@@ -53,7 +53,7 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .chip .n{color:var(--muted);font-weight:500;margin-left:5px;font-size:11px}.chip.active .n{color:#b9c0ca}
 select,input[type=number]{font-family:'Inter';font-size:13px;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;background:#fff;color:var(--text)}
 input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
-select.prov-all{min-width:180px;font-weight:600}
+.prov-all{min-width:180px;font-weight:600}
 .seg{display:inline-flex;border:1.5px solid var(--line);border-radius:8px;overflow:hidden}
 .seg button{border:none;background:#fff;padding:8px 11px;font-size:12px;font-weight:600;font-family:'JetBrains Mono';cursor:pointer;color:var(--muted);border-right:1px solid var(--line)}
 .seg button:last-child{border-right:none}.seg button.active{background:var(--ink);color:#fff}
@@ -209,7 +209,7 @@ tbody td.l{text-align:left;white-space:normal}
   <div class="ctl-row">
     <div class="field" style="flex:1;min-width:240px">
       <label>Proveedor</label>
-      <div class="prov-pick"><div class="chips" id="prov-chips"></div><select class="prov-all" id="prov-all"></select></div>
+      <div class="prov-pick"><div class="chips" id="prov-chips"></div><input class="prov-all" id="prov-all" list="prov-datalist" placeholder="Proveedor… (toca o escribe)" autocomplete="off"><datalist id="prov-datalist"></datalist></div>
     </div>
     <div class="field"><label>Rotación según</label>
       <div class="seg" id="seg-basis"><button data-b="7">7d</button><button data-b="14">14d</button><button data-b="30" class="active">30d</button><button data-b="90">90d</button></div>
@@ -346,10 +346,70 @@ function findCol(h,names){for(const n of names){const i=h.findIndex(x=>x.trim().
 function num(x){if(x==null)return 0;const s=String(x).replace(/[^0-9.\-]/g,'');const v=parseFloat(s);return isNaN(v)?0:v;}
 function parseDate(s){const m=String(s).match(/(\d{4})-(\d{2})-(\d{2})/);return m?new Date(+m[1],+m[2]-1,+m[3]):null;}
 function tag(nm,prov){const n=(nm||'').toLowerCase();
-  if(/lipton/.test(n)&&(/1\.5|1,5|1\.6|1,6/.test(n)))return{fmt:6,scale:null,role:null,word:'display'};
-  if(prov==='CCU'){if(/retornable/.test(n)&&(/2\.5/.test(n)||/2,5/.test(n)))return{fmt:6,scale:'ccu_ret',role:(/pepsi/.test(n)&&/zero/.test(n))?'pepsizero':'otros',word:'pack'};if((/2l|2 l|2 lit/.test(n))&&/desechable/.test(n))return{fmt:6,scale:null,role:null,word:'pack'};}
-  else if(prov==='COCA COLA'){if(/coca cola/.test(n)&&(/1\.5|1,5/.test(n))&&/desechable/.test(n))return{fmt:6,scale:'cc_15',role:null,word:'pack'};if(/coca cola/.test(n)&&/1\.25/.test(n)&&/retornable/.test(n))return{fmt:9,scale:'cc_vidrio',role:null,word:'caja'};if((/2 ?l|2 ?lt|2 lit/.test(n))&&/retorn/.test(n))return{fmt:8,scale:null,role:null,word:'caja'};if((/1\.5|1,5/.test(n))&&/desechable/.test(n))return{fmt:6,scale:null,role:null,word:'pack'};if(/1\.25/.test(n)&&/retornable/.test(n))return{fmt:9,scale:null,role:null,word:'caja'};}
-  return{fmt:1,scale:null,role:null,word:'u'};}
+  function F(fmt,word,scale,role){return {fmt:fmt,scale:scale||null,role:role||null,word:word||'u'};}
+  const ret=/retorn/.test(n);
+  const s125=/1[.,]25|1¼|1 ?1\/4/.test(n);
+  const s15=/1[.,]5(?!\d)/.test(n);
+  const s16=/1[.,]6|1[.,]?600|1600/.test(n);
+  const s2=(/\b2\s?l/.test(n)||/2000\s?ml/.test(n))&&!/2[.,]5|2500/.test(n)&&!s125;
+  const s25=/2[.,]5|2500/.test(n);
+  const s3=(/\b3\s?l/.test(n)||/3000\s?ml/.test(n))&&!/6[.,]?5/.test(n);
+  const s65=/6[.,]?5\s?l/.test(n);
+  const v600=/600\s?ml/.test(n), v500=/500\s?ml/.test(n);
+  const v473=/473/.test(n), lata=/\b350\s?ml/.test(n)||/lata/.test(n), v310=/310/.test(n);
+  const v300=/\b300\s?ml/.test(n), v250=/\b250\s?ml|250 ml/.test(n), v220=/220/.test(n), v200=/\b200\s?ml/.test(n);
+  if(/lipton/.test(n)&&(s15||s16))return F(6,'display');
+  if(prov==='COCA COLA'){
+    const soda=/coca|sprite|fanta|inca/.test(n);
+    if(soda){
+      if(ret&&s125)return F(9,'caja',/coca cola/.test(n)?'cc_vidrio':null);
+      if(ret&&s2)return F(8,'caja');
+      if(ret&&s3)return F(6,'caja');
+      if(s15)return F(6,'display',/coca cola/.test(n)?'cc_15':null);
+      if(s2||s25||s3)return F(6,'display');
+      if(lata||v473)return F(6,'display');
+      if(v250||v220)return F(12,'display');
+      return F(1,'u');
+    }
+    if(/monster|reign/.test(n))return F(6,'display');
+    if(/power ?ade/.test(n))return F(6,'display');
+    if(/tónica|tonica|ginger ale|schwep|shwep/.test(n))return F(6,'display');
+    if(/vital|benedictino|benedicto|aquari/.test(n)){if(s65)return F(1,'u');if(v500)return F(12,'display');if(v600)return F(6,'display');return F(6,'display');}
+    if(/kapo/.test(n))return F(24,'caja');
+    if(/guallarauco/.test(n)&&/1l|1 l/.test(n))return F(6,'display');
+    if(/fastlyte/.test(n))return F(6,'display');
+    if(/limonada kion/.test(n))return F(6,'display');
+    return F(1,'u');
+  }
+  if(prov==='CCU'){
+    const soda=/7up|bilz|canad|crush|kem|lim[oó]n soda|\bpap\b|pepsi|h2 ?oh/.test(n);
+    if(soda){
+      if(ret&&s25)return F(6,'caja','ccu_ret',(/pepsi/.test(n)&&/zero/.test(n))?'pepsizero':'otros');
+      if(s125)return F(9,'caja');
+      if(s15||s2||s3)return F(6,'display');
+      if(lata||v473)return F(24,'bandeja');
+      if(v600){if(/pepsi/.test(n)&&/zero/.test(n))return F(6,'display');if(/pepsi/.test(n))return F(12,'display');return F(6,'display');}
+      return F(1,'u');
+    }
+    if(/rockstar/.test(n))return F(12,'display');
+    if(/red bull|gatorlit/.test(n))return F(6,'display');
+    if(/gatorade/.test(n))return F(6,'display');
+    if(/lipton/.test(n)){if(v310||/310 ?gr/.test(n))return F(24,'bandeja');if(s15||/1l|1 l/.test(n))return F(6,'display');return F(1,'u');}
+    if(/watts/.test(n)){if(v200)return F(6,'display');if(v300)return F(24,'bandeja');if(s15||/1l|1 l/.test(n))return F(6,'display');return F(1,'u');}
+    if(/nescaf|starbucks/.test(n))return F(6,'display');
+    if(/vivo/.test(n))return F(12,'caja');
+    if(/cachantun|manantial|nestle|pura vida|agua mas|h2 ?oh/.test(n)){
+      if(/cachantun/.test(n)&&s25)return F(5,'display');
+      if(s65)return F(1,'u');
+      if(v310)return F(24,'bandeja');
+      if(v600)return F(12,'display');
+      return F(6,'display');
+    }
+    if(/sprim|zumo|candy/.test(n))return F(6,'display');
+    return F(1,'u');
+  }
+  return F(1,'u');
+}
 
 function parseInventory(text){
   const rows=parseCSV(text);if(rows.length<2)return null;const h=rows[0];
@@ -444,10 +504,26 @@ function tierCostUn(it){if(it.scale==='ccu_ret'){return SCALES.ccu_ret.cost[it.r
 function buildChips(){
   const chipsEl=document.getElementById('prov-chips');chipsEl.innerHTML='';
   DB.provs.slice(0,6).forEach(p=>{const b=document.createElement('button');b.className='chip';b.dataset.prov=p.prov;b.innerHTML=`${p.prov}<span class="n">${Math.round(p.u30)}</span>`;b.onclick=()=>{state.prov=p.prov;state.allProv=false;state.search='';document.getElementById('search').value='';state.edits={};render();};chipsEl.appendChild(b);});
-  const sel=document.getElementById('prov-all');sel.innerHTML='';
-  const oAll=document.createElement('option');oAll.value='__ALL__';oAll.textContent='📋 Todos los proveedores ('+DB.items.length+')';sel.appendChild(oAll);
-  DB.provs.forEach(p=>{const o=document.createElement('option');o.value=p.prov;o.textContent=`${p.prov} (${p.n})`;sel.appendChild(o);});
-  sel.onchange=()=>{if(sel.value==='__ALL__'){state.allProv=true;}else{state.allProv=false;state.prov=sel.value;}state.search='';document.getElementById('search').value='';state.edits={};render();};
+  const sel=document.getElementById('prov-all');
+  const dl=document.getElementById('prov-datalist');dl.innerHTML='';
+  const allLabel='📋 Todos los proveedores ('+DB.items.length+')';
+  const map={};map[allLabel.toLowerCase()]='__ALL__';
+  let oa=document.createElement('option');oa.value=allLabel;dl.appendChild(oa);
+  DB.provs.forEach(p=>{const lab=`${p.prov} (${p.n})`;map[lab.toLowerCase()]=p.prov;map[p.prov.toLowerCase()]=p.prov;const o=document.createElement('option');o.value=lab;dl.appendChild(o);});
+  window._provMap=map;
+  sel.onchange=()=>commitProv(sel.value);
+  sel.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();commitProv(sel.value);sel.blur();}};
+}
+function commitProv(val){
+  const map=window._provMap||{};const key=(val||'').trim().toLowerCase();
+  let target=map[key];
+  if(!target){
+    if(/^todos|📋/.test(key))target='__ALL__';
+    else if(key.length>=2){const hit=DB.provs.map(p=>p.prov).find(pp=>pp.toLowerCase().includes(key));if(hit)target=hit;}
+  }
+  if(!target)return;
+  if(target==='__ALL__'){state.allProv=true;}else{state.allProv=false;state.prov=target;}
+  state.search='';document.getElementById('search').value='';state.edits={};render();
 }
 function updGlob(){let q=0;DB.items.forEach(it=>{if(it.track&&it.stock!=null&&it.stock<=0&&it.u30>0)q++;});document.getElementById('glob-quiebre').textContent='● '+q+' en quiebre';
   document.getElementById('updlabel').innerHTML=`Datos: <b>${DB.meta.min} → ${DB.meta.max}</b> · ${DB.meta.nitems} productos · ${SRC}`;}
@@ -456,7 +532,7 @@ function render(){
   buildChips();updGlob();
   const searching=!!state.search;const allMode=state.allProv&&!searching;
   document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active',!searching&&!allMode&&c.dataset.prov===state.prov));
-  document.getElementById('prov-all').value=allMode?'__ALL__':(DB.provs.some(p=>p.prov===state.prov)?state.prov:(DB.provs[0]?DB.provs[0].prov:''));
+  document.getElementById('prov-all').value=allMode?('📋 Todos los proveedores ('+DB.items.length+')'):(DB.provs.some(p=>p.prov===state.prov)?state.prov:(DB.provs[0]?DB.provs[0].prov:''));
   document.getElementById('prov-title').textContent=searching?`Búsqueda: "${state.search}"`:allMode?'Todos los proveedores':state.prov;
   document.getElementById('order-sub').textContent=allMode?'Todos los proveedores':'Proveedor · '+state.prov;
   document.getElementById('th-rate').childNodes[0].nodeValue=unitLabel()+' ';
@@ -557,7 +633,7 @@ async function cloudPull(){
     const res=await fetch(url,{method:'GET'});
     const j=await res.json();
     if(j&&j.ok&&j.data){const o=JSON.parse(j.data);
-      if(o&&o.DB){DB=o.DB;INVMAP=o.INVMAP;SRC=o.SRC||'nube';state.edits={};
+      if(o&&o.DB){DB=o.DB;INVMAP=o.INVMAP;SRC=o.SRC||'nube';state.edits={};retagAll();
         if(!DB.provs.some(p=>p.prov===state.prov))state.prov=DB.provs[0].prov;
         persist();render();cloudStatus('✓ Bajado '+new Date().toLocaleString('es-CL'));showToast('⬇️ Datos bajados de la nube');}
       else showToast('La nube no tiene datos válidos');
@@ -607,7 +683,8 @@ document.getElementById('file-ven').onchange=e=>{const files=[...e.target.files]
   tb.addEventListener('input',e=>{if(e.target.classList&&e.target.classList.contains('qty-in'))onQty(e.target);});
 })();
 // ===================== INICIO =====================
-restore();render();
+function retagAll(){if(DB&&DB.items)DB.items.forEach(it=>{const t=tag(it.nombre,it.prov);it.fmt=t.fmt;it.scale=t.scale;it.role=t.role;it.word=t.word;});}
+restore();retagAll();render();
 </script>
 </body>
 </html>
