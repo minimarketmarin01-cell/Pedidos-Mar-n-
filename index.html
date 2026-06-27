@@ -53,7 +53,15 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .chip .n{color:var(--muted);font-weight:500;margin-left:5px;font-size:11px}.chip.active .n{color:#b9c0ca}
 select,input[type=number]{font-family:'Inter';font-size:13px;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;background:#fff;color:var(--text)}
 input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
-.prov-all{min-width:180px;font-weight:600}
+.prov-combo{position:relative;flex:1;min-width:160px}
+.prov-all{width:100%;min-width:0;font-weight:600}
+.prov-menu{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.16);max-height:min(320px,46vh);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;z-index:60}
+.prov-menu.hidden{display:none}
+.prov-opt{padding:11px 13px;font-size:14px;cursor:pointer;border-bottom:1px solid #F2F1EC;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.prov-opt:last-child{border-bottom:none}
+.prov-opt.act,.prov-opt:active{background:#F4F3EE}
+.prov-opt .n{color:var(--muted);font-size:12px;font-weight:700}
+.prov-opt.all{font-weight:800;color:var(--ink)}
 .seg{display:inline-flex;border:1.5px solid var(--line);border-radius:8px;overflow:hidden}
 .seg button{border:none;background:#fff;padding:8px 11px;font-size:12px;font-weight:600;font-family:'JetBrains Mono';cursor:pointer;color:var(--muted);border-right:1px solid var(--line)}
 .seg button:last-child{border-right:none}.seg button.active{background:var(--ink);color:#fff}
@@ -202,14 +210,10 @@ tbody td.l{text-align:left;white-space:normal}
 
 <div id="tab-pedido">
 <div class="controls">
-  <div class="searchwrap">
-    <input class="search" id="search" placeholder="Buscar por nombre, REF o código de barras… (en todos los proveedores)">
-    <button class="searchx" id="searchx">✕</button>
-  </div>
   <div class="ctl-row">
     <div class="field" style="flex:1;min-width:240px">
       <label>Proveedor</label>
-      <div class="prov-pick"><div class="chips" id="prov-chips"></div><input class="prov-all" id="prov-all" list="prov-datalist" placeholder="Proveedor… (toca o escribe)" autocomplete="off"><datalist id="prov-datalist"></datalist></div>
+      <div class="prov-pick"><div class="chips" id="prov-chips"></div><div class="prov-combo" id="prov-combo"><input class="prov-all" id="prov-all" placeholder="Proveedor… (toca o escribe)" autocomplete="off" inputmode="text"><div class="prov-menu hidden" id="prov-menu"></div></div></div>
     </div>
     <div class="field"><label>Rotación según</label>
       <div class="seg" id="seg-basis"><button data-b="7">7d</button><button data-b="14">14d</button><button data-b="30" class="active">30d</button><button data-b="90">90d</button></div>
@@ -235,6 +239,10 @@ tbody td.l{text-align:left;white-space:normal}
         <span><i class="ldot" style="background:var(--gris)"></i>Sobrestock</span>
         <span><i class="ldot" style="background:var(--azul)"></i>Sin control</span>
       </div>
+    </div>
+    <div class="searchwrap">
+      <input class="search" id="search" placeholder="Buscar por nombre, REF o código de barras…">
+      <button class="searchx" id="searchx">✕</button>
     </div>
     <div class="tablecard"><div class="tbl-scroll"><table id="ptable">
       <thead><tr>
@@ -505,26 +513,30 @@ function buildChips(){
   const chipsEl=document.getElementById('prov-chips');chipsEl.innerHTML='';
   DB.provs.slice(0,6).forEach(p=>{const b=document.createElement('button');b.className='chip';b.dataset.prov=p.prov;b.innerHTML=`${p.prov}<span class="n">${Math.round(p.u30)}</span>`;b.onclick=()=>{state.prov=p.prov;state.allProv=false;state.search='';document.getElementById('search').value='';state.edits={};render();};chipsEl.appendChild(b);});
   const sel=document.getElementById('prov-all');
-  const dl=document.getElementById('prov-datalist');dl.innerHTML='';
-  const allLabel='📋 Todos los proveedores ('+DB.items.length+')';
-  const map={};map[allLabel.toLowerCase()]='__ALL__';
-  let oa=document.createElement('option');oa.value=allLabel;dl.appendChild(oa);
-  DB.provs.forEach(p=>{const lab=`${p.prov} (${p.n})`;map[lab.toLowerCase()]=p.prov;map[p.prov.toLowerCase()]=p.prov;const o=document.createElement('option');o.value=lab;dl.appendChild(o);});
-  window._provMap=map;
-  sel.onchange=()=>commitProv(sel.value);
-  sel.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();commitProv(sel.value);sel.blur();}};
-}
-function commitProv(val){
-  const map=window._provMap||{};const key=(val||'').trim().toLowerCase();
-  let target=map[key];
-  if(!target){
-    if(/^todos|📋/.test(key))target='__ALL__';
-    else if(key.length>=2){const hit=DB.provs.map(p=>p.prov).find(pp=>pp.toLowerCase().includes(key));if(hit)target=hit;}
+  const menu=document.getElementById('prov-menu');
+  let acts=[];
+  function opt(label,n,val,isAll){const o=document.createElement('div');o.className='prov-opt'+(isAll?' all':'');o.dataset.val=val;const t=document.createElement('span');t.textContent=label;o.appendChild(t);if(n!=null){const c=document.createElement('span');c.className='n';c.textContent=n;o.appendChild(c);}o.onclick=()=>pickProv(val);return o;}
+  function renderProvMenu(filter){const q=(filter||'').trim().toLowerCase();menu.innerHTML='';
+    if(!q||'todos los proveedores'.indexOf(q)===0)menu.appendChild(opt('📋 Todos los proveedores',DB.items.length,'__ALL__',true));
+    DB.provs.filter(p=>!q||p.prov.toLowerCase().indexOf(q)>-1).forEach(p=>menu.appendChild(opt(p.prov,p.n,p.prov,false)));
+    acts=[].slice.call(menu.querySelectorAll('.prov-opt'));
+    if(!acts.length){const e=document.createElement('div');e.className='prov-opt';e.style.color='var(--muted)';e.textContent='Sin coincidencias';menu.appendChild(e);}}
+  function openMenu(f){renderProvMenu(f);menu.classList.remove('hidden');menu.scrollTop=0;}
+  function caretToEnd(el){const n=(el.value||'').length;try{el.setSelectionRange(n,n);}catch(e){}}
+  sel.onfocus=()=>{openMenu('');setTimeout(()=>caretToEnd(sel),0);};
+  sel.oninput=()=>openMenu(sel.value);
+  sel.onkeydown=e=>{
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();if(!acts.length)return;let i=acts.indexOf(menu.querySelector('.prov-opt.act'));acts.forEach(o=>o.classList.remove('act'));i=e.key==='ArrowDown'?(i+1)%acts.length:(i<=0?acts.length-1:i-1);acts[i].classList.add('act');acts[i].scrollIntoView({block:'nearest'});}
+    else if(e.key==='Enter'){e.preventDefault();const a=menu.querySelector('.prov-opt.act');if(a&&a.dataset.val){pickProv(a.dataset.val);}else{menu.classList.add('hidden');if(!commitProv(sel.value))setProvInputValue();sel.blur();}}
+    else if(e.key==='Escape'){menu.classList.add('hidden');setProvInputValue();sel.blur();}
+  };
+  if(!window._provDocBound){window._provDocBound=true;
+    document.addEventListener('pointerdown',function(ev){const combo=document.getElementById('prov-combo');const m=document.getElementById('prov-menu');if(m&&!m.classList.contains('hidden')&&combo&&!combo.contains(ev.target)){m.classList.add('hidden');setProvInputValue();}},true);
   }
-  if(!target)return;
-  if(target==='__ALL__'){state.allProv=true;}else{state.allProv=false;state.prov=target;}
-  state.search='';document.getElementById('search').value='';state.edits={};render();
 }
+function setProvInputValue(){const sel=document.getElementById('prov-all');if(!sel)return;const allMode=state.allProv&&!state.search;sel.value=allMode?'📋 Todos los proveedores':(DB.provs.some(p=>p.prov===state.prov)?state.prov:(DB.provs[0]?DB.provs[0].prov:''));}
+function pickProv(target){if(target==='__ALL__'){state.allProv=true;}else{state.allProv=false;state.prov=target;}state.search='';const s=document.getElementById('search');if(s)s.value='';const sx=document.getElementById('searchx');if(sx)sx.classList.remove('on');state.edits={};const menu=document.getElementById('prov-menu');if(menu)menu.classList.add('hidden');const sel=document.getElementById('prov-all');if(sel)sel.blur();render();}
+function commitProv(val){const key=(val||'').trim().toLowerCase();if(!key)return false;if(key.indexOf('todos')===0||key.indexOf('📋')===0){pickProv('__ALL__');return true;}let hit=DB.provs.find(p=>p.prov.toLowerCase()===key);if(!hit&&key.length>=2)hit=DB.provs.find(p=>p.prov.toLowerCase().indexOf(key)>-1);if(hit){pickProv(hit.prov);return true;}return false;}
 function updGlob(){let q=0;DB.items.forEach(it=>{if(it.track&&it.stock!=null&&it.stock<=0&&it.u30>0)q++;});document.getElementById('glob-quiebre').textContent='● '+q+' en quiebre';
   document.getElementById('updlabel').innerHTML=`Datos: <b>${DB.meta.min} → ${DB.meta.max}</b> · ${DB.meta.nitems} productos · ${SRC}`;}
 
@@ -532,7 +544,7 @@ function render(){
   buildChips();updGlob();
   const searching=!!state.search;const allMode=state.allProv&&!searching;
   document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active',!searching&&!allMode&&c.dataset.prov===state.prov));
-  document.getElementById('prov-all').value=allMode?('📋 Todos los proveedores ('+DB.items.length+')'):(DB.provs.some(p=>p.prov===state.prov)?state.prov:(DB.provs[0]?DB.provs[0].prov:''));
+  setProvInputValue();
   document.getElementById('prov-title').textContent=searching?`Búsqueda: "${state.search}"`:allMode?'Todos los proveedores':state.prov;
   document.getElementById('order-sub').textContent=allMode?'Todos los proveedores':'Proveedor · '+state.prov;
   document.getElementById('th-rate').childNodes[0].nodeValue=unitLabel()+' ';
