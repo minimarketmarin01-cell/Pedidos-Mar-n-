@@ -20,12 +20,12 @@
   --azul:#3C6FB0;--azul-bg:#E8F0F8;--wa:#1FA855;--wa-d:#178a45;--gold:#C68A1B;--gold-bg:#FBF3E1;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html{-webkit-text-size-adjust:100%}
-body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--text);font-size:14px;line-height:1.4;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%;width:100%;overflow-x:hidden}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--text);font-size:14px;line-height:1.4;-webkit-tap-highlight-color:transparent;width:100%;max-width:100%}
 .mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
 h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
-.top{background:var(--ink);color:#fff;padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.brand{display:flex;align-items:baseline;gap:9px}
+.top{background:var(--ink);color:#fff;width:100%;padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top));padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:9px;min-width:0}
 .brand .mk{font-family:'Archivo';font-weight:800;font-size:17px;letter-spacing:-.02em}
 .brand .loc{color:#9aa1ac;font-size:11px;font-weight:500}
 .toprt{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -34,10 +34,10 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .loadbtn.acc{background:var(--wa);border-color:var(--wa-d)}
 .upd{color:#8b929c;font-size:10.5px;width:100%;margin-top:2px}
 .upd b{color:#c7ccd3}
-.tabs{background:var(--ink2);padding:0 12px;display:flex;gap:2px;overflow-x:auto}
+.tabs{background:var(--ink2);width:100%;padding:0 max(12px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left));display:flex;gap:2px;overflow-x:auto}
 .tab{background:none;border:none;color:#9aa1ac;font-family:'Archivo';font-weight:700;font-size:13px;padding:11px 14px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
 .tab.active{color:#fff;border-bottom-color:var(--wa)}
-.controls{background:var(--card);border-bottom:1px solid var(--line);padding:12px 16px}
+.controls{background:var(--card);width:100%;border-bottom:1px solid var(--line);padding:12px max(16px,env(safe-area-inset-right)) 12px max(16px,env(safe-area-inset-left))}
 .searchwrap{position:relative;margin-bottom:11px}
 .search{width:100%;padding:11px 14px 11px 38px;border:1.5px solid var(--line);border-radius:10px;font-size:15px;font-family:'Inter';background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236A707B' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E") no-repeat 13px center}
 .search:focus{outline:none;border-color:var(--ink)}
@@ -66,8 +66,9 @@ input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .seg button{border:none;background:#fff;padding:8px 11px;font-size:12px;font-weight:600;font-family:'JetBrains Mono';cursor:pointer;color:var(--muted);border-right:1px solid var(--line)}
 .seg button:last-child{border-right:none}.seg button.active{background:var(--ink);color:#fff}
 .hint{font-size:10.5px;color:var(--muted);margin-top:3px}
-.wrap{display:grid;grid-template-columns:1fr 340px;gap:16px;padding:16px;align-items:start;max-width:1520px;margin:0 auto}
+.wrap{display:grid;grid-template-columns:1fr 340px;gap:16px;padding:16px;align-items:start;max-width:1520px;margin:0 auto;width:100%}
 @media(max-width:1080px){.wrap{grid-template-columns:1fr}}
+.wrap>*{min-width:0}
 .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:13px}
 @media(max-width:680px){.kpis{grid-template-columns:repeat(2,1fr)}}
 .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
@@ -89,8 +90,8 @@ input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .section-head h2{font-size:17px;font-weight:800;letter-spacing:-.02em}
 .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--muted);align-items:center}
 .legend span{display:inline-flex;align-items:center;gap:5px}.ldot{width:9px;height:9px;border-radius:50%}
-.tablecard{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.tbl-scroll{overflow:auto;max-height:72vh;-webkit-overflow-scrolling:touch}
+.tablecard{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0;max-width:100%}
+.tbl-scroll{overflow:auto;max-height:72vh;-webkit-overflow-scrolling:touch;max-width:100%}
 table{border-collapse:collapse;width:100%;min-width:720px}
 thead th{background:#FAF9F5;text-align:right;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;padding:10px 11px;border-bottom:1.5px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none;position:sticky;top:0;z-index:6;box-shadow:0 1px 0 var(--line)}
 thead th.l{text-align:left}thead th .ar{opacity:.4;font-size:9px}thead th.sorted .ar{opacity:1;color:var(--ink)}
@@ -170,11 +171,15 @@ tbody td.l{text-align:left;white-space:normal}
 .method b{color:#fff}.method .f{font-family:'JetBrains Mono';background:#0d1014;border:1px solid #2a3038;border-radius:6px;padding:2px 6px;font-size:11.5px;color:#9fe3bb}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:10px;font-weight:600;font-size:13px;box-shadow:0 8px 30px rgba(0,0,0,.25);transition:.3s;z-index:100;opacity:0;max-width:90vw;text-align:center}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
-.cloudpanel{background:var(--ink2);padding:12px 16px;border-bottom:1px solid #2a3038;display:flex;flex-direction:column;gap:9px}
+.cloudpanel{background:var(--ink2);width:100%;padding:12px max(16px,env(safe-area-inset-right)) 12px max(16px,env(safe-area-inset-left));border-bottom:1px solid #2a3038;display:flex;flex-direction:column;gap:9px}
 .cp-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .cp-url{flex:1;min-width:220px;padding:9px 11px;border-radius:8px;border:1px solid #39414c;background:#252b34;color:#fff;font-size:12.5px;font-family:'JetBrains Mono'}
 .cp-status{color:#9fe3bb;font-size:11.5px;font-weight:600}
 .cp-hint{color:#8b929c;font-size:11px;line-height:1.4}
+#tab-pedido,#tab-resumen{width:100%}
+.tbl-more{text-align:center;padding:14px 11px;color:var(--muted);font-size:12px;font-weight:600;background:#FAF9F5}
+.tbl-more .sp{display:inline-block;width:13px;height:13px;margin-right:8px;vertical-align:-2px;border:2px solid var(--line);border-top-color:var(--ink);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 .hidden{display:none!important}
 </style>
 </head>
@@ -569,24 +574,42 @@ function renderDow(){
 }
 function rowSortVal(it,a){switch(state.sort){case'nombre':return it.nombre.toLowerCase();case'rate':return a.rate;case'trend':return a.trend.k==='up'?2:a.trend.k==='flat'?1:0;case'stock':return it.stock==null?-1:it.stock;case'cov':return a.cov==null?1e9:(a.cov===Infinity?1e8:a.cov);case'estado':return SO[a.status];case'sug':return a.sug;}}
 function covColor(a){return a.status==='urgente'?'var(--rojo)':a.status==='pedir'?'var(--ambar)':a.status==='sobre'?'var(--gris)':a.status==='sinstock'?'var(--azul)':'var(--verde)';}
+// --- Render de tabla con carga incremental (lazy) para listas grandes ---
+const TABLE_PAGE=70;let _tbState=null,_tbIO=null;
+function rowHTML(it,a,f){const sug=qOf(it,a);const covTxt=a.cov==null?'—':a.cov===Infinity?'∞':(a.cov>=100?'99+':fmt1(a.cov)+'d');
+  const fmtTag=it.fmt>1?`<span class="fmt-tag">x${it.fmt}</span>`:'';
+  const bundles=it.fmt>1?Math.round(sug/it.fmt):sug;
+  const provLabel=state.search?it.prov+' · ':'';
+  return `<tr class="${a.status==='urgente'?'row-urgent':''}"><td class="l"><div class="prod-name">${it.nombre}${fmtTag}</div><span class="prod-ref">${provLabel}${peso(it.precio)} · ${it.scale?'escala ⚡':'#'+it.ref}</span></td>`+
+    `<td class="num">${fmt1(a.rate*f)}</td><td><span class="trend ${a.trend.k}">${a.trend.t}</span></td>`+
+    `<td class="num">${it.stock==null?'<span style="color:var(--azul)">s/c</span>':fmt.format(it.stock)}</td>`+
+    `<td class="cov" style="color:${covColor(a)}">${covTxt}</td>`+
+    `<td><span class="badge b-${a.status}"><span class="d"></span>${SL[a.status]}</span></td>`+
+    `<td><div class="qcell"><div class="qstep ${sug>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${it.fmt>1?'gold':''}">${labelFor(it,bundles)}</span></div></td></tr>`;
+}
+function tableScrollEl(){const tb=document.getElementById('ptbody');return tb?tb.closest('.tbl-scroll'):null;}
+function tableMore(){
+  if(!_tbState)return;const tb=document.getElementById('ptbody');const{items,f}=_tbState;
+  const old=document.getElementById('tbl-sentinel');if(old)old.remove();
+  const end=Math.min(_tbState.idx+TABLE_PAGE,items.length);let html='';
+  for(let i=_tbState.idx;i<end;i++)html+=rowHTML(items[i].it,items[i].a,f);
+  tb.insertAdjacentHTML('beforeend',html);_tbState.idx=end;
+  if(_tbState.idx<items.length){
+    tb.insertAdjacentHTML('beforeend',`<tr id="tbl-sentinel"><td colspan="7" class="tbl-more"><span class="sp"></span>Cargando más… (${_tbState.idx} de ${items.length})</td></tr>`);
+    const sent=document.getElementById('tbl-sentinel');
+    if('IntersectionObserver'in window){if(_tbIO)_tbIO.disconnect();_tbIO=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting)tableMore();});},{root:tableScrollEl(),rootMargin:'250px'});_tbIO.observe(sent);}
+  }else if(_tbIO){_tbIO.disconnect();_tbIO=null;}
+}
 function renderTable(){
   const items=currentItems().map(it=>({it,a:analyze(it)}));const f=unitFactor();
   items.sort((x,y)=>{let va=rowSortVal(x.it,x.a),vb=rowSortVal(y.it,y.a);if(typeof va==='string')return state.dir*va.localeCompare(vb);return state.dir*(va-vb);});
   document.querySelectorAll('#ptable th').forEach(th=>th.classList.toggle('sorted',th.dataset.s===state.sort));
+  if(_tbIO){_tbIO.disconnect();_tbIO=null;}
   const tb=document.getElementById('ptbody');tb.innerHTML='';
-  if(!items.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--muted)">Sin resultados.</td></tr>';return;}
-  items.forEach(({it,a})=>{const sug=qOf(it,a);const covTxt=a.cov==null?'—':a.cov===Infinity?'∞':(a.cov>=100?'99+':fmt1(a.cov)+'d');
-    const fmtTag=it.fmt>1?`<span class="fmt-tag">x${it.fmt}</span>`:'';
-    const bundles=it.fmt>1?Math.round(sug/it.fmt):sug;
-    const provLabel=state.search?it.prov+' · ':'';
-    const tr=document.createElement('tr');if(a.status==='urgente')tr.className='row-urgent';
-    tr.innerHTML=`<td class="l"><div class="prod-name">${it.nombre}${fmtTag}</div><span class="prod-ref">${provLabel}${peso(it.precio)} · ${it.scale?'escala ⚡':'#'+it.ref}</span></td>
-      <td class="num">${fmt1(a.rate*f)}</td><td><span class="trend ${a.trend.k}">${a.trend.t}</span></td>
-      <td class="num">${it.stock==null?'<span style="color:var(--azul)">s/c</span>':fmt.format(it.stock)}</td>
-      <td class="cov" style="color:${covColor(a)}">${covTxt}</td>
-      <td><span class="badge b-${a.status}"><span class="d"></span>${SL[a.status]}</span></td>
-      <td><div class="qcell"><div class="qstep ${sug>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${it.fmt>1?'gold':''}">${labelFor(it,bundles)}</span></div></td>`;
-    tb.appendChild(tr);});
+  const sc=tableScrollEl();if(sc)sc.scrollTop=0;
+  if(!items.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--muted)">Sin resultados.</td></tr>';_tbState=null;return;}
+  _tbState={items,f,idx:0};
+  tableMore();
 }
 function renderScale(){
   const card=document.getElementById('scalecard');const scs=SCALE_OF_PROV[state.prov];
