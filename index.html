@@ -95,10 +95,20 @@ input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 table{border-collapse:collapse;width:100%;min-width:720px}
 thead th{background:#FAF9F5;text-align:right;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;padding:10px 11px;border-bottom:1.5px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none;position:sticky;top:0;z-index:6;box-shadow:0 1px 0 var(--line)}
 thead th.l{text-align:left}thead th .ar{opacity:.4;font-size:9px}thead th.sorted .ar{opacity:1;color:var(--ink)}
-tbody td{padding:9px 11px;border-bottom:1px solid var(--line2);text-align:right;white-space:nowrap}
+tbody td{padding:11px 12px;border-bottom:1px solid var(--line2);text-align:right;white-space:nowrap}
+tbody tr:hover td{background:#fafaf7}
 tbody td.l{text-align:left;white-space:normal}
-.prod-name{font-weight:600;font-size:13px;line-height:1.25;max-width:240px}
+.prod-name{font-weight:700;font-size:13.5px;line-height:1.25;max-width:240px;letter-spacing:-.01em}
 .prod-ref{font-size:10px;color:var(--muted);font-family:'JetBrains Mono'}
+.prod-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:3px}
+.prod-prov{font-size:9.5px;font-weight:700;color:var(--muted);font-family:'Archivo';text-transform:uppercase;letter-spacing:.04em;padding-right:6px;border-right:1px solid var(--line)}
+.prod-prices{display:inline-flex;align-items:center;gap:7px}
+.price-item{display:inline-flex;align-items:baseline;gap:3px}
+.price-lbl{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-family:'Archivo';color:var(--muted)}
+.price-val{font-family:'JetBrains Mono';font-weight:600;font-size:12px;color:var(--text)}
+.price-cost{color:var(--ambar)}
+.price-div{color:var(--line);font-size:11px;margin:0 1px}
+.price-scale{font-size:9.5px;font-weight:700;font-family:'Archivo';color:var(--gold)}
 .fmt-tag{display:inline-block;background:var(--gold-bg);color:var(--gold);font-size:9px;font-weight:700;font-family:'Archivo';padding:1px 5px;border-radius:4px;margin-left:5px}
 .num{font-family:'JetBrains Mono';font-weight:500}
 .trend{font-size:11px;font-weight:700;font-family:'JetBrains Mono'}
@@ -187,26 +197,10 @@ tbody td.l{text-align:left;white-space:normal}
 <div class="top">
   <div class="brand"><span class="mk">Marín 376</span><span class="loc">Pedidos</span></div>
   <div class="toprt">
-    <button class="loadbtn" id="btn-inv">📦 Cargar inventario</button>
-    <button class="loadbtn" id="btn-ven">📈 Cargar ventas</button>
-    <button class="loadbtn" id="btn-cloud">☁️ Nube</button>
+    <button class="loadbtn acc" id="btn-sync">🔄 Sincronizar</button>
     <span class="glob" id="glob-quiebre" style="color:#ffb4a8;font-size:12px;font-weight:600"></span>
-    <input type="file" id="file-inv" class="hidden">
-    <input type="file" id="file-ven" multiple class="hidden">
     <span class="upd" id="updlabel"></span>
   </div>
-</div>
-<div class="cloudpanel hidden" id="cloudpanel">
-  <div class="cp-row">
-    <input id="cloud-url" class="cp-url" placeholder="Pega aquí la URL de tu app web de Google (termina en …/exec)">
-    <button class="loadbtn" id="cloud-save">Guardar URL</button>
-  </div>
-  <div class="cp-row">
-    <button class="loadbtn acc" id="cloud-push">☁️ Subir a la nube</button>
-    <button class="loadbtn" id="cloud-pull">⬇️ Bajar de la nube</button>
-    <span class="cp-status" id="cloud-status"></span>
-  </div>
-  <div class="cp-hint">Al cargar inventario o ventas, los datos se suben solos. En otro dispositivo, toca "Bajar de la nube" para ver lo último.</div>
 </div>
 <div class="tabs">
   <button class="tab active" data-tab="pedido">Armar pedido</button>
@@ -425,11 +419,29 @@ function tag(nm,prov){const n=(nm||'').toLowerCase();
 }
 
 function parseInventory(text){
-  const rows=parseCSV(text);if(rows.length<2)return null;const h=rows[0];
-  const iRef=findCol(h,['REF']),iNom=findCol(h,['Nombre']),iCat=findCol(h,['Categoria','Categoría']),iCos=findCol(h,['Coste']),iPre=findCol(h,['Precio']),iStk=findCol(h,['En inventario']),iTrk=findCol(h,['Seguir el Inventario']),iBar=findCol(h,['Codigo de barras','Código de barras','Codigo barras','Código barras','Barcode']);
+  const rows=parseCSV(text);if(rows.length<2){console.warn('[INV] CSV con menos de 2 filas: no hay datos.');return null;}
+  const h=rows[0];
+  const iRef=findCol(h,['REF','SKU']),
+        iNom=findCol(h,['Nombre','Name']),
+        iCat=findCol(h,['Categoria','Categoría','Category']),
+        iCos=findCol(h,['Coste','Costo','Cost']),
+        iPre=findCol(h,['Precio','Price']),
+        iStk=findCol(h,['En inventario','En stock','In stock']),
+        iTrk=findCol(h,['Seguir el Inventario','Seguir inventario','Track stock','Track inventory']),
+        iBar=findCol(h,['Codigo de barras','Código de barras','Codigo barras','Código barras','Barcode']);
+  console.log('[INV] Cabecera del CSV:',h);
+  console.log('[INV] Columnas detectadas -> REF:',iRef,'("'+h[iRef]+'") | Coste:',iCos,'("'+h[iCos]+'") | Precio:',iPre,'("'+h[iPre]+'") | STOCK:',iStk,'("'+h[iStk]+'") | Track:',iTrk,'("'+h[iTrk]+'") | Barras:',iBar,'("'+h[iBar]+'")');
+  if(iRef<0)console.warn('[INV] ⚠ No se encontró la columna REF: no se podrá unir el inventario con las ventas.');
+  if(iStk<0)console.warn('[INV] ⚠ No se encontró la columna de stock ("En inventario"): el stock quedará vacío.');
+  const cell=(row,i)=>i>-1?String(row[i]).trim():'';
+  const numOrNull=(row,i)=>{if(i<0)return null;const v=String(row[i]).trim();return v===''?null:num(v);};
   const map={};
-  for(let r=1;r<rows.length;r++){const row=rows[r];if(!row[iRef])continue;const trk=iTrk>-1?String(row[iTrk]||'').toUpperCase():'';
-    map[String(row[iRef]).trim()]={nombre:iNom>-1?row[iNom]:'',prov:iCat>-1?row[iCat]:'',coste:iCos>-1?num(row[iCos]):null,precio:iPre>-1?num(row[iPre]):null,stock:iStk>-1?num(row[iStk]):null,track:(trk[0]==='S'||trk[0]==='Y'||trk==='TRUE'||trk==='VERDAD'),barcode:iBar>-1?String(row[iBar]||'').trim():''};}
+  for(let r=1;r<rows.length;r++){const row=rows[r];if(!cell(row,iRef))continue;
+    const trk=iTrk>-1?String(row[iTrk]||'').trim().toUpperCase():'';
+    map[cell(row,iRef)]={nombre:cell(row,iNom),prov:cell(row,iCat),coste:numOrNull(row,iCos),precio:numOrNull(row,iPre),stock:numOrNull(row,iStk),track:(trk[0]==='S'||trk[0]==='Y'||trk==='TRUE'||trk==='VERDAD'),barcode:iBar>-1?String(row[iBar]||'').trim():''};}
+  const claves=Object.keys(map);
+  console.log('[INV] Filas de datos:',rows.length-1,'| Productos en el mapa:',claves.length);
+  console.log('[INV] Muestra de stock leído:',claves.slice(0,5).map(k=>({ref:k,stock:map[k].stock,track:map[k].track,precio:map[k].precio})));
   return map;
 }
 function parseSales(textArr){
@@ -579,8 +591,11 @@ const TABLE_PAGE=70;let _tbState=null,_tbIO=null;
 function rowHTML(it,a,f){const sug=qOf(it,a);const covTxt=a.cov==null?'—':a.cov===Infinity?'∞':(a.cov>=100?'99+':fmt1(a.cov)+'d');
   const fmtTag=it.fmt>1?`<span class="fmt-tag">x${it.fmt}</span>`:'';
   const bundles=it.fmt>1?Math.round(sug/it.fmt):sug;
-  const provLabel=state.search?it.prov+' · ':'';
-  return `<tr class="${a.status==='urgente'?'row-urgent':''}"><td class="l"><div class="prod-name">${it.nombre}${fmtTag}</div><span class="prod-ref">${provLabel}${peso(it.precio)} · ${it.scale?'escala ⚡':'#'+it.ref}</span></td>`+
+  const provLabel=state.search?`<span class="prod-prov">${it.prov}</span>`:'';
+  const precioVal=it.precio!=null?peso(it.precio):'—';
+  const costoVal=it.coste!=null?peso(it.coste):'—';
+  const tooltip='#'+it.ref+(it.scale?' · escala ⚡':'');
+  return `<tr class="${a.status==='urgente'?'row-urgent':''}"><td class="l" title="${tooltip}"><div class="prod-name">${it.nombre}${fmtTag}</div><div class="prod-meta">${provLabel}<span class="prod-prices"><span class="price-item"><span class="price-lbl">Venta</span><span class="price-val">${precioVal}</span></span><span class="price-div">·</span><span class="price-item"><span class="price-lbl">Costo</span><span class="price-val price-cost">${costoVal}</span></span>${it.scale?'<span class="price-scale">⚡ esc.</span>':''}</span></div></td>`+
     `<td class="num">${fmt1(a.rate*f)}</td><td><span class="trend ${a.trend.k}">${a.trend.t}</span></td>`+
     `<td class="num">${it.stock==null?'<span style="color:var(--azul)">s/c</span>':fmt.format(it.stock)}</td>`+
     `<td class="cov" style="color:${covColor(a)}">${covTxt}</td>`+
@@ -648,37 +663,83 @@ function renderOverview(){
 }
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
 
-// ===================== SINCRONIZACIÓN NUBE (Google Apps Script) =====================
-const CLOUD_TOKEN='marin376';
-function cloudURL(){return localStorage.getItem('marin_cloud_url')||'';}
-function cloudStatus(m){const el=document.getElementById('cloud-status');if(el)el.textContent=m;}
-async function cloudPush(silent){
-  const url=cloudURL();if(!url){if(!silent)showToast('Primero pega la URL de la nube y guárdala');return;}
-  try{cloudStatus('Subiendo…');
-    const payload=JSON.stringify({token:CLOUD_TOKEN,src:SRC,data:JSON.stringify({DB,INVMAP,SRC})});
-    const res=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:payload});
-    const j=await res.json();
-    if(j&&j.ok){cloudStatus('✓ Subido '+new Date().toLocaleString('es-CL'));if(!silent)showToast('☁️ Datos subidos a la nube');}
-    else{cloudStatus('Error al subir');if(!silent)showToast('No se pudo subir'+(j&&j.error?': '+j.error:''));}
-  }catch(e){cloudStatus('Error de conexión');if(!silent)showToast('Error de conexión al subir');}
+// ===================== SINCRONIZACIÓN AUTOMÁTICA (Apps Script /exec) =====================
+const SYNC_URL='https://script.google.com/macros/s/AKfycbzG8ezGxR1jRIKnswA851k3V0yj7JR3Z7CA0qkgPbu7irtbwj0IBMJ50M2_9jCcLlOl7A/exec';
+const SYNC_MAX_AGE=3600000; // 1 hora en ms
+
+function lastSyncTime(){const t=localStorage.getItem('marin_last_sync');return t?+t:0;}
+function setLastSync(t){localStorage.setItem('marin_last_sync',String(t));}
+
+// Convierte los datos del endpoint (items + ventas) al formato DB que usa el dashboard
+function buildDBfromCloud(items, ventas){
+  const itemRows=(items&&items.rows)?items.rows:{};
+  const ventaRows=(ventas&&ventas.rows)?ventas.rows:{};
+  const hoyRows=(ventas&&ventas.hoy&&ventas.hoy.rows)?ventas.hoy.rows:{};
+
+  // Une ventas base + lo de hoy (suma incremental)
+  const refs=new Set([...Object.keys(ventaRows),...Object.keys(itemRows)]);
+  const items_arr=[];
+  refs.forEach(ref=>{
+    const v=ventaRows[ref]||{u_all:0,u7:0,u14:0,u30:0,u90:0,rev:0,prof:0,ant:0,vs_ant_pct:null};
+    const inv=itemRows[ref]||{};
+    const hoyU=hoyRows[ref]||0;
+    const nombre=inv.nombre||v.nombre||ref;
+    const prov=inv.prov||v.prov||'SIN CATEGORÍA';
+    const t=tag(nombre,prov);
+    items_arr.push({
+      ref:ref, nombre:nombre, prov:prov,
+      u_all:(v.u_all||0)+hoyU,
+      u7:(v.u7||0)+hoyU, u14:(v.u14||0)+hoyU,
+      u30:(v.u30||0)+hoyU, u90:(v.u90||0)+hoyU,
+      rev:v.rev||0, prof:v.prof||0,
+      ant:v.ant||0, vs_ant_pct:(v.vs_ant_pct!=null?v.vs_ant_pct:null),
+      stock:inv.stock!=null?inv.stock:null,
+      precio:inv.precio!=null?inv.precio:null,
+      coste:inv.costo!=null?inv.costo:null,
+      track:!!inv.track, barcode:inv.barcode||'',
+      fmt:t.fmt, scale:t.scale, role:t.role, word:t.word
+    });
+  });
+  items_arr.sort((a,b)=>b.u_all-a.u_all);
+
+  // Construye provs + day-of-week (simplificado: sin dow detallado, se calcula u30)
+  const ps={};
+  items_arr.forEach(it=>{if(!ps[it.prov])ps[it.prov]={prov:it.prov,u30:0,u_all:0,rev:0,prof:0,n:0};
+    ps[it.prov].u30+=it.u30;ps[it.prov].u_all+=it.u_all;ps[it.prov].rev+=it.rev;ps[it.prov].prof+=it.prof;ps[it.prov].n++;});
+  const provs=Object.values(ps).map(p=>({...p,dow:null,peak:0})).sort((a,b)=>b.u30-a.u30);
+
+  const meta=ventas&&ventas.meta?ventas.meta:{min:'',max:'',ndays:0};
+  return {meta:{min:meta.min,max:meta.max,ndays:meta.ndays,nitems:items_arr.length,nprov:provs.length},items:items_arr,provs:provs};
 }
-async function cloudPull(){
-  const url=cloudURL();if(!url){showToast('Primero pega la URL de la nube y guárdala');return;}
-  try{cloudStatus('Bajando…');
-    const res=await fetch(url,{method:'GET'});
+
+async function cloudSync(silent){
+  try{
+    if(!silent)showToast('🔄 Sincronizando…');
+    const res=await fetch(SYNC_URL,{method:'GET'});
     const j=await res.json();
-    if(j&&j.ok&&j.data){const o=JSON.parse(j.data);
-      if(o&&o.DB){DB=o.DB;INVMAP=o.INVMAP;SRC=o.SRC||'nube';state.edits={};retagAll();
-        if(!DB.provs.some(p=>p.prov===state.prov))state.prov=DB.provs[0].prov;
-        persist();render();cloudStatus('✓ Bajado '+new Date().toLocaleString('es-CL'));showToast('⬇️ Datos bajados de la nube');}
-      else showToast('La nube no tiene datos válidos');
-    }else{cloudStatus('Nube vacía');showToast('La nube está vacía todavía');}
-  }catch(e){cloudStatus('Error de conexión');showToast('Error de conexión al bajar');}
+    if(j&&j.ok){
+      DB=buildDBfromCloud(j.items,j.ventas);
+      INVMAP=invMapFromItems(DB.items);
+      SRC='nube · '+new Date().toLocaleString('es-CL');
+      state.edits={};
+      if(!DB.provs.some(p=>p.prov===state.prov))state.prov=DB.provs[0]?DB.provs[0].prov:'';
+      setLastSync(Date.now());
+      persist();render();
+      if(!silent)showToast('✓ Datos actualizados');
+      return true;
+    }else{if(!silent)showToast('La nube no devolvió datos');return false;}
+  }catch(e){if(!silent)showToast('Error al sincronizar');return false;}
 }
-document.getElementById('btn-cloud').onclick=()=>{const p=document.getElementById('cloudpanel');p.classList.toggle('hidden');document.getElementById('cloud-url').value=cloudURL();};
-document.getElementById('cloud-save').onclick=()=>{localStorage.setItem('marin_cloud_url',document.getElementById('cloud-url').value.trim());showToast('✓ URL guardada');cloudStatus('URL guardada');};
-document.getElementById('cloud-push').onclick=()=>cloudPush(false);
-document.getElementById('cloud-pull').onclick=()=>cloudPull();
+
+// Auto-sync al abrir si pasó +1 hora
+async function autoSyncIfStale(){
+  const age=Date.now()-lastSyncTime();
+  if(age>SYNC_MAX_AGE||!DB||!DB.items||!DB.items.length){
+    await cloudSync(true);
+  }
+}
+
+document.getElementById('btn-sync').onclick=()=>cloudSync(false);
 
 // ===================== EVENTOS =====================
 document.querySelectorAll('#seg-basis button').forEach(b=>b.onclick=()=>{state.basis=+b.dataset.b;document.querySelectorAll('#seg-basis button').forEach(x=>x.classList.remove('active'));b.classList.add('active');render();});
@@ -701,16 +762,7 @@ document.getElementById('btn-copy').onclick=()=>{const lines=currentOrder();if(!
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok,()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();ok();});
   else{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();ok();}
 };
-// Carga de archivos
-document.getElementById('btn-inv').onclick=()=>document.getElementById('file-inv').click();
-document.getElementById('btn-ven').onclick=()=>document.getElementById('file-ven').click();
-document.getElementById('file-inv').onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const map=parseInventory(rd.result);if(!map||!Object.keys(map).length){showToast('No pude leer el inventario. ¿Es el export_items.csv?');return;}INVMAP=map;
-  DB.items.forEach(it=>{const inv=map[it.ref];if(inv){it.stock=inv.stock;it.precio=inv.precio;it.coste=inv.coste;it.track=inv.track;it.barcode=inv.barcode||'';}});
-  SRC='inventario actualizado '+new Date().toLocaleDateString('es-CL');state.edits={};persist();render();cloudPush(true);showToast('✓ Inventario actualizado: '+Object.keys(map).length+' productos');}catch(err){showToast('Error al leer el archivo.');}};rd.readAsText(f,'UTF-8');e.target.value='';};
-document.getElementById('file-ven').onchange=e=>{const files=[...e.target.files];if(!files.length)return;let texts=[],done=0;
-  files.forEach(f=>{const rd=new FileReader();rd.onload=()=>{texts.push(rd.result);if(++done===files.length){try{const sales=parseSales(texts);if(!sales.length){showToast('No encontré ventas válidas en el archivo.');return;}
-    const invBase=INVMAP||invMapFromItems(DB.items);const agg=aggregate(sales,invBase);if(!agg){showToast('No pude procesar las ventas.');return;}
-    DB=agg;SRC='ventas cargadas '+new Date().toLocaleDateString('es-CL');state.edits={};if(!DB.provs.some(p=>p.prov===state.prov))state.prov=DB.provs[0].prov;persist();render();cloudPush(true);showToast('✓ Ventas cargadas: '+files.length+' archivo(s), '+agg.meta.nitems+' productos');}catch(err){showToast('Error al procesar ventas.');}}};rd.readAsText(f,'UTF-8');});e.target.value='';};
+// (Carga manual de CSV eliminada — los datos llegan automáticamente del script)
 
 // listeners delegados (no reconstruyen la tabla -> el teclado no se cierra)
 (function(){const tb=document.getElementById('ptbody');
@@ -720,6 +772,8 @@ document.getElementById('file-ven').onchange=e=>{const files=[...e.target.files]
 // ===================== INICIO =====================
 function retagAll(){if(DB&&DB.items)DB.items.forEach(it=>{const t=tag(it.nombre,it.prov);it.fmt=t.fmt;it.scale=t.scale;it.role=t.role;it.word=t.word;});}
 restore();retagAll();render();
+// Auto-sincroniza al abrir si los datos tienen más de 1 hora (o no hay datos)
+autoSyncIfStale();
 </script>
 </body>
 </html>
