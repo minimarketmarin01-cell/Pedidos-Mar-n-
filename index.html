@@ -54,7 +54,9 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 select,input[type=number]{font-family:'Inter';font-size:13px;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;background:#fff;color:var(--text)}
 input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .prov-combo{position:relative;flex:1;min-width:160px}
-.prov-all{width:100%;min-width:0;font-weight:600}
+.prov-all{width:100%;min-width:0;font-weight:600;padding-right:30px}
+.prov-x{position:absolute;top:50%;right:6px;transform:translateY(-50%);width:22px;height:22px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
+.prov-x:active{background:var(--line);color:var(--ink)}
 .prov-menu{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.16);max-height:min(320px,46vh);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;z-index:60}
 .prov-menu.hidden{display:none}
 .prov-opt{padding:11px 13px;font-size:14px;cursor:pointer;border-bottom:1px solid #F2F1EC;display:flex;justify-content:space-between;align-items:center;gap:10px}
@@ -235,7 +237,7 @@ tbody td.l{text-align:left;white-space:normal}
   <div class="ctl-row">
     <div class="field" style="flex:1;min-width:240px">
       <label>Proveedor</label>
-      <div class="prov-pick"><div class="chips" id="prov-chips"></div><div class="prov-combo" id="prov-combo"><input class="prov-all" id="prov-all" placeholder="Proveedor… (toca o escribe)" autocomplete="off" inputmode="text"><div class="prov-menu hidden" id="prov-menu"></div></div></div>
+      <div class="prov-pick"><div class="chips" id="prov-chips"></div><div class="prov-combo" id="prov-combo"><input class="prov-all" id="prov-all" placeholder="Proveedor… (toca o escribe)" autocomplete="off" inputmode="text"><button class="prov-x" id="prov-x" type="button" tabindex="-1" aria-label="Borrar">✕</button><div class="prov-menu hidden" id="prov-menu"></div></div></div>
     </div>
     <div class="field"><label>Rotación según</label>
       <div class="seg" id="seg-basis"><button data-b="7" class="active">7d</button><button data-b="14">14d</button><button data-b="30">30d</button><button data-b="90">90d</button></div>
@@ -591,6 +593,8 @@ function buildChips(){
   function caretToEnd(el){const n=(el.value||'').length;try{el.setSelectionRange(n,n);}catch(e){}}
   sel.onfocus=()=>{openMenu('');setTimeout(()=>caretToEnd(sel),0);};
   sel.oninput=()=>openMenu(sel.value);
+  const xb=document.getElementById('prov-x');
+  if(xb)xb.onclick=ev=>{ev.preventDefault();ev.stopPropagation();sel.value='';openMenu('');sel.focus();};
   sel.onkeydown=e=>{
     if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();if(!acts.length)return;let i=acts.indexOf(menu.querySelector('.prov-opt.act'));acts.forEach(o=>o.classList.remove('act'));i=e.key==='ArrowDown'?(i+1)%acts.length:(i<=0?acts.length-1:i-1);acts[i].classList.add('act');acts[i].scrollIntoView({block:'nearest'});}
     else if(e.key==='Enter'){e.preventDefault();const a=menu.querySelector('.prov-opt.act');if(a&&a.dataset.val){pickProv(a.dataset.val);}else{menu.classList.add('hidden');if(!commitProv(sel.value))setProvInputValue();sel.blur();}}
