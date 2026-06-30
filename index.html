@@ -580,7 +580,7 @@ function tierCostUn(it){if(it.scale==='ccu_ret'){return SCALES.ccu_ret.cost[it.r
 // ===================== UI =====================
 function buildChips(){
   const chipsEl=document.getElementById('prov-chips');chipsEl.innerHTML='';
-  DB.provs.slice(0,6).forEach(p=>{const b=document.createElement('button');b.className='chip';b.dataset.prov=p.prov;b.innerHTML=`${p.prov}<span class="n">${Math.round(p.u30)}</span>`;b.onclick=()=>{state.prov=p.prov;state.allProv=false;state.search='';document.getElementById('search').value='';state.edits={};render();};chipsEl.appendChild(b);});
+  DB.provs.slice(0,6).forEach(p=>{const b=document.createElement('button');b.className='chip';b.dataset.prov=p.prov;b.innerHTML=`${p.prov}<span class="n">${Math.round(p.u30)}</span>`;b.onclick=()=>{state.prov=p.prov;state.allProv=false;state.search='';document.getElementById('search').value='';state.edits={};render();persistUI();};chipsEl.appendChild(b);});
   const sel=document.getElementById('prov-all');
   const menu=document.getElementById('prov-menu');
   let acts=[];
@@ -606,7 +606,7 @@ function buildChips(){
   }
 }
 function setProvInputValue(){const sel=document.getElementById('prov-all');if(!sel)return;const allMode=state.allProv&&!state.search;sel.value=allMode?'📋 Todos los proveedores':(DB.provs.some(p=>p.prov===state.prov)?state.prov:(DB.provs[0]?DB.provs[0].prov:''));}
-function pickProv(target){if(target==='__ALL__'){state.allProv=true;}else{state.allProv=false;state.prov=target;}state.search='';const s=document.getElementById('search');if(s)s.value='';const sx=document.getElementById('searchx');if(sx)sx.classList.remove('on');state.edits={};const menu=document.getElementById('prov-menu');if(menu)menu.classList.add('hidden');const sel=document.getElementById('prov-all');if(sel)sel.blur();render();}
+function pickProv(target){if(target==='__ALL__'){state.allProv=true;}else{state.allProv=false;state.prov=target;}state.search='';const s=document.getElementById('search');if(s)s.value='';const sx=document.getElementById('searchx');if(sx)sx.classList.remove('on');state.edits={};const menu=document.getElementById('prov-menu');if(menu)menu.classList.add('hidden');const sel=document.getElementById('prov-all');if(sel)sel.blur();render();persistUI();}
 function commitProv(val){const key=(val||'').trim().toLowerCase();if(!key)return false;if(key.indexOf('todos')===0||key.indexOf('📋')===0){pickProv('__ALL__');return true;}let hit=DB.provs.find(p=>p.prov.toLowerCase()===key);if(!hit&&key.length>=2)hit=DB.provs.find(p=>p.prov.toLowerCase().indexOf(key)>-1);if(hit){pickProv(hit.prov);return true;}return false;}
 function updGlob(){let q=0;DB.items.forEach(it=>{if(it.track&&it.stock!=null&&it.stock<=0&&it.u30>0)q++;});document.getElementById('glob-quiebre').textContent='● '+q+' en quiebre';
   document.getElementById('updlabel').innerHTML=`Datos: <b>${DB.meta.min} → ${DB.meta.max}</b> · ${DB.meta.nitems} productos · ${SRC}`;}
@@ -723,7 +723,7 @@ function renderOverview(){
   const rows=DB.provs.map(p=>{const items=itemsFor(p.prov);let urg=0,ped=0,cost=0;items.forEach(it=>{const a=analyze(it);if(a.status==='urgente')urg++;if(a.status==='pedir')ped++;if(a.sug>0)cost+=(it.coste||0)*a.sug;});return{...p,urg,ped,cost,need:urg+ped};}).filter(r=>r.n>0).sort((a,b)=>b.urg-a.urg||b.need-a.need||b.cost-a.cost);
   const tb=document.getElementById('ovbody');tb.innerHTML='';
   rows.forEach(r=>{const tr=document.createElement('tr');tr.innerHTML=`<td class="l"><span class="ov-prov" data-p="${r.prov}">${r.prov}</span></td><td class="num">${r.n}</td><td class="num">${fmt1(r.u30/30)}</td><td class="num">${r.dow?DIAS[r.peak]:'—'}</td><td class="num" style="color:${r.urg>0?'var(--rojo)':'var(--muted)'};font-weight:700">${r.urg||'—'}</td><td class="num" style="color:${r.ped>0?'var(--ambar)':'var(--muted)'};font-weight:700">${r.ped||'—'}</td><td class="num">${r.cost>0?peso(r.cost):'—'}</td><td class="num">${peso(r.prof)}</td>`;tb.appendChild(tr);});
-  tb.querySelectorAll('.ov-prov').forEach(el=>el.onclick=()=>{state.prov=el.dataset.p;state.allProv=false;state.search='';document.getElementById('search').value='';state.edits={};document.querySelector('.tab[data-tab="pedido"]').click();render();});
+  tb.querySelectorAll('.ov-prov').forEach(el=>el.onclick=()=>{state.prov=el.dataset.p;state.allProv=false;state.search='';document.getElementById('search').value='';state.edits={};document.querySelector('.tab[data-tab="pedido"]').click();render();persistUI();});
 }
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
 
@@ -823,15 +823,15 @@ document.getElementById('btn-sync').onclick=()=>cloudSync(false,true);
 document.getElementById('btn-prices').onclick=()=>cloudSync(false,false,true);
 
 // ===================== EVENTOS =====================
-document.querySelectorAll('#seg-basis button').forEach(b=>b.onclick=()=>{state.basis=+b.dataset.b;document.querySelectorAll('#seg-basis button').forEach(x=>x.classList.remove('active'));b.classList.add('active');render();});
-document.querySelectorAll('#seg-unit button').forEach(b=>b.onclick=()=>{state.unit=b.dataset.u;document.querySelectorAll('#seg-unit button').forEach(x=>x.classList.remove('active'));b.classList.add('active');render();});
+document.querySelectorAll('#seg-basis button').forEach(b=>b.onclick=()=>{state.basis=+b.dataset.b;document.querySelectorAll('#seg-basis button').forEach(x=>x.classList.remove('active'));b.classList.add('active');render();persistUI();});
+document.querySelectorAll('#seg-unit button').forEach(b=>b.onclick=()=>{state.unit=b.dataset.u;document.querySelectorAll('#seg-unit button').forEach(x=>x.classList.remove('active'));b.classList.add('active');render();persistUI();});
 document.getElementById('lead').oninput=e=>{state.lead=Math.max(0,+e.target.value||0);render();};
 document.getElementById('cover').oninput=e=>{state.cover=Math.max(1,+e.target.value||1);render();};
-document.querySelectorAll('#ptable th[data-s]').forEach(th=>th.onclick=()=>{const s=th.dataset.s;if(state.sort===s)state.dir*=-1;else{state.sort=s;state.dir=1;}renderTable();});
-document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');const tab=t.dataset.tab;document.getElementById('tab-pedido').classList.toggle('hidden',tab!=='pedido');document.getElementById('tab-resumen').classList.toggle('hidden',tab!=='resumen');if(tab==='resumen')renderOverview();});
+document.querySelectorAll('#ptable th[data-s]').forEach(th=>th.onclick=()=>{const s=th.dataset.s;if(state.sort===s)state.dir*=-1;else{state.sort=s;state.dir=1;}renderTable();persistUI();});
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');const tab=t.dataset.tab;document.getElementById('tab-pedido').classList.toggle('hidden',tab!=='pedido');document.getElementById('tab-resumen').classList.toggle('hidden',tab!=='resumen');if(tab==='resumen')renderOverview();persistUI();});
 const si=document.getElementById('search');
 let _searchT=null;
-si.oninput=e=>{state.search=e.target.value.trim();document.getElementById('searchx').classList.toggle('on',!!state.search);clearTimeout(_searchT);_searchT=setTimeout(()=>render(),200);};
+si.oninput=e=>{state.search=e.target.value.trim();document.getElementById('searchx').classList.toggle('on',!!state.search);clearTimeout(_searchT);_searchT=setTimeout(()=>{render();persistUI();},200);};
 document.getElementById('searchx').onclick=()=>{si.value='';state.search='';document.getElementById('searchx').classList.remove('on');clearTimeout(_searchT);render();};
 document.getElementById('btn-suggest').onclick=()=>{currentItems().forEach(it=>{delete state.edits[it.ref];});render();showToast('↺ Volví a las cantidades sugeridas');};
 document.getElementById('btn-clear').onclick=()=>{currentItems().forEach(it=>{state.edits[it.ref]=0;});render();showToast('✕ Pedido vaciado (todo en 0)');};
@@ -893,9 +893,74 @@ function renderProvDay(){
   el.innerHTML=h;
 }
 
+// ===================== RECORDAR DÓNDE QUEDASTE =====================
+let _uiSaveT=null;
+function persistUI(){
+  clearTimeout(_uiSaveT);
+  _uiSaveT=setTimeout(()=>{
+    try{
+      const sc=tableScrollEl();
+      const tab=document.querySelector('.tab.active');
+      localStorage.setItem('marin_ui',JSON.stringify({
+        prov:state.prov,allProv:state.allProv,search:state.search,
+        basis:state.basis,unit:state.unit,sort:state.sort,dir:state.dir,
+        tab:tab?tab.dataset.tab:'pedido',
+        winY:window.scrollY||0,
+        tblY:sc?sc.scrollTop:0
+      }));
+    }catch(e){}
+  },150);
+}
+function restoreUI(){
+  let u=null;
+  try{const v=localStorage.getItem('marin_ui');if(v)u=JSON.parse(v);}catch(e){}
+  if(!u)return null;
+  if(u.prov)state.prov=u.prov;
+  state.allProv=!!u.allProv;
+  state.search=u.search||'';
+  if([7,14,30,90].includes(u.basis))state.basis=u.basis;
+  if(['dia','sem','mes'].includes(u.unit))state.unit=u.unit;
+  if(u.sort)state.sort=u.sort;
+  if(u.dir===1||u.dir===-1)state.dir=u.dir;
+  // refleja en los controles visuales
+  document.querySelectorAll('#seg-basis button').forEach(b=>b.classList.toggle('active',+b.dataset.b===state.basis));
+  document.querySelectorAll('#seg-unit button').forEach(b=>b.classList.toggle('active',b.dataset.u===state.unit));
+  const si=document.getElementById('search');
+  if(si){si.value=state.search;document.getElementById('searchx').classList.toggle('on',!!state.search);}
+  if(u.tab==='resumen'){
+    document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab==='resumen'));
+    document.getElementById('tab-pedido').classList.add('hidden');
+    document.getElementById('tab-resumen').classList.remove('hidden');
+  }
+  return u;
+}
+function restoreScroll(u){
+  if(!u)return;
+  let tries=0;
+  (function tick(){
+    tries++;
+    const sc=tableScrollEl();
+    if(sc&&u.tblY)sc.scrollTop=u.tblY;
+    if(u.winY)window.scrollTo(0,u.winY);
+    const got=sc?sc.scrollTop:0;
+    if(tries<14&&((u.tblY&&got<u.tblY-4)||(u.winY&&Math.abs(window.scrollY-u.winY)>4))){
+      setTimeout(tick,150);   // sigue intentando mientras carga más filas (lazy-load)
+    }
+  })();
+}
+
 // ===================== INICIO =====================
 function retagAll(){if(DB&&DB.items)DB.items.forEach(it=>{const t=tag(it.nombre,it.prov);it.fmt=t.fmt;it.min=t.min;it.scale=t.scale;it.role=t.role;it.word=t.word;});}
-restore();retagAll();render();renderProvDay();
+restore();retagAll();
+const _ui=restoreUI();
+render();renderProvDay();
+if(_ui)restoreScroll(_ui);
+// guarda la posición de scroll mientras navegas, y al salir/cambiar de app
+let _scrollT=null;
+window.addEventListener('scroll',()=>{clearTimeout(_scrollT);_scrollT=setTimeout(persistUI,200);},{passive:true});
+document.addEventListener('scroll',e=>{if(e.target&&e.target.classList&&e.target.classList.contains('tbl-scroll')){clearTimeout(_scrollT);_scrollT=setTimeout(persistUI,200);}},true);
+window.addEventListener('pagehide',persistUI);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')persistUI();});
 // Auto-sincroniza al abrir si los datos tienen más de 1 hora (o no hay datos)
 autoSyncIfStale();
 </script>
