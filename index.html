@@ -761,11 +761,20 @@ function buildDBfromCloud(items, ventas){
   });
   items_arr.sort((a,b)=>b.u_all-a.u_all);
 
-  // Construye provs + day-of-week (simplificado: sin dow detallado, se calcula u30)
+  // Construye provs + patrón por día de la semana (dow) recibido de la nube
   const ps={};
   items_arr.forEach(it=>{if(!ps[it.prov])ps[it.prov]={prov:it.prov,u30:0,u_all:0,rev:0,prof:0,n:0};
     ps[it.prov].u30+=it.u30;ps[it.prov].u_all+=it.u_all;ps[it.prov].rev+=it.rev;ps[it.prov].prof+=it.prof;ps[it.prov].n++;});
-  const provs=Object.values(ps).map(p=>({...p,dow:null,peak:0})).sort((a,b)=>b.u30-a.u30);
+  const dowData=(ventas&&ventas.dow)?ventas.dow:null;
+  const provs=Object.values(ps).map(p=>{
+    if(dowData&&dowData.prov&&dowData.prov[p.prov]){
+      const raw=dowData.prov[p.prov],occ=dowData.occ||[1,1,1,1,1,1,1];
+      const dow=raw.map((x,i)=>occ[i]?Math.round(x/occ[i]*100)/100:0);
+      let peak=0;dow.forEach((x,i)=>{if(x>dow[peak])peak=i;});
+      return {...p,dow:dow,peak:peak};
+    }
+    return {...p,dow:null,peak:0};
+  }).sort((a,b)=>b.u30-a.u30);
 
   const meta=ventas&&ventas.meta?ventas.meta:{min:'',max:'',ndays:0};
   return {meta:{min:meta.min,max:meta.max,ndays:meta.ndays,nitems:items_arr.length,nprov:provs.length},items:items_arr,provs:provs};
