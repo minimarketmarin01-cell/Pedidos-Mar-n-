@@ -364,8 +364,28 @@ function parseCSV(text){
 function findCol(h,names){for(const n of names){const i=h.findIndex(x=>x.trim().toLowerCase()===n.toLowerCase());if(i>-1)return i;}for(const n of names){const i=h.findIndex(x=>x.toLowerCase().includes(n.toLowerCase()));if(i>-1)return i;}return -1;}
 function num(x){if(x==null)return 0;const s=String(x).replace(/[^0-9.\-]/g,'');const v=parseFloat(s);return isNaN(v)?0:v;}
 function parseDate(s){const m=String(s).match(/(\d{4})-(\d{2})-(\d{2})/);return m?new Date(+m[1],+m[2]-1,+m[3]):null;}
+function sopMin(n){
+  // mínimo / múltiplo de pedido Soprole (n en minúsculas). Default 4.
+  if(/parmesano/.test(n))return 25;
+  if(/leche entera/.test(n)&&/1\s?l\b|1lt|1\s?litro|1litro/.test(n))return 12;
+  if(/(mantequilla|margarina)/.test(n)&&/125/.test(n))return 8;
+  if(/quilque/.test(n))return 8;
+  if(/queso crema/.test(n)&&/100/.test(n))return 8;
+  if(/zucaritas|chocokrispis/.test(n))return 8;
+  if(/quesillo/.test(n))return 5;
+  if(/kefir|cultivada/.test(n))return 3;
+  if(/bolsa/.test(n)&&/1\s?k/.test(n))return 2;
+  if(/200\s?ml/.test(n))return 6;
+  if(/philadelphia|filadelfia/.test(n))return 6;
+  if(/crema espesa/.test(n))return 6;
+  if(/leche/.test(n)&&/zero ?lacto|zerolacto/.test(n))return 6;
+  if(/leche/.test(n)&&/(chocolate|frutilla|avena)/.test(n)&&/1\s?l\b|1lt|1\s?litro|1litro/.test(n))return 6;
+  if(/protein/.test(n)&&/leche/.test(n)&&/semidescremada/.test(n)&&/1\s?l\b/.test(n))return 6;
+  return 4;
+}
 function tag(nm,prov){const n=(nm||'').toLowerCase();
-  function F(fmt,word,scale,role){return {fmt:fmt,scale:scale||null,role:role||null,word:word||'u'};}
+  function F(fmt,word,scale,role,min){return {fmt:fmt,scale:scale||null,role:role||null,word:word||'u',min:(min||fmt)};}
+  if(prov==='SOPROLE')return F(1,'u',null,null,sopMin(n));
   const ret=/retorn/.test(n);
   const s125=/1[.,]25|1¼|1 ?1\/4/.test(n);
   const s15=/1[.,]5(?!\d)/.test(n);
@@ -516,12 +536,14 @@ function unitFactor(){return state.unit==='sem'?7:state.unit==='mes'?30:1;}
 function unitLabel(){return state.unit==='sem'?'Rot/sem':state.unit==='mes'?'Rot/mes':'Rot/día';}
 function trendOf(it){const r7=it.u7/7,r30=it.u30/30;if(r30<=0&&r7<=0)return{k:'flat',t:'='};if(r30<=0)return{k:'up',t:'▲'};const r=r7/r30;return r>=1.2?{k:'up',t:'▲'}:r<=0.8?{k:'down',t:'▼'}:{k:'flat',t:'='};}
 function roundPack(u,f){return f>1?Math.ceil(u/f)*f:Math.ceil(u);}
-function analyze(it){const rate=rateOf(it),tracked=it.track&&it.stock!=null,stock=it.stock,lead=state.lead,cover=state.cover;const target=rate*(lead+cover);let cov=null,status,sug=0;
-  if(!tracked){status='sinstock';sug=rate>0?roundPack(target,it.fmt):0;}
+function multOf(it){return (it.min&&it.min>1)?it.min:(it.fmt||1);}
+function inStep(it){return (it.fmt===1&&it.min&&it.min>1)?it.min:1;}
+function analyze(it){const rate=rateOf(it),tracked=it.track&&it.stock!=null,stock=it.stock,lead=state.lead,cover=state.cover;const target=rate*(lead+cover);let cov=null,status,sug=0;const M=multOf(it);
+  if(!tracked){status='sinstock';sug=rate>0?roundPack(target,M):0;}
   else{cov=rate>0?stock/rate:(stock>0?Infinity:0);
     if(rate<=0){status=stock>0?'sobre':'ok';sug=0;}
-    else if(stock<=0||cov<lead){status='urgente';sug=roundPack(Math.max(0,target-stock),it.fmt);}
-    else if(cov<lead+cover){status='pedir';sug=roundPack(Math.max(0,target-stock),it.fmt);}
+    else if(stock<=0||cov<lead){status='urgente';sug=roundPack(Math.max(0,target-stock),M);}
+    else if(cov<lead+cover){status='pedir';sug=roundPack(Math.max(0,target-stock),M);}
     else if(cov>(lead+cover)*2.5){status='sobre';sug=0;}else{status='ok';sug=0;}}
   return{rate,cov,status,sug,tracked,trend:trendOf(it)};}
 const SO={urgente:0,pedir:1,sinstock:2,ok:3,sobre:4};const SL={urgente:'Urgente',pedir:'Pedir',ok:'OK',sobre:'Sobrestock',sinstock:'Ref.'};
@@ -530,9 +552,9 @@ function currentItems(){if(state.search){const q=state.search.toLowerCase();retu
 function qOf(it,a){return (it.ref in state.edits)?state.edits[it.ref]:a.sug;}
 function packsOf(it,u){return it.fmt>1?Math.round(u/it.fmt):u;}
 function plural(w,n){return w==='u'?'u':(n===1?w:w+'s');}
-function labelFor(it,b){return it.fmt>1?`${plural(it.word,b||2)} · ${(b||0)*it.fmt} u`:'unidades';}
+function labelFor(it,b){return it.fmt>1?`${plural(it.word,b||2)} · ${(b||0)*it.fmt} u`:(multOf(it)>1?`de a ${multOf(it)} u`:'unidades');}
 function onQty(inp){const ref=inp.dataset.ref,fmt=+inp.dataset.fmt;let b=Math.max(0,parseInt(inp.value)||0);state.edits[ref]=b*fmt;const cell=inp.closest('.qcell');cell.querySelector('.qstep').classList.toggle('has',b>0);const it=DB.items.find(i=>i.ref===ref);const qw=cell.querySelector('.qword');if(qw&&it)qw.textContent=labelFor(it,b);renderOrder();renderScale();}
-function stepQty(btn){const cell=btn.closest('.qcell');const inp=cell.querySelector('.qty-in');inp.value=Math.max(0,(parseInt(inp.value)||0)+(+btn.dataset.d));onQty(inp);}
+function stepQty(btn){const cell=btn.closest('.qcell');const inp=cell.querySelector('.qty-in');const st=+inp.dataset.step||1;inp.value=Math.max(0,(parseInt(inp.value)||0)+(+btn.dataset.d)*st);onQty(inp);}
 function ccuMixedPacks(){let p=0;itemsFor('CCU').forEach(it=>{if(it.scale==='ccu_ret'){const a=analyze(it);p+=Math.ceil(qOf(it,a)/it.fmt);}});return p;}
 function ccuTierIdx(packs){const b=SCALES.ccu_ret.breaks;let idx=0;for(let i=0;i<b.length;i++)if(packs>=b[i])idx=i;return idx;}
 function tierCostUn(it){if(it.scale==='ccu_ret'){return SCALES.ccu_ret.cost[it.role||'otros'][ccuTierIdx(ccuMixedPacks())];}if(it.scale&&SCALES[it.scale]){const a=analyze(it);const packs=Math.ceil(qOf(it,a)/it.fmt);const t=SCALES[it.scale].tiers.find(t=>packs>=t.min&&packs<=t.max);return t?t.c:(it.coste||0);}return it.coste||0;}
@@ -612,7 +634,7 @@ function rowHTML(it,a,f){const sug=qOf(it,a);const covTxt=a.cov==null?'—':a.co
     `<td class="num">${it.stock==null?'<span style="color:var(--azul)">s/c</span>':fmt.format(it.stock)}</td>`+
     `<td class="cov" style="color:${covColor(a)}">${covTxt}</td>`+
     `<td><span class="badge b-${a.status}"><span class="d"></span>${SL[a.status]}</span></td>`+
-    `<td><div class="qcell"><div class="qstep ${sug>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${it.fmt>1?'gold':''}">${labelFor(it,bundles)}</span></div></td></tr>`;
+    `<td><div class="qcell"><div class="qstep ${sug>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}" data-step="${inStep(it)}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${(it.fmt>1||multOf(it)>1)?'gold':''}">${labelFor(it,bundles)}</span></div></td></tr>`;
 }
 function tableScrollEl(){const tb=document.getElementById('ptbody');return tb?tb.closest('.tbl-scroll'):null;}
 function tableMore(){
@@ -676,7 +698,7 @@ function renderOverview(){
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
 
 // ===================== SINCRONIZACIÓN AUTOMÁTICA (Apps Script /exec) =====================
-const SYNC_URL='https://script.google.com/macros/s/AKfycbzG8ezGxR1jRIKnswA851k3V0yj7JR3Z7CA0qkgPbu7irtbwj0IBMJ50M2_9jCcLlOl7A/exec';
+const SYNC_URL='https://script.google.com/macros/s/AKfycbx9UGhWEOSfHHLDriwr5qEoQBQl9__kFZNwQU5QfWE0WweEoOVm1-qsipmVRn4Pb1s3bw/exec';
 const SYNC_MAX_AGE=3600000; // 1 hora en ms
 
 function lastSyncTime(){const t=localStorage.getItem('marin_last_sync');return t?+t:0;}
@@ -709,7 +731,7 @@ function buildDBfromCloud(items, ventas){
       precio:inv.precio!=null?inv.precio:null,
       coste:inv.costo!=null?inv.costo:null,
       track:!!inv.track, barcode:inv.barcode||'',
-      fmt:t.fmt, scale:t.scale, role:t.role, word:t.word
+      fmt:t.fmt, min:t.min, scale:t.scale, role:t.role, word:t.word
     });
   });
   items_arr.sort((a,b)=>b.u_all-a.u_all);
@@ -737,8 +759,13 @@ async function cloudSync(silent,live){
       state.edits={};
       if(!DB.provs.some(p=>p.prov===state.prov))state.prov=DB.provs[0]?DB.provs[0].prov:'';
       setLastSync(Date.now());
-      persist();render();
-      if(!silent)showToast('✓ Datos actualizados');
+      persist();render();renderProvDay();
+      if(!silent){
+        if(live&&j.version!=='v2'){showToast('⚠️ El endpoint sigue en versión vieja. Vuelve a desplegar el Apps Script (Administrar implementaciones → editar → Versión nueva).');}
+        else if(live&&j.synced===false){showToast('⏳ Ocupado, intenta de nuevo en unos segundos');}
+        else if(live){showToast('✓ En vivo · '+(j.ventasHoy||0)+' productos vendidos hoy');}
+        else{showToast('✓ Datos actualizados');}
+      }
       return true;
     }else{if(!silent)showToast('La nube no devolvió datos');return false;}
   }catch(e){if(!silent)showToast('Error al sincronizar');return false;}
@@ -825,7 +852,7 @@ function renderProvDay(){
 }
 
 // ===================== INICIO =====================
-function retagAll(){if(DB&&DB.items)DB.items.forEach(it=>{const t=tag(it.nombre,it.prov);it.fmt=t.fmt;it.scale=t.scale;it.role=t.role;it.word=t.word;});}
+function retagAll(){if(DB&&DB.items)DB.items.forEach(it=>{const t=tag(it.nombre,it.prov);it.fmt=t.fmt;it.min=t.min;it.scale=t.scale;it.role=t.role;it.word=t.word;});}
 restore();retagAll();render();renderProvDay();
 // Auto-sincroniza al abrir si los datos tienen más de 1 hora (o no hay datos)
 autoSyncIfStale();
