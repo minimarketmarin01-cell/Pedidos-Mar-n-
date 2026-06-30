@@ -86,6 +86,17 @@ input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .dowbar .dv{font-size:9px;color:var(--muted);font-family:'JetBrains Mono'}
 .dowtip{font-size:12.5px;line-height:1.5;flex:1;min-width:200px}
 .dowtip b{color:var(--ink)}.dowtip .o{color:var(--wa-d);font-weight:700}
+.provday{margin:13px 16px 0;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 14px}
+.provday h3{font-family:'Archivo';font-size:13px;font-weight:800;letter-spacing:-.01em;margin-bottom:8px;display:flex;align-items:center;gap:7px;color:var(--ink);flex-wrap:wrap}
+.provday .pd-date{font-weight:600;color:var(--muted);font-size:11.5px}
+.provday .pd-row{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.5;padding:3px 0}
+.provday .pd-ic{flex:none;font-size:13px;margin-top:1px}
+.provday .pd-row b{font-weight:700}
+.provday .pd-pide b{color:var(--azul)}
+.provday .pd-lleg b{color:var(--verde)}
+.provday .pd-lbl{font-weight:700;color:var(--ink)}
+.provday .pd-empty{color:var(--muted)}
+.provday .pd-note{margin-top:7px;font-size:11px;color:var(--gold);border-top:1px dashed var(--line);padding-top:7px;line-height:1.5}
 .section-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 10px;gap:12px;flex-wrap:wrap}
 .section-head h2{font-size:17px;font-weight:800;letter-spacing:-.02em}
 .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--muted);align-items:center}
@@ -202,6 +213,7 @@ tbody td.l{text-align:left;white-space:normal}
     <span class="upd" id="updlabel"></span>
   </div>
 </div>
+<div class="provday" id="provday"></div>
 <div class="tabs">
   <button class="tab active" data-tab="pedido">Armar pedido</button>
   <button class="tab" data-tab="resumen">Resumen proveedores</button>
@@ -712,10 +724,11 @@ function buildDBfromCloud(items, ventas){
   return {meta:{min:meta.min,max:meta.max,ndays:meta.ndays,nitems:items_arr.length,nprov:provs.length},items:items_arr,provs:provs};
 }
 
-async function cloudSync(silent){
+async function cloudSync(silent,live){
   try{
-    if(!silent)showToast('🔄 Sincronizando…');
-    const res=await fetch(SYNC_URL,{method:'GET'});
+    if(!silent)showToast(live?'🔄 Trayendo ventas en vivo…':'🔄 Sincronizando…');
+    const url=SYNC_URL+(live?(SYNC_URL.indexOf('?')<0?'?':'&')+'action=sync':'');
+    const res=await fetch(url,{method:'GET'});
     const j=await res.json();
     if(j&&j.ok){
       DB=buildDBfromCloud(j.items,j.ventas);
@@ -735,11 +748,11 @@ async function cloudSync(silent){
 async function autoSyncIfStale(){
   const age=Date.now()-lastSyncTime();
   if(age>SYNC_MAX_AGE||!DB||!DB.items||!DB.items.length){
-    await cloudSync(true);
+    await cloudSync(true,true);
   }
 }
 
-document.getElementById('btn-sync').onclick=()=>cloudSync(false);
+document.getElementById('btn-sync').onclick=()=>cloudSync(false,true);
 
 // ===================== EVENTOS =====================
 document.querySelectorAll('#seg-basis button').forEach(b=>b.onclick=()=>{state.basis=+b.dataset.b;document.querySelectorAll('#seg-basis button').forEach(x=>x.classList.remove('active'));b.classList.add('active');render();});
@@ -769,9 +782,51 @@ document.getElementById('btn-copy').onclick=()=>{const lines=currentOrder();if(!
   tb.addEventListener('click',e=>{const b=e.target.closest('.qbtn');if(b)stepQty(b);});
   tb.addEventListener('input',e=>{if(e.target.classList&&e.target.classList.contains('qty-in'))onQty(e.target);});
 })();
+// ===================== PANEL PROVEEDORES DEL DÍA =====================
+// Días: Dom=0 Lun=1 Mar=2 Mié=3 Jue=4 Vie=5 Sáb=6
+// r:[[diaPedido, diaLlega], ...]   retiro:true = lo retiras tú (Lo Valledor)
+const DOW_LBL=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+const DOW_AB =['dom','lun','mar','mié','jue','vie','sáb'];
+const CAL_PROV=[
+  {n:'Coca-Cola',          r:[[2,4],[5,1]]},
+  {n:'CCU',                r:[[2,3],[5,6]]},
+  {n:'Palta',              r:[[1,2],[4,5]]},
+  {n:'Frutas Lo Valledor', r:[[2,2],[5,5]], retiro:true},
+  {n:'Mc Kay',             r:[[2,4]]},
+  {n:'Soprole',            r:[[4,6]]},
+  {n:'Ideal',              r:[[4,1]]},
+  {n:'Carozzi',            r:[[4,5]]},
+  {n:'Marco Polo',         r:[[4,4]]},
+  {n:'Lucchetti',          r:[[5,1]]},
+  {n:'Dinac',              r:[[3,5]], nota:'cada 15 días'}
+];
+function renderProvDay(){
+  const el=document.getElementById('provday'); if(!el)return;
+  const now=new Date(), hoy=now.getDay();
+  const pide=[], lleg=[];
+  CAL_PROV.forEach(p=>{
+    p.r.forEach(par=>{
+      const dp=par[0], dl=par[1];
+      if(dp===hoy){
+        if(p.retiro) pide.push('<b>'+p.n+'</b> (retiras hoy en Lo Valledor)');
+        else pide.push('<b>'+p.n+'</b> → llega '+DOW_AB[dl]+(p.nota?' · '+p.nota:''));
+      }
+      if(dl===hoy && !p.retiro) lleg.push('<b>'+p.n+'</b>'+(p.nota?' ('+p.nota+')':''));
+    });
+  });
+  const fecha=DOW_LBL[hoy]+' '+now.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit'});
+  let h='<h3>📦 Proveedores de hoy <span class="pd-date">· '+fecha+'</span></h3>';
+  h+='<div class="pd-row pd-pide"><span class="pd-ic">📋</span><div><span class="pd-lbl">Pides hoy:</span> '+
+     (pide.length?pide.join(' · '):'<span class="pd-empty">sin pedidos programados</span>')+'</div></div>';
+  h+='<div class="pd-row pd-lleg"><span class="pd-ic">🚚</span><div><span class="pd-lbl">Llega hoy:</span> '+
+     (lleg.length?lleg.join(' · '):'<span class="pd-empty">sin entregas programadas</span>')+'</div></div>';
+  h+='<div class="pd-note">⏰ Evercrisp: pedir con 48 h de anticipación. · Dinac es quincenal: confirma si esta semana corresponde.</div>';
+  el.innerHTML=h;
+}
+
 // ===================== INICIO =====================
 function retagAll(){if(DB&&DB.items)DB.items.forEach(it=>{const t=tag(it.nombre,it.prov);it.fmt=t.fmt;it.scale=t.scale;it.role=t.role;it.word=t.word;});}
-restore();retagAll();render();
+restore();retagAll();render();renderProvDay();
 // Auto-sincroniza al abrir si los datos tienen más de 1 hora (o no hay datos)
 autoSyncIfStale();
 </script>
