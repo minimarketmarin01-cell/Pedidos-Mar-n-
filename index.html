@@ -222,6 +222,7 @@ tbody td.l{text-align:left;white-space:normal}
   <div class="brand"><span class="mk">Marín 376</span><span class="loc">Pedidos</span></div>
   <div class="toprt">
     <button class="loadbtn acc" id="btn-sync">🔄 Sincronizar</button>
+    <button class="loadbtn" id="btn-prices">💲 Precios</button>
     <span class="glob" id="glob-quiebre" style="color:#ffb4a8;font-size:12px;font-weight:600"></span>
     <span class="upd" id="updlabel"></span>
   </div>
@@ -784,10 +785,10 @@ function buildDBfromCloud(items, ventas){
   return {meta:{min:meta.min,max:meta.max,ndays:meta.ndays,nitems:items_arr.length,nprov:provs.length},items:items_arr,provs:provs};
 }
 
-async function cloudSync(silent,live){
+async function cloudSync(silent,live,full){
   try{
-    if(!silent)showToast(live?'🔄 Trayendo ventas en vivo…':'🔄 Sincronizando…');
-    const url=SYNC_URL+(live?(SYNC_URL.indexOf('?')<0?'?':'&')+'action=sync':'');
+    if(!silent)showToast(full?'💲 Actualizando precios y costos…':(live?'🔄 Trayendo ventas en vivo…':'🔄 Sincronizando…'));
+    const url=SYNC_URL+((full||live)?(SYNC_URL.indexOf('?')<0?'?':'&')+'action='+(full?'full':'sync'):'');
     const res=await fetch(url,{method:'GET'});
     const j=await res.json();
     if(j&&j.ok){
@@ -799,8 +800,9 @@ async function cloudSync(silent,live){
       setLastSync(Date.now());
       persist();render();renderProvDay();
       if(!silent){
-        if(live&&j.version!=='v2'){showToast('⚠️ El endpoint sigue en versión vieja. Vuelve a desplegar el Apps Script (Administrar implementaciones → editar → Versión nueva).');}
-        else if(live&&j.synced===false){showToast('⏳ Ocupado, intenta de nuevo en unos segundos');}
+        if((full||live)&&j.version!=='v2'){showToast('⚠️ El endpoint sigue en versión vieja. Vuelve a desplegar el Apps Script (Administrar implementaciones → editar → Versión nueva).');}
+        else if(j.synced===false){showToast('⏳ Ocupado, intenta de nuevo en unos segundos');}
+        else if(full){showToast('✓ Precios y costos actualizados');}
         else if(live){showToast('✓ En vivo · '+(j.ventasHoy||0)+' productos vendidos hoy');}
         else{showToast('✓ Datos actualizados');}
       }
@@ -818,6 +820,7 @@ async function autoSyncIfStale(){
 }
 
 document.getElementById('btn-sync').onclick=()=>cloudSync(false,true);
+document.getElementById('btn-prices').onclick=()=>cloudSync(false,false,true);
 
 // ===================== EVENTOS =====================
 document.querySelectorAll('#seg-basis button').forEach(b=>b.onclick=()=>{state.basis=+b.dataset.b;document.querySelectorAll('#seg-basis button').forEach(x=>x.classList.remove('active'));b.classList.add('active');render();});
