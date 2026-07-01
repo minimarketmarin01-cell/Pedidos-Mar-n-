@@ -566,7 +566,7 @@ function analyze(it){const rate=rateOf(it),tracked=it.track&&it.stock!=null,stoc
   return{rate,cov,status,sug,tracked,trend:trendOf(it)};}
 const SO={urgente:0,pedir:1,sinstock:2,ok:3,sobre:4};const SL={urgente:'Urgente',pedir:'Pedir',ok:'OK',sobre:'Sobrestock',sinstock:'Ref.'};
 function itemsFor(p){return DB.items.filter(i=>i.prov===p);}
-function currentItems(){if(state.search){const q=state.search.toLowerCase();return DB.items.filter(i=>i.nombre.toLowerCase().includes(q)||String(i.ref).includes(q)||(i.barcode&&String(i.barcode).includes(q)));}if(state.allProv)return DB.items;return itemsFor(state.prov);}
+function currentItems(){if(state.search){const words=state.search.toLowerCase().trim().split(/\s+/).filter(Boolean);return DB.items.filter(i=>{const hay=(i.nombre||'').toLowerCase();const ref=String(i.ref||'');const bc=i.barcode?String(i.barcode):'';return words.every(w=>hay.includes(w)||ref.includes(w)||bc.includes(w));});}if(state.allProv)return DB.items;return itemsFor(state.prov);}
 function qOf(it,a){return (it.ref in state.edits)?state.edits[it.ref]:a.sug;}
 function packsOf(it,u){return it.fmt>1?Math.round(u/it.fmt):u;}
 function plural(w,n){return w==='u'?'u':(n===1?w:w+'s');}
