@@ -894,9 +894,8 @@ document.getElementById('btn-suggest').onclick=()=>{currentItems().forEach(it=>{
 document.getElementById('btn-clear').onclick=()=>{currentItems().forEach(it=>{state.edits[it.ref]=0;});render();showToast('✕ Pedido vaciado (todo en 0)');};
 document.getElementById('btn-copy').onclick=()=>{const lines=currentOrder();if(!lines.length){showToast('No hay productos en el pedido');return;}lines.sort((a,b)=>b.q-a.q);const uds=lines.reduce((s,l)=>s+l.q,0);const prov=(state.search||state.allProv)?'(varios)':state.prov;
   let txt=`*Pedido ${prov}*\nMinimarket Marín 376 · Local 03\nFecha: ${new Date().toLocaleDateString('es-CL')}\n\n`;
-  lines.forEach(l=>{txt+=l.it.fmt>1?`• ${l.nombre} — ${l.packs} ${plural(l.word,l.packs)} (${l.q} u)\n`:`• ${l.nombre} — ${l.q}\n`;});
+  lines.forEach(l=>{txt+=l.it.fmt>1?`• ${l.nombre} — ${l.packs} ${plural(l.word,l.packs)} (${l.q} u)\n`:`• ${l.nombre} — ${l.q} und\n`;});
   if(state.prov==='CCU'&&!state.search&&!state.allProv){const p=ccuMixedPacks();if(p>0)txt+=`\n(Retornables 2.5L: ${p} packs → -${SCALES.ccu_ret.dtoG[ccuTierIdx(p)]}%)`;}
-  txt+=`\nTotal: ${lines.length} líneas / ${uds} unidades`;
   const ok=()=>{showToast('Pedido copiado ✓ Pégalo en WhatsApp');const b=document.getElementById('btn-copy');b.classList.add('copied');setTimeout(()=>b.classList.remove('copied'),1400);};
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok,()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();ok();});
   else{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();ok();}
