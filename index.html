@@ -232,7 +232,7 @@ tbody td.l{text-align:left;white-space:normal}
   <div class="brand"><span class="mk">Marín 376</span><span class="loc">Pedidos</span></div>
   <div class="toprt">
     <button class="loadbtn acc" id="btn-sync">🔄 Sincronizar</button>
-    <button class="loadbtn" id="btn-prices">💲 Precios</button>
+    <button class="loadbtn" id="btn-prices">♻️ Catálogo</button>
     <span class="glob" id="glob-quiebre" style="color:#ffb4a8;font-size:12px;font-weight:600"></span>
     <span class="upd" id="updlabel"></span>
   </div>
@@ -339,7 +339,8 @@ tbody td.l{text-align:left;white-space:normal}
 <div class="method">
   <h3>Cómo funciona tu app</h3>
   <ul>
-    <li><b>🔄 Sincronizar:</b> toca el botón verde de arriba y trae en vivo desde Loyverse el stock, precios, costos y las ventas de hoy. Además se actualiza solo cada hora.</li>
+    <li><b>🔄 Sincronizar:</b> rápido — trae stock y ventas de hoy en vivo. Se actualiza solo cada hora.</li>
+    <li><b>♻️ Catálogo:</b> úsalo cuando crees, elimines o cambies precio/costo de un producto en Loyverse, para verlo reflejado al instante (nuevos, eliminados, precios y costos). También se actualiza solo cada hora.</li>
     <li><b>📦 Proveedores de hoy:</b> el recuadro de arriba te dice a quién <b>pedir hoy</b> y qué <b>llega hoy</b>, según el calendario de cada proveedor.</li>
     <li><b>Semáforo de pedido:</b> 🔴 Urgente · 🟡 Pedir · 🟢 OK · ⚫ Sobrestock · 🔵 Sin control. La columna <b>Pedir</b> ya trae la cantidad sugerida según rotación, días de entrega y cobertura objetivo.</li>
     <li><b>Venta · Costo · Margen:</b> cada fila muestra el margen sobre venta del producto, con color (verde alto, dorado medio, rojo bajo).</li>
@@ -803,7 +804,7 @@ function buildDBfromCloud(items, ventas){
 
 async function cloudSync(silent,live,full){
   try{
-    if(!silent)showToast(full?'💲 Actualizando precios y costos…':(live?'🔄 Trayendo ventas en vivo…':'🔄 Sincronizando…'));
+    if(!silent)showToast(full?'♻️ Actualizando catálogo completo…':(live?'🔄 Trayendo ventas en vivo…':'🔄 Sincronizando…'));
     const url=SYNC_URL+((full||live)?(SYNC_URL.indexOf('?')<0?'?':'&')+'action='+(full?'full':'sync'):'');
     const res=await fetch(url,{method:'GET'});
     const j=await res.json();
@@ -818,7 +819,7 @@ async function cloudSync(silent,live,full){
       if(!silent){
         if((full||live)&&j.version!=='v2'){showToast('⚠️ El endpoint sigue en versión vieja. Vuelve a desplegar el Apps Script (Administrar implementaciones → editar → Versión nueva).');}
         else if(j.synced===false){showToast('⏳ Ocupado, intenta de nuevo en unos segundos');}
-        else if(full){showToast('✓ Precios y costos actualizados');}
+        else if(full){showToast('✓ Catálogo actualizado (nuevos, eliminados, precios y costos)');}
         else if(live){showToast('✓ En vivo · '+(j.ventasHoy||0)+' productos vendidos hoy');}
         else{showToast('✓ Datos actualizados');}
       }
