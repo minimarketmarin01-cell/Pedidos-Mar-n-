@@ -44,7 +44,11 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .searchx{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--gris-bg);border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;color:var(--muted);font-size:14px;display:none}
 .scanbtn{position:absolute;right:42px;top:50%;transform:translateY(-50%);background:var(--gris-bg);border:none;border-radius:8px;width:30px;height:26px;cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0}
 .scanbtn:active{background:var(--line)}
-.search{padding-right:78px}
+.micbtn{position:absolute;right:76px;top:50%;transform:translateY(-50%);background:var(--gris-bg);border:none;border-radius:8px;width:30px;height:26px;cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0}
+.micbtn:active{background:var(--line)}
+.micbtn.listening{background:var(--rojo);color:#fff;animation:micpulse 1s infinite}
+@keyframes micpulse{0%,100%{opacity:1}50%{opacity:.55}}
+.search{padding-right:112px}
 .scan-ov{position:fixed;inset:0;background:#000;z-index:200;display:flex;flex-direction:column}
 .scan-ov.hidden{display:none}
 .scan-ov video{flex:1;width:100%;object-fit:cover}
@@ -64,9 +68,12 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 select,input[type=number]{font-family:'Inter';font-size:13px;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;background:#fff;color:var(--text)}
 input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .prov-combo{position:relative;flex:1;min-width:160px}
-.prov-all{width:100%;min-width:0;font-weight:600;padding-right:30px}
+.prov-all{width:100%;min-width:0;font-weight:600;padding-right:58px}
 .prov-x{position:absolute;top:50%;right:6px;transform:translateY(-50%);width:22px;height:22px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
 .prov-x:active{background:var(--line);color:var(--ink)}
+.prov-mic{position:absolute;top:50%;right:32px;transform:translateY(-50%);width:24px;height:24px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
+.prov-mic:active{background:var(--line);color:var(--ink)}
+.prov-mic.listening{background:var(--rojo);color:#fff;animation:micpulse 1s infinite}
 .prov-menu{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.16);max-height:min(320px,46vh);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;z-index:60}
 .prov-menu.hidden{display:none}
 .prov-opt{padding:11px 13px;font-size:14px;cursor:pointer;border-bottom:1px solid #F2F1EC;display:flex;justify-content:space-between;align-items:center;gap:10px}
@@ -262,7 +269,7 @@ tbody td.l{text-align:left;white-space:normal}
       <div class="ctl-row">
         <div class="field" style="flex:1;min-width:240px">
           <label>Proveedor</label>
-          <div class="prov-pick"><div class="chips" id="prov-chips"></div><div class="prov-combo" id="prov-combo"><input class="prov-all" id="prov-all" placeholder="Proveedor… (toca o escribe)" autocomplete="off" inputmode="text"><button class="prov-x" id="prov-x" type="button" tabindex="-1" aria-label="Borrar">✕</button><div class="prov-menu hidden" id="prov-menu"></div></div></div>
+          <div class="prov-pick"><div class="chips" id="prov-chips"></div><div class="prov-combo" id="prov-combo"><input class="prov-all" id="prov-all" placeholder="Proveedor… (toca o escribe)" autocomplete="off" inputmode="text"><button class="prov-mic" id="prov-mic" type="button" tabindex="-1" aria-label="Buscar por voz">🎤</button><button class="prov-x" id="prov-x" type="button" tabindex="-1" aria-label="Borrar">✕</button><div class="prov-menu hidden" id="prov-menu"></div></div></div>
         </div>
         <div class="field"><label>Rotación según</label>
           <div class="seg" id="seg-basis"><button data-b="7" class="active">7d</button><button data-b="14">14d</button><button data-b="30">30d</button><button data-b="90">90d</button></div>
@@ -276,6 +283,7 @@ tbody td.l{text-align:left;white-space:normal}
     </div>
     <div class="searchwrap">
       <input class="search" id="search" placeholder="Buscar por nombre, REF o código de barras…">
+      <button class="micbtn" id="micbtn" type="button" aria-label="Buscar por voz">🎤</button>
       <button class="scanbtn" id="scanbtn" type="button" aria-label="Escanear código">📷</button>
       <button class="searchx" id="searchx">✕</button>
     </div>
@@ -344,7 +352,7 @@ tbody td.l{text-align:left;white-space:normal}
     <li><b>📦 Proveedores de hoy:</b> el recuadro de arriba te dice a quién <b>pedir hoy</b> y qué <b>llega hoy</b>, según el calendario de cada proveedor.</li>
     <li><b>Semáforo de pedido:</b> 🔴 Urgente · 🟡 Pedir · 🟢 OK · ⚫ Sobrestock · 🔵 Sin control. La columna <b>Pedir</b> ya trae la cantidad sugerida según rotación, días de entrega y cobertura objetivo.</li>
     <li><b>Venta · Costo · Margen:</b> cada fila muestra el margen sobre venta del producto, con color (verde alto, dorado medio, rojo bajo).</li>
-    <li><b>Buscador:</b> escribe el nombre, REF o <b>código de barras</b> y busca en todos los proveedores a la vez.</li>
+    <li><b>Buscador:</b> escribe el nombre, REF o <b>código de barras</b> y busca en todos los proveedores a la vez. También puedes usar 🎤 para hablar o 📷 para escanear el código de barras con la cámara.</li>
     <li><b>Ver todos los proveedores:</b> en el selector elige "📋 Todos los proveedores" para armar pedidos con todo el inventario junto.</li>
     <li><b>Rotación día/semana/mes</b> y base 7/14/30/90 días: ajústalas según lo que quieras analizar (abre por defecto en 7 días · semana).</li>
     <li><b>Soprole:</b> las cantidades suben por el mínimo de cada producto (de a 4, 6, 8, 12… según corresponda).</li>
@@ -890,6 +898,40 @@ function closeScanner(){
 }
 document.getElementById('scanbtn').onclick=openScanner;
 document.getElementById('scan-close').onclick=closeScanner;
+
+// ===================== BÚSQUEDA POR VOZ =====================
+const SpeechRec=window.SpeechRecognition||window.webkitSpeechRecognition;
+function voiceSearch(btn,onText){
+  if(!SpeechRec){showToast('Este navegador no soporta búsqueda por voz. Usa Chrome actualizado.');return;}
+  let rec;
+  try{rec=new SpeechRec();}catch(e){showToast('No se pudo iniciar el micrófono');return;}
+  rec.lang='es-CL';rec.continuous=false;rec.interimResults=false;rec.maxAlternatives=1;
+  btn.classList.add('listening');
+  let got=false;
+  rec.onresult=e=>{
+    got=true;
+    const text=(e.results&&e.results[0]&&e.results[0][0])?e.results[0][0].transcript.trim():'';
+    if(text)onText(text);
+  };
+  rec.onerror=e=>{ if(e.error==='not-allowed')showToast('Permiso de micrófono denegado. Actívalo en el navegador.'); else if(e.error!=='aborted'&&e.error!=='no-speech')showToast('No se entendió, intenta de nuevo'); };
+  rec.onend=()=>{btn.classList.remove('listening'); if(!got){/* silencio, no molesta */}};
+  try{rec.start();}catch(e){btn.classList.remove('listening');}
+}
+document.getElementById('micbtn').onclick=()=>{
+  voiceSearch(document.getElementById('micbtn'),text=>{
+    si.value=text;state.search=text;
+    document.getElementById('searchx').classList.toggle('on',!!text);
+    render();persistUI();
+  });
+};
+document.getElementById('prov-mic').onclick=ev=>{
+  ev.preventDefault();ev.stopPropagation();
+  voiceSearch(document.getElementById('prov-mic'),text=>{
+    const sel=document.getElementById('prov-all');
+    sel.value=text;sel.focus();
+    sel.dispatchEvent(new Event('input',{bubbles:true}));
+  });
+};
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&_scanStream)closeScanner();});
 document.getElementById('btn-suggest').onclick=()=>{currentItems().forEach(it=>{delete state.edits[it.ref];});render();showToast('↺ Volví a las cantidades sugeridas');};
 document.getElementById('btn-clear').onclick=()=>{currentItems().forEach(it=>{state.edits[it.ref]=0;});render();showToast('✕ Pedido vaciado (todo en 0)');};
