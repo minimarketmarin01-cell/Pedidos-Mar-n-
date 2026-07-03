@@ -42,6 +42,16 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .search{width:100%;padding:11px 14px 11px 38px;border:1.5px solid var(--line);border-radius:10px;font-size:15px;font-family:'Inter';background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236A707B' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E") no-repeat 13px center}
 .search:focus{outline:none;border-color:var(--ink)}
 .searchx{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--gris-bg);border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;color:var(--muted);font-size:14px;display:none}
+.scanbtn{position:absolute;right:42px;top:50%;transform:translateY(-50%);background:var(--gris-bg);border:none;border-radius:8px;width:30px;height:26px;cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0}
+.scanbtn:active{background:var(--line)}
+.search{padding-right:78px}
+.scan-ov{position:fixed;inset:0;background:#000;z-index:200;display:flex;flex-direction:column}
+.scan-ov.hidden{display:none}
+.scan-ov video{flex:1;width:100%;object-fit:cover}
+.scan-top{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:14px 16px;color:#fff;font-family:'Archivo';font-weight:700;font-size:14px;background:linear-gradient(rgba(0,0,0,.6),transparent);z-index:2}
+.scan-close{background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:50%;width:34px;height:34px;font-size:16px;cursor:pointer}
+.scan-frame{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:78%;max-width:420px;height:130px;border:2.5px solid #22c55e;border-radius:14px;box-shadow:0 0 0 2000px rgba(0,0,0,.35);z-index:1;pointer-events:none}
+.scan-hint{position:absolute;bottom:26px;left:0;right:0;text-align:center;color:#fff;font-size:13px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.7);z-index:2}
 .searchx.on{display:block}
 .ctl-row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
 .field{display:flex;flex-direction:column;gap:5px}
@@ -266,7 +276,14 @@ tbody td.l{text-align:left;white-space:normal}
     </div>
     <div class="searchwrap">
       <input class="search" id="search" placeholder="Buscar por nombre, REF o código de barras…">
+      <button class="scanbtn" id="scanbtn" type="button" aria-label="Escanear código">📷</button>
       <button class="searchx" id="searchx">✕</button>
+    </div>
+    <div class="scan-ov hidden" id="scan-ov">
+      <div class="scan-top"><span>Escanear código de barras</span><button class="scan-close" id="scan-close">✕</button></div>
+      <video id="scan-video" playsinline muted></video>
+      <div class="scan-frame"></div>
+      <div class="scan-hint">Apunta al código de barras del producto</div>
     </div>
     <div class="tablecard"><div class="tbl-scroll"><table id="ptable">
       <thead><tr>
@@ -739,8 +756,8 @@ function buildDBfromCloud(items, ventas){
   const ventaRows=(ventas&&ventas.rows)?ventas.rows:{};
   const hoyRows=(ventas&&ventas.hoy&&ventas.hoy.rows)?ventas.hoy.rows:{};
 
-  // Une ventas base + lo de hoy (suma incremental)
-  const refs=new Set([...Object.keys(ventaRows),...Object.keys(itemRows)]);
+  // Solo productos que EXISTEN en el catálogo actual (los eliminados en Loyverse no se muestran)
+  const refs=new Set(Object.keys(itemRows));
   const items_arr=[];
   refs.forEach(ref=>{
     const v=ventaRows[ref]||{u_all:0,u7:0,u14:0,u30:0,u90:0,rev:0,prof:0,ant:0,vs_ant_pct:null};
@@ -812,10 +829,9 @@ async function cloudSync(silent,live,full){
 
 // Auto-sync al abrir si pasó +1 hora
 async function autoSyncIfStale(){
-  const age=Date.now()-lastSyncTime();
-  if(age>SYNC_MAX_AGE||!DB||!DB.items||!DB.items.length){
-    await cloudSync(true,true);
-  }
+  // Siempre al abrir: trae stock actualizado, quita productos eliminados y suma ventas de hoy.
+  // Los datos guardados se muestran al instante y se refrescan en segundo plano.
+  await cloudSync(true,true);
 }
 
 document.getElementById('btn-sync').onclick=()=>cloudSync(false,true);
@@ -832,6 +848,48 @@ const si=document.getElementById('search');
 let _searchT=null;
 si.oninput=e=>{state.search=e.target.value.trim();document.getElementById('searchx').classList.toggle('on',!!state.search);clearTimeout(_searchT);_searchT=setTimeout(()=>{render();persistUI();},200);};
 document.getElementById('searchx').onclick=()=>{si.value='';state.search='';document.getElementById('searchx').classList.remove('on');clearTimeout(_searchT);render();};
+
+// ===================== ESCÁNER DE CÓDIGO DE BARRAS (cámara) =====================
+let _scanStream=null,_scanTimer=null;
+async function openScanner(){
+  const ov=document.getElementById('scan-ov'),video=document.getElementById('scan-video');
+  if(!('BarcodeDetector' in window)){showToast('Este navegador no soporta escáner. Usa Chrome actualizado.');return;}
+  let detector;
+  try{detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf']});}
+  catch(e){showToast('No se pudo iniciar el detector de códigos');return;}
+  try{
+    _scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});
+  }catch(e){showToast('Permiso de cámara denegado. Actívalo en el navegador.');return;}
+  video.srcObject=_scanStream;ov.classList.remove('hidden');
+  try{await video.play();}catch(e){}
+  let busy=false;
+  _scanTimer=setInterval(async()=>{
+    if(busy||video.readyState<2)return;busy=true;
+    try{
+      const codes=await detector.detect(video);
+      if(codes&&codes.length&&codes[0].rawValue){
+        const code=String(codes[0].rawValue).trim();
+        closeScanner();
+        if(navigator.vibrate)navigator.vibrate(80);
+        si.value=code;state.search=code;
+        document.getElementById('searchx').classList.add('on');
+        render();persistUI();
+        const n=currentItems().length;
+        showToast(n?('✓ '+code+' · '+n+(n===1?' producto':' productos')):('Código '+code+' no encontrado en el inventario'));
+      }
+    }catch(e){}
+    busy=false;
+  },220);
+}
+function closeScanner(){
+  clearInterval(_scanTimer);_scanTimer=null;
+  if(_scanStream){_scanStream.getTracks().forEach(t=>t.stop());_scanStream=null;}
+  const v=document.getElementById('scan-video');if(v)v.srcObject=null;
+  document.getElementById('scan-ov').classList.add('hidden');
+}
+document.getElementById('scanbtn').onclick=openScanner;
+document.getElementById('scan-close').onclick=closeScanner;
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&_scanStream)closeScanner();});
 document.getElementById('btn-suggest').onclick=()=>{currentItems().forEach(it=>{delete state.edits[it.ref];});render();showToast('↺ Volví a las cantidades sugeridas');};
 document.getElementById('btn-clear').onclick=()=>{currentItems().forEach(it=>{state.edits[it.ref]=0;});render();showToast('✕ Pedido vaciado (todo en 0)');};
 document.getElementById('btn-copy').onclick=()=>{const lines=currentOrder();if(!lines.length){showToast('No hay productos en el pedido');return;}lines.sort((a,b)=>b.q-a.q);const uds=lines.reduce((s,l)=>s+l.q,0);const prov=(state.search||state.allProv)?'(varios)':state.prov;
