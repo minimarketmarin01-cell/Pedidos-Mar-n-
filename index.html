@@ -42,6 +42,20 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .search{width:100%;padding:11px 14px 11px 38px;border:1.5px solid var(--line);border-radius:10px;font-size:15px;font-family:'Inter';background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236A707B' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E") no-repeat 13px center}
 .search:focus{outline:none;border-color:var(--ink)}
 .searchx{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--gris-bg);border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;color:var(--muted);font-size:14px;display:none}
+.scanbtn{position:absolute;right:42px;top:50%;transform:translateY(-50%);background:var(--gris-bg);border:none;border-radius:8px;width:30px;height:26px;cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0}
+.scanbtn:active{background:var(--line)}
+.micbtn{position:absolute;right:76px;top:50%;transform:translateY(-50%);background:var(--gris-bg);border:none;border-radius:8px;width:30px;height:26px;cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0}
+.micbtn:active{background:var(--line)}
+.micbtn.listening{background:var(--rojo);color:#fff;animation:micpulse 1s infinite}
+@keyframes micpulse{0%,100%{opacity:1}50%{opacity:.55}}
+.search{padding-right:112px}
+.scan-ov{position:fixed;inset:0;background:#000;z-index:200;display:flex;flex-direction:column}
+.scan-ov.hidden{display:none}
+.scan-ov video{flex:1;width:100%;object-fit:cover}
+.scan-top{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:14px 16px;color:#fff;font-family:'Archivo';font-weight:700;font-size:14px;background:linear-gradient(rgba(0,0,0,.6),transparent);z-index:2}
+.scan-close{background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:50%;width:34px;height:34px;font-size:16px;cursor:pointer}
+.scan-frame{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:78%;max-width:420px;height:130px;border:2.5px solid #22c55e;border-radius:14px;box-shadow:0 0 0 2000px rgba(0,0,0,.35);z-index:1;pointer-events:none}
+.scan-hint{position:absolute;bottom:26px;left:0;right:0;text-align:center;color:#fff;font-size:13px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.7);z-index:2}
 .searchx.on{display:block}
 .ctl-row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
 .field{display:flex;flex-direction:column;gap:5px}
@@ -54,9 +68,12 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 select,input[type=number]{font-family:'Inter';font-size:13px;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;background:#fff;color:var(--text)}
 input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .prov-combo{position:relative;flex:1;min-width:160px}
-.prov-all{width:100%;min-width:0;font-weight:600;padding-right:30px}
+.prov-all{width:100%;min-width:0;font-weight:600;padding-right:58px}
 .prov-x{position:absolute;top:50%;right:6px;transform:translateY(-50%);width:22px;height:22px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
 .prov-x:active{background:var(--line);color:var(--ink)}
+.prov-mic{position:absolute;top:50%;right:32px;transform:translateY(-50%);width:24px;height:24px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
+.prov-mic:active{background:var(--line);color:var(--ink)}
+.prov-mic.listening{background:var(--rojo);color:#fff;animation:micpulse 1s infinite}
 .prov-menu{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.16);max-height:min(320px,46vh);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;z-index:60}
 .prov-menu.hidden{display:none}
 .prov-opt{padding:11px 13px;font-size:14px;cursor:pointer;border-bottom:1px solid #F2F1EC;display:flex;justify-content:space-between;align-items:center;gap:10px}
@@ -222,7 +239,7 @@ tbody td.l{text-align:left;white-space:normal}
   <div class="brand"><span class="mk">Marín 376</span><span class="loc">Pedidos</span></div>
   <div class="toprt">
     <button class="loadbtn acc" id="btn-sync">🔄 Sincronizar</button>
-    <button class="loadbtn" id="btn-prices">💲 Precios</button>
+    <button class="loadbtn" id="btn-prices">♻️ Catálogo</button>
     <span class="glob" id="glob-quiebre" style="color:#ffb4a8;font-size:12px;font-weight:600"></span>
     <span class="upd" id="updlabel"></span>
   </div>
@@ -252,7 +269,7 @@ tbody td.l{text-align:left;white-space:normal}
       <div class="ctl-row">
         <div class="field" style="flex:1;min-width:240px">
           <label>Proveedor</label>
-          <div class="prov-pick"><div class="chips" id="prov-chips"></div><div class="prov-combo" id="prov-combo"><input class="prov-all" id="prov-all" placeholder="Proveedor… (toca o escribe)" autocomplete="off" inputmode="text"><button class="prov-x" id="prov-x" type="button" tabindex="-1" aria-label="Borrar">✕</button><div class="prov-menu hidden" id="prov-menu"></div></div></div>
+          <div class="prov-pick"><div class="chips" id="prov-chips"></div><div class="prov-combo" id="prov-combo"><input class="prov-all" id="prov-all" placeholder="Proveedor… (toca o escribe)" autocomplete="off" inputmode="text"><button class="prov-mic" id="prov-mic" type="button" tabindex="-1" aria-label="Buscar por voz">🎤</button><button class="prov-x" id="prov-x" type="button" tabindex="-1" aria-label="Borrar">✕</button><div class="prov-menu hidden" id="prov-menu"></div></div></div>
         </div>
         <div class="field"><label>Rotación según</label>
           <div class="seg" id="seg-basis"><button data-b="7" class="active">7d</button><button data-b="14">14d</button><button data-b="30">30d</button><button data-b="90">90d</button></div>
@@ -266,7 +283,15 @@ tbody td.l{text-align:left;white-space:normal}
     </div>
     <div class="searchwrap">
       <input class="search" id="search" placeholder="Buscar por nombre, REF o código de barras…">
+      <button class="micbtn" id="micbtn" type="button" aria-label="Buscar por voz">🎤</button>
+      <button class="scanbtn" id="scanbtn" type="button" aria-label="Escanear código">📷</button>
       <button class="searchx" id="searchx">✕</button>
+    </div>
+    <div class="scan-ov hidden" id="scan-ov">
+      <div class="scan-top"><span>Escanear código de barras</span><button class="scan-close" id="scan-close">✕</button></div>
+      <video id="scan-video" playsinline muted></video>
+      <div class="scan-frame"></div>
+      <div class="scan-hint">Apunta al código de barras del producto</div>
     </div>
     <div class="tablecard"><div class="tbl-scroll"><table id="ptable">
       <thead><tr>
@@ -322,11 +347,12 @@ tbody td.l{text-align:left;white-space:normal}
 <div class="method">
   <h3>Cómo funciona tu app</h3>
   <ul>
-    <li><b>🔄 Sincronizar:</b> toca el botón verde de arriba y trae en vivo desde Loyverse el stock, precios, costos y las ventas de hoy. Además se actualiza solo cada hora.</li>
+    <li><b>🔄 Sincronizar:</b> rápido — trae stock y ventas de hoy en vivo. Se actualiza solo cada hora.</li>
+    <li><b>♻️ Catálogo:</b> úsalo cuando crees, elimines o cambies precio/costo de un producto en Loyverse, para verlo reflejado al instante (nuevos, eliminados, precios y costos). También se actualiza solo cada hora.</li>
     <li><b>📦 Proveedores de hoy:</b> el recuadro de arriba te dice a quién <b>pedir hoy</b> y qué <b>llega hoy</b>, según el calendario de cada proveedor.</li>
     <li><b>Semáforo de pedido:</b> 🔴 Urgente · 🟡 Pedir · 🟢 OK · ⚫ Sobrestock · 🔵 Sin control. La columna <b>Pedir</b> ya trae la cantidad sugerida según rotación, días de entrega y cobertura objetivo.</li>
     <li><b>Venta · Costo · Margen:</b> cada fila muestra el margen sobre venta del producto, con color (verde alto, dorado medio, rojo bajo).</li>
-    <li><b>Buscador:</b> escribe el nombre, REF o <b>código de barras</b> y busca en todos los proveedores a la vez.</li>
+    <li><b>Buscador:</b> escribe el nombre, REF o <b>código de barras</b> y busca en todos los proveedores a la vez. También puedes usar 🎤 para hablar o 📷 para escanear el código de barras con la cámara.</li>
     <li><b>Ver todos los proveedores:</b> en el selector elige "📋 Todos los proveedores" para armar pedidos con todo el inventario junto.</li>
     <li><b>Rotación día/semana/mes</b> y base 7/14/30/90 días: ajústalas según lo que quieras analizar (abre por defecto en 7 días · semana).</li>
     <li><b>Soprole:</b> las cantidades suben por el mínimo de cada producto (de a 4, 6, 8, 12… según corresponda).</li>
@@ -739,8 +765,8 @@ function buildDBfromCloud(items, ventas){
   const ventaRows=(ventas&&ventas.rows)?ventas.rows:{};
   const hoyRows=(ventas&&ventas.hoy&&ventas.hoy.rows)?ventas.hoy.rows:{};
 
-  // Une ventas base + lo de hoy (suma incremental)
-  const refs=new Set([...Object.keys(ventaRows),...Object.keys(itemRows)]);
+  // Solo productos que EXISTEN en el catálogo actual (los eliminados en Loyverse no se muestran)
+  const refs=new Set(Object.keys(itemRows));
   const items_arr=[];
   refs.forEach(ref=>{
     const v=ventaRows[ref]||{u_all:0,u7:0,u14:0,u30:0,u90:0,rev:0,prof:0,ant:0,vs_ant_pct:null};
@@ -786,7 +812,7 @@ function buildDBfromCloud(items, ventas){
 
 async function cloudSync(silent,live,full){
   try{
-    if(!silent)showToast(full?'💲 Actualizando precios y costos…':(live?'🔄 Trayendo ventas en vivo…':'🔄 Sincronizando…'));
+    if(!silent)showToast(full?'♻️ Actualizando catálogo completo…':(live?'🔄 Trayendo ventas en vivo…':'🔄 Sincronizando…'));
     const url=SYNC_URL+((full||live)?(SYNC_URL.indexOf('?')<0?'?':'&')+'action='+(full?'full':'sync'):'');
     const res=await fetch(url,{method:'GET'});
     const j=await res.json();
@@ -801,7 +827,7 @@ async function cloudSync(silent,live,full){
       if(!silent){
         if((full||live)&&j.version!=='v2'){showToast('⚠️ El endpoint sigue en versión vieja. Vuelve a desplegar el Apps Script (Administrar implementaciones → editar → Versión nueva).');}
         else if(j.synced===false){showToast('⏳ Ocupado, intenta de nuevo en unos segundos');}
-        else if(full){showToast('✓ Precios y costos actualizados');}
+        else if(full){showToast('✓ Catálogo actualizado (nuevos, eliminados, precios y costos)');}
         else if(live){showToast('✓ En vivo · '+(j.ventasHoy||0)+' productos vendidos hoy');}
         else{showToast('✓ Datos actualizados');}
       }
@@ -812,10 +838,9 @@ async function cloudSync(silent,live,full){
 
 // Auto-sync al abrir si pasó +1 hora
 async function autoSyncIfStale(){
-  const age=Date.now()-lastSyncTime();
-  if(age>SYNC_MAX_AGE||!DB||!DB.items||!DB.items.length){
-    await cloudSync(true,true);
-  }
+  // Siempre al abrir: trae stock actualizado, quita productos eliminados y suma ventas de hoy.
+  // Los datos guardados se muestran al instante y se refrescan en segundo plano.
+  await cloudSync(true,true);
 }
 
 document.getElementById('btn-sync').onclick=()=>cloudSync(false,true);
@@ -832,13 +857,88 @@ const si=document.getElementById('search');
 let _searchT=null;
 si.oninput=e=>{state.search=e.target.value.trim();document.getElementById('searchx').classList.toggle('on',!!state.search);clearTimeout(_searchT);_searchT=setTimeout(()=>{render();persistUI();},200);};
 document.getElementById('searchx').onclick=()=>{si.value='';state.search='';document.getElementById('searchx').classList.remove('on');clearTimeout(_searchT);render();};
+
+// ===================== ESCÁNER DE CÓDIGO DE BARRAS (cámara) =====================
+let _scanStream=null,_scanTimer=null;
+async function openScanner(){
+  const ov=document.getElementById('scan-ov'),video=document.getElementById('scan-video');
+  if(!('BarcodeDetector' in window)){showToast('Este navegador no soporta escáner. Usa Chrome actualizado.');return;}
+  let detector;
+  try{detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf']});}
+  catch(e){showToast('No se pudo iniciar el detector de códigos');return;}
+  try{
+    _scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});
+  }catch(e){showToast('Permiso de cámara denegado. Actívalo en el navegador.');return;}
+  video.srcObject=_scanStream;ov.classList.remove('hidden');
+  try{await video.play();}catch(e){}
+  let busy=false;
+  _scanTimer=setInterval(async()=>{
+    if(busy||video.readyState<2)return;busy=true;
+    try{
+      const codes=await detector.detect(video);
+      if(codes&&codes.length&&codes[0].rawValue){
+        const code=String(codes[0].rawValue).trim();
+        closeScanner();
+        if(navigator.vibrate)navigator.vibrate(80);
+        si.value=code;state.search=code;
+        document.getElementById('searchx').classList.add('on');
+        render();persistUI();
+        const n=currentItems().length;
+        showToast(n?('✓ '+code+' · '+n+(n===1?' producto':' productos')):('Código '+code+' no encontrado en el inventario'));
+      }
+    }catch(e){}
+    busy=false;
+  },220);
+}
+function closeScanner(){
+  clearInterval(_scanTimer);_scanTimer=null;
+  if(_scanStream){_scanStream.getTracks().forEach(t=>t.stop());_scanStream=null;}
+  const v=document.getElementById('scan-video');if(v)v.srcObject=null;
+  document.getElementById('scan-ov').classList.add('hidden');
+}
+document.getElementById('scanbtn').onclick=openScanner;
+document.getElementById('scan-close').onclick=closeScanner;
+
+// ===================== BÚSQUEDA POR VOZ =====================
+const SpeechRec=window.SpeechRecognition||window.webkitSpeechRecognition;
+function voiceSearch(btn,onText){
+  if(!SpeechRec){showToast('Este navegador no soporta búsqueda por voz. Usa Chrome actualizado.');return;}
+  let rec;
+  try{rec=new SpeechRec();}catch(e){showToast('No se pudo iniciar el micrófono');return;}
+  rec.lang='es-CL';rec.continuous=false;rec.interimResults=false;rec.maxAlternatives=1;
+  btn.classList.add('listening');
+  let got=false;
+  rec.onresult=e=>{
+    got=true;
+    const text=(e.results&&e.results[0]&&e.results[0][0])?e.results[0][0].transcript.trim():'';
+    if(text)onText(text);
+  };
+  rec.onerror=e=>{ if(e.error==='not-allowed')showToast('Permiso de micrófono denegado. Actívalo en el navegador.'); else if(e.error!=='aborted'&&e.error!=='no-speech')showToast('No se entendió, intenta de nuevo'); };
+  rec.onend=()=>{btn.classList.remove('listening'); if(!got){/* silencio, no molesta */}};
+  try{rec.start();}catch(e){btn.classList.remove('listening');}
+}
+document.getElementById('micbtn').onclick=()=>{
+  voiceSearch(document.getElementById('micbtn'),text=>{
+    si.value=text;state.search=text;
+    document.getElementById('searchx').classList.toggle('on',!!text);
+    render();persistUI();
+  });
+};
+document.getElementById('prov-mic').onclick=ev=>{
+  ev.preventDefault();ev.stopPropagation();
+  voiceSearch(document.getElementById('prov-mic'),text=>{
+    const sel=document.getElementById('prov-all');
+    sel.value=text;sel.focus();
+    sel.dispatchEvent(new Event('input',{bubbles:true}));
+  });
+};
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&_scanStream)closeScanner();});
 document.getElementById('btn-suggest').onclick=()=>{currentItems().forEach(it=>{delete state.edits[it.ref];});render();showToast('↺ Volví a las cantidades sugeridas');};
 document.getElementById('btn-clear').onclick=()=>{currentItems().forEach(it=>{state.edits[it.ref]=0;});render();showToast('✕ Pedido vaciado (todo en 0)');};
 document.getElementById('btn-copy').onclick=()=>{const lines=currentOrder();if(!lines.length){showToast('No hay productos en el pedido');return;}lines.sort((a,b)=>b.q-a.q);const uds=lines.reduce((s,l)=>s+l.q,0);const prov=(state.search||state.allProv)?'(varios)':state.prov;
   let txt=`*Pedido ${prov}*\nMinimarket Marín 376 · Local 03\nFecha: ${new Date().toLocaleDateString('es-CL')}\n\n`;
-  lines.forEach(l=>{txt+=l.it.fmt>1?`• ${l.nombre} — ${l.packs} ${plural(l.word,l.packs)} (${l.q} u)\n`:`• ${l.nombre} — ${l.q}\n`;});
+  lines.forEach(l=>{txt+=l.it.fmt>1?`• ${l.nombre} — ${l.packs} ${plural(l.word,l.packs)} (${l.q} u)\n`:`• ${l.nombre} — ${l.q} und\n`;});
   if(state.prov==='CCU'&&!state.search&&!state.allProv){const p=ccuMixedPacks();if(p>0)txt+=`\n(Retornables 2.5L: ${p} packs → -${SCALES.ccu_ret.dtoG[ccuTierIdx(p)]}%)`;}
-  txt+=`\nTotal: ${lines.length} líneas / ${uds} unidades`;
   const ok=()=>{showToast('Pedido copiado ✓ Pégalo en WhatsApp');const b=document.getElementById('btn-copy');b.classList.add('copied');setTimeout(()=>b.classList.remove('copied'),1400);};
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok,()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();ok();});
   else{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();ok();}
