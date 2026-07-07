@@ -56,6 +56,40 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .scan-close{background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:50%;width:34px;height:34px;font-size:16px;cursor:pointer}
 .scan-frame{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:78%;max-width:420px;height:130px;border:2.5px solid #22c55e;border-radius:14px;box-shadow:0 0 0 2000px rgba(0,0,0,.35);z-index:1;pointer-events:none}
 .scan-hint{position:absolute;bottom:26px;left:0;right:0;text-align:center;color:#fff;font-size:13px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.7);z-index:2}
+.mm-ov{position:fixed;inset:0;background:rgba(21,25,31,.55);z-index:210;display:flex;align-items:flex-end;justify-content:center}
+.mm-ov.hidden{display:none}
+.mm-card{background:var(--card);width:100%;max-width:480px;max-height:92vh;overflow-y:auto;border-radius:18px 18px 0 0;padding:16px 16px 22px}
+.mm-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.mm-head h3{font-family:'Archivo';font-weight:800;font-size:16px}
+.mm-close{background:var(--gris-bg);border:none;border-radius:50%;width:30px;height:30px;font-size:14px;cursor:pointer;color:var(--muted)}
+.mm-field{margin-bottom:12px}
+.mm-field label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:5px}
+.mm-search{position:relative}
+.mm-search input{width:100%;padding:11px 76px 11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:15px}
+.mm-search .mm-mic,.mm-search .mm-scan{position:absolute;top:50%;transform:translateY(-50%);background:var(--gris-bg);border:none;border-radius:8px;width:28px;height:24px;font-size:14px;cursor:pointer}
+.mm-search .mm-mic{right:38px}
+.mm-search .mm-scan{right:6px}
+.mm-picked{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:8px;display:none}
+.mm-picked.on{display:block}
+.mm-picked .nom{font-weight:700;font-size:14px}
+.mm-picked .cat{font-size:11.5px;color:var(--muted);margin-top:2px}
+.mm-qty{display:flex;align-items:center;gap:10px}
+.mm-qty input{flex:1;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:16px;font-family:'JetBrains Mono';text-align:center}
+.mm-qty .unidad{font-weight:700;color:var(--muted);min-width:28px}
+.mm-costo-ok{background:var(--verde-bg);border:1px solid var(--verde);border-radius:10px;padding:9px 12px;font-size:13px;color:var(--verde);font-weight:600}
+.mm-costo-warn{background:var(--rojo-bg);border:1px solid var(--rojo);border-radius:10px;padding:9px 12px;font-size:12.5px;color:var(--rojo);font-weight:600;margin-bottom:8px;line-height:1.4}
+.mm-costo-manual{width:100%;padding:11px 14px;border:1.5px solid var(--rojo);border-radius:10px;font-size:15px;font-family:'JetBrains Mono'}
+.mm-total{background:var(--paper);border-radius:10px;padding:10px 12px;font-size:13px;display:flex;justify-content:space-between;align-items:center;font-weight:700}
+.mm-total b{font-family:'JetBrains Mono';font-size:16px}
+.mm-motivos{display:flex;flex-wrap:wrap;gap:7px}
+.mm-motivo{border:1.5px solid var(--line);background:var(--card);border-radius:20px;padding:7px 13px;font-size:12.5px;font-weight:600;cursor:pointer}
+.mm-motivo.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
+.mm-resp{display:flex;gap:7px}
+.mm-resp button{flex:1;border:1.5px solid var(--line);background:var(--card);border-radius:10px;padding:9px;font-size:13px;font-weight:600;cursor:pointer}
+.mm-resp button.sel{background:var(--azul);color:#fff;border-color:var(--azul)}
+.mm-save{width:100%;background:var(--rojo);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;font-family:'Archivo';cursor:pointer;margin-top:4px}
+.mm-save:disabled{opacity:.45;cursor:not-allowed}
+.mm-save.saving{opacity:.7}
 .searchx.on{display:block}
 .ctl-row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
 .field{display:flex;flex-direction:column;gap:5px}
@@ -240,6 +274,7 @@ tbody td.l{text-align:left;white-space:normal}
   <div class="toprt">
     <button class="loadbtn acc" id="btn-sync">🔄 Sincronizar</button>
     <button class="loadbtn" id="btn-prices">♻️ Catálogo</button>
+    <button class="loadbtn" id="btn-merma">🗑️ Merma</button>
     <span class="glob" id="glob-quiebre" style="color:#ffb4a8;font-size:12px;font-weight:600"></span>
     <span class="upd" id="updlabel"></span>
   </div>
@@ -292,6 +327,70 @@ tbody td.l{text-align:left;white-space:normal}
       <video id="scan-video" playsinline muted></video>
       <div class="scan-frame"></div>
       <div class="scan-hint">Apunta al código de barras del producto</div>
+    </div>
+    <div class="mm-ov hidden" id="mm-ov">
+      <div class="mm-card">
+        <div class="mm-head"><h3>🗑️ Registrar merma</h3><button class="mm-close" id="mm-close">✕</button></div>
+
+        <div class="mm-field">
+          <label>Producto</label>
+          <div class="mm-search">
+            <input id="mm-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off">
+            <button class="mm-mic" id="mm-mic" type="button" aria-label="Buscar por voz">🎤</button>
+            <button class="mm-scan" id="mm-scan" type="button" aria-label="Escanear código">📷</button>
+          </div>
+          <div class="mm-picked" id="mm-picked">
+            <div class="nom" id="mm-nom">—</div>
+            <div class="cat" id="mm-cat">—</div>
+          </div>
+          <div id="mm-results"></div>
+        </div>
+
+        <div class="mm-field">
+          <label>Cantidad</label>
+          <div class="mm-qty">
+            <button class="qbtn" id="mm-qty-menos" type="button">−</button>
+            <input id="mm-cantidad" inputmode="decimal" placeholder="0" disabled>
+            <span class="unidad" id="mm-unidad">u</span>
+            <button class="qbtn" id="mm-qty-mas" type="button">+</button>
+          </div>
+        </div>
+
+        <div class="mm-field" id="mm-costo-wrap">
+          <label>Costo</label>
+          <div id="mm-costo-ok" class="mm-costo-ok" style="display:none">✓ <span id="mm-costo-txt">—</span> · desde Loyverse</div>
+          <div id="mm-costo-warn-box" style="display:none">
+            <div class="mm-costo-warn">⚠️ Este producto no tiene costo cargado en Loyverse. Escríbelo para poder registrar la merma, y de paso cárgalo en Loyverse para que no vuelva a pasar.</div>
+            <input class="mm-costo-manual" id="mm-costo-manual" inputmode="numeric" placeholder="Costo por unidad ($)">
+          </div>
+        </div>
+
+        <div class="mm-field">
+          <div class="mm-total">Costo total <b id="mm-total-val">$0</b></div>
+        </div>
+
+        <div class="mm-field">
+          <label>Motivo</label>
+          <div class="mm-motivos" id="mm-motivos">
+            <button class="mm-motivo" data-m="liquidado">Liquidado</button>
+            <button class="mm-motivo" data-m="vencido">Vencido</button>
+            <button class="mm-motivo" data-m="dañado">Dañado</button>
+            <button class="mm-motivo" data-m="robo">Robo</button>
+            <button class="mm-motivo" data-m="consumo_interno">Consumo interno</button>
+          </div>
+        </div>
+
+        <div class="mm-field">
+          <label>Responsable</label>
+          <div class="mm-resp" id="mm-resp">
+            <button data-r="Dueña">Dueña</button>
+            <button data-r="Rossy">Rossy</button>
+            <button data-r="Edwin">Edwin</button>
+          </div>
+        </div>
+
+        <button class="mm-save" id="mm-save" disabled>Guardar merma</button>
+      </div>
     </div>
     <div class="tablecard"><div class="tbl-scroll"><table id="ptable">
       <thead><tr>
@@ -785,7 +884,7 @@ function buildDBfromCloud(items, ventas){
       stock:inv.stock!=null?inv.stock:null,
       precio:inv.precio!=null?inv.precio:null,
       coste:inv.costo!=null?inv.costo:null,
-      track:!!inv.track, barcode:inv.barcode||'',
+      track:!!inv.track, barcode:inv.barcode||'', peso:!!inv.peso,
       fmt:t.fmt, min:t.min, scale:t.scale, role:t.role, word:t.word
     });
   });
@@ -860,7 +959,7 @@ document.getElementById('searchx').onclick=()=>{si.value='';state.search='';docu
 
 // ===================== ESCÁNER DE CÓDIGO DE BARRAS (cámara) =====================
 let _scanStream=null,_scanTimer=null;
-async function openScanner(){
+async function openScanner(onCode){
   const ov=document.getElementById('scan-ov'),video=document.getElementById('scan-video');
   if(!('BarcodeDetector' in window)){showToast('Este navegador no soporta escáner. Usa Chrome actualizado.');return;}
   let detector;
@@ -880,11 +979,14 @@ async function openScanner(){
         const code=String(codes[0].rawValue).trim();
         closeScanner();
         if(navigator.vibrate)navigator.vibrate(80);
-        si.value=code;state.search=code;
-        document.getElementById('searchx').classList.add('on');
-        render();persistUI();
-        const n=currentItems().length;
-        showToast(n?('✓ '+code+' · '+n+(n===1?' producto':' productos')):('Código '+code+' no encontrado en el inventario'));
+        if(onCode){onCode(code);}
+        else{
+          si.value=code;state.search=code;
+          document.getElementById('searchx').classList.add('on');
+          render();persistUI();
+          const n=currentItems().length;
+          showToast(n?('✓ '+code+' · '+n+(n===1?' producto':' productos')):('Código '+code+' no encontrado en el inventario'));
+        }
       }
     }catch(e){}
     busy=false;
@@ -933,6 +1035,127 @@ document.getElementById('prov-mic').onclick=ev=>{
   });
 };
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&_scanStream)closeScanner();});
+
+// ===================== REGISTRAR MERMA =====================
+const mmState={item:null,motivo:null,resp:null};
+function mmFindItems(q){
+  q=(q||'').toLowerCase().trim();
+  if(!q)return [];
+  const words=q.split(/\s+/).filter(Boolean);
+  return (DB.items||[]).filter(i=>{
+    const hay=(i.nombre||'').toLowerCase();const ref=String(i.ref||'');const bc=i.barcode?String(i.barcode):'';
+    return words.every(w=>hay.includes(w)||ref.includes(w)||bc.includes(w));
+  }).slice(0,25);
+}
+function mmRenderResults(list){
+  const box=document.getElementById('mm-results');
+  if(!list.length){box.innerHTML='';return;}
+  box.innerHTML=list.map(it=>`<div class="mm-motivo" style="display:block;margin-bottom:6px;cursor:pointer" data-ref="${it.ref}">${it.nombre} <span style="color:var(--muted);font-weight:400">· ${it.prov}</span></div>`).join('');
+  box.querySelectorAll('[data-ref]').forEach(el=>el.onclick=()=>mmPick(el.dataset.ref));
+}
+function mmPick(ref){
+  const it=(DB.items||[]).find(i=>i.ref===ref);
+  if(!it)return;
+  mmState.item=it;
+  document.getElementById('mm-search').value=it.nombre;
+  document.getElementById('mm-results').innerHTML='';
+  document.getElementById('mm-picked').classList.add('on');
+  document.getElementById('mm-nom').textContent=it.nombre;
+  document.getElementById('mm-cat').textContent=it.prov+(it.barcode?' · '+it.barcode:'');
+  const esPeso=!!it.peso;
+  document.getElementById('mm-unidad').textContent=esPeso?'kg':'u';
+  const cIn=document.getElementById('mm-cantidad');
+  cIn.disabled=false;cIn.value='';cIn.placeholder=esPeso?'0.000':'0';
+  cIn.step=esPeso?'0.001':'1';
+  const okBox=document.getElementById('mm-costo-ok'),warnBox=document.getElementById('mm-costo-warn-box');
+  if(it.coste>0){
+    okBox.style.display='block';warnBox.style.display='none';
+    document.getElementById('mm-costo-txt').textContent=peso(it.coste)+(esPeso?' / kg':' / u');
+    document.getElementById('mm-costo-manual').value='';
+  }else{
+    okBox.style.display='none';warnBox.style.display='block';
+    document.getElementById('mm-costo-manual').value='';
+  }
+  mmCalcTotal();mmValidar();
+}
+function mmCostoUnit(){
+  const it=mmState.item;if(!it)return 0;
+  if(it.coste>0)return it.coste;
+  return Number(document.getElementById('mm-costo-manual').value)||0;
+}
+function mmCalcTotal(){
+  const cant=Number(document.getElementById('mm-cantidad').value)||0;
+  const total=Math.round(cant*mmCostoUnit());
+  document.getElementById('mm-total-val').textContent=peso(total);
+}
+function mmValidar(){
+  const cant=Number(document.getElementById('mm-cantidad').value)||0;
+  const ok=mmState.item&&cant>0&&mmCostoUnit()>0&&mmState.motivo&&mmState.resp;
+  document.getElementById('mm-save').disabled=!ok;
+}
+function mmReset(){
+  mmState.item=null;mmState.motivo=null;mmState.resp=null;
+  document.getElementById('mm-search').value='';
+  document.getElementById('mm-results').innerHTML='';
+  document.getElementById('mm-picked').classList.remove('on');
+  const cIn=document.getElementById('mm-cantidad');cIn.value='';cIn.disabled=true;cIn.placeholder='0';
+  document.getElementById('mm-unidad').textContent='u';
+  document.getElementById('mm-costo-ok').style.display='none';
+  document.getElementById('mm-costo-warn-box').style.display='none';
+  document.getElementById('mm-costo-manual').value='';
+  document.getElementById('mm-total-val').textContent='$0';
+  document.querySelectorAll('.mm-motivo[data-m]').forEach(b=>b.classList.remove('sel'));
+  document.querySelectorAll('#mm-resp button').forEach(b=>b.classList.remove('sel'));
+  document.getElementById('mm-save').disabled=true;
+}
+function openMerma(){mmReset();document.getElementById('mm-ov').classList.remove('hidden');}
+function closeMerma(){document.getElementById('mm-ov').classList.add('hidden');}
+
+document.getElementById('btn-merma').onclick=openMerma;
+document.getElementById('mm-close').onclick=closeMerma;
+document.getElementById('mm-search').oninput=e=>mmRenderResults(mmFindItems(e.target.value));
+document.getElementById('mm-scan').onclick=()=>openScanner(code=>{
+  document.getElementById('mm-search').value=code;
+  const list=mmFindItems(code);
+  if(list.length===1)mmPick(list[0].ref); else mmRenderResults(list);
+});
+document.getElementById('mm-mic').onclick=()=>voiceSearch(document.getElementById('mm-mic'),text=>{
+  document.getElementById('mm-search').value=text;
+  mmRenderResults(mmFindItems(text));
+});
+document.getElementById('mm-qty-menos').onclick=()=>{const i=document.getElementById('mm-cantidad');const st=mmState.item&&mmState.item.peso?0.05:1;i.value=Math.max(0,(Number(i.value)||0)-st).toFixed(mmState.item&&mmState.item.peso?3:0);mmCalcTotal();mmValidar();};
+document.getElementById('mm-qty-mas').onclick=()=>{const i=document.getElementById('mm-cantidad');const st=mmState.item&&mmState.item.peso?0.05:1;i.value=((Number(i.value)||0)+st).toFixed(mmState.item&&mmState.item.peso?3:0);mmCalcTotal();mmValidar();};
+document.getElementById('mm-cantidad').oninput=()=>{mmCalcTotal();mmValidar();};
+document.getElementById('mm-costo-manual').oninput=()=>{mmCalcTotal();mmValidar();};
+document.querySelectorAll('.mm-motivo[data-m]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.mm-motivo[data-m]').forEach(x=>x.classList.remove('sel'));
+  b.classList.add('sel');mmState.motivo=b.dataset.m;mmValidar();
+});
+document.querySelectorAll('#mm-resp button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#mm-resp button').forEach(x=>x.classList.remove('sel'));
+  b.classList.add('sel');mmState.resp=b.dataset.r;mmValidar();
+});
+document.getElementById('mm-save').onclick=async()=>{
+  const btn=document.getElementById('mm-save');
+  const it=mmState.item;if(!it)return;
+  const cantidad=Number(document.getElementById('mm-cantidad').value)||0;
+  const costoManual=it.coste>0?undefined:(Number(document.getElementById('mm-costo-manual').value)||0);
+  btn.disabled=true;btn.classList.add('saving');btn.textContent='Guardando…';
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'merma',payload:{
+      sku:it.ref,cantidad:cantidad,costoManual:costoManual,motivo:mmState.motivo,responsable:mmState.resp,origen:'manual'
+    }})});
+    const j=await res.json();
+    if(j&&j.ok){
+      showToast('✓ Merma registrada: '+it.nombre+' · '+peso(j.fila.costoTotal)+(j.fila.estadoCosto&&j.fila.estadoCosto.indexOf('⚠️')===0?' · ⚠️ revisar costo':''));
+      closeMerma();
+    }else{
+      showToast('Error: '+((j&&j.error)||'no se pudo guardar'));
+    }
+  }catch(e){showToast('Error de conexión al guardar la merma');}
+  btn.disabled=false;btn.classList.remove('saving');btn.textContent='Guardar merma';
+  mmValidar();
+};
 document.getElementById('btn-suggest').onclick=()=>{currentItems().forEach(it=>{delete state.edits[it.ref];});render();showToast('↺ Volví a las cantidades sugeridas');};
 document.getElementById('btn-clear').onclick=()=>{currentItems().forEach(it=>{state.edits[it.ref]=0;});render();showToast('✕ Pedido vaciado (todo en 0)');};
 document.getElementById('btn-copy').onclick=()=>{const lines=currentOrder();if(!lines.length){showToast('No hay productos en el pedido');return;}lines.sort((a,b)=>b.q-a.q);const uds=lines.reduce((s,l)=>s+l.q,0);const prov=(state.search||state.allProv)?'(varios)':state.prov;
