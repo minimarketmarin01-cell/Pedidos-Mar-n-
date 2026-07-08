@@ -54,7 +54,8 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .scan-ov video{flex:1;width:100%;object-fit:cover}
 .scan-top{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:14px 16px;color:#fff;font-family:'Archivo';font-weight:700;font-size:14px;background:linear-gradient(rgba(0,0,0,.6),transparent);z-index:2}
 .scan-close{background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:50%;width:34px;height:34px;font-size:16px;cursor:pointer}
-.scan-frame{position:absolute;top:32%;left:50%;transform:translate(-50%,-50%);width:78%;max-width:420px;height:130px;border:2.5px solid #22c55e;border-radius:14px;box-shadow:0 0 0 2000px rgba(0,0,0,.35);z-index:1;pointer-events:none}
+.scan-frame{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:82%;max-width:440px;height:0;border:none;border-top:2px solid rgba(255,255,255,.35);box-shadow:none;z-index:1;pointer-events:none}
+.scan-frame::after{content:"";position:absolute;top:-1px;left:0;right:0;height:2px;background:#ff2d2d;box-shadow:0 0 8px 1px rgba(255,45,45,.7)}
 .scan-hint{position:absolute;bottom:26px;left:0;right:0;text-align:center;color:#fff;font-size:13px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.7);z-index:2}
 .mm-ov{position:fixed;inset:0;background:rgba(21,25,31,.55);z-index:210;display:flex;align-items:flex-end;justify-content:center}
 .mm-ov.hidden{display:none}
@@ -1022,23 +1023,24 @@ si.oninput=e=>{state.search=e.target.value.trim();document.getElementById('searc
 document.getElementById('searchx').onclick=()=>{si.value='';state.search='';document.getElementById('searchx').classList.remove('on');clearTimeout(_searchT);render();};
 
 // ===================== ESCÁNER DE CÓDIGO DE BARRAS (cámara) =====================
-let _scanStream=null,_scanTimer=null,_scanToken=0;
-async function openScanner(onCode){
+let _scanStream=null,_scanTimer=null,_scanToken=0,_scanOnCancel=null,_scanDone=false;
+async function openScanner(onCode,onCancel){
   const myToken=++_scanToken;   // invalida este intento si se cierra antes de terminar
+  _scanOnCancel=onCancel||null;_scanDone=false;
   const ov=document.getElementById('scan-ov'),video=document.getElementById('scan-video');
-  if(!('BarcodeDetector' in window)){showToast('Este navegador no soporta escáner. Usa Chrome actualizado.');return;}
+  if(!('BarcodeDetector' in window)){showToast('Este navegador no soporta escáner. Usa Chrome actualizado.');if(onCancel)onCancel();return;}
   let detector;
   try{detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf']});}
-  catch(e){showToast('No se pudo iniciar el detector de códigos');return;}
+  catch(e){showToast('No se pudo iniciar el detector de códigos');if(onCancel)onCancel();return;}
   let stream;
   try{
     stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});
-  }catch(e){showToast('Permiso de cámara denegado. Actívalo en el navegador.');return;}
+  }catch(e){showToast('Permiso de cámara denegado. Actívalo en el navegador.');if(onCancel)onCancel();return;}
   if(myToken!==_scanToken){stream.getTracks().forEach(t=>t.stop());return;}   // ya se cerró mientras esperaba permiso
   _scanStream=stream;
   video.srcObject=_scanStream;ov.classList.remove('hidden');
   try{await video.play();}catch(e){}
-  if(myToken!==_scanToken){stream.getTracks().forEach(t=>t.stop());video.srcObject=null;ov.classList.add('hidden');return;}   // se cerró justo al terminar de cargar
+  if(myToken!==_scanToken){stream.getTracks().forEach(t=>t.stop());video.srcObject=null;ov.classList.add('hidden');return;}
   let busy=false;
   _scanTimer=setInterval(async()=>{
     if(myToken!==_scanToken){clearInterval(_scanTimer);return;}
@@ -1048,6 +1050,7 @@ async function openScanner(onCode){
       if(myToken!==_scanToken)return;
       if(codes&&codes.length&&codes[0].rawValue){
         const code=String(codes[0].rawValue).trim();
+        _scanDone=true;                    // se detectó → no dispares onCancel al cerrar
         closeScanner();
         if(navigator.vibrate)navigator.vibrate(80);
         if(onCode){onCode(code);}
@@ -1069,8 +1072,10 @@ function closeScanner(){
   if(_scanStream){_scanStream.getTracks().forEach(t=>t.stop());_scanStream=null;}
   const v=document.getElementById('scan-video');if(v)v.srcObject=null;
   document.getElementById('scan-ov').classList.add('hidden');
+  const cb=_scanOnCancel;_scanOnCancel=null;
+  if(!_scanDone&&cb)cb();   // se cerró sin escanear → reabre el panel de donde vino
 }
-document.getElementById('scanbtn').onclick=openScanner;
+document.getElementById('scanbtn').onclick=()=>openScanner();
 document.getElementById('scan-close').onclick=closeScanner;
 
 // ===================== BÚSQUEDA POR VOZ =====================
@@ -1195,11 +1200,15 @@ function mmPrefill(ref,cantidad,lote){
 document.getElementById('btn-merma').onclick=openMerma;
 document.getElementById('mm-cancelar').onclick=closeMerma;
 document.getElementById('mm-search').oninput=e=>mmRenderResults(mmFindItems(e.target.value));
-document.getElementById('mm-scan').onclick=()=>openScanner(code=>{
-  document.getElementById('mm-search').value=code;
-  const list=mmFindItems(code);
-  if(list.length===1)mmPick(list[0].ref); else mmRenderResults(list);
-});
+document.getElementById('mm-scan').onclick=()=>{
+  closeMerma();                          // solo cámara, como Loyverse
+  openScanner(code=>{
+    openMerma(true);                     // al detectar, vuelve el panel con lo ya cargado
+    document.getElementById('mm-search').value=code;
+    const list=mmFindItems(code);
+    if(list.length===1)mmPick(list[0].ref); else mmRenderResults(list);
+  }, openMerma.bind(null,true));          // si cancela el escaneo, reabre el panel igual
+};
 document.getElementById('mm-mic').onclick=()=>voiceSearch(document.getElementById('mm-mic'),text=>{
   document.getElementById('mm-search').value=text;
   mmRenderResults(mmFindItems(text));
@@ -1332,12 +1341,17 @@ document.getElementById('vc-search').oninput=e=>{
   document.getElementById('vc-results').innerHTML=list.map(it=>`<div class="mm-motivo" style="display:block;margin-bottom:6px;cursor:pointer" data-ref="${it.ref}">${it.nombre} <span style="color:var(--muted);font-weight:400">· ${it.prov}</span></div>`).join('');
   document.querySelectorAll('#vc-results [data-ref]').forEach(el=>el.onclick=()=>vcPick(el.dataset.ref));
 };
-document.getElementById('vc-scan').onclick=()=>openScanner(code=>{
-  document.getElementById('vc-search').value=code;
-  const list=mmFindItems(code);
-  if(list.length===1)vcPick(list[0].ref);
-  else document.getElementById('vc-search').dispatchEvent(new Event('input',{bubbles:true}));
-});
+document.getElementById('vc-scan').onclick=()=>{
+  const reopen=()=>{document.getElementById('vc-ov').classList.remove('hidden');vcShowForm();};
+  closeVenc();
+  openScanner(code=>{
+    reopen();
+    document.getElementById('vc-search').value=code;
+    const list=mmFindItems(code);
+    if(list.length===1)vcPick(list[0].ref);
+    else document.getElementById('vc-search').dispatchEvent(new Event('input',{bubbles:true}));
+  }, reopen);
+};
 document.getElementById('vc-mic').onclick=()=>voiceSearch(document.getElementById('vc-mic'),text=>{
   document.getElementById('vc-search').value=text;
   document.getElementById('vc-search').dispatchEvent(new Event('input',{bubbles:true}));
