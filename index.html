@@ -1197,7 +1197,7 @@ function mmPrefill(ref,cantidad,lote){
   mmValidar();
 }
 
-document.getElementById('btn-merma').onclick=openMerma;
+document.getElementById('btn-merma').onclick=()=>openMerma();
 document.getElementById('mm-cancelar').onclick=closeMerma;
 document.getElementById('mm-search').oninput=e=>mmRenderResults(mmFindItems(e.target.value));
 document.getElementById('mm-scan').onclick=()=>{
