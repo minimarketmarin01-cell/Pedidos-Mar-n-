@@ -102,6 +102,20 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .vc-empty{padding:20px;text-align:center;color:var(--muted);font-size:13px}
 .vc-toprow{display:flex;gap:8px;margin-bottom:12px}
 .vc-toprow button{flex:1}
+.sc-row{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.sc-row .nom{font-weight:700;font-size:13.5px}
+.sc-row .cat{font-size:11.5px;color:var(--muted);margin-top:2px}
+.sc-row .inrow{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.sc-row .inrow input{flex:1 1 100%}
+.sc-row .inrow button{flex:1}
+.sc-row input{flex:1;padding:9px 12px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;font-family:'JetBrains Mono'}
+.sc-row button{border:none;background:var(--rojo);color:#fff;border-radius:9px;padding:9px 14px;font-size:12.5px;font-weight:700;cursor:pointer}
+.sc-row button:disabled{opacity:.4;cursor:not-allowed}
+.sc-row.done{opacity:.5}
+.sc-row.skipped{background:var(--gold-bg);border-color:var(--gold)}
+.sc-skip{background:var(--gris-bg)!important;color:var(--ink)!important}
+.sc-summary{font-size:12.5px;color:var(--muted);margin-bottom:10px;line-height:1.5}
+.sc-warn{background:var(--rojo-bg);border:1px solid var(--rojo);border-radius:10px;padding:9px 12px;font-size:12px;color:var(--rojo);font-weight:600;margin-bottom:12px;line-height:1.4}
 .searchx.on{display:block}
 .ctl-row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
 .field{display:flex;flex-direction:column;gap:5px}
@@ -288,6 +302,7 @@ tbody td.l{text-align:left;white-space:normal}
     <button class="loadbtn" id="btn-prices">♻️ Catálogo</button>
     <button class="loadbtn" id="btn-merma">🗑️ Merma</button>
     <button class="loadbtn" id="btn-venc">📅 Vencimientos</button>
+    <button class="loadbtn" id="btn-sincosto">⚠️ Sin costo</button>
     <span class="glob" id="glob-quiebre" style="color:#ffb4a8;font-size:12px;font-weight:600"></span>
     <span class="upd" id="updlabel"></span>
   </div>
@@ -454,6 +469,15 @@ tbody td.l{text-align:left;white-space:normal}
           <button class="mm-save" id="vc-guardar" disabled>Guardar lote</button>
           <button class="loadbtn" id="vc-cancelar" style="width:100%;margin-top:8px">Cancelar</button>
         </div>
+      </div>
+    </div>
+    <div class="mm-ov hidden" id="sc-ov">
+      <div class="mm-card">
+        <div class="mm-head"><h3>⚠️ Productos sin costo</h3></div>
+        <div class="sc-warn">Al guardar, el costo se escribe directo en Loyverse (no solo aquí). Revisa el valor antes de guardar.</div>
+        <div class="sc-summary" id="sc-summary">Cargando…</div>
+        <div id="sc-list"></div>
+        <button class="loadbtn" id="sc-cerrar" style="width:100%;margin-top:10px">Cerrar</button>
       </div>
     </div>
     <div class="tablecard"><div class="tbl-scroll"><table id="ptable">
@@ -1377,6 +1401,81 @@ document.getElementById('vc-guardar').onclick=async()=>{
   }catch(e){showToast('Error de conexión al guardar el lote');}
   btn.disabled=false;btn.textContent='Guardar lote';vcValidar();
 };
+
+// ===================== PRODUCTOS SIN COSTO =====================
+// Borrador local: lo que vas escribiendo se guarda en el teléfono aunque no hayas
+// presionado "Guardar", y los que "saltas" quedan marcados como pendientes.
+// Nada de esto toca Loyverse — solo se escribe en Loyverse al presionar "Guardar".
+function scDraftGet(){try{return JSON.parse(localStorage.getItem('marin_sincosto_draft')||'{}');}catch(e){return {};}}
+function scDraftSet(d){try{localStorage.setItem('marin_sincosto_draft',JSON.stringify(d));}catch(e){}}
+function scDraftSaveVal(ref,val){const d=scDraftGet();if(val)d[ref]={...(d[ref]||{}),costo:val};else if(d[ref])delete d[ref].costo;scDraftSet(d);}
+function scDraftSkip(ref,skip){const d=scDraftGet();d[ref]={...(d[ref]||{}),skipped:skip};scDraftSet(d);}
+function scDraftClear(ref){const d=scDraftGet();delete d[ref];scDraftSet(d);}
+
+async function scLoad(){
+  const box=document.getElementById('sc-list'),sum=document.getElementById('sc-summary');
+  box.innerHTML='';sum.textContent='Cargando…';
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=sincosto');
+    const j=await res.json();
+    if(!j||!j.ok){sum.textContent='Error al cargar.';return;}
+    const rep=j.reporte;
+    if(!rep.total){box.innerHTML='<div class="vc-empty">Todos los productos tienen costo cargado 🎉</div>';sum.textContent='';return;}
+    const draft=scDraftGet();
+    // pendientes/saltados van al final, para que lo urgente quede arriba
+    const items=[...rep.items].sort((a,b)=>{
+      const sa=draft[a.ref]&&draft[a.ref].skipped?1:0, sb=draft[b.ref]&&draft[b.ref].skipped?1:0;
+      if(sa!==sb)return sa-sb;
+      return (b.peso-a.peso);
+    });
+    const nSkip=items.filter(it=>draft[it.ref]&&draft[it.ref].skipped).length;
+    sum.textContent=rep.total+' productos sin costo · '+rep.porPeso+' vendidos por peso'+(nSkip?(' · '+nSkip+' pendientes que saltaste'):'');
+    box.innerHTML=items.map(it=>{
+      const dv=draft[it.ref]||{};
+      const skipped=!!dv.skipped;
+      return `
+      <div class="sc-row${skipped?' skipped':''}" id="sc-row-${it.ref}">
+        <div class="nom">${it.nombre}</div>
+        <div class="cat">${it.prov}${it.peso?' · ⚖️ vendido por kg':''}${skipped?' · <span style="color:var(--gold)">pendiente</span>':''}</div>
+        <div class="inrow">
+          <input type="text" inputmode="numeric" placeholder="Costo${it.peso?' por kg':''} ($)" id="sc-in-${it.ref}" value="${dv.costo||''}">
+          <button class="sc-skip" data-ref="${it.ref}">${skipped?'↺ Retomar':'Saltar por ahora'}</button>
+          <button data-ref="${it.ref}">Guardar</button>
+        </div>
+      </div>`;
+    }).join('');
+    box.querySelectorAll('.sc-row input').forEach(inp=>inp.oninput=()=>scDraftSaveVal(inp.id.replace('sc-in-',''),inp.value));
+    box.querySelectorAll('.sc-row button:not(.sc-skip)').forEach(b=>b.onclick=()=>scGuardar(b.dataset.ref));
+    box.querySelectorAll('.sc-skip').forEach(b=>b.onclick=()=>{
+      const ref=b.dataset.ref,d=scDraftGet();
+      scDraftSkip(ref,!(d[ref]&&d[ref].skipped));
+      scLoad();
+    });
+  }catch(e){sum.textContent='Error de conexión.';}
+}
+async function scGuardar(ref){
+  const inp=document.getElementById('sc-in-'+ref);
+  const btn=document.querySelector('#sc-row-'+ref+' button:not(.sc-skip)');
+  const costo=Number(inp.value);
+  if(!costo||costo<=0){showToast('Escribe un costo válido');return;}
+  btn.disabled=true;btn.textContent='Guardando…';
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'actualizar_costo',payload:{sku:ref,costo:costo}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      showToast('✓ Costo actualizado en Loyverse: '+j.item.nombre+' → '+peso(j.item.costo));
+      scDraftClear(ref);
+      const row=document.getElementById('sc-row-'+ref);
+      row.classList.add('done');
+      row.querySelector('.inrow').innerHTML='<span style="color:var(--verde);font-weight:700;font-size:13px">✓ Guardado</span>';
+    }else{
+      showToast('Error: '+((j&&j.error)||'no se pudo guardar'));
+      btn.disabled=false;btn.textContent='Guardar';
+    }
+  }catch(e){showToast('Error de conexión al guardar el costo');btn.disabled=false;btn.textContent='Guardar';}
+}
+document.getElementById('btn-sincosto').onclick=()=>{document.getElementById('sc-ov').classList.remove('hidden');scLoad();};
+document.getElementById('sc-cerrar').onclick=()=>document.getElementById('sc-ov').classList.add('hidden');
 
 document.getElementById('btn-suggest').onclick=()=>{currentItems().forEach(it=>{delete state.edits[it.ref];});render();showToast('↺ Volví a las cantidades sugeridas');};
 document.getElementById('btn-clear').onclick=()=>{currentItems().forEach(it=>{state.edits[it.ref]=0;});render();showToast('✕ Pedido vaciado (todo en 0)');};
