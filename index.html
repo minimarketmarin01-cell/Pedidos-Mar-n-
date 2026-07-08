@@ -116,6 +116,31 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .sc-skip{background:var(--gris-bg)!important;color:var(--ink)!important}
 .sc-summary{font-size:12.5px;color:var(--muted);margin-bottom:10px;line-height:1.5}
 .sc-warn{background:var(--rojo-bg);border:1px solid var(--rojo);border-radius:10px;padding:9px 12px;font-size:12px;color:var(--rojo);font-weight:600;margin-bottom:12px;line-height:1.4}
+.hm-summary{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.hm-summary .lbl{font-size:12px;color:var(--muted);font-weight:600}
+.hm-summary .val{font-family:'JetBrains Mono';font-weight:700;font-size:16px;color:var(--rojo)}
+.hm-row{border-bottom:1px solid var(--line2);padding:9px 0}
+.hm-row:last-child{border-bottom:none}
+.hm-row .top{display:flex;justify-content:space-between;gap:8px}
+.hm-row .nom{font-weight:700;font-size:13px}
+.hm-row .costo{font-family:'JetBrains Mono';font-weight:700;font-size:13px;white-space:nowrap}
+.hm-row .meta{font-size:11.5px;color:var(--muted);margin-top:2px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.hm-badge{display:inline-block;padding:1.5px 7px;border-radius:20px;font-size:10.5px;font-weight:700}
+.hm-badge.liquidado{background:var(--verde-bg);color:var(--verde)}
+.hm-badge.vencido{background:var(--gold-bg);color:var(--gold)}
+.hm-badge.dañado,.hm-badge.robo{background:var(--rojo-bg);color:var(--rojo)}
+.hm-badge.consumo_interno,.hm-badge.otro{background:var(--gris-bg);color:var(--muted)}
+.in-cart-row{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:7px}
+.in-cart-row .top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.in-cart-row .nom{font-weight:700;font-size:13px}
+.in-cart-row .cat{font-size:11px;color:var(--muted)}
+.in-cart-row .x{background:none;border:none;color:var(--rojo);font-size:16px;cursor:pointer;padding:0 2px;line-height:1}
+.in-cart-row .qtyrow{display:flex;align-items:center;gap:8px;margin-top:7px}
+.in-cart-row .qtyrow input{width:70px;padding:6px 8px;border:1.5px solid var(--line);border-radius:8px;font-size:13px;font-family:'JetBrains Mono';text-align:center}
+.in-cart-row .unidad{font-size:12px;color:var(--muted)}
+.in-cart-row .costo-warn{width:100%;margin-top:6px;padding:7px 9px;border:1.5px solid var(--rojo);border-radius:8px;font-size:12.5px;font-family:'JetBrains Mono'}
+.in-cart-total{background:var(--paper);border-radius:10px;padding:10px 12px;font-size:13px;display:flex;justify-content:space-between;align-items:center;font-weight:700;margin:10px 0}
+.in-cart-total b{font-family:'JetBrains Mono';font-size:16px}
 .searchx.on{display:block}
 .ctl-row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
 .field{display:flex;flex-direction:column;gap:5px}
@@ -301,6 +326,8 @@ tbody td.l{text-align:left;white-space:normal}
     <button class="loadbtn acc" id="btn-sync">🔄 Sincronizar</button>
     <button class="loadbtn" id="btn-prices">♻️ Catálogo</button>
     <button class="loadbtn" id="btn-merma">🗑️ Merma</button>
+    <button class="loadbtn" id="btn-hist-merma">📋 Historial</button>
+    <button class="loadbtn" id="btn-insumos">🧹 Insumos</button>
     <button class="loadbtn" id="btn-venc">📅 Vencimientos</button>
     <button class="loadbtn" id="btn-sincosto">⚠️ Sin costo</button>
     <span class="glob" id="glob-quiebre" style="color:#ffb4a8;font-size:12px;font-weight:600"></span>
@@ -480,6 +507,48 @@ tbody td.l{text-align:left;white-space:normal}
         <button class="loadbtn" id="sc-cerrar" style="width:100%;margin-top:10px">Cerrar</button>
       </div>
     </div>
+    <div class="mm-ov hidden" id="hm-ov">
+      <div class="mm-card">
+        <div class="mm-head"><h3>📋 Historial de mermas</h3></div>
+        <div class="hm-summary"><span class="lbl" id="hm-lbl">Cargando…</span><span class="val" id="hm-val"></span></div>
+        <div id="hm-list"></div>
+        <button class="loadbtn" id="hm-cerrar" style="width:100%;margin-top:10px">Cerrar</button>
+      </div>
+    </div>
+    <div class="mm-ov hidden" id="in-ov">
+      <div class="mm-card">
+        <div class="mm-head"><h3>🧹 Insumos / consumo interno</h3></div>
+
+        <div class="mm-field">
+          <label>Agregar producto</label>
+          <div class="mm-search">
+            <input id="in-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off">
+            <button class="mm-mic" id="in-mic" type="button" aria-label="Buscar por voz">🎤</button>
+            <button class="mm-scan" id="in-scan" type="button" aria-label="Escanear código">📷</button>
+          </div>
+          <div id="in-results"></div>
+        </div>
+
+        <div class="mm-field">
+          <label>Carrito</label>
+          <div id="in-cart"><div class="vc-empty">Agrega productos de arriba</div></div>
+        </div>
+
+        <div class="in-cart-total">Total <b id="in-total">$0</b></div>
+
+        <div class="mm-field">
+          <label>Responsable</label>
+          <div class="mm-resp" id="in-resp">
+            <button data-r="Dueña">Dueña</button>
+            <button data-r="Rossy">Rossy</button>
+            <button data-r="Edwin">Edwin</button>
+          </div>
+        </div>
+
+        <button class="mm-save" id="in-guardar" disabled>Guardar consumo</button>
+        <button class="loadbtn" id="in-cancelar" style="width:100%;margin-top:8px">Cancelar</button>
+      </div>
+    </div>
     <div class="tablecard"><div class="tbl-scroll"><table id="ptable">
       <thead><tr>
         <th class="l" data-s="nombre">Producto <span class="ar">▲▼</span></th>
@@ -522,6 +591,8 @@ tbody td.l{text-align:left;white-space:normal}
     <div>
       <div class="section-head" style="margin-top:4px"><h2>Venta semanal por categoría <span style="font-weight:600;color:var(--muted);font-size:12px">· estimada (u7 × precio)</span></h2></div>
       <div class="tablecard"><div id="catchart" class="catchart"></div></div>
+      <div class="section-head" style="margin-top:14px"><h2>Consumo interno por categoría <span style="font-weight:600;color:var(--muted);font-size:12px">· últimos 30 días</span></h2></div>
+      <div class="tablecard"><div id="inchart" class="catchart"><div class="cc-empty">Cargando…</div></div></div>
       <div class="section-head" style="margin-top:14px"><h2>Proveedores que necesitan pedido</h2></div>
       <div class="tablecard"><div class="tbl-scroll"><table>
         <thead><tr><th class="l">Proveedor</th><th>SKUs</th><th>Rot/día 30d</th><th>Día pico</th><th>En quiebre</th><th>Por pedir</th><th>Costo pedido</th><th>Margen 30d</th></tr></thead>
@@ -937,6 +1008,20 @@ function renderOverview(){
   const tb=document.getElementById('ovbody');tb.innerHTML='';
   rows.forEach(r=>{const tr=document.createElement('tr');tr.innerHTML=`<td class="l"><span class="ov-prov" data-p="${r.prov}">${r.prov}</span></td><td class="num">${r.n}</td><td class="num">${fmt1(r.u30/30)}</td><td class="num">${r.dow?DIAS[r.peak]:'—'}</td><td class="num" style="color:${r.urg>0?'var(--rojo)':'var(--muted)'};font-weight:700">${r.urg||'—'}</td><td class="num" style="color:${r.ped>0?'var(--ambar)':'var(--muted)'};font-weight:700">${r.ped||'—'}</td><td class="num">${r.cost>0?peso(r.cost):'—'}</td><td class="num">${peso(r.prof)}</td>`;tb.appendChild(tr);});
   tb.querySelectorAll('.ov-prov').forEach(el=>el.onclick=()=>{state.prov=el.dataset.p;state.allProv=false;state.search='';document.getElementById('search').value='';state.edits={};document.querySelector('.tab[data-tab="pedido"]').click();render();persistUI();});
+  renderInsumosChart();
+}
+async function renderInsumosChart(){
+  const cc=document.getElementById('inchart');
+  if(!cc)return;
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=consumo_categoria');
+    const j=await res.json();
+    if(!j||!j.ok){cc.innerHTML='<div class="cc-empty">Error al cargar.</div>';return;}
+    const r=j.resumen;
+    if(!r.cats||!r.cats.length){cc.innerHTML='<div class="cc-empty">Sin consumo interno registrado en los últimos 30 días.</div>';return;}
+    const max=r.cats[0].total;
+    cc.innerHTML=r.cats.map(c=>`<div class="cbar-row"><span class="cbar-lbl" title="${c.categoria}">${c.categoria}</span><span class="cbar-track"><span class="cbar-fill" style="width:${Math.max(3,Math.round(c.total/max*100))}%;background:var(--rojo)"></span></span><span class="cbar-val">${peso(c.total)}</span></div>`).join('');
+  }catch(e){cc.innerHTML='<div class="cc-empty">Error de conexión.</div>';}
 }
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
 
@@ -1476,6 +1561,138 @@ async function scGuardar(ref){
 }
 document.getElementById('btn-sincosto').onclick=()=>{document.getElementById('sc-ov').classList.remove('hidden');scLoad();};
 document.getElementById('sc-cerrar').onclick=()=>document.getElementById('sc-ov').classList.add('hidden');
+
+// ===================== HISTORIAL DE MERMAS =====================
+const MOTIVO_LBL={liquidado:'Liquidado',vencido:'Vencido',dañado:'Dañado',robo:'Robo',consumo_interno:'Consumo interno',otro:'Otro'};
+async function hmLoad(){
+  const box=document.getElementById('hm-list'),lbl=document.getElementById('hm-lbl'),val=document.getElementById('hm-val');
+  box.innerHTML='';lbl.textContent='Cargando…';val.textContent='';
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=historial_mermas');
+    const j=await res.json();
+    if(!j||!j.ok){lbl.textContent='Error al cargar.';return;}
+    const h=j.historial;
+    if(!h.total){lbl.textContent='Sin mermas registradas todavía';box.innerHTML='<div class="vc-empty">Cuando registres una merma, aparecerá aquí.</div>';return;}
+    lbl.textContent=h.total+' merma'+(h.total===1?'':'s')+' registrada'+(h.total===1?'':'s')+(h.items.length<h.total?' · mostrando las últimas '+h.items.length:'');
+    val.textContent=peso(h.sumaCostoTotal);
+    box.innerHTML=h.items.map(it=>{
+      const mkey=MOTIVO_LBL[it.motivo]?it.motivo:'otro';
+      const warn=it.estadoCosto&&String(it.estadoCosto).indexOf('⚠️')===0;
+      return `
+      <div class="hm-row">
+        <div class="top"><span class="nom">${it.nombre}</span><span class="costo">${peso(it.costoTotal)}</span></div>
+        <div class="meta">
+          <span>${it.fecha}</span>·<span>${it.cantidad} ${it.unidad}</span>·<span>${it.categoria}</span>
+          <span class="hm-badge ${mkey}">${MOTIVO_LBL[mkey]}</span>
+          ${it.responsable?('· '+it.responsable):''}
+          ${warn?'<span style="color:var(--rojo);font-weight:700">⚠️ costo sin confirmar</span>':''}
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){lbl.textContent='Error de conexión.';}
+}
+document.getElementById('btn-hist-merma').onclick=()=>{document.getElementById('hm-ov').classList.remove('hidden');hmLoad();};
+document.getElementById('hm-cerrar').onclick=()=>document.getElementById('hm-ov').classList.add('hidden');
+
+// ===================== INSUMOS / CONSUMO INTERNO (ticket) =====================
+let inCart=[],inResp=null;
+function inFindItems(q){return mmFindItems(q);}   // mismo buscador que merma/vencimientos
+function inAdd(ref){
+  const it=(DB.items||[]).find(i=>i.ref===ref);
+  if(!it)return;
+  if(inCart.some(c=>c.ref===ref)){showToast('Ya está en el carrito');return;}
+  inCart.push({ref:it.ref,nombre:it.nombre,prov:it.prov,peso:!!it.peso,coste:it.coste,cantidad:it.peso?0.5:1,costoManual:''});
+  document.getElementById('in-search').value='';
+  document.getElementById('in-results').innerHTML='';
+  inRenderCart();
+}
+function inRemove(ref){inCart=inCart.filter(c=>c.ref!==ref);inRenderCart();}
+function inCostoUnit(c){return c.coste>0?c.coste:(Number(c.costoManual)||0);}
+function inRenderCart(){
+  const box=document.getElementById('in-cart');
+  if(!inCart.length){box.innerHTML='<div class="vc-empty">Agrega productos de arriba</div>';}
+  else{
+    box.innerHTML=inCart.map(c=>{
+      const sinCosto=!(c.coste>0);
+      return `
+      <div class="in-cart-row" data-ref="${c.ref}">
+        <div class="top"><span class="nom">${c.nombre}</span><button class="x" data-x="${c.ref}">✕</button></div>
+        <div class="cat">${c.prov}${c.peso?' · ⚖️ kg':''}</div>
+        <div class="qtyrow">
+          <button class="qbtn" data-menos="${c.ref}" type="button">−</button>
+          <input inputmode="decimal" data-qty="${c.ref}" value="${c.cantidad}">
+          <span class="unidad">${c.peso?'kg':'u'}</span>
+          <button class="qbtn" data-mas="${c.ref}" type="button">+</button>
+          <span style="margin-left:auto;font-weight:700;font-family:'JetBrains Mono';font-size:13px">${peso(c.cantidad*inCostoUnit(c))}</span>
+        </div>
+        ${sinCosto?`<input class="costo-warn" placeholder="⚠️ Sin costo en Loyverse — escribe costo${c.peso?'/kg':''} ($)" data-costo="${c.ref}" value="${c.costoManual}">`:''}
+      </div>`;
+    }).join('');
+    box.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>inRemove(b.dataset.x));
+    box.querySelectorAll('[data-menos]').forEach(b=>b.onclick=()=>{const c=inCart.find(x=>x.ref===b.dataset.menos);const st=c.peso?0.05:1;c.cantidad=Math.max(st,+(c.cantidad-st).toFixed(c.peso?3:0));inRenderCart();});
+    box.querySelectorAll('[data-mas]').forEach(b=>b.onclick=()=>{const c=inCart.find(x=>x.ref===b.dataset.mas);const st=c.peso?0.05:1;c.cantidad=+(c.cantidad+st).toFixed(c.peso?3:0);inRenderCart();});
+    box.querySelectorAll('[data-qty]').forEach(inp=>inp.oninput=()=>{const c=inCart.find(x=>x.ref===inp.dataset.qty);c.cantidad=Number(inp.value)||0;inUpdateTotal();});
+    box.querySelectorAll('[data-costo]').forEach(inp=>inp.oninput=()=>{const c=inCart.find(x=>x.ref===inp.dataset.costo);c.costoManual=inp.value;inUpdateTotal();inValidar();});
+  }
+  inUpdateTotal();inValidar();
+}
+function inUpdateTotal(){
+  const total=inCart.reduce((s,c)=>s+(c.cantidad*inCostoUnit(c)),0);
+  document.getElementById('in-total').textContent=peso(total);
+}
+function inValidar(){
+  const ok=inCart.length>0&&inResp&&inCart.every(c=>c.cantidad>0&&inCostoUnit(c)>0);
+  document.getElementById('in-guardar').disabled=!ok;
+}
+function inReset(){
+  inCart=[];inResp=null;
+  document.getElementById('in-search').value='';
+  document.getElementById('in-results').innerHTML='';
+  document.querySelectorAll('#in-resp button').forEach(b=>b.classList.remove('sel'));
+  inRenderCart();
+}
+function openInsumos(){inReset();document.getElementById('in-ov').classList.remove('hidden');}
+function closeInsumos(){document.getElementById('in-ov').classList.add('hidden');}
+
+document.getElementById('btn-insumos').onclick=openInsumos;
+document.getElementById('in-cancelar').onclick=closeInsumos;
+document.getElementById('in-search').oninput=e=>{
+  const list=inFindItems(e.target.value).filter(it=>!inCart.some(c=>c.ref===it.ref));
+  document.getElementById('in-results').innerHTML=list.map(it=>`<div class="mm-motivo" style="display:block;margin-bottom:6px;cursor:pointer" data-ref="${it.ref}">${it.nombre} <span style="color:var(--muted);font-weight:400">· ${it.prov}</span></div>`).join('');
+  document.querySelectorAll('#in-results [data-ref]').forEach(el=>el.onclick=()=>inAdd(el.dataset.ref));
+};
+document.getElementById('in-scan').onclick=()=>{
+  const reopen=()=>{document.getElementById('in-ov').classList.remove('hidden');};
+  closeInsumos();
+  openScanner(code=>{
+    reopen();
+    const list=inFindItems(code);
+    if(list.length===1)inAdd(list[0].ref);
+    else{document.getElementById('in-search').value=code;document.getElementById('in-search').dispatchEvent(new Event('input',{bubbles:true}));}
+  },reopen);
+};
+document.getElementById('in-mic').onclick=()=>voiceSearch(document.getElementById('in-mic'),text=>{
+  document.getElementById('in-search').value=text;
+  document.getElementById('in-search').dispatchEvent(new Event('input',{bubbles:true}));
+});
+document.querySelectorAll('#in-resp button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#in-resp button').forEach(x=>x.classList.remove('sel'));
+  b.classList.add('sel');inResp=b.dataset.r;inValidar();
+});
+document.getElementById('in-guardar').onclick=async()=>{
+  const btn=document.getElementById('in-guardar');
+  btn.disabled=true;btn.textContent='Guardando…';
+  try{
+    const items=inCart.map(c=>({sku:c.ref,cantidad:c.cantidad,costoManual:c.coste>0?undefined:(Number(c.costoManual)||0)}));
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'consumo_interno',payload:{items:items,responsable:inResp}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      showToast('✓ Consumo registrado: '+j.resumen.n+' producto'+(j.resumen.n===1?'':'s')+' · '+peso(j.resumen.total));
+      closeInsumos();
+    }else{showToast('Error: '+((j&&j.error)||'no se pudo guardar'));}
+  }catch(e){showToast('Error de conexión al guardar el consumo');}
+  btn.disabled=false;btn.textContent='Guardar consumo';inValidar();
+};
 
 document.getElementById('btn-suggest').onclick=()=>{currentItems().forEach(it=>{delete state.edits[it.ref];});render();showToast('↺ Volví a las cantidades sugeridas');};
 document.getElementById('btn-clear').onclick=()=>{currentItems().forEach(it=>{state.edits[it.ref]=0;});render();showToast('✕ Pedido vaciado (todo en 0)');};
