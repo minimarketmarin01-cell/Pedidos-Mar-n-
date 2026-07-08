@@ -90,6 +90,18 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .mm-save{width:100%;background:var(--rojo);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;font-family:'Archivo';cursor:pointer;margin-top:4px}
 .mm-save:disabled{opacity:.45;cursor:not-allowed}
 .mm-save.saving{opacity:.7}
+.vc-row{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.vc-row .nom{font-weight:700;font-size:13.5px}
+.vc-row .cat{font-size:11.5px;color:var(--muted);margin-top:2px}
+.vc-row .accion{font-size:12.5px;font-weight:700;margin-top:6px}
+.vc-row .accion .est{font-weight:600;color:var(--muted);margin-left:4px}
+.vc-row .btns{display:flex;gap:7px;margin-top:8px}
+.vc-row .btns button{flex:1;border:1.5px solid var(--line);background:var(--card);border-radius:9px;padding:8px;font-size:12px;font-weight:700;cursor:pointer}
+.vc-row .btn-ok{color:var(--verde);border-color:var(--verde)}
+.vc-row .btn-merma{background:var(--rojo);color:#fff;border-color:var(--rojo)}
+.vc-empty{padding:20px;text-align:center;color:var(--muted);font-size:13px}
+.vc-toprow{display:flex;gap:8px;margin-bottom:12px}
+.vc-toprow button{flex:1}
 .searchx.on{display:block}
 .ctl-row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
 .field{display:flex;flex-direction:column;gap:5px}
@@ -275,6 +287,7 @@ tbody td.l{text-align:left;white-space:normal}
     <button class="loadbtn acc" id="btn-sync">🔄 Sincronizar</button>
     <button class="loadbtn" id="btn-prices">♻️ Catálogo</button>
     <button class="loadbtn" id="btn-merma">🗑️ Merma</button>
+    <button class="loadbtn" id="btn-venc">📅 Vencimientos</button>
     <span class="glob" id="glob-quiebre" style="color:#ffb4a8;font-size:12px;font-weight:600"></span>
     <span class="upd" id="updlabel"></span>
   </div>
@@ -392,6 +405,55 @@ tbody td.l{text-align:left;white-space:normal}
         <button class="mm-save" id="mm-save" disabled>Guardar merma</button>
       </div>
     </div>
+    <div class="mm-ov hidden" id="vc-ov">
+      <div class="mm-card">
+        <div class="mm-head"><h3>📅 Vencimientos</h3><button class="mm-close" id="vc-close">✕</button></div>
+
+        <div id="vc-list-view">
+          <div class="vc-toprow"><button class="loadbtn acc" id="vc-add-btn" style="width:100%">+ Nuevo lote</button></div>
+          <div id="vc-list"><div class="vc-empty">Cargando…</div></div>
+        </div>
+
+        <div id="vc-form-view" class="hidden">
+          <div class="mm-field">
+            <label>Producto</label>
+            <div class="mm-search">
+              <input id="vc-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off">
+              <button class="mm-mic" id="vc-mic" type="button" aria-label="Buscar por voz">🎤</button>
+              <button class="mm-scan" id="vc-scan" type="button" aria-label="Escanear código">📷</button>
+            </div>
+            <div class="mm-picked" id="vc-picked">
+              <div class="nom" id="vc-nom">—</div>
+              <div class="cat" id="vc-cat">—</div>
+            </div>
+            <div id="vc-results"></div>
+          </div>
+
+          <div class="mm-field">
+            <label>Cantidad</label>
+            <div class="mm-qty">
+              <button class="qbtn" id="vc-qty-menos" type="button">−</button>
+              <input id="vc-cantidad" inputmode="decimal" placeholder="0" disabled>
+              <span class="unidad" id="vc-unidad">u</span>
+              <button class="qbtn" id="vc-qty-mas" type="button">+</button>
+            </div>
+          </div>
+
+          <div class="mm-field">
+            <label>Lote (opcional)</label>
+            <input id="vc-lote" placeholder="Código de lote, si tiene" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+          </div>
+
+          <div class="mm-field">
+            <label>Fecha de vencimiento</label>
+            <input id="vc-fecha" type="date" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:15px">
+          </div>
+
+          <button class="mm-save" id="vc-guardar" disabled>Guardar lote</button>
+          <button class="loadbtn" id="vc-cancelar" style="width:100%;margin-top:8px">Cancelar</button>
+        </div>
+      </div>
+    </div>
     <div class="tablecard"><div class="tbl-scroll"><table id="ptable">
       <thead><tr>
         <th class="l" data-s="nombre">Producto <span class="ar">▲▼</span></th>
@@ -457,6 +519,7 @@ tbody td.l{text-align:left;white-space:normal}
     <li><b>Soprole:</b> las cantidades suben por el mínimo de cada producto (de a 4, 6, 8, 12… según corresponda).</li>
     <li><b>Resumen proveedores:</b> gráfico de venta semanal por categoría y qué proveedores necesitan pedido, con su día de mayor venta.</li>
     <li><b>Escalas CCU/Coca-Cola</b> (⚡) integradas: el costo baja por volumen. Pedido listo para WhatsApp en un toque.</li>
+    <li><b>📅 Vencimientos:</b> registra un lote con fecha de vencimiento y el sistema te dice qué hacer cada día (reubicar, rebajar %, gestionar cambio con proveedor, liquidar) según su categoría y si el stock alcanza a rotar. Se recalcula solo cada madrugada.</li>
     <li><b>Instalar como app:</b> en Chrome → menú ⋮ → "Añadir a pantalla de inicio". Ícono propio, pantalla completa.</li>
   </ul>
 </div>
@@ -1037,7 +1100,7 @@ document.getElementById('prov-mic').onclick=ev=>{
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&_scanStream)closeScanner();});
 
 // ===================== REGISTRAR MERMA =====================
-const mmState={item:null,motivo:null,resp:null};
+const mmState={item:null,motivo:null,resp:null,origen:'manual',lote:''};
 function mmFindItems(q){
   q=(q||'').toLowerCase().trim();
   if(!q)return [];
@@ -1094,7 +1157,7 @@ function mmValidar(){
   document.getElementById('mm-save').disabled=!ok;
 }
 function mmReset(){
-  mmState.item=null;mmState.motivo=null;mmState.resp=null;
+  mmState.item=null;mmState.motivo=null;mmState.resp=null;mmState.origen='manual';mmState.lote='';
   document.getElementById('mm-search').value='';
   document.getElementById('mm-results').innerHTML='';
   document.getElementById('mm-picked').classList.remove('on');
@@ -1108,8 +1171,17 @@ function mmReset(){
   document.querySelectorAll('#mm-resp button').forEach(b=>b.classList.remove('sel'));
   document.getElementById('mm-save').disabled=true;
 }
-function openMerma(){mmReset();document.getElementById('mm-ov').classList.remove('hidden');}
+function openMerma(skipReset){if(!skipReset)mmReset();document.getElementById('mm-ov').classList.remove('hidden');}
 function closeMerma(){document.getElementById('mm-ov').classList.add('hidden');}
+// Prellenar el modal de merma desde el panel de vencimientos ("Es merma")
+function mmPrefill(ref,cantidad,lote){
+  mmReset();
+  mmPick(ref);
+  const cIn=document.getElementById('mm-cantidad');
+  cIn.value=cantidad;mmCalcTotal();
+  mmState.origen='vencimiento';mmState.lote=lote||'';
+  mmValidar();
+}
 
 document.getElementById('btn-merma').onclick=openMerma;
 document.getElementById('mm-close').onclick=closeMerma;
@@ -1143,7 +1215,8 @@ document.getElementById('mm-save').onclick=async()=>{
   btn.disabled=true;btn.classList.add('saving');btn.textContent='Guardando…';
   try{
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'merma',payload:{
-      sku:it.ref,cantidad:cantidad,costoManual:costoManual,motivo:mmState.motivo,responsable:mmState.resp,origen:'manual'
+      sku:it.ref,cantidad:cantidad,costoManual:costoManual,motivo:mmState.motivo,responsable:mmState.resp,
+      origen:mmState.origen||'manual',lote:mmState.lote||''
     }})});
     const j=await res.json();
     if(j&&j.ok){
@@ -1156,6 +1229,132 @@ document.getElementById('mm-save').onclick=async()=>{
   btn.disabled=false;btn.classList.remove('saving');btn.textContent='Guardar merma';
   mmValidar();
 };
+
+// ===================== VENCIMIENTOS =====================
+const vcNew={item:null};
+function fmtDateInputToDDMMAAAA(v){ // "YYYY-MM-DD" → "DD/MM/AAAA"
+  const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v||'');
+  return m ? (m[3]+'/'+m[2]+'/'+m[1]) : '';
+}
+async function vcLoad(){
+  const box=document.getElementById('vc-list');
+  box.innerHTML='<div class="vc-empty">Cargando…</div>';
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=vencimientos');
+    const j=await res.json();
+    vcRender((j&&j.ok)?j.lotes:[]);
+  }catch(e){box.innerHTML='<div class="vc-empty">Error al cargar. Intenta de nuevo.</div>';}
+}
+function vcRender(lotes){
+  const box=document.getElementById('vc-list');
+  if(!lotes.length){box.innerHTML='<div class="vc-empty">Sin lotes activos por vencer 🎉</div>';return;}
+  box.innerHTML=lotes.map(l=>`
+    <div class="vc-row">
+      <div class="nom">${l.prioridad} ${l.nombre}</div>
+      <div class="cat">${l.categoria} · vence ${l.fechaVencimiento} · ${l.cantidad} ${l.unidad}${l.lote?' · lote '+l.lote:''}</div>
+      <div class="accion">${l.accion}${l.precioRecomendado?(' → '+peso(l.precioRecomendado)+(l.costoOrigen==='estimado'?' <span class="est">(costo estimado)</span>':'')):''}</div>
+      <div class="btns">
+        <button class="btn-ok" data-act="ok" data-i="${l.filaIndex}">✓ Vendido / liquidado</button>
+        <button class="btn-merma" data-act="merma" data-i="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" data-lote="${l.lote||''}">🗑️ Es merma</button>
+      </div>
+    </div>`).join('');
+  box.querySelectorAll('[data-act="ok"]').forEach(b=>b.onclick=()=>vcRevisar(b.dataset.i,'vendido'));
+  box.querySelectorAll('[data-act="merma"]').forEach(b=>b.onclick=()=>{
+    vcRevisar(b.dataset.i,'merma',false);   // marca revisado sin pedir responsable extra
+    closeVenc();
+    mmPrefill(b.dataset.sku,b.dataset.cant,b.dataset.lote);
+    openMerma(true);
+  });
+}
+async function vcRevisar(filaIndex,resultado,recargar){
+  if(recargar===undefined)recargar=true;
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'revisar_lote',payload:{
+      filaIndex:filaIndex,revisadoPor:'',resultado:resultado
+    }})});
+    const j=await res.json();
+    if(j&&j.ok){ if(recargar){showToast('✓ Lote revisado');vcLoad();} }
+    else showToast('Error: '+((j&&j.error)||'no se pudo'));
+  }catch(e){showToast('Error de conexión');}
+}
+function vcShowList(){document.getElementById('vc-list-view').classList.remove('hidden');document.getElementById('vc-form-view').classList.add('hidden');}
+function vcShowForm(){
+  vcNew.item=null;
+  document.getElementById('vc-search').value='';
+  document.getElementById('vc-results').innerHTML='';
+  document.getElementById('vc-picked').classList.remove('on');
+  const cIn=document.getElementById('vc-cantidad');cIn.value='';cIn.disabled=true;cIn.placeholder='0';
+  document.getElementById('vc-unidad').textContent='u';
+  document.getElementById('vc-lote').value='';
+  document.getElementById('vc-fecha').value='';
+  document.getElementById('vc-guardar').disabled=true;
+  document.getElementById('vc-list-view').classList.add('hidden');
+  document.getElementById('vc-form-view').classList.remove('hidden');
+}
+function vcPick(ref){
+  const it=(DB.items||[]).find(i=>i.ref===ref);
+  if(!it)return;
+  vcNew.item=it;
+  document.getElementById('vc-search').value=it.nombre;
+  document.getElementById('vc-results').innerHTML='';
+  document.getElementById('vc-picked').classList.add('on');
+  document.getElementById('vc-nom').textContent=it.nombre;
+  document.getElementById('vc-cat').textContent=it.prov+(it.barcode?' · '+it.barcode:'');
+  const esPeso=!!it.peso;
+  document.getElementById('vc-unidad').textContent=esPeso?'kg':'u';
+  const cIn=document.getElementById('vc-cantidad');
+  cIn.disabled=false;cIn.value='';cIn.placeholder=esPeso?'0.000':'0';
+  vcValidar();
+}
+function vcValidar(){
+  const cant=Number(document.getElementById('vc-cantidad').value)||0;
+  const fecha=document.getElementById('vc-fecha').value;
+  document.getElementById('vc-guardar').disabled=!(vcNew.item&&cant>0&&fecha);
+}
+function openVenc(){document.getElementById('vc-ov').classList.remove('hidden');vcShowList();vcLoad();}
+function closeVenc(){document.getElementById('vc-ov').classList.add('hidden');}
+
+document.getElementById('btn-venc').onclick=openVenc;
+document.getElementById('vc-close').onclick=closeVenc;
+document.getElementById('vc-add-btn').onclick=vcShowForm;
+document.getElementById('vc-cancelar').onclick=vcShowList;
+document.getElementById('vc-search').oninput=e=>{
+  const list=mmFindItems(e.target.value);
+  document.getElementById('vc-results').innerHTML=list.map(it=>`<div class="mm-motivo" style="display:block;margin-bottom:6px;cursor:pointer" data-ref="${it.ref}">${it.nombre} <span style="color:var(--muted);font-weight:400">· ${it.prov}</span></div>`).join('');
+  document.querySelectorAll('#vc-results [data-ref]').forEach(el=>el.onclick=()=>vcPick(el.dataset.ref));
+};
+document.getElementById('vc-scan').onclick=()=>openScanner(code=>{
+  document.getElementById('vc-search').value=code;
+  const list=mmFindItems(code);
+  if(list.length===1)vcPick(list[0].ref);
+  else document.getElementById('vc-search').dispatchEvent(new Event('input',{bubbles:true}));
+});
+document.getElementById('vc-mic').onclick=()=>voiceSearch(document.getElementById('vc-mic'),text=>{
+  document.getElementById('vc-search').value=text;
+  document.getElementById('vc-search').dispatchEvent(new Event('input',{bubbles:true}));
+});
+document.getElementById('vc-qty-menos').onclick=()=>{const i=document.getElementById('vc-cantidad');const st=vcNew.item&&vcNew.item.peso?0.05:1;i.value=Math.max(0,(Number(i.value)||0)-st).toFixed(vcNew.item&&vcNew.item.peso?3:0);vcValidar();};
+document.getElementById('vc-qty-mas').onclick=()=>{const i=document.getElementById('vc-cantidad');const st=vcNew.item&&vcNew.item.peso?0.05:1;i.value=((Number(i.value)||0)+st).toFixed(vcNew.item&&vcNew.item.peso?3:0);vcValidar();};
+document.getElementById('vc-cantidad').oninput=vcValidar;
+document.getElementById('vc-fecha').oninput=vcValidar;
+document.getElementById('vc-guardar').onclick=async()=>{
+  const btn=document.getElementById('vc-guardar');
+  const it=vcNew.item;if(!it)return;
+  const cantidad=Number(document.getElementById('vc-cantidad').value)||0;
+  const fecha=fmtDateInputToDDMMAAAA(document.getElementById('vc-fecha').value);
+  const lote=document.getElementById('vc-lote').value.trim();
+  btn.disabled=true;btn.textContent='Guardando…';
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'lote_nuevo',payload:{
+      sku:it.ref,cantidad:cantidad,lote:lote,fechaVencimiento:fecha
+    }})});
+    const j=await res.json();
+    if(j&&j.ok){showToast('✓ Lote registrado: '+it.nombre);vcShowList();vcLoad();}
+    else showToast('Error: '+((j&&j.error)||'no se pudo guardar'));
+  }catch(e){showToast('Error de conexión al guardar el lote');}
+  btn.disabled=false;btn.textContent='Guardar lote';vcValidar();
+};
+
 document.getElementById('btn-suggest').onclick=()=>{currentItems().forEach(it=>{delete state.edits[it.ref];});render();showToast('↺ Volví a las cantidades sugeridas');};
 document.getElementById('btn-clear').onclick=()=>{currentItems().forEach(it=>{state.edits[it.ref]=0;});render();showToast('✕ Pedido vaciado (todo en 0)');};
 document.getElementById('btn-copy').onclick=()=>{const lines=currentOrder();if(!lines.length){showToast('No hay productos en el pedido');return;}lines.sort((a,b)=>b.q-a.q);const uds=lines.reduce((s,l)=>s+l.q,0);const prov=(state.search||state.allProv)?'(varios)':state.prov;
