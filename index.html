@@ -54,14 +54,13 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .scan-ov video{flex:1;width:100%;object-fit:cover}
 .scan-top{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:14px 16px;color:#fff;font-family:'Archivo';font-weight:700;font-size:14px;background:linear-gradient(rgba(0,0,0,.6),transparent);z-index:2}
 .scan-close{background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:50%;width:34px;height:34px;font-size:16px;cursor:pointer}
-.scan-frame{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:78%;max-width:420px;height:130px;border:2.5px solid #22c55e;border-radius:14px;box-shadow:0 0 0 2000px rgba(0,0,0,.35);z-index:1;pointer-events:none}
+.scan-frame{position:absolute;top:32%;left:50%;transform:translate(-50%,-50%);width:78%;max-width:420px;height:130px;border:2.5px solid #22c55e;border-radius:14px;box-shadow:0 0 0 2000px rgba(0,0,0,.35);z-index:1;pointer-events:none}
 .scan-hint{position:absolute;bottom:26px;left:0;right:0;text-align:center;color:#fff;font-size:13px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.7);z-index:2}
 .mm-ov{position:fixed;inset:0;background:rgba(21,25,31,.55);z-index:210;display:flex;align-items:flex-end;justify-content:center}
 .mm-ov.hidden{display:none}
 .mm-card{background:var(--card);width:100%;max-width:480px;max-height:92vh;overflow-y:auto;border-radius:18px 18px 0 0;padding:16px 16px 22px}
 .mm-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .mm-head h3{font-family:'Archivo';font-weight:800;font-size:16px}
-.mm-close{background:var(--gris-bg);border:none;border-radius:50%;width:30px;height:30px;font-size:14px;cursor:pointer;color:var(--muted)}
 .mm-field{margin-bottom:12px}
 .mm-field label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:5px}
 .mm-search{position:relative}
@@ -343,7 +342,7 @@ tbody td.l{text-align:left;white-space:normal}
     </div>
     <div class="mm-ov hidden" id="mm-ov">
       <div class="mm-card">
-        <div class="mm-head"><h3>🗑️ Registrar merma</h3><button class="mm-close" id="mm-close">✕</button></div>
+        <div class="mm-head"><h3>🗑️ Registrar merma</h3></div>
 
         <div class="mm-field">
           <label>Producto</label>
@@ -403,15 +402,17 @@ tbody td.l{text-align:left;white-space:normal}
         </div>
 
         <button class="mm-save" id="mm-save" disabled>Guardar merma</button>
+        <button class="loadbtn" id="mm-cancelar" style="width:100%;margin-top:8px">Cancelar</button>
       </div>
     </div>
     <div class="mm-ov hidden" id="vc-ov">
       <div class="mm-card">
-        <div class="mm-head"><h3>📅 Vencimientos</h3><button class="mm-close" id="vc-close">✕</button></div>
+        <div class="mm-head"><h3>📅 Vencimientos</h3></div>
 
         <div id="vc-list-view">
           <div class="vc-toprow"><button class="loadbtn acc" id="vc-add-btn" style="width:100%">+ Nuevo lote</button></div>
           <div id="vc-list"><div class="vc-empty">Cargando…</div></div>
+          <button class="loadbtn" id="vc-cerrar" style="width:100%;margin-top:10px">Cerrar</button>
         </div>
 
         <div id="vc-form-view" class="hidden">
@@ -1021,23 +1022,30 @@ si.oninput=e=>{state.search=e.target.value.trim();document.getElementById('searc
 document.getElementById('searchx').onclick=()=>{si.value='';state.search='';document.getElementById('searchx').classList.remove('on');clearTimeout(_searchT);render();};
 
 // ===================== ESCÁNER DE CÓDIGO DE BARRAS (cámara) =====================
-let _scanStream=null,_scanTimer=null;
+let _scanStream=null,_scanTimer=null,_scanToken=0;
 async function openScanner(onCode){
+  const myToken=++_scanToken;   // invalida este intento si se cierra antes de terminar
   const ov=document.getElementById('scan-ov'),video=document.getElementById('scan-video');
   if(!('BarcodeDetector' in window)){showToast('Este navegador no soporta escáner. Usa Chrome actualizado.');return;}
   let detector;
   try{detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf']});}
   catch(e){showToast('No se pudo iniciar el detector de códigos');return;}
+  let stream;
   try{
-    _scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});
   }catch(e){showToast('Permiso de cámara denegado. Actívalo en el navegador.');return;}
+  if(myToken!==_scanToken){stream.getTracks().forEach(t=>t.stop());return;}   // ya se cerró mientras esperaba permiso
+  _scanStream=stream;
   video.srcObject=_scanStream;ov.classList.remove('hidden');
   try{await video.play();}catch(e){}
+  if(myToken!==_scanToken){stream.getTracks().forEach(t=>t.stop());video.srcObject=null;ov.classList.add('hidden');return;}   // se cerró justo al terminar de cargar
   let busy=false;
   _scanTimer=setInterval(async()=>{
+    if(myToken!==_scanToken){clearInterval(_scanTimer);return;}
     if(busy||video.readyState<2)return;busy=true;
     try{
       const codes=await detector.detect(video);
+      if(myToken!==_scanToken)return;
       if(codes&&codes.length&&codes[0].rawValue){
         const code=String(codes[0].rawValue).trim();
         closeScanner();
@@ -1056,6 +1064,7 @@ async function openScanner(onCode){
   },220);
 }
 function closeScanner(){
+  _scanToken++;   // invalida cualquier apertura de cámara en curso
   clearInterval(_scanTimer);_scanTimer=null;
   if(_scanStream){_scanStream.getTracks().forEach(t=>t.stop());_scanStream=null;}
   const v=document.getElementById('scan-video');if(v)v.srcObject=null;
@@ -1184,7 +1193,7 @@ function mmPrefill(ref,cantidad,lote){
 }
 
 document.getElementById('btn-merma').onclick=openMerma;
-document.getElementById('mm-close').onclick=closeMerma;
+document.getElementById('mm-cancelar').onclick=closeMerma;
 document.getElementById('mm-search').oninput=e=>mmRenderResults(mmFindItems(e.target.value));
 document.getElementById('mm-scan').onclick=()=>openScanner(code=>{
   document.getElementById('mm-search').value=code;
@@ -1315,7 +1324,7 @@ function openVenc(){document.getElementById('vc-ov').classList.remove('hidden');
 function closeVenc(){document.getElementById('vc-ov').classList.add('hidden');}
 
 document.getElementById('btn-venc').onclick=openVenc;
-document.getElementById('vc-close').onclick=closeVenc;
+document.getElementById('vc-cerrar').onclick=closeVenc;
 document.getElementById('vc-add-btn').onclick=vcShowForm;
 document.getElementById('vc-cancelar').onclick=vcShowList;
 document.getElementById('vc-search').oninput=e=>{
