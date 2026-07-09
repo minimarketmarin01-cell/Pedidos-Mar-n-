@@ -1922,23 +1922,15 @@ document.getElementById('rc-guardar').onclick=async()=>{
   const precioCambio=nuevoPrecio>0&&nuevoPrecio!==rcState.precioOriginal;
   btn.disabled=true;btn.textContent='Guardando…';
   try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'lote_nuevo',payload:{
-      sku:it.ref,cantidad:cantidad,fechaVencimiento:fecha
-    }})});
+    const payload={sku:it.ref,cantidad:cantidad,fechaVencimiento:fecha};
+    if(costoCambio)payload.costo=nuevoCosto;
+    if(precioCambio)payload.precio=nuevoPrecio;
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'lote_nuevo',payload:payload})});
     const j=await res.json();
     if(j&&j.ok){
       let msg='✓ Recibido: '+it.nombre+' · +'+cantidad+' '+(it.peso?'kg':'u')+' · vence '+fecha;
+      if(costoCambio||precioCambio)msg+=' · '+(costoCambio?'costo':'')+(costoCambio&&precioCambio?' y ':'')+(precioCambio?'precio':'')+' actualizados';
       if(j.fila.avisoStock)msg+=' · '+j.fila.avisoStock;
-      if(costoCambio||precioCambio){
-        try{
-          const res2=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'actualizar_costo',payload:{
-            sku:it.ref,costo:costoCambio?nuevoCosto:undefined,precio:precioCambio?nuevoPrecio:undefined
-          }})});
-          const j2=await res2.json();
-          if(j2&&j2.ok)msg+=' · ✓ '+(costoCambio?'costo':'')+(costoCambio&&precioCambio?' y ':'')+(precioCambio?'precio':'')+' actualizados en Loyverse';
-          else msg+=' · ⚠️ no se pudo actualizar costo/precio ('+((j2&&j2.error)||'error')+')';
-        }catch(e){msg+=' · ⚠️ no se pudo actualizar costo/precio (sin conexión)';}
-      }
       showToast(msg);
       closeRecibir();
     }else{showToast('Error: '+((j&&j.error)||'no se pudo guardar'));}
