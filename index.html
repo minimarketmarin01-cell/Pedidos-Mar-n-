@@ -141,15 +141,6 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .in-cart-row .costo-warn{width:100%;margin-top:6px;padding:7px 9px;border:1.5px solid var(--rojo);border-radius:8px;font-size:12.5px;font-family:'JetBrains Mono'}
 .in-cart-total{background:var(--paper);border-radius:10px;padding:10px 12px;font-size:13px;display:flex;justify-content:space-between;align-items:center;font-weight:700;margin:10px 0}
 .in-cart-total b{font-family:'JetBrains Mono';font-size:16px}
-.ll-row{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
-.ll-row .nom{font-weight:700;font-size:13.5px}
-.ll-row .cat{font-size:11.5px;color:var(--muted);margin-top:2px}
-.ll-row .plus{color:var(--verde);font-weight:700}
-.ll-row .fecharow{display:flex;gap:8px;margin-top:8px}
-.ll-row .fecharow input{flex:1;padding:9px 12px;border:1.5px solid var(--line);border-radius:9px;font-size:14px}
-.ll-row .fecharow button{border:none;border-radius:9px;padding:9px 12px;font-size:12px;font-weight:700;cursor:pointer}
-.ll-row .btn-guardar-fecha{background:var(--verde);color:#fff}
-.ll-row .btn-ignorar{background:var(--gris-bg);color:var(--ink)}
 .searchx.on{display:block}
 .ctl-row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
 .field{display:flex;flex-direction:column;gap:5px}
@@ -338,7 +329,7 @@ tbody td.l{text-align:left;white-space:normal}
     <button class="loadbtn" id="btn-hist-merma">📋 Historial</button>
     <button class="loadbtn" id="btn-insumos">🧹 Insumos</button>
     <button class="loadbtn" id="btn-venc">📅 Vencimientos</button>
-    <button class="loadbtn" id="btn-llegadas">🔔 Recién llegado</button>
+    <button class="loadbtn" id="btn-recibir">📦 Recibir mercadería</button>
     <button class="loadbtn" id="btn-sincosto">⚠️ Sin costo</button>
     <span class="glob" id="glob-quiebre" style="color:#ffb4a8;font-size:12px;font-weight:600"></span>
     <span class="upd" id="updlabel"></span>
@@ -559,12 +550,42 @@ tbody td.l{text-align:left;white-space:normal}
         <button class="loadbtn" id="in-cancelar" style="width:100%;margin-top:8px">Cancelar</button>
       </div>
     </div>
-    <div class="mm-ov hidden" id="ll-ov">
+    <div class="mm-ov hidden" id="rc-ov">
       <div class="mm-card">
-        <div class="mm-head"><h3>🔔 Recién llegado</h3></div>
-        <div class="hm-summary"><span class="lbl" id="ll-lbl">Cargando…</span></div>
-        <div id="ll-list"></div>
-        <button class="loadbtn" id="ll-cerrar" style="width:100%;margin-top:10px">Cerrar</button>
+        <div class="mm-head"><h3>📦 Recibir mercadería</h3></div>
+
+        <div class="mm-field">
+          <label>Producto</label>
+          <div class="mm-search">
+            <input id="rc-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off">
+            <button class="mm-mic" id="rc-mic" type="button" aria-label="Buscar por voz">🎤</button>
+            <button class="mm-scan" id="rc-scan" type="button" aria-label="Escanear código">📷</button>
+          </div>
+          <div class="mm-picked" id="rc-picked">
+            <div class="nom" id="rc-nom">—</div>
+            <div class="cat" id="rc-cat">—</div>
+            <div class="cat" id="rc-stock" style="font-weight:700;color:var(--ink);margin-top:3px">Stock actual: —</div>
+          </div>
+          <div id="rc-results"></div>
+        </div>
+
+        <div class="mm-field">
+          <label>Cantidad recibida</label>
+          <div class="mm-qty">
+            <button class="qbtn" id="rc-qty-menos" type="button">−</button>
+            <input id="rc-cantidad" inputmode="decimal" placeholder="0" disabled>
+            <span class="unidad" id="rc-unidad">u</span>
+            <button class="qbtn" id="rc-qty-mas" type="button">+</button>
+          </div>
+        </div>
+
+        <div class="mm-field">
+          <label>Fecha de vencimiento <span style="color:var(--rojo)">*</span></label>
+          <input id="rc-fecha" type="date" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:15px">
+        </div>
+
+        <button class="mm-save" id="rc-guardar" disabled>Guardar y sumar stock</button>
+        <button class="loadbtn" id="rc-cancelar" style="width:100%;margin-top:8px">Cancelar</button>
       </div>
     </div>
     <div class="tablecard"><div class="tbl-scroll"><table id="ptable">
@@ -1716,59 +1737,91 @@ document.getElementById('in-guardar').onclick=async()=>{
   btn.disabled=false;btn.textContent='Guardar consumo';inValidar();
 };
 
-// ===================== RECIÉN LLEGADO =====================
-async function llLoad(){
-  const box=document.getElementById('ll-list'),lbl=document.getElementById('ll-lbl');
-  box.innerHTML='';lbl.textContent='Cargando…';
-  try{
-    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=llegadas');
-    const j=await res.json();
-    if(!j||!j.ok){lbl.textContent='Error al cargar.';return;}
-    const lst=j.llegadas;
-    if(!lst.length){lbl.textContent='';box.innerHTML='<div class="vc-empty">Sin llegadas pendientes por fechar 🎉</div>';return;}
-    lbl.textContent=lst.length+' producto'+(lst.length===1?'':'s')+' con stock nuevo, esperando fecha de vencimiento';
-    box.innerHTML=lst.map(it=>`
-      <div class="ll-row" id="ll-row-${it.filaIndex}">
-        <div class="nom">${it.nombre}</div>
-        <div class="cat">${it.categoria} · <span class="plus">+${it.aumento}</span> unidades (${it.stockAntes} → ${it.stockDespues}) · detectado ${it.fecha}</div>
-        <div class="fecharow">
-          <input type="date" id="ll-fecha-${it.filaIndex}">
-          <button class="btn-guardar-fecha" data-i="${it.filaIndex}">Guardar</button>
-          <button class="btn-ignorar" data-ig="${it.filaIndex}">Ignorar</button>
-        </div>
-      </div>`).join('');
-    box.querySelectorAll('.btn-guardar-fecha').forEach(b=>b.onclick=()=>llGuardarFecha(b.dataset.i));
-    box.querySelectorAll('.btn-ignorar').forEach(b=>b.onclick=()=>llIgnorar(b.dataset.ig));
-  }catch(e){lbl.textContent='Error de conexión.';}
+// ===================== RECIBIR MERCADERÍA =====================
+const rcState={item:null};
+function rcShowPicked(it){
+  document.getElementById('rc-picked').classList.add('on');
+  document.getElementById('rc-nom').textContent=it.nombre;
+  document.getElementById('rc-cat').textContent=it.prov+(it.barcode?' · '+it.barcode:'');
+  const stockTxt=(it.stock==null)?'sin control':(it.stock+(it.peso?' kg':' u'));
+  document.getElementById('rc-stock').textContent='Stock actual: '+stockTxt;
+  const esPeso=!!it.peso;
+  document.getElementById('rc-unidad').textContent=esPeso?'kg':'u';
+  const cIn=document.getElementById('rc-cantidad');
+  cIn.disabled=false;cIn.value='';cIn.placeholder=esPeso?'0.000':'0';
 }
-async function llGuardarFecha(filaIndex){
-  const inp=document.getElementById('ll-fecha-'+filaIndex);
-  const v=inp.value;
-  if(!v){showToast('Elige una fecha primero');return;}
-  const fecha=fmtDateInputToDDMMAAAA(v);
-  const row=document.getElementById('ll-row-'+filaIndex);
-  const btn=row.querySelector('.btn-guardar-fecha');
+function rcPick(ref){
+  const it=(DB.items||[]).find(i=>i.ref===ref);
+  if(!it)return;
+  rcState.item=it;
+  document.getElementById('rc-search').value=it.nombre;
+  document.getElementById('rc-results').innerHTML='';
+  rcShowPicked(it);
+  rcValidar();
+}
+function rcValidar(){
+  const cant=Number(document.getElementById('rc-cantidad').value)||0;
+  const fecha=document.getElementById('rc-fecha').value;
+  document.getElementById('rc-guardar').disabled=!(rcState.item&&cant>0&&fecha);
+}
+function rcReset(){
+  rcState.item=null;
+  document.getElementById('rc-search').value='';
+  document.getElementById('rc-results').innerHTML='';
+  document.getElementById('rc-picked').classList.remove('on');
+  const cIn=document.getElementById('rc-cantidad');cIn.value='';cIn.disabled=true;cIn.placeholder='0';
+  document.getElementById('rc-unidad').textContent='u';
+  document.getElementById('rc-fecha').value='';
+  document.getElementById('rc-guardar').disabled=true;
+}
+function openRecibir(){rcReset();document.getElementById('rc-ov').classList.remove('hidden');}
+function closeRecibir(){document.getElementById('rc-ov').classList.add('hidden');}
+
+document.getElementById('btn-recibir').onclick=openRecibir;
+document.getElementById('rc-cancelar').onclick=closeRecibir;
+document.getElementById('rc-search').oninput=e=>{
+  const list=mmFindItems(e.target.value);
+  document.getElementById('rc-results').innerHTML=list.map(it=>`<div class="mm-motivo" style="display:block;margin-bottom:6px;cursor:pointer" data-ref="${it.ref}">${it.nombre} <span style="color:var(--muted);font-weight:400">· ${it.prov}</span></div>`).join('');
+  document.querySelectorAll('#rc-results [data-ref]').forEach(el=>el.onclick=()=>rcPick(el.dataset.ref));
+};
+document.getElementById('rc-scan').onclick=()=>{
+  const reopen=()=>{document.getElementById('rc-ov').classList.remove('hidden');};
+  closeRecibir();
+  openScanner(code=>{
+    reopen();
+    const list=mmFindItems(code);
+    if(list.length===1)rcPick(list[0].ref);
+    else{document.getElementById('rc-search').value=code;document.getElementById('rc-search').dispatchEvent(new Event('input',{bubbles:true}));}
+  },reopen);
+};
+document.getElementById('rc-mic').onclick=()=>voiceSearch(document.getElementById('rc-mic'),text=>{
+  document.getElementById('rc-search').value=text;
+  document.getElementById('rc-search').dispatchEvent(new Event('input',{bubbles:true}));
+});
+document.getElementById('rc-qty-menos').onclick=()=>{const i=document.getElementById('rc-cantidad');const st=rcState.item&&rcState.item.peso?0.05:1;i.value=Math.max(0,(Number(i.value)||0)-st).toFixed(rcState.item&&rcState.item.peso?3:0);rcValidar();};
+document.getElementById('rc-qty-mas').onclick=()=>{const i=document.getElementById('rc-cantidad');const st=rcState.item&&rcState.item.peso?0.05:1;i.value=((Number(i.value)||0)+st).toFixed(rcState.item&&rcState.item.peso?3:0);rcValidar();};
+document.getElementById('rc-cantidad').oninput=rcValidar;
+document.getElementById('rc-fecha').oninput=rcValidar;
+document.getElementById('rc-guardar').onclick=async()=>{
+  const btn=document.getElementById('rc-guardar');
+  const it=rcState.item;if(!it)return;
+  const cantidad=Number(document.getElementById('rc-cantidad').value)||0;
+  const fecha=fmtDateInputToDDMMAAAA(document.getElementById('rc-fecha').value);
   btn.disabled=true;btn.textContent='Guardando…';
   try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'asignar_llegada',payload:{filaIndex:filaIndex,fechaVencimiento:fecha}})});
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'lote_nuevo',payload:{
+      sku:it.ref,cantidad:cantidad,fechaVencimiento:fecha
+    }})});
     const j=await res.json();
-    if(j&&j.ok){showToast('✓ Lote creado en Vencimientos · vence '+fecha);row.remove();}
-    else{showToast('Error: '+((j&&j.error)||'no se pudo guardar'));btn.disabled=false;btn.textContent='Guardar';}
-  }catch(e){showToast('Error de conexión');btn.disabled=false;btn.textContent='Guardar';}
-}
-async function llIgnorar(filaIndex){
-  const row=document.getElementById('ll-row-'+filaIndex);
-  const btn=row.querySelector('.btn-ignorar');
-  btn.disabled=true;
-  try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'ignorar_llegada',payload:{filaIndex:filaIndex}})});
-    const j=await res.json();
-    if(j&&j.ok){row.remove();}
-    else{showToast('Error: '+((j&&j.error)||'no se pudo'));btn.disabled=false;}
-  }catch(e){showToast('Error de conexión');btn.disabled=false;}
-}
-document.getElementById('btn-llegadas').onclick=()=>{document.getElementById('ll-ov').classList.remove('hidden');llLoad();};
-document.getElementById('ll-cerrar').onclick=()=>document.getElementById('ll-ov').classList.add('hidden');
+    if(j&&j.ok){
+      let msg='✓ Recibido: '+it.nombre+' · +'+cantidad+' '+(it.peso?'kg':'u')+' · vence '+fecha;
+      if(j.fila.avisoStock)msg+=' · '+j.fila.avisoStock;
+      showToast(msg);
+      closeRecibir();
+    }else{showToast('Error: '+((j&&j.error)||'no se pudo guardar'));}
+  }catch(e){showToast('Error de conexión al recibir la mercadería');}
+  btn.disabled=false;btn.textContent='Guardar y sumar stock';rcValidar();
+};
 
 document.getElementById('btn-suggest').onclick=()=>{currentItems().forEach(it=>{delete state.edits[it.ref];});render();showToast('↺ Volví a las cantidades sugeridas');};
 document.getElementById('btn-clear').onclick=()=>{currentItems().forEach(it=>{state.edits[it.ref]=0;});render();showToast('✕ Pedido vaciado (todo en 0)');};
