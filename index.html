@@ -580,6 +580,15 @@ tbody td.l{text-align:left;white-space:normal}
         </div>
 
         <div class="mm-field">
+          <label>¿Cambió el costo o el precio? <span style="font-weight:400;color:var(--muted);text-transform:none">(opcional)</span></label>
+          <div style="display:flex;gap:8px">
+            <input id="rc-costo" inputmode="numeric" placeholder="Costo ($)" style="flex:1;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'JetBrains Mono'">
+            <input id="rc-precio" inputmode="numeric" placeholder="Precio de venta ($)" style="flex:1;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'JetBrains Mono'">
+          </div>
+          <div class="cat" id="rc-precio-hint" style="margin-top:6px"></div>
+        </div>
+
+        <div class="mm-field">
           <label>Fecha de vencimiento <span style="color:var(--rojo)">*</span></label>
           <input id="rc-fecha" type="date" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:15px">
         </div>
@@ -1738,7 +1747,14 @@ document.getElementById('in-guardar').onclick=async()=>{
 };
 
 // ===================== RECIBIR MERCADERÍA =====================
-const rcState={item:null};
+const rcState={item:null,costoOriginal:0,precioOriginal:0,precioTocado:false};
+function redondeoPsicologicoJS(p){
+  const base=Math.floor(p/100)*100;
+  const cand=[base+90,base+50,base+190,base+150];
+  let best=cand[0],bd=Math.abs(cand[0]-p);
+  cand.forEach(c=>{const d=Math.abs(c-p);if(d<bd){bd=d;best=c;}});
+  return best;
+}
 function rcShowPicked(it){
   document.getElementById('rc-picked').classList.add('on');
   document.getElementById('rc-nom').textContent=it.nombre;
@@ -1749,6 +1765,12 @@ function rcShowPicked(it){
   document.getElementById('rc-unidad').textContent=esPeso?'kg':'u';
   const cIn=document.getElementById('rc-cantidad');
   cIn.disabled=false;cIn.value='';cIn.placeholder=esPeso?'0.000':'0';
+  rcState.costoOriginal=it.coste||0;
+  rcState.precioOriginal=it.precio||0;
+  rcState.precioTocado=false;
+  document.getElementById('rc-costo').value=rcState.costoOriginal||'';
+  document.getElementById('rc-precio').value=rcState.precioOriginal||'';
+  document.getElementById('rc-precio-hint').textContent='';
 }
 function rcPick(ref){
   const it=(DB.items||[]).find(i=>i.ref===ref);
@@ -1765,13 +1787,16 @@ function rcValidar(){
   document.getElementById('rc-guardar').disabled=!(rcState.item&&cant>0&&fecha);
 }
 function rcReset(){
-  rcState.item=null;
+  rcState.item=null;rcState.costoOriginal=0;rcState.precioOriginal=0;rcState.precioTocado=false;
   document.getElementById('rc-search').value='';
   document.getElementById('rc-results').innerHTML='';
   document.getElementById('rc-picked').classList.remove('on');
   const cIn=document.getElementById('rc-cantidad');cIn.value='';cIn.disabled=true;cIn.placeholder='0';
   document.getElementById('rc-unidad').textContent='u';
   document.getElementById('rc-fecha').value='';
+  document.getElementById('rc-costo').value='';
+  document.getElementById('rc-precio').value='';
+  document.getElementById('rc-precio-hint').textContent='';
   document.getElementById('rc-guardar').disabled=true;
 }
 function openRecibir(){rcReset();document.getElementById('rc-ov').classList.remove('hidden');}
@@ -1802,11 +1827,27 @@ document.getElementById('rc-qty-menos').onclick=()=>{const i=document.getElement
 document.getElementById('rc-qty-mas').onclick=()=>{const i=document.getElementById('rc-cantidad');const st=rcState.item&&rcState.item.peso?0.05:1;i.value=((Number(i.value)||0)+st).toFixed(rcState.item&&rcState.item.peso?3:0);rcValidar();};
 document.getElementById('rc-cantidad').oninput=rcValidar;
 document.getElementById('rc-fecha').oninput=rcValidar;
+document.getElementById('rc-precio').oninput=()=>{rcState.precioTocado=true;document.getElementById('rc-precio-hint').textContent='';};
+document.getElementById('rc-costo').oninput=()=>{
+  const nuevoCosto=Number(document.getElementById('rc-costo').value)||0;
+  const hint=document.getElementById('rc-precio-hint');
+  if(!nuevoCosto||rcState.precioTocado||!rcState.precioOriginal||!rcState.costoOriginal){return;}
+  // mantiene el MISMO margen sobre venta que ya tenía, aplicado al costo nuevo
+  const margenActual=(rcState.precioOriginal-rcState.costoOriginal)/rcState.precioOriginal;
+  if(margenActual<=0||margenActual>=1)return;
+  const sugerido=redondeoPsicologicoJS(Math.round(nuevoCosto/(1-margenActual)));
+  document.getElementById('rc-precio').value=sugerido;
+  hint.textContent='Precio sugerido para mantener el margen actual ('+Math.round(margenActual*100)+'%). Puedes ajustarlo.';
+};
 document.getElementById('rc-guardar').onclick=async()=>{
   const btn=document.getElementById('rc-guardar');
   const it=rcState.item;if(!it)return;
   const cantidad=Number(document.getElementById('rc-cantidad').value)||0;
   const fecha=fmtDateInputToDDMMAAAA(document.getElementById('rc-fecha').value);
+  const nuevoCosto=Number(document.getElementById('rc-costo').value)||0;
+  const nuevoPrecio=Number(document.getElementById('rc-precio').value)||0;
+  const costoCambio=nuevoCosto>0&&nuevoCosto!==rcState.costoOriginal;
+  const precioCambio=nuevoPrecio>0&&nuevoPrecio!==rcState.precioOriginal;
   btn.disabled=true;btn.textContent='Guardando…';
   try{
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'lote_nuevo',payload:{
@@ -1816,6 +1857,16 @@ document.getElementById('rc-guardar').onclick=async()=>{
     if(j&&j.ok){
       let msg='✓ Recibido: '+it.nombre+' · +'+cantidad+' '+(it.peso?'kg':'u')+' · vence '+fecha;
       if(j.fila.avisoStock)msg+=' · '+j.fila.avisoStock;
+      if(costoCambio||precioCambio){
+        try{
+          const res2=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'actualizar_costo',payload:{
+            sku:it.ref,costo:costoCambio?nuevoCosto:undefined,precio:precioCambio?nuevoPrecio:undefined
+          }})});
+          const j2=await res2.json();
+          if(j2&&j2.ok)msg+=' · ✓ '+(costoCambio?'costo':'')+(costoCambio&&precioCambio?' y ':'')+(precioCambio?'precio':'')+' actualizados en Loyverse';
+          else msg+=' · ⚠️ no se pudo actualizar costo/precio ('+((j2&&j2.error)||'error')+')';
+        }catch(e){msg+=' · ⚠️ no se pudo actualizar costo/precio (sin conexión)';}
+      }
       showToast(msg);
       closeRecibir();
     }else{showToast('Error: '+((j&&j.error)||'no se pudo guardar'));}
