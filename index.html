@@ -607,8 +607,14 @@ tbody td.l{text-align:left;white-space:normal}
         <div class="mm-field">
           <label>¿Cambió el costo o el precio? <span style="font-weight:400;color:var(--muted);text-transform:none">(opcional)</span></label>
           <div style="display:flex;gap:8px">
-            <input id="rc-costo" inputmode="numeric" placeholder="Costo ($)" style="flex:1;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'JetBrains Mono'">
-            <input id="rc-precio" inputmode="numeric" placeholder="Precio de venta ($)" style="flex:1;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'JetBrains Mono'">
+            <div style="flex:1">
+              <div style="font-size:10.5px;color:var(--muted);font-weight:700;margin-bottom:3px">COSTO</div>
+              <input id="rc-costo" inputmode="numeric" placeholder="$" style="width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'JetBrains Mono'">
+            </div>
+            <div style="flex:1">
+              <div style="font-size:10.5px;color:var(--muted);font-weight:700;margin-bottom:3px">PRECIO DE VENTA</div>
+              <input id="rc-precio" inputmode="numeric" placeholder="$" style="width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'JetBrains Mono'">
+            </div>
           </div>
           <div class="cat" id="rc-precio-hint" style="margin-top:6px"></div>
         </div>
@@ -1928,6 +1934,15 @@ document.getElementById('rc-guardar').onclick=async()=>{
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'lote_nuevo',payload:payload})});
     const j=await res.json();
     if(j&&j.ok){
+      // Actualiza la copia local del producto AL INSTANTE (sin esperar a sincronizar),
+      // para que si vuelves a abrir el mismo producto ya se vea al día.
+      const itLocal=(DB.items||[]).find(x=>x.ref===it.ref);
+      if(itLocal){
+        if(j.fila.nuevoStock!=null)itLocal.stock=j.fila.nuevoStock;
+        if(j.fila.costoAplicado!=null)itLocal.coste=j.fila.costoAplicado;
+        if(j.fila.precioAplicado!=null)itLocal.precio=j.fila.precioAplicado;
+        persist();
+      }
       let msg='✓ Recibido: '+it.nombre+' · +'+cantidad+' '+(it.peso?'kg':'u')+' · vence '+fecha;
       if(costoCambio||precioCambio)msg+=' · '+(costoCambio?'costo':'')+(costoCambio&&precioCambio?' y ':'')+(precioCambio?'precio':'')+' actualizados';
       if(j.fila.avisoStock)msg+=' · '+j.fila.avisoStock;
