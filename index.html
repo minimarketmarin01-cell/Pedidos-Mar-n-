@@ -37,7 +37,7 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .tabs{background:var(--ink2);width:100%;padding:0 max(12px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left));display:flex;gap:2px;overflow-x:auto}
 .tab{background:none;border:none;color:#9aa1ac;font-family:'Archivo';font-weight:700;font-size:13px;padding:11px 14px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
 .tab.active{color:#fff;border-bottom-color:var(--wa)}
-.controls{background:var(--card);width:100%;border-bottom:1px solid var(--line);padding:12px max(16px,env(safe-area-inset-right)) 12px max(16px,env(safe-area-inset-left))}
+.controls{background:var(--azul-bg);width:100%;border-bottom:2px solid var(--azul);padding:12px max(16px,env(safe-area-inset-right)) 12px max(16px,env(safe-area-inset-left))}
 .searchwrap{position:relative;margin-bottom:11px}
 .search{width:100%;padding:11px 14px 11px 38px;border:1.5px solid var(--line);border-radius:10px;font-size:15px;font-family:'Inter';background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236A707B' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E") no-repeat 13px center}
 .search:focus{outline:none;border-color:var(--ink)}
@@ -109,6 +109,7 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .vc-row .btns button{flex:1;border:1.5px solid var(--line);background:var(--card);border-radius:9px;padding:8px;font-size:12px;font-weight:700;cursor:pointer}
 .vc-row .btn-ok{color:var(--verde);border-color:var(--verde)}
 .vc-row .btn-merma{background:var(--rojo);color:#fff;border-color:var(--rojo)}
+.vc-row .btn-cambio{background:var(--azul);color:#fff;border-color:var(--azul)}
 .vc-empty{padding:20px;text-align:center;color:var(--muted);font-size:13px}
 .vc-toprow{display:flex;gap:8px;margin-bottom:12px}
 .vc-toprow button{flex:1}
@@ -149,6 +150,7 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .hm-badge.vencido{background:var(--gold-bg);color:var(--gold)}
 .hm-badge.dañado,.hm-badge.robo{background:var(--rojo-bg);color:var(--rojo)}
 .hm-badge.consumo_interno,.hm-badge.otro{background:var(--gris-bg);color:var(--muted)}
+.hm-badge.cambio_proveedor{background:var(--azul-bg);color:var(--azul)}
 .in-cart-row{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:7px}
 .in-cart-row .top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
 .in-cart-row .nom{font-weight:700;font-size:13px}
@@ -172,7 +174,8 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 select,input[type=number]{font-family:'Inter';font-size:13px;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;background:#fff;color:var(--text)}
 input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .prov-combo{position:relative;flex:1;min-width:160px}
-.prov-all{width:100%;min-width:0;font-weight:600;padding-right:58px}
+.prov-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none;z-index:2}
+.prov-all{width:100%;min-width:0;font-weight:600;padding-right:58px;padding-left:34px}
 .prov-x{position:absolute;top:50%;right:6px;transform:translateY(-50%);width:22px;height:22px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
 .prov-x:active{background:var(--line);color:var(--ink)}
 .prov-mic{position:absolute;top:50%;right:32px;transform:translateY(-50%);width:24px;height:24px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
@@ -380,7 +383,7 @@ tbody td.l{text-align:left;white-space:normal}
       <div class="ctl-row">
         <div class="field" style="flex:1;min-width:240px">
           <label>Proveedor</label>
-          <div class="prov-pick"><div class="chips" id="prov-chips"></div><div class="prov-combo" id="prov-combo"><input class="prov-all" id="prov-all" placeholder="Proveedor… (toca o escribe)" autocomplete="off" inputmode="text"><button class="prov-mic" id="prov-mic" type="button" tabindex="-1" aria-label="Buscar por voz">🎤</button><button class="prov-x" id="prov-x" type="button" tabindex="-1" aria-label="Borrar">✕</button><div class="prov-menu hidden" id="prov-menu"></div></div></div>
+          <div class="prov-pick"><div class="chips" id="prov-chips"></div><div class="prov-combo" id="prov-combo"><span class="prov-icon">🏷️</span><input class="prov-all" id="prov-all" placeholder="Toca o escribe…" autocomplete="off" inputmode="text"><button class="prov-mic" id="prov-mic" type="button" tabindex="-1" aria-label="Buscar por voz">🎤</button><button class="prov-x" id="prov-x" type="button" tabindex="-1" aria-label="Borrar">✕</button><div class="prov-menu hidden" id="prov-menu"></div></div></div>
         </div>
         <div class="field"><label>Rotación según</label>
           <div class="seg" id="seg-basis"><button data-b="7" class="active">7d</button><button data-b="14">14d</button><button data-b="30">30d</button><button data-b="90">90d</button></div>
@@ -392,6 +395,7 @@ tbody td.l{text-align:left;white-space:normal}
         <div class="field"><label>Cobertura obj.</label><input type="number" id="cover" value="10" min="1" max="60"></div>
       </div>
     </div>
+    <label style="display:block;font-size:10.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:2px 0 5px">🔍 Buscar producto</label>
     <div class="searchwrap">
       <input class="search" id="search" placeholder="Buscar por nombre, REF o código de barras…">
       <button class="micbtn" id="micbtn" type="button" aria-label="Buscar por voz">🎤</button>
@@ -454,6 +458,7 @@ tbody td.l{text-align:left;white-space:normal}
             <button class="mm-motivo" data-m="dañado">Dañado</button>
             <button class="mm-motivo" data-m="robo">Robo</button>
             <button class="mm-motivo" data-m="consumo_interno">Consumo interno</button>
+            <button class="mm-motivo" data-m="cambio_proveedor">Cambio con proveedor</button>
           </div>
         </div>
 
@@ -1544,6 +1549,7 @@ wireFechaInput('vc-fecha-txt','vc-fecha','vc-fecha-cal');
 async function vcLoad(){
   const box=document.getElementById('vc-list');
   box.innerHTML='<div class="vc-empty">Cargando…</div>';
+  if(!CATEGORIAS_CAMBIO.length)await cargarConfigCambio();   // asegura tener la lista antes de decidir qué botones mostrar
   try{
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=vencimientos');
     const j=await res.json();
@@ -1553,16 +1559,20 @@ async function vcLoad(){
 function vcRender(lotes){
   const box=document.getElementById('vc-list');
   if(!lotes.length){box.innerHTML='<div class="vc-empty">Sin lotes activos por vencer 🎉</div>';return;}
-  box.innerHTML=lotes.map(l=>`
+  box.innerHTML=lotes.map(l=>{
+    const esCambio=esCategoriaCambio(l.categoria);
+    const botones=esCambio
+      ? `<button class="btn-cambio" data-actc="cambio" data-i="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" data-lote="${l.lote||''}" data-nom="${l.nombre.replace(/"/g,'&quot;')}">🔁 Cambio realizado</button>`
+      : `<button class="btn-ok" data-act="ok" data-i="${l.filaIndex}">✓ Vendido / liquidado</button>
+         <button class="btn-merma" data-act="merma" data-i="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" data-lote="${l.lote||''}">🗑️ Es merma</button>`;
+    return `
     <div class="vc-row">
       <div class="nom">${l.prioridad} ${l.nombre}</div>
       <div class="cat">${l.categoria} · vence ${l.fechaVencimiento} · ${l.cantidad} ${l.unidad}${l.lote?' · lote '+l.lote:''}</div>
       <div class="accion">${l.accion}${l.precioRecomendado?(' → '+peso(l.precioRecomendado)+(l.costoOrigen==='estimado'?' <span class="est">(costo estimado)</span>':'')):''}</div>
-      <div class="btns">
-        <button class="btn-ok" data-act="ok" data-i="${l.filaIndex}">✓ Vendido / liquidado</button>
-        <button class="btn-merma" data-act="merma" data-i="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" data-lote="${l.lote||''}">🗑️ Es merma</button>
-      </div>
-    </div>`).join('');
+      <div class="btns">${botones}</div>
+    </div>`;
+  }).join('');
   box.querySelectorAll('[data-act="ok"]').forEach(b=>b.onclick=()=>vcRevisar(b.dataset.i,'vendido'));
   box.querySelectorAll('[data-act="merma"]').forEach(b=>b.onclick=()=>{
     vcRevisar(b.dataset.i,'merma',false);   // marca revisado sin pedir responsable extra
@@ -1570,6 +1580,26 @@ function vcRender(lotes){
     mmPrefill(b.dataset.sku,b.dataset.cant,b.dataset.lote);
     openMerma(true);
   });
+  box.querySelectorAll('[data-actc="cambio"]').forEach(b=>b.onclick=()=>vcCambioRealizado(b.dataset.i,b.dataset.sku,b.dataset.cant,b.dataset.lote,b.dataset.nom));
+}
+// Flujo de "Cambio realizado": registra la salida (motivo cambio_proveedor, sin
+// pedir formulario porque ya tenemos sku/cantidad/costo), marca el lote como
+// revisado, y abre directo "Recibir mercadería" para cargar lo que llegó a cambio.
+async function vcCambioRealizado(filaIndex,sku,cantidad,lote,nombre){
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'merma',payload:{
+      sku:sku,cantidad:Number(cantidad),motivo:'cambio_proveedor',responsable:'',lote:lote||'',origen:'vencimiento'
+    }})});
+    const j=await res.json();
+    if(j&&j.ok){
+      await vcRevisar(filaIndex,'cambio',false);   // cierra el lote sin recargar la lista (ya vamos a otro panel)
+      showToast('✓ Cambio registrado: '+(nombre||j.fila.nombre)+(j.fila.avisoStock?(' · '+j.fila.avisoStock):' · ahora carga lo que recibiste a cambio'));
+      closeVenc();
+      openRecibir();
+    }else{
+      showToast('Error: '+((j&&j.error)||'no se pudo registrar el cambio'));
+    }
+  }catch(e){showToast('Error de conexión al registrar el cambio');}
 }
 async function vcRevisar(filaIndex,resultado,recargar){
   if(recargar===undefined)recargar=true;
@@ -1742,7 +1772,7 @@ document.getElementById('btn-sincosto').onclick=()=>{document.getElementById('sc
 document.getElementById('sc-cerrar').onclick=()=>document.getElementById('sc-ov').classList.add('hidden');
 
 // ===================== HISTORIAL DE MERMAS =====================
-const MOTIVO_LBL={liquidado:'Liquidado',vencido:'Vencido',dañado:'Dañado',robo:'Robo',consumo_interno:'Consumo interno',otro:'Otro'};
+const MOTIVO_LBL={liquidado:'Liquidado',vencido:'Vencido',dañado:'Dañado',robo:'Robo',consumo_interno:'Consumo interno',cambio_proveedor:'Cambio c/ proveedor',otro:'Otro'};
 async function hmLoad(){
   const box=document.getElementById('hm-list'),lbl=document.getElementById('hm-lbl'),val=document.getElementById('hm-val');
   box.innerHTML='';lbl.textContent='Cargando…';val.textContent='';
