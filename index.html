@@ -77,6 +77,13 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .mm-picked .nom{font-weight:700;font-size:14px}
 .mm-picked .cat{font-size:11.5px;color:var(--muted);margin-top:2px}
 .mm-qty{display:flex;align-items:center;gap:10px}
+.fecha-wrap{position:relative;display:flex;gap:8px}
+.fecha-txt{flex:1;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:16px;font-family:'JetBrains Mono';letter-spacing:.02em}
+.fecha-txt::placeholder{font-family:'Inter';letter-spacing:0;color:var(--muted);font-size:13px}
+.fecha-cal-btn{flex:none;width:46px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);font-size:19px;cursor:pointer}
+.fecha-cal-btn:active{background:var(--line)}
+.fecha-hint{font-size:10.5px;color:var(--muted);margin-top:4px;letter-spacing:.02em}
+.fecha-date-hidden{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none;left:0;top:0}
 .mm-qty input{flex:1;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:16px;font-family:'JetBrains Mono';text-align:center}
 .mm-qty .unidad{font-weight:700;color:var(--muted);min-width:28px}
 .mm-costo-ok{background:var(--verde-bg);border:1px solid var(--verde);border-radius:10px;padding:9px 12px;font-size:13px;color:var(--verde);font-weight:600}
@@ -508,7 +515,12 @@ tbody td.l{text-align:left;white-space:normal}
 
           <div class="mm-field">
             <label>Fecha de vencimiento</label>
-            <input id="vc-fecha" type="date" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:15px">
+            <div class="fecha-wrap">
+              <input id="vc-fecha-txt" class="fecha-txt" inputmode="numeric" placeholder="DD/MM/AAAA" maxlength="10" autocomplete="off">
+              <button type="button" class="fecha-cal-btn" id="vc-fecha-cal" aria-label="Elegir en calendario">📅</button>
+              <input type="date" id="vc-fecha" class="fecha-date-hidden" tabindex="-1">
+            </div>
+            <div class="fecha-hint">Escribe día, mes y año, o toca 📅 para elegir en el calendario</div>
           </div>
 
           <button class="mm-save" id="vc-guardar" disabled>Guardar lote</button>
@@ -621,7 +633,12 @@ tbody td.l{text-align:left;white-space:normal}
 
         <div class="mm-field">
           <label>Fecha de vencimiento <span style="color:var(--rojo)">*</span></label>
-          <input id="rc-fecha" type="date" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:15px">
+          <div class="fecha-wrap">
+            <input id="rc-fecha-txt" class="fecha-txt" inputmode="numeric" placeholder="DD/MM/AAAA" maxlength="10" autocomplete="off">
+            <button type="button" class="fecha-cal-btn" id="rc-fecha-cal" aria-label="Elegir en calendario">📅</button>
+            <input type="date" id="rc-fecha" class="fecha-date-hidden" tabindex="-1">
+          </div>
+          <div class="fecha-hint">Escribe día, mes y año, o toca 📅 para elegir en el calendario</div>
         </div>
 
         <button class="mm-save" id="rc-guardar" disabled>Guardar y sumar stock</button>
@@ -1491,6 +1508,39 @@ function fmtDateInputToDDMMAAAA(v){ // "YYYY-MM-DD" → "DD/MM/AAAA"
   const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v||'');
   return m ? (m[3]+'/'+m[2]+'/'+m[1]) : '';
 }
+// Conecta un campo de texto (DD/MM/AAAA, con "/" automáticos) con un
+// <input type="date"> oculto que sirve solo para abrir el calendario nativo.
+// Escribir en el texto actualiza el oculto (y dispara su 'input'/'change',
+// para que los validadores que ya escuchan ese campo sigan funcionando);
+// elegir una fecha en el calendario actualiza el texto.
+function wireFechaInput(txtId,hiddenDateId,calBtnId){
+  const txt=document.getElementById(txtId),hidden=document.getElementById(hiddenDateId),cal=document.getElementById(calBtnId);
+  if(!txt||!hidden||!cal)return;
+  txt.oninput=()=>{
+    let v=txt.value.replace(/[^\d]/g,'').slice(0,8);
+    let out='';
+    if(v.length>0)out=v.slice(0,2);
+    if(v.length>=3)out+='/'+v.slice(2,4);
+    if(v.length>=5)out+='/'+v.slice(4,8);
+    txt.value=out;
+    const m=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(out);
+    hidden.value=m?(m[3]+'-'+m[2]+'-'+m[1]):'';
+    hidden.dispatchEvent(new Event('input',{bubbles:true}));
+    hidden.dispatchEvent(new Event('change',{bubbles:true}));
+  };
+  cal.onclick=()=>{
+    if(hidden.showPicker){try{hidden.showPicker();return;}catch(e){}}
+    hidden.click();
+  };
+  hidden.addEventListener('change',()=>{
+    if(hidden.value){
+      const p=hidden.value.split('-');
+      txt.value=p[2]+'/'+p[1]+'/'+p[0];
+    }
+  });
+}
+wireFechaInput('rc-fecha-txt','rc-fecha','rc-fecha-cal');
+wireFechaInput('vc-fecha-txt','vc-fecha','vc-fecha-cal');
 async function vcLoad(){
   const box=document.getElementById('vc-list');
   box.innerHTML='<div class="vc-empty">Cargando…</div>';
@@ -1542,6 +1592,7 @@ function vcShowForm(){
   document.getElementById('vc-unidad').textContent='u';
   document.getElementById('vc-lote').value='';
   document.getElementById('vc-fecha').value='';
+  document.getElementById('vc-fecha-txt').value='';
   document.getElementById('vc-guardar').disabled=true;
   document.getElementById('vc-list-view').classList.add('hidden');
   document.getElementById('vc-form-view').classList.remove('hidden');
@@ -1872,6 +1923,7 @@ function rcReset(){
   const cIn=document.getElementById('rc-cantidad');cIn.value='';cIn.disabled=true;cIn.placeholder='0';
   document.getElementById('rc-unidad').textContent='u';
   document.getElementById('rc-fecha').value='';
+  document.getElementById('rc-fecha-txt').value='';
   document.getElementById('rc-costo').value='';
   document.getElementById('rc-precio').value='';
   document.getElementById('rc-precio-hint').textContent='';
@@ -1969,12 +2021,17 @@ async function llLoad(){
       <div class="ll-row" id="ll-row-${it.filaIndex}">
         <div class="nom">${it.nombre}</div>
         <div class="cat">${it.categoria} · <span class="plus">+${it.aumento}</span> unidades (${it.stockAntes} → ${it.stockDespues}) · detectado ${it.fecha}</div>
+        <div class="fecha-wrap" style="margin-top:8px">
+          <input id="ll-fecha-txt-${it.filaIndex}" class="fecha-txt" inputmode="numeric" placeholder="DD/MM/AAAA" maxlength="10" autocomplete="off" style="font-size:14px;padding:9px 12px">
+          <button type="button" class="fecha-cal-btn" id="ll-fecha-cal-${it.filaIndex}" aria-label="Elegir en calendario" style="width:40px;font-size:16px">📅</button>
+          <input type="date" id="ll-fecha-${it.filaIndex}" class="fecha-date-hidden" tabindex="-1">
+        </div>
         <div class="fecharow">
-          <input type="date" id="ll-fecha-${it.filaIndex}">
           <button class="btn-guardar-fecha" data-i="${it.filaIndex}">Guardar</button>
           <button class="btn-ignorar" data-ig="${it.filaIndex}">Ignorar</button>
         </div>
       </div>`).join('');
+    lst.forEach(it=>wireFechaInput('ll-fecha-txt-'+it.filaIndex,'ll-fecha-'+it.filaIndex,'ll-fecha-cal-'+it.filaIndex));
     box.querySelectorAll('.btn-guardar-fecha').forEach(b=>b.onclick=()=>llGuardarFecha(b.dataset.i));
     box.querySelectorAll('.btn-ignorar').forEach(b=>b.onclick=()=>llIgnorar(b.dataset.ig));
   }catch(e){lbl.textContent='Error de conexión.';}
