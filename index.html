@@ -141,6 +141,15 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .in-cart-row .costo-warn{width:100%;margin-top:6px;padding:7px 9px;border:1.5px solid var(--rojo);border-radius:8px;font-size:12.5px;font-family:'JetBrains Mono'}
 .in-cart-total{background:var(--paper);border-radius:10px;padding:10px 12px;font-size:13px;display:flex;justify-content:space-between;align-items:center;font-weight:700;margin:10px 0}
 .in-cart-total b{font-family:'JetBrains Mono';font-size:16px}
+.ll-row{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.ll-row .nom{font-weight:700;font-size:13.5px}
+.ll-row .cat{font-size:11.5px;color:var(--muted);margin-top:2px}
+.ll-row .plus{color:var(--verde);font-weight:700}
+.ll-row .fecharow{display:flex;gap:8px;margin-top:8px}
+.ll-row .fecharow input{flex:1;padding:9px 12px;border:1.5px solid var(--line);border-radius:9px;font-size:14px}
+.ll-row .fecharow button{border:none;border-radius:9px;padding:9px 12px;font-size:12px;font-weight:700;cursor:pointer}
+.ll-row .btn-guardar-fecha{background:var(--verde);color:#fff}
+.ll-row .btn-ignorar{background:var(--gris-bg);color:var(--ink)}
 .searchx.on{display:block}
 .ctl-row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
 .field{display:flex;flex-direction:column;gap:5px}
@@ -329,6 +338,7 @@ tbody td.l{text-align:left;white-space:normal}
     <button class="loadbtn" id="btn-hist-merma">📋 Historial</button>
     <button class="loadbtn" id="btn-insumos">🧹 Insumos</button>
     <button class="loadbtn" id="btn-venc">📅 Vencimientos</button>
+    <button class="loadbtn" id="btn-llegadas">🔔 Recién llegado</button>
     <button class="loadbtn" id="btn-sincosto">⚠️ Sin costo</button>
     <span class="glob" id="glob-quiebre" style="color:#ffb4a8;font-size:12px;font-weight:600"></span>
     <span class="upd" id="updlabel"></span>
@@ -547,6 +557,14 @@ tbody td.l{text-align:left;white-space:normal}
 
         <button class="mm-save" id="in-guardar" disabled>Guardar consumo</button>
         <button class="loadbtn" id="in-cancelar" style="width:100%;margin-top:8px">Cancelar</button>
+      </div>
+    </div>
+    <div class="mm-ov hidden" id="ll-ov">
+      <div class="mm-card">
+        <div class="mm-head"><h3>🔔 Recién llegado</h3></div>
+        <div class="hm-summary"><span class="lbl" id="ll-lbl">Cargando…</span></div>
+        <div id="ll-list"></div>
+        <button class="loadbtn" id="ll-cerrar" style="width:100%;margin-top:10px">Cerrar</button>
       </div>
     </div>
     <div class="tablecard"><div class="tbl-scroll"><table id="ptable">
@@ -1693,6 +1711,60 @@ document.getElementById('in-guardar').onclick=async()=>{
   }catch(e){showToast('Error de conexión al guardar el consumo');}
   btn.disabled=false;btn.textContent='Guardar consumo';inValidar();
 };
+
+// ===================== RECIÉN LLEGADO =====================
+async function llLoad(){
+  const box=document.getElementById('ll-list'),lbl=document.getElementById('ll-lbl');
+  box.innerHTML='';lbl.textContent='Cargando…';
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=llegadas');
+    const j=await res.json();
+    if(!j||!j.ok){lbl.textContent='Error al cargar.';return;}
+    const lst=j.llegadas;
+    if(!lst.length){lbl.textContent='';box.innerHTML='<div class="vc-empty">Sin llegadas pendientes por fechar 🎉</div>';return;}
+    lbl.textContent=lst.length+' producto'+(lst.length===1?'':'s')+' con stock nuevo, esperando fecha de vencimiento';
+    box.innerHTML=lst.map(it=>`
+      <div class="ll-row" id="ll-row-${it.filaIndex}">
+        <div class="nom">${it.nombre}</div>
+        <div class="cat">${it.categoria} · <span class="plus">+${it.aumento}</span> unidades (${it.stockAntes} → ${it.stockDespues}) · detectado ${it.fecha}</div>
+        <div class="fecharow">
+          <input type="date" id="ll-fecha-${it.filaIndex}">
+          <button class="btn-guardar-fecha" data-i="${it.filaIndex}">Guardar</button>
+          <button class="btn-ignorar" data-ig="${it.filaIndex}">Ignorar</button>
+        </div>
+      </div>`).join('');
+    box.querySelectorAll('.btn-guardar-fecha').forEach(b=>b.onclick=()=>llGuardarFecha(b.dataset.i));
+    box.querySelectorAll('.btn-ignorar').forEach(b=>b.onclick=()=>llIgnorar(b.dataset.ig));
+  }catch(e){lbl.textContent='Error de conexión.';}
+}
+async function llGuardarFecha(filaIndex){
+  const inp=document.getElementById('ll-fecha-'+filaIndex);
+  const v=inp.value;
+  if(!v){showToast('Elige una fecha primero');return;}
+  const fecha=fmtDateInputToDDMMAAAA(v);
+  const row=document.getElementById('ll-row-'+filaIndex);
+  const btn=row.querySelector('.btn-guardar-fecha');
+  btn.disabled=true;btn.textContent='Guardando…';
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'asignar_llegada',payload:{filaIndex:filaIndex,fechaVencimiento:fecha}})});
+    const j=await res.json();
+    if(j&&j.ok){showToast('✓ Lote creado en Vencimientos · vence '+fecha);row.remove();}
+    else{showToast('Error: '+((j&&j.error)||'no se pudo guardar'));btn.disabled=false;btn.textContent='Guardar';}
+  }catch(e){showToast('Error de conexión');btn.disabled=false;btn.textContent='Guardar';}
+}
+async function llIgnorar(filaIndex){
+  const row=document.getElementById('ll-row-'+filaIndex);
+  const btn=row.querySelector('.btn-ignorar');
+  btn.disabled=true;
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'ignorar_llegada',payload:{filaIndex:filaIndex}})});
+    const j=await res.json();
+    if(j&&j.ok){row.remove();}
+    else{showToast('Error: '+((j&&j.error)||'no se pudo'));btn.disabled=false;}
+  }catch(e){showToast('Error de conexión');btn.disabled=false;}
+}
+document.getElementById('btn-llegadas').onclick=()=>{document.getElementById('ll-ov').classList.remove('hidden');llLoad();};
+document.getElementById('ll-cerrar').onclick=()=>document.getElementById('ll-ov').classList.add('hidden');
 
 document.getElementById('btn-suggest').onclick=()=>{currentItems().forEach(it=>{delete state.edits[it.ref];});render();showToast('↺ Volví a las cantidades sugeridas');};
 document.getElementById('btn-clear').onclick=()=>{currentItems().forEach(it=>{state.edits[it.ref]=0;});render();showToast('✕ Pedido vaciado (todo en 0)');};
