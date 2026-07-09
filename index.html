@@ -59,8 +59,11 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .scan-hint{position:absolute;bottom:26px;left:0;right:0;text-align:center;color:#fff;font-size:13px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.7);z-index:2}
 .mm-ov{position:fixed;inset:0;background:rgba(21,25,31,.55);z-index:210;display:flex;align-items:flex-end;justify-content:center}
 .mm-ov.hidden{display:none}
-.mm-card{background:var(--card);width:100%;max-width:480px;max-height:92vh;overflow-y:auto;border-radius:18px 18px 0 0;padding:16px 16px 22px}
-.mm-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.mm-card{background:var(--card);width:100%;max-width:480px;max-height:92vh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;overflow:hidden}
+.mm-head{display:flex;justify-content:space-between;align-items:center;padding:16px 16px 0 16px;flex:none;margin-bottom:12px}
+.mm-topbar{padding:0 16px;flex:none;margin-bottom:10px}
+.mm-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 16px 22px;flex:1;min-height:0}
+#vc-list-view,#vc-form-view{display:flex;flex-direction:column;flex:1;min-height:0}
 .mm-head h3{font-family:'Archivo';font-weight:800;font-size:16px}
 .mm-field{margin-bottom:12px}
 .mm-field label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:5px}
@@ -397,6 +400,7 @@ tbody td.l{text-align:left;white-space:normal}
     <div class="mm-ov hidden" id="mm-ov">
       <div class="mm-card">
         <div class="mm-head"><h3>🗑️ Registrar merma</h3></div>
+        <div class="mm-body">
 
         <div class="mm-field">
           <label>Producto</label>
@@ -457,6 +461,7 @@ tbody td.l{text-align:left;white-space:normal}
 
         <button class="mm-save" id="mm-save" disabled>Guardar merma</button>
         <button class="loadbtn" id="mm-cancelar" style="width:100%;margin-top:8px">Cancelar</button>
+        </div>
       </div>
     </div>
     <div class="mm-ov hidden" id="vc-ov">
@@ -464,12 +469,14 @@ tbody td.l{text-align:left;white-space:normal}
         <div class="mm-head"><h3>📅 Vencimientos</h3></div>
 
         <div id="vc-list-view">
-          <div class="vc-toprow"><button class="loadbtn acc" id="vc-add-btn" style="width:100%">+ Nuevo lote</button></div>
+          <div class="mm-topbar"><div class="vc-toprow"><button class="loadbtn acc" id="vc-add-btn" style="flex:1">+ Nuevo lote</button><button class="loadbtn" id="vc-cerrar" style="flex:1">Cerrar</button></div></div>
+          <div class="mm-body">
           <div id="vc-list"><div class="vc-empty">Cargando…</div></div>
-          <button class="loadbtn" id="vc-cerrar" style="width:100%;margin-top:10px">Cerrar</button>
+          </div>
         </div>
 
         <div id="vc-form-view" class="hidden">
+          <div class="mm-body">
           <div class="mm-field">
             <label>Producto</label>
             <div class="mm-search">
@@ -506,29 +513,35 @@ tbody td.l{text-align:left;white-space:normal}
 
           <button class="mm-save" id="vc-guardar" disabled>Guardar lote</button>
           <button class="loadbtn" id="vc-cancelar" style="width:100%;margin-top:8px">Cancelar</button>
+          </div>
         </div>
       </div>
     </div>
     <div class="mm-ov hidden" id="sc-ov">
       <div class="mm-card">
         <div class="mm-head"><h3>⚠️ Productos sin costo</h3></div>
+        <div class="mm-topbar"><button class="loadbtn" id="sc-cerrar" style="width:100%">Cerrar</button></div>
+        <div class="mm-body">
         <div class="sc-warn">Al guardar, el costo se escribe directo en Loyverse (no solo aquí). Revisa el valor antes de guardar.</div>
         <div class="sc-summary" id="sc-summary">Cargando…</div>
         <div id="sc-list"></div>
-        <button class="loadbtn" id="sc-cerrar" style="width:100%;margin-top:10px">Cerrar</button>
+        </div>
       </div>
     </div>
     <div class="mm-ov hidden" id="hm-ov">
       <div class="mm-card">
         <div class="mm-head"><h3>📋 Historial de mermas</h3></div>
+        <div class="mm-topbar"><button class="loadbtn" id="hm-cerrar" style="width:100%">Cerrar</button></div>
+        <div class="mm-body">
         <div class="hm-summary"><span class="lbl" id="hm-lbl">Cargando…</span><span class="val" id="hm-val"></span></div>
         <div id="hm-list"></div>
-        <button class="loadbtn" id="hm-cerrar" style="width:100%;margin-top:10px">Cerrar</button>
+        </div>
       </div>
     </div>
     <div class="mm-ov hidden" id="in-ov">
       <div class="mm-card">
         <div class="mm-head"><h3>🧹 Insumos / consumo interno</h3></div>
+        <div class="mm-body">
 
         <div class="mm-field">
           <label>Agregar producto</label>
@@ -558,11 +571,13 @@ tbody td.l{text-align:left;white-space:normal}
 
         <button class="mm-save" id="in-guardar" disabled>Guardar consumo</button>
         <button class="loadbtn" id="in-cancelar" style="width:100%;margin-top:8px">Cancelar</button>
+        </div>
       </div>
     </div>
     <div class="mm-ov hidden" id="rc-ov">
       <div class="mm-card">
         <div class="mm-head"><h3>📦 Recibir mercadería</h3></div>
+        <div class="mm-body">
 
         <div class="mm-field">
           <label>Producto</label>
@@ -605,14 +620,17 @@ tbody td.l{text-align:left;white-space:normal}
 
         <button class="mm-save" id="rc-guardar" disabled>Guardar y sumar stock</button>
         <button class="loadbtn" id="rc-cancelar" style="width:100%;margin-top:8px">Cancelar</button>
+        </div>
       </div>
     </div>
     <div class="mm-ov hidden" id="ll-ov">
       <div class="mm-card">
         <div class="mm-head"><h3>🔔 Recién llegado</h3></div>
+        <div class="mm-topbar"><button class="loadbtn" id="ll-cerrar" style="width:100%">Cerrar</button></div>
+        <div class="mm-body">
         <div class="hm-summary"><span class="lbl" id="ll-lbl">Cargando…</span></div>
         <div id="ll-list"></div>
-        <button class="loadbtn" id="ll-cerrar" style="width:100%;margin-top:10px">Cerrar</button>
+        </div>
       </div>
     </div>
     <div class="tablecard"><div class="tbl-scroll"><table id="ptable">
