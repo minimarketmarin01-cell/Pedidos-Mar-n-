@@ -99,6 +99,10 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .rc-fecha-rapida{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .rc-fr-btn{background:var(--paper);border:1.5px solid var(--line);border-radius:9px;padding:8px 12px;font-size:12.5px;font-weight:700;color:var(--ink);cursor:pointer;min-height:40px;flex:1;min-width:70px}
 .rc-fr-btn:active{background:var(--azul-bg);border-color:var(--azul);color:var(--azul)}
+.btn-editfecha{background:none;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:700;color:var(--muted);cursor:pointer}
+.btn-editfecha:active{background:var(--paper)}
+.vc-editbox{margin-top:8px;padding:10px;background:var(--paper);border:1px solid var(--line);border-radius:10px}
+.vc-editlbl{font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px}
 .fecha-date-hidden{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none;left:0;top:0}
 .mm-qty input{flex:1;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:16px;font-family:'JetBrains Mono';text-align:center}
 .mm-qty .unidad{font-weight:700;color:var(--muted);min-width:28px}
@@ -885,7 +889,7 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 <nav class="bottom-nav" id="bottom-nav">
   <button class="bn-item active" id="bn-pedidos"><span class="ic">🛒</span>Pedidos</button>
   <button class="bn-item" id="bn-recepcion"><span class="ic">📦</span>Recepción</button>
-  <button class="bn-item" id="bn-mermas"><span class="ic">🗑️</span>Mermas</button>
+  <button class="bn-item" id="bn-vencimientos"><span class="ic">📅</span>Vencimientos</button>
   <button class="bn-item" id="bn-mas"><span class="ic">⋯</span>Más<span class="bn-dot" id="bn-mas-dot"></span></button>
 </nav>
 
@@ -895,15 +899,12 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
     <div class="mm-topbar"><button class="loadbtn" id="mas-cerrar" style="width:100%">Cerrar</button></div>
     <div class="mm-body">
       <div class="mas-quick">
-        <button id="mas-q-sync">🔄<br>Sincronizar</button>
-        <button id="mas-q-catalogo">♻️<br>Catálogo</button>
-        <button id="mas-q-recibir">📦<br>Recibir</button>
         <button id="mas-q-merma">🗑️<br>Merma</button>
         <button id="mas-q-insumos">🧹<br>Insumos</button>
-        <button id="mas-q-venc">📅<br>Vencimientos</button>
         <button id="mas-q-llegadas">🔔<br>Avisos<span class="mas-badge" id="mas-badge"></span></button>
         <button id="mas-q-sincosto">⚠️<br>Sin costo</button>
         <button id="mas-q-hist">📋<br>Historial</button>
+        <button id="mas-q-recargar">📊<br>Recargar historial</button>
       </div>
       <div class="method" style="margin:0;padding:16px 18px">
         <h3>ℹ️ Cómo funciona tu app</h3>
@@ -1624,23 +1625,37 @@ function playTabAnim(name){
   el.classList.add('tab-anim');
 }
 document.getElementById('bn-pedidos').onclick=()=>showScreen('pedido');
-document.getElementById('bn-recepcion').onclick=()=>document.getElementById('btn-recibir').click();
-document.getElementById('bn-mermas').onclick=()=>document.getElementById('btn-merma').click();
+function cerrarOverlays(){
+  document.querySelectorAll('.mm-ov, .scan-ov').forEach(o=>o.classList.add('hidden'));
+}
+document.getElementById('bn-recepcion').onclick=()=>{cerrarOverlays();document.getElementById('btn-recibir').click();};
+document.getElementById('bn-vencimientos').onclick=()=>{cerrarOverlays();document.getElementById('btn-venc').click();};
 document.getElementById('bn-mas').onclick=()=>document.getElementById('mas-ov').classList.remove('hidden');
 document.getElementById('mas-cerrar').onclick=()=>document.getElementById('mas-ov').classList.add('hidden');
 document.getElementById('cart-fab').onclick=()=>showScreen('carrito');
 document.getElementById('cart-back').onclick=()=>showScreen('pedido');
 
 // Accesos rápidos del panel Más: reusan los botones reales que ya funcionan (sin duplicar lógica)
-document.getElementById('mas-q-sync').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');document.getElementById('btn-sync').click();};
-document.getElementById('mas-q-catalogo').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');document.getElementById('btn-prices').click();};
-document.getElementById('mas-q-recibir').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');document.getElementById('btn-recibir').click();};
 document.getElementById('mas-q-merma').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');document.getElementById('btn-merma').click();};
 document.getElementById('mas-q-insumos').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');document.getElementById('btn-insumos').click();};
-document.getElementById('mas-q-venc').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');document.getElementById('btn-venc').click();};
 document.getElementById('mas-q-llegadas').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');document.getElementById('btn-llegadas').click();};
 document.getElementById('mas-q-sincosto').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');document.getElementById('btn-sincosto').click();};
 document.getElementById('mas-q-hist').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');document.getElementById('btn-hist-merma').click();};
+document.getElementById('mas-q-recargar').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');recargarHistorial();};
+async function recargarHistorial(){
+  showToast('📊 Recargando historial de ventas… (puede tardar unos segundos)');
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=recargar_historial');
+    const j=await res.json();
+    if(j&&j.ok){
+      DB=buildDBfromCloud(j.items,j.ventas);
+      INVMAP=invMapFromItems(DB.items);
+      state.edits={};
+      persist();render();
+      showToast('✓ '+(j.syncMsg||'Historial recargado')+'. Ahora 7d, 14d, 30d y 90d muestran valores distintos según los días disponibles.');
+    }else{showToast('No se pudo recargar el historial'+((j&&j.syncMsg)?': '+j.syncMsg:''));}
+  }catch(e){showToast('Error al recargar el historial');}
+}
 const si=document.getElementById('search');
 let _searchT=null;
 si.oninput=e=>{state.search=e.target.value.trim();document.getElementById('searchx').classList.toggle('on',!!state.search);clearTimeout(_searchT);_searchT=setTimeout(()=>{render();persistUI();},200);};
@@ -1809,7 +1824,7 @@ function mmReset(){
   document.querySelectorAll('#mm-resp button').forEach(b=>b.classList.remove('sel'));
   document.getElementById('mm-save').disabled=true;
 }
-function openMerma(skipReset){if(!skipReset)mmReset();document.getElementById('mm-ov').classList.remove('hidden');}
+function openMerma(skipReset){if(!skipReset){try{mmReset();}catch(e){}}document.getElementById('mm-ov').classList.remove('hidden');}
 function closeMerma(){document.getElementById('mm-ov').classList.add('hidden');}
 // Prellenar el modal de merma desde el panel de vencimientos ("Es merma")
 function mmPrefill(ref,cantidad,lote){
@@ -1956,7 +1971,14 @@ function vcRender(lotes){
       <div class="cat">${l.categoria} · vence ${l.fechaVencimiento} · ${l.cantidad} ${l.unidad}${l.lote?' · lote '+l.lote:''}</div>
       <div class="accion">${l.accion}${l.precioRecomendado?(' → '+peso(l.precioRecomendado)+(l.costoOrigen==='estimado'?' <span class="est">(costo estimado)</span>':'')):''}</div>
       ${notaExtra}
-      ${botones?'<div class="btns">'+botones+'</div>':''}
+      <div class="btns">${botones||''}<button class="btn-editfecha" data-editf="${l.filaIndex}" data-fv="${l.fechaVencimiento}">✏️ Editar fecha</button></div>
+      <div class="vc-editbox hidden" data-editbox="${l.filaIndex}">
+        <span class="vc-editlbl">Nueva fecha de vencimiento:</span>
+        <div class="fecha-wrap">
+          <input class="fecha-txt vc-ef-txt" inputmode="numeric" placeholder="DD/MM/AAAA" maxlength="10" autocomplete="off" value="${l.fechaVencimiento}">
+          <button type="button" class="btn-ok vc-ef-save" data-savef="${l.filaIndex}" style="white-space:nowrap">Guardar</button>
+        </div>
+      </div>
     </div>`;
   }).join('');
   box.querySelectorAll('[data-act="ok"]').forEach(b=>b.onclick=()=>vcRevisar(b.dataset.i,'vendido'));
@@ -1967,6 +1989,32 @@ function vcRender(lotes){
     openMerma(true);
   });
   box.querySelectorAll('[data-actm="cambiado"]').forEach(b=>b.onclick=()=>vcMarcarCambiado(b.dataset.i,b.dataset.nom));
+  // Editar fecha: abre el mini-formulario; con auto-formato DD/MM/AAAA al escribir
+  box.querySelectorAll('[data-editf]').forEach(b=>b.onclick=()=>{
+    const bx=box.querySelector(`[data-editbox="${b.dataset.editf}"]`);
+    if(bx)bx.classList.toggle('hidden');
+  });
+  box.querySelectorAll('.vc-ef-txt').forEach(inp=>inp.oninput=()=>{
+    let v=inp.value.replace(/[^\d]/g,'').slice(0,8);let out='';
+    if(v.length>0)out=v.slice(0,2);if(v.length>=3)out+='/'+v.slice(2,4);if(v.length>=5)out+='/'+v.slice(4,8);
+    inp.value=out;
+  });
+  box.querySelectorAll('[data-savef]').forEach(b=>b.onclick=()=>{
+    const bx=box.querySelector(`[data-editbox="${b.dataset.savef}"]`);
+    const inp=bx?bx.querySelector('.vc-ef-txt'):null;
+    if(inp)vcEditarFecha(b.dataset.savef,inp.value.trim());
+  });
+}
+async function vcEditarFecha(filaIndex,nuevaFecha){
+  if(!/^\d{2}\/\d{2}\/\d{4}$/.test(nuevaFecha)){showToast('Escribe la fecha como DD/MM/AAAA');return;}
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_fecha_venc',payload:{filaIndex:Number(filaIndex),nuevaFecha:nuevaFecha}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      showToast('✓ Fecha corregida a '+j.nuevaFecha+' ('+j.estado+')');
+      vcLoad();
+    }else{showToast('Error: '+((j&&j.error)||'no se pudo corregir la fecha'));}
+  }catch(e){showToast('Error de conexión al corregir la fecha');}
 }
 // El producto ya se retiró de la góndola y el stock ya se descontó SOLO (automático,
 // la noche que venció). Esto solo cierra el registro cuando por fin llega el proveedor
