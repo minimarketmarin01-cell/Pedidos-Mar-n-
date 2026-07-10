@@ -96,6 +96,9 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .fecha-cal-btn{flex:none;width:46px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);font-size:19px;cursor:pointer}
 .fecha-cal-btn:active{background:var(--line)}
 .fecha-hint{font-size:10.5px;color:var(--muted);margin-top:4px;letter-spacing:.02em}
+.rc-fecha-rapida{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.rc-fr-btn{background:var(--paper);border:1.5px solid var(--line);border-radius:9px;padding:8px 12px;font-size:12.5px;font-weight:700;color:var(--ink);cursor:pointer;min-height:40px;flex:1;min-width:70px}
+.rc-fr-btn:active{background:var(--azul-bg);border-color:var(--azul);color:var(--azul)}
 .fecha-date-hidden{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none;left:0;top:0}
 .mm-qty input{flex:1;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:16px;font-family:'JetBrains Mono';text-align:center}
 .mm-qty .unidad{font-weight:700;color:var(--muted);min-width:28px}
@@ -795,6 +798,13 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
             <input type="date" id="rc-fecha" class="fecha-date-hidden" tabindex="-1">
           </div>
           <div class="fecha-hint">Escribe día, mes y año, o toca 📅 para elegir en el calendario</div>
+          <div class="rc-fecha-rapida">
+            <button type="button" class="rc-fr-btn" data-dias="15">+15 días</button>
+            <button type="button" class="rc-fr-btn" data-meses="1">+1 mes</button>
+            <button type="button" class="rc-fr-btn" data-meses="3">+3 meses</button>
+            <button type="button" class="rc-fr-btn" data-meses="6">+6 meses</button>
+            <button type="button" class="rc-fr-btn" data-meses="12">+1 año</button>
+          </div>
         </div>
 
         <button class="mm-save" id="rc-guardar" disabled>Guardar y sumar stock</button>
@@ -1233,7 +1243,7 @@ function render(){
   setProvInputValue();
   document.getElementById('order-sub').textContent=allMode?'Todos los proveedores':'Proveedor · '+state.prov;
   const thRate=document.getElementById('th-rate');
-  if(thRate&&thRate.childNodes[0])thRate.childNodes[0].nodeValue=unitLabel()+' ';
+  if(thRate&&thRate.childNodes[0])thRate.childNodes[0].nodeValue='Vta '+state.basis+'d ';
   renderTable();renderScale();renderOrder();
 }
 // ===================== INICIO (dashboard resumen) =====================
@@ -1382,8 +1392,9 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
   const mgVal=mg!=null?mg+'%':'—';
   const showProv=(state.search||state.allProv);
   const priceLine=`<div class="prod-prices"><span class="pp-v" title="Venta">V ${precioVal}</span><span class="pp-sep">·</span><span class="pp-c" title="Costo">C ${costoVal}</span><span class="pp-sep">·</span><span class="price-mg ${mgCls}" title="Margen">${mgVal}</span></div>`;
+  const ventasPeriodo=state.basis===7?it.u7:state.basis===14?it.u14:state.basis===90?it.u90:it.u30;
   return `<tr class="${a.status==='urgente'?'row-urgent':''}"><td class="l" title="${tooltip}"><span class="row-dot" style="background:${dotColor}"></span><div class="prod-name">${it.nombre}</div>${showProv?`<div class="prod-meta">${it.prov}</div>`:''}${priceLine}</td>`+
-    `<td class="num">${fmt1(a.rate*f)}</td>`+
+    `<td class="num">${fmt1(ventasPeriodo)}</td>`+
     `<td class="tdc"><span class="trend ${a.trend.k}">${a.trend.t}</span></td>`+
     `<td class="num">${it.stock==null?'<span style="color:var(--azul)">s/c</span>':fmt.format(it.stock)}${(a.vencido>0)?`<br><span style="color:var(--rojo);font-size:9.5px;font-weight:700">-${fmt.format(a.vencido)}</span>`:''}</td>`+
     `<td class="num" style="color:${covColor(a)}">${covTxt}</td>`+
@@ -1902,6 +1913,18 @@ function wireFechaInput(txtId,hiddenDateId,calBtnId){
 }
 wireFechaInput('rc-fecha-txt','rc-fecha','rc-fecha-cal');
 wireFechaInput('vc-fecha-txt','vc-fecha','vc-fecha-cal');
+// Botones rápidos de fecha en Recepción: setean el vencimiento a hoy + N días/meses
+document.querySelectorAll('.rc-fr-btn').forEach(b=>b.onclick=()=>{
+  const d=new Date();
+  if(b.dataset.dias)d.setDate(d.getDate()+Number(b.dataset.dias));
+  if(b.dataset.meses)d.setMonth(d.getMonth()+Number(b.dataset.meses));
+  const iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const hidden=document.getElementById('rc-fecha'), txt=document.getElementById('rc-fecha-txt');
+  hidden.value=iso;
+  txt.value=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+  hidden.dispatchEvent(new Event('change',{bubbles:true}));
+  hidden.dispatchEvent(new Event('input',{bubbles:true}));
+});
 async function vcLoad(){
   const box=document.getElementById('vc-list');
   box.innerHTML='<div class="vc-empty">Cargando…</div>';
@@ -2395,12 +2418,16 @@ document.getElementById('rc-guardar').onclick=async()=>{
   const costoCambio=nuevoCosto>0&&nuevoCosto!==rcState.costoOriginal;
   const precioCambio=nuevoPrecio>0&&nuevoPrecio!==rcState.precioOriginal;
   btn.disabled=true;btn.textContent='Guardando…';
+  // Timeout de seguridad: si el servidor no responde en 25s, se corta y avisa
+  // (así el botón nunca queda pegado en "Guardando…" para siempre).
+  const ctrl=new AbortController();
+  const to=setTimeout(()=>ctrl.abort(),25000);
   try{
     const payload={sku:it.ref,cantidad:cantidad,fechaVencimiento:fecha,
       snap:{id:it.id,vid:it.vid,nombre:it.nombre,prov:it.prov,peso:it.peso,precio:it.precio,costo:it.coste,stock:it.stock,track:it.track,barcode:it.barcode}};
     if(costoCambio)payload.costo=nuevoCosto;
     if(precioCambio)payload.precio=nuevoPrecio;
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'lote_nuevo',payload:payload})});
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'lote_nuevo',payload:payload}),signal:ctrl.signal});
     const j=await res.json();
     if(j&&j.ok){
       // Actualiza la copia local del producto AL INSTANTE (sin esperar a sincronizar),
@@ -2421,8 +2448,14 @@ document.getElementById('rc-guardar').onclick=async()=>{
       rcReset();
       document.getElementById('rc-search').focus();
     }else{showToast('Error: '+((j&&j.error)||'no se pudo guardar'));}
-  }catch(e){showToast('Error de conexión al recibir la mercadería');}
-  btn.disabled=false;btn.textContent='Guardar y sumar stock';rcValidar();
+  }catch(e){
+    if(e.name==='AbortError')showToast('El guardado tardó demasiado. Revisa tu conexión y vuelve a intentar (el stock pudo haberse guardado — verifica antes de repetir).');
+    else showToast('Error de conexión al recibir la mercadería');
+  }finally{
+    clearTimeout(to);
+    btn.disabled=false;btn.textContent='Guardar y sumar stock';
+    try{rcValidar();}catch(_){}
+  }
 };
 
 // ===================== RECIÉN LLEGADO =====================
