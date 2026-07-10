@@ -1498,6 +1498,7 @@ function buildDBfromCloud(items, ventas){
     const t=tag(nombre,prov);
     items_arr.push({
       ref:ref, nombre:nombre, prov:prov,
+      id:inv.id||'', vid:inv.vid||'',
       u_all:(v.u_all||0)+hoyU,
       u7:(v.u7||0)+hoyU, u14:(v.u14||0)+hoyU,
       u30:(v.u30||0)+hoyU, u90:(v.u90||0)+hoyU,
@@ -2185,6 +2186,7 @@ async function hmCorregir(filaIndex,nuevoMotivo){
     }
   }catch(e){showToast('Error de conexión al corregir');}
 }
+document.getElementById('btn-hist-merma').onclick=()=>{document.getElementById('hm-ov').classList.remove('hidden');hmLoad();};
 document.getElementById('hm-cerrar').onclick=()=>document.getElementById('hm-ov').classList.add('hidden');
 
 // ===================== INSUMOS / CONSUMO INTERNO (ticket) =====================
@@ -2343,7 +2345,7 @@ function rcReset(){
   document.getElementById('rc-precio-hint').textContent='';
   document.getElementById('rc-guardar').disabled=true;
 }
-function openRecibir(){rcReset();document.getElementById('rc-ov').classList.remove('hidden');}
+function openRecibir(){try{rcReset();}catch(e){}document.getElementById('rc-ov').classList.remove('hidden');}
 function closeRecibir(){document.getElementById('rc-ov').classList.add('hidden');}
 
 document.getElementById('btn-recibir').onclick=openRecibir;
@@ -2394,7 +2396,8 @@ document.getElementById('rc-guardar').onclick=async()=>{
   const precioCambio=nuevoPrecio>0&&nuevoPrecio!==rcState.precioOriginal;
   btn.disabled=true;btn.textContent='Guardando…';
   try{
-    const payload={sku:it.ref,cantidad:cantidad,fechaVencimiento:fecha};
+    const payload={sku:it.ref,cantidad:cantidad,fechaVencimiento:fecha,
+      snap:{id:it.id,vid:it.vid,nombre:it.nombre,prov:it.prov,peso:it.peso,precio:it.precio,costo:it.coste,stock:it.stock,track:it.track,barcode:it.barcode}};
     if(costoCambio)payload.costo=nuevoCosto;
     if(precioCambio)payload.precio=nuevoPrecio;
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'lote_nuevo',payload:payload})});
