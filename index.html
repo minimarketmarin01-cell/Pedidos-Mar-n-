@@ -2413,7 +2413,10 @@ document.getElementById('rc-guardar').onclick=async()=>{
       if(costoCambio||precioCambio)msg+=' · '+(costoCambio?'costo':'')+(costoCambio&&precioCambio?' y ':'')+(precioCambio?'precio':'')+' actualizados';
       if(j.fila.avisoStock)msg+=' · '+j.fila.avisoStock;
       showToast(msg);
-      closeRecibir();
+      // No cerramos: reseteamos y dejamos la ventana lista para el siguiente producto,
+      // así puedes recibir varios seguidos sin tener que reabrir Recepción.
+      rcReset();
+      document.getElementById('rc-search').focus();
     }else{showToast('Error: '+((j&&j.error)||'no se pudo guardar'));}
   }catch(e){showToast('Error de conexión al recibir la mercadería');}
   btn.disabled=false;btn.textContent='Guardar y sumar stock';rcValidar();
