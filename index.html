@@ -143,6 +143,31 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .sm-row .nom{font-weight:700;font-size:13px;line-height:1.25}
 .sm-row .meta{font-size:11.5px;color:var(--muted);margin-top:3px}
 .sm-row .val{font-weight:700;color:var(--rojo);font-size:12px;white-space:nowrap;text-align:right}
+.cp-toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:600;font-size:14px}
+.cp-toggle input[type=checkbox]{width:22px;height:22px;flex:0 0 auto}
+#cp-cat-nuevabox:not(.hidden){display:flex}
+.gon-top{display:flex;gap:8px;margin:0 0 10px}
+.gon-top input,.gon-top select{flex:1;min-width:0;padding:9px 11px;border:1.5px solid var(--line);border-radius:10px;font-size:13px}
+.gon-progress{display:flex;align-items:center;gap:10px;margin:0 0 12px}
+.gon-bar{flex:1;height:8px;background:var(--gris-bg);border-radius:99px;overflow:hidden}
+.gon-bar>div{height:100%;background:var(--verde);width:0;transition:width .25s}
+.gon-progress span{font-size:12px;font-weight:700;color:var(--muted);white-space:nowrap}
+.gon-cat{margin-bottom:14px}
+.gon-cat-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 6px;flex-wrap:wrap}
+.gon-cat-head .cat-nom{font-weight:800;font-size:14px}
+.gon-counts{display:flex;gap:5px;flex-wrap:wrap}
+.gon-badge{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:99px;white-space:nowrap}
+.gon-badge.v{background:#fdecec;color:#b42318}
+.gon-badge.h{background:#fff2e0;color:#b54708}
+.gon-badge.d3{background:#fff8e1;color:#8a6d00}
+.gon-badge.d7{background:#eaf7ee;color:#217a3b}
+.gon-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:7px;background:var(--card)}
+.gon-row .gon-info{flex:1;min-width:0}
+.gon-row .nom{font-weight:700;font-size:13px;line-height:1.25}
+.gon-row .meta{font-size:11.5px;color:var(--muted);margin-top:2px}
+.gon-retirar{flex:0 0 auto;border:1.5px solid var(--ink);background:var(--ink);color:#fff;border-radius:9px;padding:8px 13px;font-size:12px;font-weight:700;cursor:pointer}
+.gon-retirar:disabled{opacity:.5}
+.gon-empty{padding:20px;text-align:center;color:var(--muted);font-size:13px}
 .vc-row .btns button{flex:1;border:1.5px solid var(--line);background:var(--card);border-radius:9px;padding:8px;font-size:12px;font-weight:700;cursor:pointer}
 .vc-row .btn-ok{color:var(--verde);border-color:var(--verde)}
 .vc-row .btn-merma{background:var(--rojo);color:#fff;border-color:var(--rojo)}
@@ -661,13 +686,27 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
         <div id="vc-list-view">
           <div class="mm-topbar"><div class="vc-toprow"><button class="loadbtn acc" id="vc-add-btn" style="flex:1">+ Nuevo lote</button><button class="loadbtn" id="vc-cerrar" style="flex:1">Cerrar</button></div></div>
           <div class="mm-body">
+          <div class="seg" id="vc-viewseg" style="display:flex;width:100%;margin:0 0 10px">
+            <button type="button" data-view="lista" class="active" style="flex:1">📋 Lista</button>
+            <button type="button" data-view="gondola" style="flex:1">🛒 Por góndola</button>
+          </div>
+          <div id="vc-view-lista">
           <div class="mm-search" style="margin:0 0 10px">
-            <input id="vc-lsearch" placeholder="Buscar en la lista…" autocomplete="off" style="padding-right:104px">
+            <input id="vc-lsearch" placeholder="Buscar producto: nombre, código o SKU…" autocomplete="off" style="padding-right:104px">
             <button class="mm-x" id="vc-lx" type="button" aria-label="Limpiar" style="position:absolute;top:50%;transform:translateY(-50%);right:68px;background:var(--gris-bg);border:none;border-radius:8px;width:28px;height:24px;font-size:13px;cursor:pointer;display:none">✕</button>
             <button class="mm-mic" id="vc-lmic" type="button" aria-label="Buscar por voz">🎤</button>
             <button class="mm-scan" id="vc-lscan" type="button" aria-label="Escanear código">📷</button>
           </div>
           <div id="vc-list"><div class="vc-empty">Cargando…</div></div>
+          </div>
+          <div id="vc-view-gondola" class="hidden">
+            <div class="gon-top">
+              <input id="gon-revisor" placeholder="Revisor (tu nombre)" autocomplete="off">
+              <select id="gon-catfilter"><option value="">Todas las categorías</option></select>
+            </div>
+            <div class="gon-progress"><div class="gon-bar"><div id="gon-bar-fill"></div></div><span id="gon-prog-lbl">0/0 revisados</span></div>
+            <div id="gon-list"></div>
+          </div>
           </div>
         </div>
 
@@ -938,6 +977,7 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
         <button id="mas-q-sincosto">⚠️<br>Sin costo</button>
         <button id="mas-q-hist">📋<br>Historial</button>
         <button id="mas-q-sinmov">🧹<br>Sin movimiento</button>
+        <button id="mas-q-crear">➕<br>Crear producto</button>
         <button id="mas-q-recargar">📊<br>Recargar historial</button>
       </div>
       <div class="method" style="margin:0;padding:16px 18px">
@@ -981,6 +1021,66 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
         <button class="mm-save sm-del" id="sm-del" disabled>🗑️ Eliminar (0)</button>
       </div>
       <div id="sm-list"></div>
+    </div>
+  </div>
+</div>
+
+<div class="mm-ov hidden" id="cp-ov">
+  <div class="mm-card">
+    <div class="mm-head"><h3>➕ Crear producto</h3></div>
+    <div class="mm-body">
+      <div class="mm-field">
+        <label>Nombre *</label>
+        <input id="cp-nombre" placeholder="Ej: 7 up 2.0L" autocomplete="off" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+      </div>
+      <div class="mm-field">
+        <label>Categoría *</label>
+        <div style="display:flex;gap:8px">
+          <select id="cp-cat" style="flex:1;min-width:0;padding:11px 10px;border:1.5px solid var(--line);border-radius:10px;font-size:14px"><option value="">Cargando…</option></select>
+          <button class="loadbtn" id="cp-cat-nueva" type="button" style="white-space:nowrap">➕ Nueva</button>
+        </div>
+        <div id="cp-cat-nuevabox" class="hidden" style="gap:8px;margin-top:8px">
+          <input id="cp-cat-nuevanom" placeholder="Nombre de la categoría nueva" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+          <button class="btn-ok loadbtn" id="cp-cat-crear" type="button" style="white-space:nowrap">Crear</button>
+        </div>
+      </div>
+      <div class="mm-field">
+        <label>Vendido por</label><br>
+        <div class="seg" id="cp-venta"><button type="button" data-v="u" class="active">Unidad</button><button type="button" data-v="kg">Peso (kg)</button></div>
+      </div>
+      <div class="mm-field">
+        <label>Precio de venta (opcional)</label>
+        <input id="cp-precio" inputmode="numeric" placeholder="Vacío = precio variable" autocomplete="off" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+      </div>
+      <div class="mm-field">
+        <label>Costo (opcional)</label>
+        <input id="cp-costo" inputmode="numeric" placeholder="0" autocomplete="off" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+      </div>
+      <div class="mm-field">
+        <label>Código de barras (opcional)</label>
+        <div class="mm-search">
+          <input id="cp-barcode" placeholder="Escanea o escribe" autocomplete="off" style="padding-right:44px">
+          <button class="mm-scan" id="cp-scan" type="button" aria-label="Escanear">📷</button>
+        </div>
+      </div>
+      <div class="mm-field">
+        <label class="cp-toggle">Seguir inventario <input type="checkbox" id="cp-track" checked></label>
+      </div>
+      <div class="mm-field" id="cp-stock-field">
+        <label>Stock inicial</label>
+        <input id="cp-stock" inputmode="decimal" placeholder="0" autocomplete="off" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+      </div>
+      <div class="mm-field">
+        <label class="cp-toggle">IVA 19% <input type="checkbox" id="cp-iva" checked></label>
+      </div>
+      <div class="mm-field">
+        <label class="cp-toggle">Producto activo (a la venta) <input type="checkbox" id="cp-activo" checked></label>
+      </div>
+      <!-- Imagen: preparado para una versión futura (Loyverse la recibe por multipart aparte).
+      <div class="mm-field" id="cp-img-field"><label>Imagen</label> … </div> -->
+      <div style="font-size:11.5px;color:var(--muted);margin:2px 0 10px">El código interno (SKU) se genera <b>automáticamente</b> y es único — no se edita a mano. La imagen se podrá agregar en una próxima versión.</div>
+      <button class="mm-save" id="cp-guardar" disabled>Crear producto</button>
+      <button class="loadbtn" id="cp-cerrar" style="width:100%;margin-top:8px">Cancelar</button>
     </div>
   </div>
 </div>
@@ -1888,6 +1988,121 @@ async function smEliminar(){
   finally{smActualizarBoton();}
 }
 document.getElementById('sm-del').onclick=smEliminar;
+
+// ===================== CREAR PRODUCTO =====================
+let _cpCats=[], _cpImpuestos=[], _cpVenta='u', _cpCargado=false;
+document.getElementById('mas-q-crear').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');cpAbrir();};
+document.getElementById('cp-cerrar').onclick=()=>cerrarModal('cp-ov');
+function cpAbrir(){cpReset();abrirModal('cp-ov');cpCargarCatalogo();}
+function cpReset(){
+  ['cp-nombre','cp-precio','cp-costo','cp-barcode','cp-stock','cp-cat-nuevanom'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('cp-track').checked=true;
+  document.getElementById('cp-iva').checked=true;
+  document.getElementById('cp-activo').checked=true;
+  document.getElementById('cp-cat-nuevabox').classList.add('hidden');
+  cpSetVenta('u');cpToggleStock();cpValidar();
+}
+function cpSetVenta(v){_cpVenta=v;document.querySelectorAll('#cp-venta button').forEach(b=>b.classList.toggle('active',b.dataset.v===v));}
+document.querySelectorAll('#cp-venta button').forEach(b=>b.onclick=()=>cpSetVenta(b.dataset.v));
+function cpToggleStock(){document.getElementById('cp-stock-field').style.display=document.getElementById('cp-track').checked?'':'none';}
+document.getElementById('cp-track').onchange=cpToggleStock;
+async function cpCargarCatalogo(){
+  const sel=document.getElementById('cp-cat');
+  if(_cpCargado){cpLlenarSelect();return;}
+  sel.innerHTML='<option value="">Cargando…</option>';
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=catalogo_crear');
+    const j=await res.json();
+    if(j&&j.ok){_cpCats=j.categorias||[];_cpImpuestos=j.impuestos||[];_cpCargado=true;cpLlenarSelect();}
+    else sel.innerHTML='<option value="">Error al cargar categorías</option>';
+  }catch(e){sel.innerHTML='<option value="">Sin conexión</option>';}
+}
+function cpLlenarSelect(preselectId){
+  const s=document.getElementById('cp-cat');
+  const prev=preselectId||s.value;
+  s.innerHTML='<option value="">Elige una categoría…</option>'+_cpCats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  if(prev)s.value=prev;
+  cpValidar();
+}
+function cpValidar(){
+  const nombre=(document.getElementById('cp-nombre').value||'').trim();
+  const cat=document.getElementById('cp-cat').value;
+  document.getElementById('cp-guardar').disabled=!(nombre&&cat);
+}
+document.getElementById('cp-nombre').oninput=cpValidar;
+document.getElementById('cp-cat').onchange=cpValidar;
+document.getElementById('cp-cat-nueva').onclick=()=>{const b=document.getElementById('cp-cat-nuevabox');b.classList.toggle('hidden');if(!b.classList.contains('hidden'))document.getElementById('cp-cat-nuevanom').focus();};
+document.getElementById('cp-cat-crear').onclick=async()=>{
+  const nom=(document.getElementById('cp-cat-nuevanom').value||'').trim();
+  if(!nom){showToast('Escribe el nombre de la categoría');return;}
+  const btn=document.getElementById('cp-cat-crear');btn.disabled=true;
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'crear_categoria',payload:{nombre:nom}})});
+    const j=await res.json();
+    if(j&&j.ok&&j.categoria){
+      const c=j.categoria;
+      if(!_cpCats.some(x=>x.id===c.id)){_cpCats.push({id:c.id,name:c.name});_cpCats.sort((a,b)=>String(a.name).localeCompare(String(b.name)));}
+      cpLlenarSelect(c.id);
+      document.getElementById('cp-cat-nuevabox').classList.add('hidden');
+      document.getElementById('cp-cat-nuevanom').value='';
+      showToast(c.yaExistia?('Ya existía: '+c.name):('✓ Categoría creada: '+c.name));
+    }else showToast('Error: '+((j&&j.error)||'no se pudo crear'));
+  }catch(e){showToast('Error de conexión');}
+  finally{btn.disabled=false;}
+};
+document.getElementById('cp-scan').onclick=()=>{
+  const reopen=()=>{document.getElementById('cp-ov').classList.remove('hidden');_sincronizarNav();};
+  document.getElementById('cp-ov').classList.add('hidden');
+  openScanner(code=>{reopen();document.getElementById('cp-barcode').value=code;},reopen);
+};
+document.getElementById('cp-guardar').onclick=async()=>{
+  const nombre=(document.getElementById('cp-nombre').value||'').trim();
+  const sel=document.getElementById('cp-cat');
+  const categoryId=sel.value;
+  const categoriaNombre=sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:'';
+  if(!nombre||!categoryId){cpValidar();return;}
+  const precioRaw=(document.getElementById('cp-precio').value||'').replace(/[^\d]/g,'');
+  const costoRaw=(document.getElementById('cp-costo').value||'').replace(/[^\d]/g,'');
+  const stockRaw=(document.getElementById('cp-stock').value||'').replace(',','.');
+  const track=document.getElementById('cp-track').checked;
+  const taxIds=[];
+  if(document.getElementById('cp-iva').checked){const iva=_cpImpuestos.find(t=>/iva/i.test(t.name)||t.rate===19);if(iva)taxIds.push(iva.id);}
+  const payload={
+    nombre:nombre,categoryId:categoryId,categoriaNombre:categoriaNombre,
+    soldByWeight:_cpVenta==='kg',
+    precio:precioRaw?Number(precioRaw):null,
+    coste:costoRaw?Number(costoRaw):0,
+    barcode:(document.getElementById('cp-barcode').value||'').trim(),
+    trackStock:track,
+    stockInicial:(track&&stockRaw)?Number(stockRaw):0,
+    taxIds:taxIds,
+    activo:document.getElementById('cp-activo').checked
+  };
+  const btn=document.getElementById('cp-guardar');btn.disabled=true;btn.textContent='Creando…';
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'crear_producto',payload:payload})});
+    const j=await res.json();
+    if(j&&j.ok&&j.producto){
+      cpAgregarLocal(j.producto);
+      showToast('✓ Producto creado: '+j.producto.nombre+' · SKU '+j.producto.ref);
+      cerrarModal('cp-ov');
+      try{render();}catch(_){}
+    }else showToast('Error: '+((j&&j.error)||'no se pudo crear el producto'));
+  }catch(e){showToast('Error de conexión al crear');}
+  finally{btn.disabled=false;btn.textContent='Crear producto';}
+};
+function cpAgregarLocal(p){
+  const prov=p.prov||'SIN CATEGORÍA';
+  const t=tag(p.nombre,prov);
+  (DB.items=DB.items||[]).push({
+    ref:p.ref,nombre:p.nombre,prov:prov,id:p.id||'',vid:p.vid||'',
+    u_all:0,u7:0,u14:0,u30:0,u90:0,rev:0,prof:0,ant:0,vs_ant_pct:null,
+    stock:p.stock!=null?p.stock:null,precio:p.precio!=null?p.precio:null,coste:p.costo!=null?p.costo:0,
+    track:!!p.track,barcode:p.barcode||'',peso:!!p.peso,
+    fmt:t.fmt,min:t.min,scale:t.scale,role:t.role,word:t.word,hoyU:0
+  });
+  persist();
+}
 async function recargarHistorial(){
   showToast('📊 Recargando historial de ventas… (puede tardar unos segundos)');
   try{
@@ -2142,13 +2357,132 @@ function vcAplicarFiltro(){
   const inp=document.getElementById('vc-lsearch');
   const q=(inp?inp.value:'').toLowerCase().trim();
   const x=document.getElementById('vc-lx'); if(x)x.style.display=q?'block':'none';
-  if(!q){vcRender(_vcTodos);return;}
+  if(!q){vcRender(_vcTodos);return;}   // sin texto → lista normal de vencimientos activos
+  vcBuscarCatalogo(q);                 // con texto → busca en TODO el catálogo
+}
+// Busca en el catálogo completo (no solo en lotes activos) por nombre, código de
+// barras o SKU. Muestra los lotes registrados del producto reutilizando vcRender
+// (todos sus botones siguen funcionando) y, si el producto no tiene lote/fecha,
+// una tarjeta "Sin fecha de vencimiento" con acceso directo a registrar un lote.
+function vcBuscarCatalogo(q){
+  const box=document.getElementById('vc-list');
   const words=q.split(/\s+/).filter(Boolean);
-  const filt=_vcTodos.filter(l=>{
-    const s=((l.nombre||'')+' '+(l.sku||'')+' '+(l.categoria||'')+' '+(l.lote||'')).toLowerCase();
+  const prods=(DB.items||[]).filter(it=>{
+    const s=((it.nombre||'')+' '+(it.ref||'')+' '+(it.barcode||'')).toLowerCase();
     return words.every(w=>s.includes(w));
+  }).slice(0,80);
+  if(!prods.length){box.innerHTML='<div class="vc-empty">Sin coincidencias en el catálogo.</div>';return;}
+  const lotesPorSku={};_vcTodos.forEach(l=>{(lotesPorSku[l.sku]=lotesPorSku[l.sku]||[]).push(l);});
+  const lotesMatch=[], sinLote=[];
+  prods.forEach(p=>{const ls=lotesPorSku[p.ref]; if(ls&&ls.length)ls.forEach(l=>lotesMatch.push(l)); else sinLote.push(p);});
+  if(lotesMatch.length)vcRender(lotesMatch); else box.innerHTML='';   // reutiliza el render de lotes
+  if(sinLote.length){
+    const cards=sinLote.map(p=>{
+      const nom=(p.nombre||'').replace(/"/g,'&quot;');
+      return `<div class="vc-row">
+        <div class="nom">${p.nombre}</div>
+        <div class="cat">REF ${p.ref} · ${p.prov}${p.barcode?(' · '+p.barcode):''} · <b>Sin fecha de vencimiento</b></div>
+        <div class="btns"><button class="btn-editfecha" data-nuevolote="${p.ref}" data-nom="${nom}">➕ Registrar lote / fecha</button></div>
+      </div>`;
+    }).join('');
+    box.insertAdjacentHTML('afterbegin',cards);   // arriba de los lotes reales
+    box.querySelectorAll('[data-nuevolote]').forEach(b=>b.onclick=()=>vcNuevoLoteDe(b.dataset.nuevolote));
+  }
+}
+// Abre el formulario de nuevo lote con el producto ya seleccionado (reutiliza vcPick).
+function vcNuevoLoteDe(ref){
+  document.getElementById('vc-lsearch').value='';
+  vcShowForm();
+  vcPick(ref);
+}
+
+// ===================== REVISIÓN POR GÓNDOLA =====================
+let _gonTotalInicial=0, _gonRevisados=0;
+function _diasVenc(f){
+  if(!f)return null;const p=String(f).split('/');if(p.length!==3)return null;
+  const d=new Date(+p[2],+p[1]-1,+p[0]);if(isNaN(d.getTime()))return null;
+  const hoy=new Date();hoy.setHours(0,0,0,0);d.setHours(0,0,0,0);
+  return Math.round((d-hoy)/86400000);
+}
+function _gonBucket(dias){
+  if(dias==null)return null;
+  if(dias<0)return {k:'v',ord:0,lbl:'Vencido'};
+  if(dias===0)return {k:'h',ord:1,lbl:'Vence hoy'};
+  if(dias<=3)return {k:'d3',ord:2,lbl:'Vence en '+dias+'d'};
+  if(dias<=7)return {k:'d7',ord:3,lbl:'Vence en '+dias+'d'};
+  return null;   // >7 días: aún no requiere revisión física
+}
+function vcSetView(v){
+  document.querySelectorAll('#vc-viewseg button').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
+  document.getElementById('vc-view-lista').classList.toggle('hidden',v!=='lista');
+  document.getElementById('vc-view-gondola').classList.toggle('hidden',v!=='gondola');
+  if(v==='gondola')gonIniciar();
+  else vcAplicarFiltro();   // refresca la lista por si se retiró algo en góndola
+}
+document.querySelectorAll('#vc-viewseg button').forEach(b=>b.onclick=()=>vcSetView(b.dataset.view));
+function gonIniciar(){
+  const rev=_vcTodos.filter(l=>_gonBucket(_diasVenc(l.fechaVencimiento))!=null);
+  _gonTotalInicial=rev.length;_gonRevisados=0;
+  const cats=[...new Set(rev.map(l=>l.categoria))].sort((a,b)=>String(a).localeCompare(String(b)));
+  const sel=document.getElementById('gon-catfilter');const prev=sel.value;
+  sel.innerHTML='<option value="">Todas las categorías</option>'+cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+  if(prev&&cats.indexOf(prev)>=0)sel.value=prev;
+  try{const r=localStorage.getItem('gon_revisor');if(r&&!document.getElementById('gon-revisor').value)document.getElementById('gon-revisor').value=r;}catch(_){}
+  gonRender();
+}
+document.getElementById('gon-catfilter').onchange=gonRender;
+function gonRender(){
+  const box=document.getElementById('gon-list');
+  const filtroCat=document.getElementById('gon-catfilter').value;
+  const rev=_vcTodos.map(l=>{const dv=_diasVenc(l.fechaVencimiento);const bk=_gonBucket(dv);return bk?Object.assign({_dias:dv,_bk:bk},l):null;}).filter(Boolean);
+  const lista=filtroCat?rev.filter(l=>l.categoria===filtroCat):rev;
+  const pct=_gonTotalInicial?Math.round(_gonRevisados/_gonTotalInicial*100):0;
+  document.getElementById('gon-bar-fill').style.width=pct+'%';
+  document.getElementById('gon-prog-lbl').textContent=_gonRevisados+'/'+_gonTotalInicial+' revisados';
+  if(!lista.length){box.innerHTML='<div class="gon-empty">'+(_gonTotalInicial?'✓ Nada pendiente en esta categoría':'Nada por revisar 🎉 (sin vencidos ni próximos a 7 días)')+'</div>';return;}
+  const grupos={};lista.forEach(l=>{(grupos[l.categoria]=grupos[l.categoria]||[]).push(l);});
+  const cats=Object.keys(grupos).sort((a,b)=>{
+    const ma=Math.min.apply(null,grupos[a].map(x=>x._bk.ord));
+    const mb=Math.min.apply(null,grupos[b].map(x=>x._bk.ord));
+    return ma-mb || grupos[b].length-grupos[a].length || String(a).localeCompare(String(b));
   });
-  vcRender(filt);
+  box.innerHTML=cats.map(cat=>{
+    const items=grupos[cat].sort((a,b)=>a._bk.ord-b._bk.ord||a._dias-b._dias);
+    const c={v:0,h:0,d3:0,d7:0};items.forEach(x=>c[x._bk.k]++);
+    const badges=[c.v?`<span class="gon-badge v">${c.v} vencido${c.v>1?'s':''}</span>`:'',
+                  c.h?`<span class="gon-badge h">${c.h} hoy</span>`:'',
+                  c.d3?`<span class="gon-badge d3">${c.d3} en 1-3d</span>`:'',
+                  c.d7?`<span class="gon-badge d7">${c.d7} en 4-7d</span>`:''].filter(Boolean).join('');
+    const filas=items.map(l=>{
+      const nom=(l.nombre||'').replace(/"/g,'&quot;');
+      return `<div class="gon-row">
+        <div class="gon-info"><div class="nom">${l.prioridad} ${l.nombre}</div>
+        <div class="meta">${l._bk.lbl} · vence ${l.fechaVencimiento} · ${l.cantidad} ${l.unidad}${l.lote?' · lote '+l.lote:''}</div></div>
+        <button class="gon-retirar" data-fi="${l.filaIndex}" data-nom="${nom}">Retirar</button>
+      </div>`;
+    }).join('');
+    return `<div class="gon-cat"><div class="gon-cat-head"><span class="cat-nom">${cat}</span><span class="gon-counts">${badges}</span></div>${filas}</div>`;
+  }).join('');
+  box.querySelectorAll('.gon-retirar').forEach(b=>b.onclick=()=>gonRetirar(b.dataset.fi,b.dataset.nom,b));
+}
+async function gonRetirar(fi,nombre,btn){
+  const revisor=(document.getElementById('gon-revisor').value||'').trim();
+  try{localStorage.setItem('gon_revisor',revisor);}catch(_){}
+  if(btn){btn.disabled=true;btn.textContent='…';}
+  try{
+    // Reutiliza el endpoint revisar_lote: marca el lote como revisado/retirado y
+    // registra fecha, hora y responsable en la hoja de vencimientos.
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'revisar_lote',payload:{
+      filaIndex:Number(fi),revisadoPor:revisor,resultado:'retirado'
+    }})});
+    const j=await res.json();
+    if(j&&j.ok){
+      _vcTodos=_vcTodos.filter(l=>String(l.filaIndex)!==String(fi));
+      _gonRevisados++;
+      showToast('✓ Retirado: '+nombre);
+      gonRender();
+    }else{showToast('Error: '+((j&&j.error)||'no se pudo marcar'));if(btn){btn.disabled=false;btn.textContent='Retirar';}}
+  }catch(e){showToast('Error de conexión');if(btn){btn.disabled=false;btn.textContent='Retirar';}}
 }
 function fmtDateInputToDDMMAAAA(v){ // "YYYY-MM-DD" → "DD/MM/AAAA"
   const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v||'');
@@ -2194,6 +2528,10 @@ wireFechaSegmentada('vc-fecha-dd','vc-fecha-mm','vc-fecha-aaaa','vc-fecha','vc-f
 async function vcLoad(){
   const box=document.getElementById('vc-list');
   box.innerHTML='<div class="vc-empty">Cargando…</div>';
+  // Al abrir/recargar, la vista arranca en "Lista" (el modo Góndola se elige a mano)
+  document.querySelectorAll('#vc-viewseg button').forEach(b=>b.classList.toggle('active',b.dataset.view==='lista'));
+  document.getElementById('vc-view-lista').classList.remove('hidden');
+  document.getElementById('vc-view-gondola').classList.add('hidden');
   if(!CATEGORIAS_CAMBIO.length)await cargarConfigCambio();   // asegura tener la lista antes de decidir qué botones mostrar
   try{
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=vencimientos');
