@@ -133,6 +133,16 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .vc-row .btns{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
 .vc-row .btn-elim{color:var(--rojo);border-color:var(--rojo);background:var(--card)}
 .vc-row .btn-elim:active{background:var(--paper)}
+.sm-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px}
+.sm-selall{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.sm-del{width:auto!important;padding:9px 14px!important;font-size:13px;margin:0!important;background:var(--rojo);border-color:var(--rojo)}
+.sm-del:disabled{opacity:.45}
+.sm-row{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:var(--card)}
+.sm-row input[type=checkbox]{margin-top:2px;width:18px;height:18px;flex:0 0 auto}
+.sm-row .sm-info{flex:1;min-width:0}
+.sm-row .nom{font-weight:700;font-size:13px;line-height:1.25}
+.sm-row .meta{font-size:11.5px;color:var(--muted);margin-top:3px}
+.sm-row .val{font-weight:700;color:var(--rojo);font-size:12px;white-space:nowrap;text-align:right}
 .vc-row .btns button{flex:1;border:1.5px solid var(--line);background:var(--card);border-radius:9px;padding:8px;font-size:12px;font-weight:700;cursor:pointer}
 .vc-row .btn-ok{color:var(--verde);border-color:var(--verde)}
 .vc-row .btn-merma{background:var(--rojo);color:#fff;border-color:var(--rojo)}
@@ -651,6 +661,12 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
         <div id="vc-list-view">
           <div class="mm-topbar"><div class="vc-toprow"><button class="loadbtn acc" id="vc-add-btn" style="flex:1">+ Nuevo lote</button><button class="loadbtn" id="vc-cerrar" style="flex:1">Cerrar</button></div></div>
           <div class="mm-body">
+          <div class="mm-search" style="margin:0 0 10px">
+            <input id="vc-lsearch" placeholder="Buscar en la lista…" autocomplete="off" style="padding-right:104px">
+            <button class="mm-x" id="vc-lx" type="button" aria-label="Limpiar" style="position:absolute;top:50%;transform:translateY(-50%);right:68px;background:var(--gris-bg);border:none;border-radius:8px;width:28px;height:24px;font-size:13px;cursor:pointer;display:none">✕</button>
+            <button class="mm-mic" id="vc-lmic" type="button" aria-label="Buscar por voz">🎤</button>
+            <button class="mm-scan" id="vc-lscan" type="button" aria-label="Escanear código">📷</button>
+          </div>
           <div id="vc-list"><div class="vc-empty">Cargando…</div></div>
           </div>
         </div>
@@ -723,6 +739,12 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
         <div class="mm-topbar"><button class="loadbtn" id="hm-cerrar" style="width:100%">Cerrar</button></div>
         <div class="mm-body">
         <div class="hm-summary"><span class="lbl" id="hm-lbl">Cargando…</span><span class="val" id="hm-val"></span></div>
+        <div class="mm-search" style="margin:0 0 10px">
+          <input id="hm-lsearch" placeholder="Buscar en el historial…" autocomplete="off" style="padding-right:104px">
+          <button class="mm-x" id="hm-lx" type="button" aria-label="Limpiar" style="position:absolute;top:50%;transform:translateY(-50%);right:68px;background:var(--gris-bg);border:none;border-radius:8px;width:28px;height:24px;font-size:13px;cursor:pointer;display:none">✕</button>
+          <button class="mm-mic" id="hm-lmic" type="button" aria-label="Buscar por voz">🎤</button>
+          <button class="mm-scan" id="hm-lscan" type="button" aria-label="Escanear código">📷</button>
+        </div>
         <div id="hm-list"></div>
         </div>
       </div>
@@ -915,6 +937,7 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
         <button id="mas-q-llegadas">🔔<br>Avisos<span class="mas-badge" id="mas-badge"></span></button>
         <button id="mas-q-sincosto">⚠️<br>Sin costo</button>
         <button id="mas-q-hist">📋<br>Historial</button>
+        <button id="mas-q-sinmov">🧹<br>Sin movimiento</button>
         <button id="mas-q-recargar">📊<br>Recargar historial</button>
       </div>
       <div class="method" style="margin:0;padding:16px 18px">
@@ -937,6 +960,27 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
           <li><b>Instalar como app:</b> en Chrome → menú ⋮ → "Añadir a pantalla de inicio". Ícono propio, pantalla completa.</li>
         </ul>
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="mm-ov hidden" id="sm-ov">
+  <div class="mm-card">
+    <div class="mm-head"><h3>🧹 Sin movimiento (90 días)</h3></div>
+    <div class="mm-topbar"><button class="loadbtn" id="sm-cerrar" style="width:100%">Cerrar</button></div>
+    <div class="mm-body">
+      <div class="hm-summary"><span class="lbl" id="sm-lbl">—</span><span class="val" id="sm-val"></span></div>
+      <div class="mm-search" style="margin:0 0 10px">
+        <input id="sm-search" placeholder="Buscar en la lista…" autocomplete="off" style="padding-right:104px">
+        <button class="mm-x" id="sm-x" type="button" aria-label="Limpiar" style="position:absolute;top:50%;transform:translateY(-50%);right:68px;background:var(--gris-bg);border:none;border-radius:8px;width:28px;height:24px;font-size:13px;cursor:pointer;display:none">✕</button>
+        <button class="mm-mic" id="sm-mic" type="button" aria-label="Buscar por voz">🎤</button>
+        <button class="mm-scan" id="sm-scan" type="button" aria-label="Escanear código">📷</button>
+      </div>
+      <div class="sm-actions">
+        <label class="sm-selall"><input type="checkbox" id="sm-selall"> Seleccionar todos</label>
+        <button class="mm-save sm-del" id="sm-del" disabled>🗑️ Eliminar (0)</button>
+      </div>
+      <div id="sm-list"></div>
     </div>
   </div>
 </div>
@@ -1750,6 +1794,100 @@ document.getElementById('mas-q-llegadas').onclick=()=>{document.getElementById('
 document.getElementById('mas-q-sincosto').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');document.getElementById('btn-sincosto').click();};
 document.getElementById('mas-q-hist').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');document.getElementById('btn-hist-merma').click();};
 document.getElementById('mas-q-recargar').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');recargarHistorial();};
+
+// ===================== SIN MOVIMIENTO (limpieza de catálogo) =====================
+let _smTodos=[], _smSel={};
+document.getElementById('mas-q-sinmov').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');smAbrir();};
+document.getElementById('sm-cerrar').onclick=()=>cerrarModal('sm-ov');
+function smAbrir(){document.getElementById('sm-search').value='';_smSel={};abrirModal('sm-ov');smCalcular();}
+function smCalcular(){
+  // "Sin movimiento" = 0 ventas en los últimos 90 días (u90===0). Se calcula al
+  // instante desde la copia local del catálogo — sin llamadas a Sheets ni Loyverse.
+  _smTodos=(DB.items||[]).filter(it=>(it.u90||0)===0).map(it=>{
+    const stock=(it.stock!=null?it.stock:null);
+    const valor=Math.max(0,stock||0)*(it.coste||0);
+    return {ref:it.ref,id:it.id||'',nombre:it.nombre,prov:it.prov,stock:stock,coste:it.coste||0,valor:valor,tuvoVentas:(it.u_all||0)>0};
+  }).sort((a,b)=>b.valor-a.valor||((b.stock||0)-(a.stock||0)));
+  smRender();
+}
+function smFiltrados(){
+  const q=(document.getElementById('sm-search').value||'').toLowerCase().trim();
+  const x=document.getElementById('sm-x'); if(x)x.style.display=q?'block':'none';
+  if(!q)return _smTodos;
+  const words=q.split(/\s+/).filter(Boolean);
+  return _smTodos.filter(p=>{const s=((p.nombre||'')+' '+(p.ref||'')+' '+(p.prov||'')).toLowerCase();return words.every(w=>s.includes(w));});
+}
+function smRender(){
+  const box=document.getElementById('sm-list');
+  const lista=smFiltrados();
+  const totalValor=_smTodos.reduce((s,p)=>s+p.valor,0);
+  document.getElementById('sm-lbl').textContent=_smTodos.length+' producto'+(_smTodos.length===1?'':'s')+' sin ventas en 90 días';
+  document.getElementById('sm-val').textContent='Inmovilizado: '+peso(totalValor);
+  if(!lista.length){box.innerHTML='<div class="vc-empty">'+(_smTodos.length?'Sin coincidencias en la búsqueda.':'Todo tu catálogo tuvo ventas en los últimos 90 días 🎉')+'</div>';smActualizarBoton();return;}
+  box.innerHTML=lista.map(p=>{
+    const stockTxt=p.stock==null?'sin control':fmt1(p.stock);
+    return `<div class="sm-row">
+      <input type="checkbox" data-ref="${p.ref}" ${_smSel[p.ref]?'checked':''}>
+      <div class="sm-info">
+        <div class="nom">${p.nombre}</div>
+        <div class="meta">REF ${p.ref} · ${p.prov} · stock ${stockTxt} · ${p.tuvoVentas?'sin ventas ≥90d':'nunca vendido'}</div>
+      </div>
+      <div class="val">${p.valor>0?peso(p.valor):'—'}</div>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('input[type=checkbox]').forEach(chk=>chk.onchange=()=>{
+    if(chk.checked)_smSel[chk.dataset.ref]=true;else delete _smSel[chk.dataset.ref];
+    smActualizarBoton();
+  });
+  smActualizarBoton();
+}
+function smActualizarBoton(){
+  const n=Object.keys(_smSel).length;
+  const b=document.getElementById('sm-del');
+  b.disabled=n===0;b.textContent='🗑️ Eliminar ('+n+')';
+  const all=document.getElementById('sm-selall');
+  const vis=smFiltrados();
+  all.checked=vis.length>0&&vis.every(p=>_smSel[p.ref]);
+}
+document.getElementById('sm-search').oninput=smRender;
+document.getElementById('sm-x').onclick=()=>{document.getElementById('sm-search').value='';smRender();document.getElementById('sm-search').focus();};
+document.getElementById('sm-mic').onclick=()=>voiceSearch(document.getElementById('sm-mic'),text=>{document.getElementById('sm-search').value=text;smRender();});
+document.getElementById('sm-scan').onclick=()=>{
+  const reopen=()=>{document.getElementById('sm-ov').classList.remove('hidden');_sincronizarNav();};
+  document.getElementById('sm-ov').classList.add('hidden');
+  openScanner(code=>{reopen();document.getElementById('sm-search').value=code;smRender();},reopen);
+};
+document.getElementById('sm-selall').onchange=e=>{
+  const vis=smFiltrados();
+  if(e.target.checked)vis.forEach(p=>_smSel[p.ref]=true); else vis.forEach(p=>delete _smSel[p.ref]);
+  smRender();
+};
+async function smEliminar(){
+  const sel=_smTodos.filter(p=>_smSel[p.ref]);
+  if(!sel.length)return;
+  const sinId=sel.filter(p=>!p.id).length;
+  const aviso=sinId?('\n\n⚠️ '+sinId+' no tienen id de Loyverse (usa ♻️ Catálogo antes).'):'';
+  if(!confirm('¿Eliminar '+sel.length+' producto'+(sel.length===1?'':'s')+' de Loyverse?\n\nSe borran del catálogo de forma PERMANENTE. Esta acción no se puede deshacer.'+aviso))return;
+  const b=document.getElementById('sm-del');b.disabled=true;b.textContent='Eliminando…';
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'eliminar_productos',payload:{
+      items:sel.map(p=>({id:p.id,sku:p.ref,nombre:p.nombre,categoria:p.prov,stock:p.stock}))
+    }})});
+    const j=await res.json();
+    if(j&&j.ok){
+      const okRefs=new Set((j.resultados||[]).filter(r=>r.ok).map(r=>r.sku));
+      if(okRefs.size){DB.items=(DB.items||[]).filter(it=>!okRefs.has(it.ref));persist();}
+      _smTodos=_smTodos.filter(p=>!okRefs.has(p.ref));_smSel={};
+      const fallos=(j.resultados||[]).filter(r=>!r.ok).length;
+      let m='✓ '+j.eliminados+' producto'+(j.eliminados===1?'':'s')+' eliminado'+(j.eliminados===1?'':'s');
+      if(fallos)m+=' · '+fallos+' con error (revisa ♻️ Catálogo)';
+      showToast(m);smRender();
+      try{render();}catch(_){}   // refresca el tablero de Pedidos
+    }else showToast('Error: '+((j&&j.error)||'no se pudo eliminar'));
+  }catch(e){showToast('Error de conexión al eliminar');}
+  finally{smActualizarBoton();}
+}
+document.getElementById('sm-del').onclick=smEliminar;
 async function recargarHistorial(){
   showToast('📊 Recargando historial de ventas… (puede tardar unos segundos)');
   try{
@@ -1999,6 +2137,19 @@ document.getElementById('mm-save').onclick=async()=>{
 
 // ===================== VENCIMIENTOS =====================
 const vcNew={item:null};
+let _vcTodos=[];   // lista completa de lotes cargada; el buscador filtra sobre esta copia (sin volver a pedir al servidor)
+function vcAplicarFiltro(){
+  const inp=document.getElementById('vc-lsearch');
+  const q=(inp?inp.value:'').toLowerCase().trim();
+  const x=document.getElementById('vc-lx'); if(x)x.style.display=q?'block':'none';
+  if(!q){vcRender(_vcTodos);return;}
+  const words=q.split(/\s+/).filter(Boolean);
+  const filt=_vcTodos.filter(l=>{
+    const s=((l.nombre||'')+' '+(l.sku||'')+' '+(l.categoria||'')+' '+(l.lote||'')).toLowerCase();
+    return words.every(w=>s.includes(w));
+  });
+  vcRender(filt);
+}
 function fmtDateInputToDDMMAAAA(v){ // "YYYY-MM-DD" → "DD/MM/AAAA"
   const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v||'');
   return m ? (m[3]+'/'+m[2]+'/'+m[1]) : '';
@@ -2047,7 +2198,8 @@ async function vcLoad(){
   try{
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=vencimientos');
     const j=await res.json();
-    vcRender((j&&j.ok)?j.lotes:[]);
+    _vcTodos=(j&&j.ok)?j.lotes:[];
+    vcAplicarFiltro();   // pinta ya filtrado por lo que haya escrito en el buscador de la lista
   }catch(e){box.innerHTML='<div class="vc-empty">Error al cargar. Intenta de nuevo.</div>';}
 }
 function vcRender(lotes){
@@ -2234,6 +2386,15 @@ function closeVenc(){cerrarModal('vc-ov');}
 document.getElementById('btn-venc').onclick=openVenc;
 document.getElementById('vc-cerrar').onclick=closeVenc;
 document.getElementById('vc-add-btn').onclick=vcShowForm;
+// Buscador de la LISTA de vencimientos (filtra en memoria, instantáneo)
+document.getElementById('vc-lsearch').oninput=vcAplicarFiltro;
+document.getElementById('vc-lx').onclick=()=>{document.getElementById('vc-lsearch').value='';vcAplicarFiltro();document.getElementById('vc-lsearch').focus();};
+document.getElementById('vc-lmic').onclick=()=>voiceSearch(document.getElementById('vc-lmic'),text=>{document.getElementById('vc-lsearch').value=text;vcAplicarFiltro();});
+document.getElementById('vc-lscan').onclick=()=>{
+  const reopen=()=>{document.getElementById('vc-ov').classList.remove('hidden');vcShowList();_sincronizarNav();};
+  closeVenc();
+  openScanner(code=>{reopen();document.getElementById('vc-lsearch').value=code;vcAplicarFiltro();},reopen);
+};
 document.getElementById('vc-cancelar').onclick=vcShowList;
 document.getElementById('vc-search').oninput=e=>{
   const list=mmFindItems(e.target.value);
@@ -2354,18 +2515,10 @@ document.getElementById('sc-cerrar').onclick=()=>document.getElementById('sc-ov'
 
 // ===================== HISTORIAL DE MERMAS =====================
 const MOTIVO_LBL={liquidado:'Liquidado',vencido:'Vencido',dañado:'Dañado',robo:'Robo',consumo_interno:'Consumo interno',cambio_proveedor:'Cambio c/ proveedor',otro:'Otro'};
-async function hmLoad(){
-  const box=document.getElementById('hm-list'),lbl=document.getElementById('hm-lbl'),val=document.getElementById('hm-val');
-  box.innerHTML='';lbl.textContent='Cargando…';val.textContent='';
-  try{
-    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=historial_mermas');
-    const j=await res.json();
-    if(!j||!j.ok){lbl.textContent='Error al cargar.';return;}
-    const h=j.historial;
-    if(!h.total){lbl.textContent='Sin mermas registradas todavía';box.innerHTML='<div class="vc-empty">Cuando registres una merma, aparecerá aquí.</div>';return;}
-    lbl.textContent=h.total+' merma'+(h.total===1?'':'s')+' registrada'+(h.total===1?'':'s')+(h.items.length<h.total?' · mostrando las últimas '+h.items.length:'');
-    val.textContent=peso(h.sumaCostoTotal);
-    box.innerHTML=h.items.map(it=>{
+let _hmTodos=[];   // historial completo en memoria; el buscador filtra sobre esta copia
+function hmPintar(items){
+  const box=document.getElementById('hm-list');
+    box.innerHTML=items.map(it=>{
       const mkey=MOTIVO_LBL[it.motivo]?it.motivo:'otro';
       const warn=it.estadoCosto&&String(it.estadoCosto).indexOf('⚠️')===0;
       return `
@@ -2393,6 +2546,33 @@ async function hmLoad(){
       if(bx)bx.classList.toggle('hidden');
     });
     box.querySelectorAll('.hm-motbtn').forEach(b=>b.onclick=()=>hmCorregir(b.dataset.fi,b.dataset.newmot));
+}
+function hmAplicarFiltro(){
+  const inp=document.getElementById('hm-lsearch');
+  const q=(inp?inp.value:'').toLowerCase().trim();
+  const x=document.getElementById('hm-lx'); if(x)x.style.display=q?'block':'none';
+  if(!q){hmPintar(_hmTodos);return;}
+  const words=q.split(/\s+/).filter(Boolean);
+  const filt=_hmTodos.filter(it=>{
+    const s=((it.nombre||'')+' '+(it.categoria||'')+' '+(it.responsable||'')+' '+(it.motivo||'')).toLowerCase();
+    return words.every(w=>s.includes(w));
+  });
+  hmPintar(filt);
+}
+
+async function hmLoad(){
+  const box=document.getElementById('hm-list'),lbl=document.getElementById('hm-lbl'),val=document.getElementById('hm-val');
+  box.innerHTML='';lbl.textContent='Cargando…';val.textContent='';
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=historial_mermas');
+    const j=await res.json();
+    if(!j||!j.ok){lbl.textContent='Error al cargar.';return;}
+    const h=j.historial;
+    if(!h.total){lbl.textContent='Sin mermas registradas todavía';box.innerHTML='<div class="vc-empty">Cuando registres una merma, aparecerá aquí.</div>';return;}
+    lbl.textContent=h.total+' merma'+(h.total===1?'':'s')+' registrada'+(h.total===1?'':'s')+(h.items.length<h.total?' · mostrando las últimas '+h.items.length:'');
+    val.textContent=peso(h.sumaCostoTotal);
+    _hmTodos=h.items||[];
+    hmAplicarFiltro();
   }catch(e){lbl.textContent='Error de conexión.';}
 }
 async function hmCorregir(filaIndex,nuevoMotivo){
@@ -2407,7 +2587,16 @@ async function hmCorregir(filaIndex,nuevoMotivo){
     }
   }catch(e){showToast('Error de conexión al corregir');}
 }
-document.getElementById('btn-hist-merma').onclick=()=>{document.getElementById('hm-ov').classList.remove('hidden');hmLoad();};
+document.getElementById('btn-hist-merma').onclick=()=>{document.getElementById('hm-lsearch').value='';document.getElementById('hm-ov').classList.remove('hidden');_sincronizarNav();hmLoad();};
+// Buscador del HISTORIAL de mermas (filtra en memoria, instantáneo)
+document.getElementById('hm-lsearch').oninput=hmAplicarFiltro;
+document.getElementById('hm-lx').onclick=()=>{document.getElementById('hm-lsearch').value='';hmAplicarFiltro();document.getElementById('hm-lsearch').focus();};
+document.getElementById('hm-lmic').onclick=()=>voiceSearch(document.getElementById('hm-lmic'),text=>{document.getElementById('hm-lsearch').value=text;hmAplicarFiltro();});
+document.getElementById('hm-lscan').onclick=()=>{
+  const reopen=()=>{document.getElementById('hm-ov').classList.remove('hidden');_sincronizarNav();};
+  document.getElementById('hm-ov').classList.add('hidden');
+  openScanner(code=>{reopen();document.getElementById('hm-lsearch').value=code;hmAplicarFiltro();},reopen);
+};
 document.getElementById('hm-cerrar').onclick=()=>document.getElementById('hm-ov').classList.add('hidden');
 
 // ===================== INSUMOS / CONSUMO INTERNO (ticket) =====================
