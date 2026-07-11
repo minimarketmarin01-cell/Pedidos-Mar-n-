@@ -35,7 +35,11 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .upd{color:#8b929c;font-size:10.5px;width:100%;margin-top:2px}
 .upd b{color:#c7ccd3}
 /* ===== Encabezado fijo (sticky) de Pedidos: compacto, sin chips ni gráficos ===== */
-.sticky-hdr{position:sticky;top:0;z-index:120;background:var(--card);border-bottom:1px solid var(--line);padding:8px max(12px,env(safe-area-inset-right)) 9px max(12px,env(safe-area-inset-left));box-shadow:0 2px 10px rgba(0,0,0,.05)}
+.sticky-hdr{position:sticky;top:0;z-index:120;background:var(--card);border-bottom:1px solid var(--line);padding:6px max(12px,env(safe-area-inset-right)) 7px max(12px,env(safe-area-inset-left));box-shadow:0 2px 10px rgba(0,0,0,.05)}
+.prov-acc-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-family:'Archivo';font-weight:800;font-size:12.5px;color:var(--ink);cursor:pointer;margin-bottom:6px}
+.prov-acc-toggle:active{background:var(--line)}
+.prov-acc-caret{transition:transform .2s ease;color:var(--muted);font-size:12px}
+.prov-acc-toggle[aria-expanded="true"] .prov-acc-caret{transform:rotate(180deg)}
 .shc-inner{max-width:1520px;margin:0 auto}
 .shc-row{display:flex;gap:8px;align-items:center}
 .shc-wrap{flex-wrap:wrap}
@@ -312,7 +316,7 @@ input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .dowbar .dv{font-size:9px;color:var(--muted);font-family:'JetBrains Mono'}
 .dowtip{font-size:12.5px;line-height:1.5;flex:1;min-width:200px}
 .dowtip b{color:var(--ink)}.dowtip .o{color:var(--wa-d);font-weight:700}
-.provday{margin:13px 16px 0;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 14px}
+.provday{margin:0 0 6px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:11px 14px;max-height:40vh;overflow-y:auto}
 .provday h3{font-family:'Archivo';font-size:13px;font-weight:800;letter-spacing:-.01em;margin-bottom:8px;display:flex;align-items:center;gap:7px;color:var(--ink);flex-wrap:wrap}
 .provday .pd-date{font-weight:600;color:var(--muted);font-size:11.5px}
 .provday .pd-row{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.5;padding:3px 0}
@@ -475,7 +479,7 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 
 /* ===== ANIMACIONES — sensación de mayor calidad ===== */
 /* 1) Sincronizar / Actualizar catálogo: el ícono gira mientras carga */
-.sync-ic{display:inline-block}
+.sync-ic{display:inline-block;transform-origin:center}
 .sync-ic.spin{animation:spin .8s linear infinite}
 #btn-sync[disabled],#btn-prices[disabled]{opacity:.65;cursor:default}
 
@@ -522,8 +526,8 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 <div class="top">
   <div class="brand"><span class="mk">Marín 376</span><span class="loc">Pedidos</span></div>
   <div class="toprt">
-    <button class="loadbtn acc" id="btn-sync"><span class="sync-ic">🔄</span> Sincronizar</button>
-    <button class="loadbtn" id="btn-prices"><span class="sync-ic">♻️</span> Catálogo</button>
+    <button class="loadbtn acc" id="btn-sync"><svg class="sync-ic" id="sync-ic-sync" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.7-3"/><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.7 3"/><polyline points="21 3 21 9 15 9"/><polyline points="3 21 3 15 9 15"/></svg> Sincronizar</button>
+    <button class="loadbtn" id="btn-prices"><span class="sync-ic" id="sync-ic-prices">♻️</span> Catálogo</button>
     <button class="loadbtn hidden" id="btn-merma">🗑️ Merma</button>
     <button class="loadbtn hidden" id="btn-hist-merma">📋 Historial</button>
     <button class="loadbtn hidden" id="btn-insumos">🧹 Insumos</button>
@@ -535,18 +539,21 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
     <span class="upd" id="updlabel"></span>
   </div>
 </div>
-<div class="provday" id="provday"></div>
 <button class="cart-fab" id="cart-fab" aria-label="Ver carrito">🛍️<span class="cart-badge" id="cart-badge"></span></button>
 <div id="tab-pedido">
 <div class="sticky-hdr" id="sticky-hdr">
   <div class="shc-inner">
+  <button class="prov-acc-toggle" id="prov-acc-toggle" aria-expanded="false">
+    <span>📦 Proveedores de hoy</span><span class="prov-acc-caret" id="prov-acc-caret">▾</span>
+  </button>
+  <div class="provday hidden" id="provday"></div>
   <div class="shc-row shc-wrap">
     <div class="prov-combo" id="prov-combo"><span class="prov-icon">🏷️</span><input class="prov-all" id="prov-all" placeholder="Proveedor… toca o escribe" autocomplete="off" inputmode="text"><button class="prov-mic" id="prov-mic" type="button" tabindex="-1" aria-label="Buscar por voz">🎤</button><button class="prov-x" id="prov-x" type="button" tabindex="-1" aria-label="Borrar">✕</button><div class="prov-menu hidden" id="prov-menu"></div></div>
     <div class="seg sm" id="seg-basis"><button data-b="7" class="active">7d</button><button data-b="14">14d</button><button data-b="30">30d</button><button data-b="90">90d</button></div>
     <div class="shc-mini"><label>Entrega</label><input type="number" id="lead" value="3" min="0" max="30"></div>
     <div class="shc-mini"><label>Cobertura</label><input type="number" id="cover" value="10" min="1" max="60"></div>
   </div>
-  <div class="searchwrap" style="margin:8px 0 0">
+  <div class="searchwrap" style="margin:6px 0 0">
     <input class="search" id="search" placeholder="Buscar por nombre, REF o código de barras…">
     <button class="micbtn" id="micbtn" type="button" aria-label="Buscar por voz">🎤</button>
     <button class="scanbtn" id="scanbtn" type="button" aria-label="Escanear código">📷</button>
@@ -1547,8 +1554,8 @@ function buildDBfromCloud(items, ventas){
   return {meta:{min:meta.min,max:meta.max,ndays:meta.ndays,nitems:items_arr.length,nprov:provs.length},items:items_arr,provs:provs};
 }
 
-async function cloudSync(silent,live,full){
-  setSyncSpinning(true);
+async function cloudSync(silent,live,full,origen){
+  setSyncSpinning(true,origen);
   try{
     if(!silent)showToast(full?'♻️ Actualizando catálogo completo…':(live?'🔄 Trayendo ventas en vivo…':'🔄 Sincronizando…'));
     const url=SYNC_URL+((full||live)?(SYNC_URL.indexOf('?')<0?'?':'&')+'action='+(full?'full':'sync'):'');
@@ -1578,8 +1585,12 @@ async function cloudSync(silent,live,full){
   finally{setSyncSpinning(false);}
 }
 // Ícono girando + botones deshabilitados mientras hay una sincronización en curso (evita doble toque)
-function setSyncSpinning(on){
-  document.querySelectorAll('.sync-ic').forEach(el=>el.classList.toggle('spin',on));
+function setSyncSpinning(on,origen){
+  // Anima SOLO el ícono del botón que se presionó, no ambos.
+  // origen: 'sync' → botón Sincronizar · 'prices' → botón Catálogo · undefined → auto-sync (no anima)
+  const icSync=document.getElementById('sync-ic-sync'), icPrices=document.getElementById('sync-ic-prices');
+  if(icSync)icSync.classList.toggle('spin', on && origen==='sync');
+  if(icPrices)icPrices.classList.toggle('spin', on && origen==='prices');
   const b1=document.getElementById('btn-sync'), b2=document.getElementById('btn-prices');
   if(b1)b1.disabled=on; if(b2)b2.disabled=on;
 }
@@ -1600,8 +1611,8 @@ async function autoSyncIfStale(){
   await cloudSync(true,true);
 }
 
-document.getElementById('btn-sync').onclick=()=>cloudSync(false,true);
-document.getElementById('btn-prices').onclick=()=>cloudSync(false,false,true);
+document.getElementById('btn-sync').onclick=()=>cloudSync(false,true,false,'sync');
+document.getElementById('btn-prices').onclick=()=>cloudSync(false,false,true,'prices');
 
 // ===================== EVENTOS =====================
 document.querySelectorAll('#seg-basis button').forEach(b=>b.onclick=()=>{state.basis=+b.dataset.b;document.querySelectorAll('#seg-basis button').forEach(x=>x.classList.remove('active'));b.classList.add('active');render();persistUI();});
@@ -1663,6 +1674,13 @@ document.querySelector('.bottom-nav').addEventListener('click',(e)=>{
   }catch(err){showToast('Ocurrió un error al abrir. Intenta de nuevo.');}
 });
 document.getElementById('mas-cerrar').onclick=()=>cerrarModal('mas-ov');
+// Acordeón de "Proveedores de hoy": cerrado por defecto, se abre al tocar
+document.getElementById('prov-acc-toggle').onclick=()=>{
+  const t=document.getElementById('prov-acc-toggle'), pd=document.getElementById('provday');
+  const abrir=pd.classList.contains('hidden');
+  pd.classList.toggle('hidden',!abrir);
+  t.setAttribute('aria-expanded',abrir?'true':'false');
+};
 document.getElementById('cart-fab').onclick=()=>showScreen('carrito');
 document.getElementById('cart-back').onclick=()=>showScreen('pedido');
 
