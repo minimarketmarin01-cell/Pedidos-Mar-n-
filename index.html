@@ -2056,44 +2056,59 @@ document.getElementById('cp-scan').onclick=()=>{
   openScanner(code=>{reopen();document.getElementById('cp-barcode').value=code;},reopen);
 };
 document.getElementById('cp-guardar').onclick=async()=>{
-  const nombre=(document.getElementById('cp-nombre').value||'').trim();
-  const sel=document.getElementById('cp-cat');
-  const categoryId=sel.value;
-  const categoriaNombre=sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:'';
-  if(!nombre||!categoryId){cpValidar();return;}
-  const precioRaw=(document.getElementById('cp-precio').value||'').replace(/[^\d]/g,'');
-  const costoRaw=(document.getElementById('cp-costo').value||'').replace(/[^\d]/g,'');
-  const stockRaw=(document.getElementById('cp-stock').value||'').replace(',','.');
-  const track=document.getElementById('cp-track').checked;
-  const taxIds=[];
-  if(document.getElementById('cp-iva').checked){const iva=_cpImpuestos.find(t=>/iva/i.test(t.name)||t.rate===19);if(iva)taxIds.push(iva.id);}
-  const payload={
-    nombre:nombre,categoryId:categoryId,categoriaNombre:categoriaNombre,
-    soldByWeight:_cpVenta==='kg',
-    precio:precioRaw?Number(precioRaw):null,
-    coste:costoRaw?Number(costoRaw):0,
-    barcode:(document.getElementById('cp-barcode').value||'').trim(),
-    trackStock:track,
-    stockInicial:(track&&stockRaw)?Number(stockRaw):0,
-    taxIds:taxIds,
-    activo:document.getElementById('cp-activo').checked
-  };
-  const btn=document.getElementById('cp-guardar');btn.disabled=true;btn.textContent='Creando…';
+  const btn=document.getElementById('cp-guardar');
   try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'crear_producto',payload:payload})});
-    const j=await res.json();
+    const nombre=(document.getElementById('cp-nombre').value||'').trim();
+    const sel=document.getElementById('cp-cat');
+    const categoryId=sel.value;
+    const categoriaNombre=(sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:'');
+    if(!nombre||!categoryId){cpValidar();showToast('Falta el nombre o la categoría');return;}
+    const precioRaw=(document.getElementById('cp-precio').value||'').replace(/[^\d]/g,'');
+    const costoRaw=(document.getElementById('cp-costo').value||'').replace(/[^\d]/g,'');
+    const stockRaw=(document.getElementById('cp-stock').value||'').replace(',','.');
+    const track=document.getElementById('cp-track').checked;
+    const taxIds=[];
+    if(document.getElementById('cp-iva').checked){const iva=_cpImpuestos.find(t=>/iva/i.test(t.name)||t.rate===19);if(iva)taxIds.push(iva.id);}
+    const payload={
+      nombre:nombre,categoryId:categoryId,categoriaNombre:categoriaNombre,
+      soldByWeight:_cpVenta==='kg',
+      precio:precioRaw?Number(precioRaw):null,
+      coste:costoRaw?Number(costoRaw):0,
+      barcode:(document.getElementById('cp-barcode').value||'').trim(),
+      trackStock:track,
+      stockInicial:(track&&stockRaw)?Number(stockRaw):0,
+      taxIds:taxIds,
+      activo:document.getElementById('cp-activo').checked
+    };
+    btn.disabled=true;btn.textContent='Creando…';
+    showToast('Creando en Loyverse… (puede tardar unos segundos)');
+    // Timeout: si el servidor no responde en 45s, avisa en vez de quedar colgado en silencio
+    const ctrl=new AbortController();
+    const to=setTimeout(()=>ctrl.abort(),45000);
+    let txt='';
+    try{
+      const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'crear_producto',payload:payload}),signal:ctrl.signal});
+      txt=await res.text();
+    }finally{clearTimeout(to);}
+    let j=null;
+    try{j=JSON.parse(txt);}catch(_){showToast('Respuesta rara del servidor: '+String(txt).slice(0,90));return;}
     if(j&&j.ok&&j.producto){
-      cpAgregarLocal(j.producto);
-      let m='✓ Producto creado: '+j.producto.nombre+' · SKU '+j.producto.ref;
+      try{cpAgregarLocal(j.producto);}catch(_){}   // agregar al catálogo local no debe tapar el aviso
+      let m='✓ Creado: '+j.producto.nombre+' · SKU '+j.producto.ref;
       if(j.producto.confirmado===false)m+=' ⚠️ NO verificado en Loyverse';
-      else if(j.producto.enEstaTienda===false)m+=' ⚠️ creado pero NO asignado a esta tienda';
+      else if(j.producto.enEstaTienda===false)m+=' ⚠️ no asignado a tu tienda';
       else m+=' ✓ verificado en Loyverse';
       showToast(m);
       cerrarModal('cp-ov');
       try{render();}catch(_){}
-    }else showToast('Error: '+((j&&j.error)||'no se pudo crear el producto'));
-  }catch(e){showToast('Error de conexión al crear');}
-  finally{btn.disabled=false;btn.textContent='Crear producto';}
+    }else{
+      showToast('Error del servidor: '+((j&&j.error)?j.error:'no se pudo crear el producto'));
+    }
+  }catch(e){
+    showToast(e&&e.name==='AbortError'?'El servidor tardó demasiado (timeout). Reintenta.':('Error al crear: '+(e&&e.message?e.message:String(e))));
+  }finally{
+    btn.disabled=false;btn.textContent='Crear producto';
+  }
 };
 function cpAgregarLocal(p){
   const prov=p.prov||'SIN CATEGORÍA';
