@@ -130,7 +130,9 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .vc-row .cat{font-size:11.5px;color:var(--muted);margin-top:2px}
 .vc-row .accion{font-size:12.5px;font-weight:700;margin-top:6px}
 .vc-row .accion .est{font-weight:600;color:var(--muted);margin-left:4px}
-.vc-row .btns{display:flex;gap:7px;margin-top:8px}
+.vc-row .btns{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+.vc-row .btn-elim{color:var(--rojo);border-color:var(--rojo);background:var(--card)}
+.vc-row .btn-elim:active{background:var(--paper)}
 .vc-row .btns button{flex:1;border:1.5px solid var(--line);background:var(--card);border-radius:9px;padding:8px;font-size:12px;font-weight:700;cursor:pointer}
 .vc-row .btn-ok{color:var(--verde);border-color:var(--verde)}
 .vc-row .btn-merma{background:var(--rojo);color:#fff;border-color:var(--rojo)}
@@ -465,7 +467,7 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .method li{font-size:12.5px;line-height:1.5;padding-left:18px;position:relative}
 .method li::before{content:"›";position:absolute;left:0;color:var(--wa);font-weight:800}
 .method b{color:#fff}.method .f{font-family:'JetBrains Mono';background:#0d1014;border:1px solid #2a3038;border-radius:6px;padding:2px 6px;font-size:11.5px;color:#9fe3bb}
-.toast{position:fixed;bottom:92px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:10px;font-weight:600;font-size:13px;box-shadow:0 8px 30px rgba(0,0,0,.25);transition:.3s;z-index:180;opacity:0;max-width:90vw;text-align:center}
+.toast{position:fixed;bottom:92px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:10px;font-weight:600;font-size:13px;box-shadow:0 8px 30px rgba(0,0,0,.25);transition:.3s;z-index:180;opacity:0;max-width:90vw;text-align:center;pointer-events:none}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 .cloudpanel{background:var(--ink2);width:100%;padding:12px max(16px,env(safe-area-inset-right)) 12px max(16px,env(safe-area-inset-left));border-bottom:1px solid #2a3038;display:flex;flex-direction:column;gap:9px}
 .cp-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -1615,7 +1617,23 @@ document.getElementById('btn-sync').onclick=()=>cloudSync(false,true,false,'sync
 document.getElementById('btn-prices').onclick=()=>cloudSync(false,false,true,'prices');
 
 // ===================== EVENTOS =====================
-document.querySelectorAll('#seg-basis button').forEach(b=>b.onclick=()=>{state.basis=+b.dataset.b;document.querySelectorAll('#seg-basis button').forEach(x=>x.classList.remove('active'));b.classList.add('active');render();persistUI();});
+function restaurarScrollTabla(tblY,winY){
+  const sc=tableScrollEl();
+  // Reexpande las filas cargadas de a poco hasta poder alcanzar el punto guardado,
+  // porque renderTable() reinicia la tabla mostrando solo las primeras 70 filas.
+  let guard=0;
+  while(sc&&_tbState&&_tbState.idx<_tbState.items.length&&sc.scrollHeight<tblY+sc.clientHeight+40&&guard++<80){tableMore();}
+  if(sc&&tblY)sc.scrollTop=tblY;
+  if(winY)window.scrollTo(0,winY);
+}
+document.querySelectorAll('#seg-basis button').forEach(b=>b.onclick=()=>{
+  const sc=tableScrollEl();const prevTbl=sc?sc.scrollTop:0,prevWin=window.scrollY||0;
+  state.basis=+b.dataset.b;
+  document.querySelectorAll('#seg-basis button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+  render();
+  restaurarScrollTabla(prevTbl,prevWin);   // conserva exactamente donde estabas (sin salto al inicio)
+  persistUI();
+});
 document.querySelectorAll('#seg-unit button').forEach(b=>b.onclick=()=>{state.unit=b.dataset.u;document.querySelectorAll('#seg-unit button').forEach(x=>x.classList.remove('active'));b.classList.add('active');render();persistUI();});
 document.getElementById('lead').oninput=e=>{state.lead=Math.max(0,+e.target.value||0);render();};
 document.getElementById('cover').oninput=e=>{state.cover=Math.max(1,+e.target.value||1);render();};
@@ -1650,14 +1668,55 @@ function abrirModal(id){
   el.classList.remove('hidden');
   el.style.removeProperty('display');
   void el.offsetWidth;   // fuerza a que el navegador aplique el cambio ya mismo
+  _sincronizarNav();
 }
 function cerrarModal(id){
   const el=document.getElementById(id);
   if(el){el.classList.add('hidden');el.style.removeProperty('display');}
+  _sincronizarNav();
 }
 function cerrarOverlays(){
   document.querySelectorAll('.mm-ov, .scan-ov').forEach(o=>{o.classList.add('hidden');o.style.removeProperty('display');});
+  _sincronizarNav();
 }
+
+// ===================== NAVEGACIÓN + BOTÓN ATRÁS (PWA) =====================
+// Devuelve la ventana visible que está más arriba (mayor z-index), o null.
+function _overlaySuperior(){
+  const vis=[].slice.call(document.querySelectorAll('.mm-ov, .scan-ov')).filter(o=>!o.classList.contains('hidden'));
+  if(!vis.length)return null;
+  return vis.sort((a,b)=>(parseInt(getComputedStyle(b).zIndex,10)||0)-(parseInt(getComputedStyle(a).zIndex,10)||0))[0];
+}
+// Barra inferior: solo una pestaña activa a la vez, reflejando la ventana abierta.
+function _sincronizarNav(){
+  const map={'rc-ov':'bn-recepcion','vc-ov':'bn-vencimientos','mas-ov':'bn-mas'};
+  const ov=_overlaySuperior();
+  const activeId=(ov&&map[ov.id])?map[ov.id]:'bn-pedidos';
+  document.querySelectorAll('.bn-item').forEach(b=>b.classList.toggle('active',b.id===activeId));
+}
+// Botón físico "Atrás" de Android: cierra SOLO la ventana abierta; si no hay
+// ninguna y estás en el carrito, vuelve a Pedidos; y solo sale de la app cuando
+// ya estás en Pedidos (con doble toque de confirmación, para no salir sin querer).
+let _salirArmado=false,_salirT=null;
+function _reponerTrampa(){history.pushState({marin:'nav'},'');}
+history.pushState({marin:'nav'},'');   // trampa inicial: le da algo que consumir al primer "Atrás"
+window.addEventListener('popstate',function(){
+  const ov=_overlaySuperior();
+  if(ov){                                       // 1) hay ventana abierta → ciérrala
+    if(ov.id==='scan-ov'){try{closeScanner();}catch(e){ov.classList.add('hidden');}}
+    else cerrarModal(ov.id);
+    _sincronizarNav();_reponerTrampa();return;
+  }
+  const carrito=document.getElementById('tab-carrito');
+  if(carrito&&!carrito.classList.contains('hidden')){   // 2) estás en el carrito → vuelve a Pedidos
+    showScreen('pedido');_reponerTrampa();return;
+  }
+  if(_salirArmado){return;}                     // 3b) segundo "Atrás" seguido → deja salir de la app
+  _salirArmado=true;                            // 3a) primer "Atrás" en Pedidos → confirma
+  showToast('Presiona atrás de nuevo para salir');
+  clearTimeout(_salirT);_salirT=setTimeout(()=>{_salirArmado=false;},2000);
+  _reponerTrampa();
+});
 
 // Delegación de eventos: el listener vive en el contenedor de la barra inferior
 // (que nunca se destruye ni se reconstruye), no en cada botón por separado.
@@ -2009,10 +2068,10 @@ function vcRender(lotes){
     return `
     <div class="vc-row">
       <div class="nom">${l.prioridad} ${l.nombre}</div>
-      <div class="cat">${l.categoria} · vence ${l.fechaVencimiento} · ${l.cantidad} ${l.unidad}${l.lote?' · lote '+l.lote:''}</div>
+      <div class="cat">${l.categoria} · ${l.fechaVencimiento?('vence '+l.fechaVencimiento):'sin vencimiento'} · ${l.cantidad} ${l.unidad}${l.lote?' · lote '+l.lote:''}</div>
       <div class="accion">${l.accion}${l.precioRecomendado?(' → '+peso(l.precioRecomendado)+(l.costoOrigen==='estimado'?' <span class="est">(costo estimado)</span>':'')):''}</div>
       ${notaExtra}
-      <div class="btns">${botones||''}<button class="btn-editfecha" data-editf="${l.filaIndex}" data-fv="${l.fechaVencimiento}">✏️ Editar fecha</button></div>
+      <div class="btns">${botones||''}<button class="btn-editfecha" data-editf="${l.filaIndex}" data-fv="${l.fechaVencimiento}">✏️ Editar fecha</button><button class="btn-elim" data-elim="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" data-nom="${(l.nombre||'').replace(/"/g,'&quot;')}">❌ Eliminar lote</button></div>
       <div class="vc-editbox hidden" data-editbox="${l.filaIndex}">
         <span class="vc-editlbl">Nueva fecha de vencimiento:</span>
         <div class="fecha-wrap">
@@ -2034,6 +2093,7 @@ function vcRender(lotes){
     openMerma(true);
   });
   box.querySelectorAll('[data-actm="cambiado"]').forEach(b=>b.onclick=()=>vcMarcarCambiado(b.dataset.i,b.dataset.nom));
+  box.querySelectorAll('[data-elim]').forEach(b=>b.onclick=()=>vcEliminarLote(b.dataset.elim,b.dataset.sku,b.dataset.cant,b.dataset.nom));
   // Editar fecha: abre el mini-formulario con la fecha actual precargada en los 3 campos
   box.querySelectorAll('[data-editf]').forEach(b=>b.onclick=()=>{
     const fi=b.dataset.editf;
@@ -2105,6 +2165,32 @@ async function vcRevisar(filaIndex,resultado,recargar){
     else showToast('Error: '+((j&&j.error)||'no se pudo'));
   }catch(e){showToast('Error de conexión');}
 }
+async function vcEliminarLote(filaIndex,sku,cantidad,nombre){
+  const cant=Number(cantidad)||0;
+  const msg='¿Eliminar este lote de "'+nombre+'"?\n\n'+
+    (cant>0?('Se descontarán '+cant+' del stock en Loyverse (revierte la recepción).\n'):'')+
+    'Esta acción no se puede deshacer.';
+  if(!confirm(msg))return;
+  showToast('Eliminando lote…');
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'eliminar_lote',payload:{
+      filaIndex:Number(filaIndex),sku:sku,cantidad:cant
+    }})});
+    const j=await res.json();
+    if(j&&j.ok){
+      // Actualiza la copia local al instante (sin esperar a sincronizar)
+      if(j.fila&&j.fila.nuevoStock!=null){
+        const itLocal=(DB.items||[]).find(x=>x.ref===sku);
+        if(itLocal){itLocal.stock=j.fila.nuevoStock;persist();}
+      }
+      let m='✓ Lote eliminado: '+nombre;
+      if(j.fila&&j.fila.nuevoStock!=null)m+=' · stock ahora '+j.fila.nuevoStock;
+      if(j.fila&&j.fila.avisoStock)m+=' · '+j.fila.avisoStock;
+      showToast(m);
+      vcLoad();
+    }else showToast('Error: '+((j&&j.error)||'no se pudo eliminar el lote'));
+  }catch(e){showToast('Error de conexión al eliminar el lote');}
+}
 function vcShowList(){document.getElementById('vc-list-view').classList.remove('hidden');document.getElementById('vc-form-view').classList.add('hidden');}
 function vcShowForm(){
   vcNew.item=null;
@@ -2139,8 +2225,8 @@ function vcPick(ref){
 }
 function vcValidar(){
   const cant=Number(document.getElementById('vc-cantidad').value)||0;
-  const fecha=document.getElementById('vc-fecha').value;
-  document.getElementById('vc-guardar').disabled=!(vcNew.item&&cant>0&&fecha);
+  // Fecha de vencimiento OPCIONAL: producto + cantidad es suficiente para guardar.
+  document.getElementById('vc-guardar').disabled=!(vcNew.item&&cant>0);
 }
 function openVenc(){abrirModal('vc-ov');try{vcShowList();}catch(e){}try{vcLoad();}catch(e){}}
 function closeVenc(){cerrarModal('vc-ov');}
@@ -2463,8 +2549,9 @@ function rcPick(ref){
 }
 function rcValidar(){
   const cant=Number(document.getElementById('rc-cantidad').value)||0;
-  const fecha=document.getElementById('rc-fecha').value;
-  document.getElementById('rc-guardar').disabled=!(rcState.item&&cant>0&&fecha);
+  // La fecha de vencimiento es OPCIONAL (productos de limpieza, utensilios, etc.):
+  // basta con producto + cantidad para poder guardar.
+  document.getElementById('rc-guardar').disabled=!(rcState.item&&cant>0);
 }
 function rcReset(){
   rcState.item=null;rcState.costoOriginal=0;rcState.precioOriginal=0;rcState.precioTocado=false;
@@ -2553,7 +2640,7 @@ document.getElementById('rc-guardar').onclick=async()=>{
         if(j.fila.precioAplicado!=null)itLocal.precio=j.fila.precioAplicado;
         persist();
       }
-      let msg='✓ Recibido: '+it.nombre+' · +'+cantidad+' '+(it.peso?'kg':'u')+' · vence '+fecha;
+      let msg='✓ Recibido: '+it.nombre+' · +'+cantidad+' '+(it.peso?'kg':'u')+(fecha?(' · vence '+fecha):' · sin vencimiento');
       if(costoCambio||precioCambio)msg+=' · '+(costoCambio?'costo':'')+(costoCambio&&precioCambio?' y ':'')+(precioCambio?'precio':'')+' actualizados';
       if(j.fila.avisoStock)msg+=' · '+j.fila.avisoStock;
       showToast(msg);
