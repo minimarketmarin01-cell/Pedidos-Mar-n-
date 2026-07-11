@@ -94,11 +94,12 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .fecha-txt{flex:1;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:16px;font-family:'JetBrains Mono';letter-spacing:.02em}
 .fecha-txt::placeholder{font-family:'Inter';letter-spacing:0;color:var(--muted);font-size:13px}
 .fecha-cal-btn{flex:none;width:46px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);font-size:19px;cursor:pointer}
+.fecha-seg{flex:none;padding:11px 2px;border:1.5px solid var(--line);border-radius:10px;font-size:17px;font-family:'JetBrains Mono';font-weight:700;text-align:center;width:46px}
+.fecha-seg:focus{border-color:var(--azul);outline:none}
+.fecha-seg-y{width:66px}
+.fecha-sep{align-self:center;color:var(--muted);font-weight:700;font-size:16px}
 .fecha-cal-btn:active{background:var(--line)}
 .fecha-hint{font-size:10.5px;color:var(--muted);margin-top:4px;letter-spacing:.02em}
-.rc-fecha-rapida{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.rc-fr-btn{background:var(--paper);border:1.5px solid var(--line);border-radius:9px;padding:8px 12px;font-size:12.5px;font-weight:700;color:var(--ink);cursor:pointer;min-height:40px;flex:1;min-width:70px}
-.rc-fr-btn:active{background:var(--azul-bg);border-color:var(--azul);color:var(--azul)}
 .btn-editfecha{background:none;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:700;color:var(--muted);cursor:pointer}
 .btn-editfecha:active{background:var(--paper)}
 .vc-editbox{margin-top:8px;padding:10px;background:var(--paper);border:1px solid var(--line);border-radius:10px}
@@ -679,7 +680,11 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
           <div class="mm-field">
             <label>Fecha de vencimiento</label>
             <div class="fecha-wrap">
-              <input id="vc-fecha-txt" class="fecha-txt" inputmode="numeric" placeholder="DD/MM/AAAA" maxlength="10" autocomplete="off">
+              <input id="vc-fecha-dd" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="DD" autocomplete="off">
+              <span class="fecha-sep">/</span>
+              <input id="vc-fecha-mm" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="off">
+              <span class="fecha-sep">/</span>
+              <input id="vc-fecha-aaaa" class="fecha-seg fecha-seg-y" inputmode="numeric" maxlength="4" placeholder="AAAA" autocomplete="off">
               <button type="button" class="fecha-cal-btn" id="vc-fecha-cal" aria-label="Elegir en calendario">📅</button>
               <input type="date" id="vc-fecha" class="fecha-date-hidden" tabindex="-1">
             </div>
@@ -797,18 +802,15 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
         <div class="mm-field">
           <label>Fecha de vencimiento <span style="color:var(--rojo)">*</span></label>
           <div class="fecha-wrap">
-            <input id="rc-fecha-txt" class="fecha-txt" inputmode="numeric" placeholder="DD/MM/AAAA" maxlength="10" autocomplete="off">
+            <input id="rc-fecha-dd" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="DD" autocomplete="off">
+            <span class="fecha-sep">/</span>
+            <input id="rc-fecha-mm" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="off">
+            <span class="fecha-sep">/</span>
+            <input id="rc-fecha-aaaa" class="fecha-seg fecha-seg-y" inputmode="numeric" maxlength="4" placeholder="AAAA" autocomplete="off">
             <button type="button" class="fecha-cal-btn" id="rc-fecha-cal" aria-label="Elegir en calendario">📅</button>
             <input type="date" id="rc-fecha" class="fecha-date-hidden" tabindex="-1">
           </div>
           <div class="fecha-hint">Escribe día, mes y año, o toca 📅 para elegir en el calendario</div>
-          <div class="rc-fecha-rapida">
-            <button type="button" class="rc-fr-btn" data-dias="15">+15 días</button>
-            <button type="button" class="rc-fr-btn" data-meses="1">+1 mes</button>
-            <button type="button" class="rc-fr-btn" data-meses="3">+3 meses</button>
-            <button type="button" class="rc-fr-btn" data-meses="6">+6 meses</button>
-            <button type="button" class="rc-fr-btn" data-meses="12">+1 año</button>
-          </div>
         </div>
 
         <button class="mm-save" id="rc-guardar" disabled>Guardar y sumar stock</button>
@@ -1625,13 +1627,42 @@ function playTabAnim(name){
   el.classList.add('tab-anim');
 }
 document.getElementById('bn-pedidos').onclick=()=>showScreen('pedido');
-function cerrarOverlays(){
-  document.querySelectorAll('.mm-ov, .scan-ov').forEach(o=>o.classList.add('hidden'));
+
+// Abre un modal de forma robusta: quita 'hidden' por clase Y por estilo inline
+// (redundante a propósito, para que nunca quede un modal que no se puede reabrir).
+function abrirModal(id){
+  document.querySelectorAll('.mm-ov, .scan-ov').forEach(o=>{
+    if(o.id!==id){o.classList.add('hidden');o.style.removeProperty('display');}
+  });
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.classList.remove('hidden');
+  el.style.removeProperty('display');
+  void el.offsetWidth;   // fuerza a que el navegador aplique el cambio ya mismo
 }
-document.getElementById('bn-recepcion').onclick=()=>{cerrarOverlays();document.getElementById('btn-recibir').click();};
-document.getElementById('bn-vencimientos').onclick=()=>{cerrarOverlays();document.getElementById('btn-venc').click();};
-document.getElementById('bn-mas').onclick=()=>document.getElementById('mas-ov').classList.remove('hidden');
-document.getElementById('mas-cerrar').onclick=()=>document.getElementById('mas-ov').classList.add('hidden');
+function cerrarModal(id){
+  const el=document.getElementById(id);
+  if(el){el.classList.add('hidden');el.style.removeProperty('display');}
+}
+function cerrarOverlays(){
+  document.querySelectorAll('.mm-ov, .scan-ov').forEach(o=>{o.classList.add('hidden');o.style.removeProperty('display');});
+}
+
+// Delegación de eventos: el listener vive en el contenedor de la barra inferior
+// (que nunca se destruye ni se reconstruye), no en cada botón por separado.
+// Así, aunque algo raro le pase a un botón individual, la navegación nunca deja
+// de responder — hay que cerrar la app para romper esto, ya no debería pasar.
+document.querySelector('.bottom-nav').addEventListener('click',(e)=>{
+  const btn=e.target.closest('.bn-item');
+  if(!btn)return;
+  try{
+    if(btn.id==='bn-pedidos'){showScreen('pedido');}
+    else if(btn.id==='bn-recepcion'){cerrarOverlays();abrirModal('rc-ov');try{rcReset();}catch(_){}}
+    else if(btn.id==='bn-vencimientos'){cerrarOverlays();abrirModal('vc-ov');try{vcShowList();vcLoad();}catch(_){}}
+    else if(btn.id==='bn-mas'){abrirModal('mas-ov');}
+  }catch(err){showToast('Ocurrió un error al abrir. Intenta de nuevo.');}
+});
+document.getElementById('mas-cerrar').onclick=()=>cerrarModal('mas-ov');
 document.getElementById('cart-fab').onclick=()=>showScreen('carrito');
 document.getElementById('cart-back').onclick=()=>showScreen('pedido');
 
@@ -1824,8 +1855,8 @@ function mmReset(){
   document.querySelectorAll('#mm-resp button').forEach(b=>b.classList.remove('sel'));
   document.getElementById('mm-save').disabled=true;
 }
-function openMerma(skipReset){if(!skipReset){try{mmReset();}catch(e){}}document.getElementById('mm-ov').classList.remove('hidden');}
-function closeMerma(){document.getElementById('mm-ov').classList.add('hidden');}
+function openMerma(skipReset){if(!skipReset){try{mmReset();}catch(e){}}abrirModal('mm-ov');}
+function closeMerma(){cerrarModal('mm-ov');}
 // Prellenar el modal de merma desde el panel de vencimientos ("Es merma")
 function mmPrefill(ref,cantidad,lote){
   mmReset();
@@ -1900,46 +1931,38 @@ function fmtDateInputToDDMMAAAA(v){ // "YYYY-MM-DD" → "DD/MM/AAAA"
 // Escribir en el texto actualiza el oculto (y dispara su 'input'/'change',
 // para que los validadores que ya escuchan ese campo sigan funcionando);
 // elegir una fecha en el calendario actualiza el texto.
-function wireFechaInput(txtId,hiddenDateId,calBtnId){
-  const txt=document.getElementById(txtId),hidden=document.getElementById(hiddenDateId),cal=document.getElementById(calBtnId);
-  if(!txt||!hidden||!cal)return;
-  txt.oninput=()=>{
-    let v=txt.value.replace(/[^\d]/g,'').slice(0,8);
-    let out='';
-    if(v.length>0)out=v.slice(0,2);
-    if(v.length>=3)out+='/'+v.slice(2,4);
-    if(v.length>=5)out+='/'+v.slice(4,8);
-    txt.value=out;
-    const m=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(out);
-    hidden.value=m?(m[3]+'-'+m[2]+'-'+m[1]):'';
+// Fecha en 3 campos independientes (día/mes/año) — cada uno se edita por separado,
+// sin que escribir en uno afecte o borre los otros. Sincroniza con el mismo input
+// oculto type="date" de siempre, así todo el código que lee/valida la fecha
+// (rcValidar, vcValidar, el guardado, etc.) sigue funcionando exactamente igual.
+function wireFechaSegmentada(ddId,mmId,yyId,hiddenId,calId){
+  const dd=document.getElementById(ddId),mm=document.getElementById(mmId),yy=document.getElementById(yyId),
+        hidden=document.getElementById(hiddenId),cal=calId?document.getElementById(calId):null;
+  if(!dd||!mm||!yy||!hidden)return;
+  function sync(){
+    hidden.value=(dd.value.length===2&&mm.value.length===2&&yy.value.length===4)?(yy.value+'-'+mm.value+'-'+dd.value):'';
     hidden.dispatchEvent(new Event('input',{bubbles:true}));
     hidden.dispatchEvent(new Event('change',{bubbles:true}));
-  };
-  cal.onclick=()=>{
-    if(hidden.showPicker){try{hidden.showPicker();return;}catch(e){}}
-    hidden.click();
-  };
+  }
+  [[dd,2,mm],[mm,2,yy],[yy,4,null]].forEach(([inp,max,next])=>{
+    inp.addEventListener('input',()=>{
+      inp.value=inp.value.replace(/[^\d]/g,'').slice(0,max);
+      if(inp.value.length>=max&&next)next.focus();
+      sync();
+    });
+    inp.addEventListener('keydown',e=>{
+      if(e.key==='Backspace'&&!inp.value){
+        if(inp===mm)dd.focus();else if(inp===yy)mm.focus();
+      }
+    });
+  });
+  if(cal)cal.onclick=()=>{if(hidden.showPicker){try{hidden.showPicker();return;}catch(e){}}hidden.click();};
   hidden.addEventListener('change',()=>{
-    if(hidden.value){
-      const p=hidden.value.split('-');
-      txt.value=p[2]+'/'+p[1]+'/'+p[0];
-    }
+    if(hidden.value){const p=hidden.value.split('-');yy.value=p[0];mm.value=p[1];dd.value=p[2];}
   });
 }
-wireFechaInput('rc-fecha-txt','rc-fecha','rc-fecha-cal');
-wireFechaInput('vc-fecha-txt','vc-fecha','vc-fecha-cal');
-// Botones rápidos de fecha en Recepción: setean el vencimiento a hoy + N días/meses
-document.querySelectorAll('.rc-fr-btn').forEach(b=>b.onclick=()=>{
-  const d=new Date();
-  if(b.dataset.dias)d.setDate(d.getDate()+Number(b.dataset.dias));
-  if(b.dataset.meses)d.setMonth(d.getMonth()+Number(b.dataset.meses));
-  const iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-  const hidden=document.getElementById('rc-fecha'), txt=document.getElementById('rc-fecha-txt');
-  hidden.value=iso;
-  txt.value=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
-  hidden.dispatchEvent(new Event('change',{bubbles:true}));
-  hidden.dispatchEvent(new Event('input',{bubbles:true}));
-});
+wireFechaSegmentada('rc-fecha-dd','rc-fecha-mm','rc-fecha-aaaa','rc-fecha','rc-fecha-cal');
+wireFechaSegmentada('vc-fecha-dd','vc-fecha-mm','vc-fecha-aaaa','vc-fecha','vc-fecha-cal');
 async function vcLoad(){
   const box=document.getElementById('vc-list');
   box.innerHTML='<div class="vc-empty">Cargando…</div>';
@@ -1975,7 +1998,11 @@ function vcRender(lotes){
       <div class="vc-editbox hidden" data-editbox="${l.filaIndex}">
         <span class="vc-editlbl">Nueva fecha de vencimiento:</span>
         <div class="fecha-wrap">
-          <input class="fecha-txt vc-ef-txt" inputmode="numeric" placeholder="DD/MM/AAAA" maxlength="10" autocomplete="off" value="${l.fechaVencimiento}">
+          <input id="vc-ef-dd-${l.filaIndex}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="DD" autocomplete="off">
+          <span class="fecha-sep">/</span>
+          <input id="vc-ef-mm-${l.filaIndex}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="off">
+          <span class="fecha-sep">/</span>
+          <input id="vc-ef-aaaa-${l.filaIndex}" class="fecha-seg fecha-seg-y" inputmode="numeric" maxlength="4" placeholder="AAAA" autocomplete="off">
           <button type="button" class="btn-ok vc-ef-save" data-savef="${l.filaIndex}" style="white-space:nowrap">Guardar</button>
         </div>
       </div>
@@ -1989,20 +2016,37 @@ function vcRender(lotes){
     openMerma(true);
   });
   box.querySelectorAll('[data-actm="cambiado"]').forEach(b=>b.onclick=()=>vcMarcarCambiado(b.dataset.i,b.dataset.nom));
-  // Editar fecha: abre el mini-formulario; con auto-formato DD/MM/AAAA al escribir
+  // Editar fecha: abre el mini-formulario con la fecha actual precargada en los 3 campos
   box.querySelectorAll('[data-editf]').forEach(b=>b.onclick=()=>{
-    const bx=box.querySelector(`[data-editbox="${b.dataset.editf}"]`);
-    if(bx)bx.classList.toggle('hidden');
+    const fi=b.dataset.editf;
+    const bx=box.querySelector(`[data-editbox="${fi}"]`);
+    if(!bx)return;
+    const wasHidden=bx.classList.contains('hidden');
+    bx.classList.toggle('hidden');
+    if(wasHidden){
+      // recién se abre: precarga con la fecha actual del lote
+      const p=(b.dataset.fv||'').split('/');
+      if(p.length===3){
+        document.getElementById('vc-ef-dd-'+fi).value=p[0];
+        document.getElementById('vc-ef-mm-'+fi).value=p[1];
+        document.getElementById('vc-ef-aaaa-'+fi).value=p[2];
+      }
+    }
   });
-  box.querySelectorAll('.vc-ef-txt').forEach(inp=>inp.oninput=()=>{
-    let v=inp.value.replace(/[^\d]/g,'').slice(0,8);let out='';
-    if(v.length>0)out=v.slice(0,2);if(v.length>=3)out+='/'+v.slice(2,4);if(v.length>=5)out+='/'+v.slice(4,8);
-    inp.value=out;
-  });
-  box.querySelectorAll('[data-savef]').forEach(b=>b.onclick=()=>{
-    const bx=box.querySelector(`[data-editbox="${b.dataset.savef}"]`);
-    const inp=bx?bx.querySelector('.vc-ef-txt'):null;
-    if(inp)vcEditarFecha(b.dataset.savef,inp.value.trim());
+  box.querySelectorAll('[data-savef]').forEach(b=>{
+    const fi=b.dataset.savef;
+    // Solo cambia la fecha con el botón "Guardar" — nunca solo, así se puede
+    // corregir un campo sin que se dispare el guardado a medio escribir.
+    document.getElementById('vc-ef-dd-'+fi).addEventListener('keydown',e=>{if(e.key==='Enter')b.click();});
+    document.getElementById('vc-ef-mm-'+fi).addEventListener('keydown',e=>{if(e.key==='Enter')b.click();});
+    document.getElementById('vc-ef-aaaa-'+fi).addEventListener('keydown',e=>{if(e.key==='Enter')b.click();});
+    b.onclick=()=>{
+      const dd=document.getElementById('vc-ef-dd-'+fi).value;
+      const mm=document.getElementById('vc-ef-mm-'+fi).value;
+      const aaaa=document.getElementById('vc-ef-aaaa-'+fi).value;
+      if(dd.length!==2||mm.length!==2||aaaa.length!==4){showToast('Completa día, mes y año');return;}
+      vcEditarFecha(fi,dd+'/'+mm+'/'+aaaa);
+    };
   });
 }
 async function vcEditarFecha(filaIndex,nuevaFecha){
@@ -2053,7 +2097,9 @@ function vcShowForm(){
   document.getElementById('vc-unidad').textContent='u';
   document.getElementById('vc-lote').value='';
   document.getElementById('vc-fecha').value='';
-  document.getElementById('vc-fecha-txt').value='';
+  document.getElementById('vc-fecha-dd').value='';
+  document.getElementById('vc-fecha-mm').value='';
+  document.getElementById('vc-fecha-aaaa').value='';
   document.getElementById('vc-guardar').disabled=true;
   document.getElementById('vc-list-view').classList.add('hidden');
   document.getElementById('vc-form-view').classList.remove('hidden');
@@ -2078,8 +2124,8 @@ function vcValidar(){
   const fecha=document.getElementById('vc-fecha').value;
   document.getElementById('vc-guardar').disabled=!(vcNew.item&&cant>0&&fecha);
 }
-function openVenc(){document.getElementById('vc-ov').classList.remove('hidden');vcShowList();vcLoad();}
-function closeVenc(){document.getElementById('vc-ov').classList.add('hidden');}
+function openVenc(){abrirModal('vc-ov');try{vcShowList();}catch(e){}try{vcLoad();}catch(e){}}
+function closeVenc(){cerrarModal('vc-ov');}
 
 document.getElementById('btn-venc').onclick=openVenc;
 document.getElementById('vc-cerrar').onclick=closeVenc;
@@ -2410,14 +2456,16 @@ function rcReset(){
   const cIn=document.getElementById('rc-cantidad');cIn.value='';cIn.disabled=true;cIn.placeholder='0';
   document.getElementById('rc-unidad').textContent='u';
   document.getElementById('rc-fecha').value='';
-  document.getElementById('rc-fecha-txt').value='';
+  document.getElementById('rc-fecha-dd').value='';
+  document.getElementById('rc-fecha-mm').value='';
+  document.getElementById('rc-fecha-aaaa').value='';
   document.getElementById('rc-costo').value='';
   document.getElementById('rc-precio').value='';
   document.getElementById('rc-precio-hint').textContent='';
   document.getElementById('rc-guardar').disabled=true;
 }
-function openRecibir(){try{rcReset();}catch(e){}document.getElementById('rc-ov').classList.remove('hidden');}
-function closeRecibir(){document.getElementById('rc-ov').classList.add('hidden');}
+function openRecibir(){try{rcReset();}catch(e){}abrirModal('rc-ov');}
+function closeRecibir(){cerrarModal('rc-ov');}
 
 document.getElementById('btn-recibir').onclick=openRecibir;
 document.getElementById('rc-cancelar').onclick=closeRecibir;
@@ -2523,7 +2571,11 @@ async function llLoad(){
         <div class="nom">${it.nombre}</div>
         <div class="cat">${it.categoria} · <span class="plus">+${it.aumento}</span> unidades (${it.stockAntes} → ${it.stockDespues}) · detectado ${it.fecha}</div>
         <div class="fecha-wrap" style="margin-top:8px">
-          <input id="ll-fecha-txt-${it.filaIndex}" class="fecha-txt" inputmode="numeric" placeholder="DD/MM/AAAA" maxlength="10" autocomplete="off" style="font-size:14px;padding:9px 12px">
+          <input id="ll-fecha-dd-${it.filaIndex}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="DD" autocomplete="off" style="font-size:14px;padding:9px 2px;width:38px">
+          <span class="fecha-sep">/</span>
+          <input id="ll-fecha-mm-${it.filaIndex}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="off" style="font-size:14px;padding:9px 2px;width:38px">
+          <span class="fecha-sep">/</span>
+          <input id="ll-fecha-aaaa-${it.filaIndex}" class="fecha-seg fecha-seg-y" inputmode="numeric" maxlength="4" placeholder="AAAA" autocomplete="off" style="font-size:14px;padding:9px 2px;width:56px">
           <button type="button" class="fecha-cal-btn" id="ll-fecha-cal-${it.filaIndex}" aria-label="Elegir en calendario" style="width:40px;font-size:16px">📅</button>
           <input type="date" id="ll-fecha-${it.filaIndex}" class="fecha-date-hidden" tabindex="-1">
         </div>
@@ -2532,7 +2584,7 @@ async function llLoad(){
           <button class="btn-ignorar" data-ig="${it.filaIndex}">Ignorar</button>
         </div>
       </div>`).join('');
-    lst.forEach(it=>wireFechaInput('ll-fecha-txt-'+it.filaIndex,'ll-fecha-'+it.filaIndex,'ll-fecha-cal-'+it.filaIndex));
+    lst.forEach(it=>wireFechaSegmentada('ll-fecha-dd-'+it.filaIndex,'ll-fecha-mm-'+it.filaIndex,'ll-fecha-aaaa-'+it.filaIndex,'ll-fecha-'+it.filaIndex,'ll-fecha-cal-'+it.filaIndex));
     box.querySelectorAll('.btn-guardar-fecha').forEach(b=>b.onclick=()=>llGuardarFecha(b.dataset.i));
     box.querySelectorAll('.btn-ignorar').forEach(b=>b.onclick=()=>llIgnorar(b.dataset.ig));
   }catch(e){lbl.textContent='Error de conexión.';}
