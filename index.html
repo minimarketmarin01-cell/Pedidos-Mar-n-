@@ -2084,7 +2084,11 @@ document.getElementById('cp-guardar').onclick=async()=>{
     const j=await res.json();
     if(j&&j.ok&&j.producto){
       cpAgregarLocal(j.producto);
-      showToast('✓ Producto creado: '+j.producto.nombre+' · SKU '+j.producto.ref);
+      let m='✓ Producto creado: '+j.producto.nombre+' · SKU '+j.producto.ref;
+      if(j.producto.confirmado===false)m+=' ⚠️ NO verificado en Loyverse';
+      else if(j.producto.enEstaTienda===false)m+=' ⚠️ creado pero NO asignado a esta tienda';
+      else m+=' ✓ verificado en Loyverse';
+      showToast(m);
       cerrarModal('cp-ov');
       try{render();}catch(_){}
     }else showToast('Error: '+((j&&j.error)||'no se pudo crear el producto'));
