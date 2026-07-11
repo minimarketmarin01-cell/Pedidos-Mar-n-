@@ -1070,6 +1070,11 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
         <label>Stock inicial</label>
         <input id="cp-stock" inputmode="decimal" placeholder="0" autocomplete="off" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
       </div>
+      <div class="mm-field" id="cp-fecha-field">
+        <label>Fecha de vencimiento (opcional)</label>
+        <input id="cp-fecha" type="date" autocomplete="off" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Si la pones, el stock inicial queda registrado como lote y aparece en Vencimientos.</div>
+      </div>
       <div class="mm-field">
         <label class="cp-toggle">IVA 19% <input type="checkbox" id="cp-iva" checked></label>
       </div>
@@ -1995,7 +2000,7 @@ document.getElementById('mas-q-crear').onclick=()=>{document.getElementById('mas
 document.getElementById('cp-cerrar').onclick=()=>cerrarModal('cp-ov');
 function cpAbrir(){cpReset();abrirModal('cp-ov');cpCargarCatalogo();}
 function cpReset(){
-  ['cp-nombre','cp-precio','cp-costo','cp-barcode','cp-stock','cp-cat-nuevanom'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['cp-nombre','cp-precio','cp-costo','cp-barcode','cp-stock','cp-fecha','cp-cat-nuevanom'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('cp-track').checked=true;
   document.getElementById('cp-iva').checked=true;
   document.getElementById('cp-activo').checked=true;
@@ -2004,7 +2009,11 @@ function cpReset(){
 }
 function cpSetVenta(v){_cpVenta=v;document.querySelectorAll('#cp-venta button').forEach(b=>b.classList.toggle('active',b.dataset.v===v));}
 document.querySelectorAll('#cp-venta button').forEach(b=>b.onclick=()=>cpSetVenta(b.dataset.v));
-function cpToggleStock(){document.getElementById('cp-stock-field').style.display=document.getElementById('cp-track').checked?'':'none';}
+function cpToggleStock(){
+  const on=document.getElementById('cp-track').checked;
+  document.getElementById('cp-stock-field').style.display=on?'':'none';
+  document.getElementById('cp-fecha-field').style.display=on?'':'none';   // la fecha solo aplica si hay stock
+}
 document.getElementById('cp-track').onchange=cpToggleStock;
 async function cpCargarCatalogo(){
   const sel=document.getElementById('cp-cat');
@@ -2067,6 +2076,10 @@ document.getElementById('cp-guardar').onclick=async()=>{
     const costoRaw=(document.getElementById('cp-costo').value||'').replace(/[^\d]/g,'');
     const stockRaw=(document.getElementById('cp-stock').value||'').replace(',','.');
     const track=document.getElementById('cp-track').checked;
+    // Fecha de vencimiento opcional: el input date da AAAA-MM-DD; el backend espera DD/MM/AAAA
+    const fRaw=(document.getElementById('cp-fecha').value||'').trim();
+    let fechaVenc='';
+    if(fRaw){const fp=fRaw.split('-');if(fp.length===3)fechaVenc=fp[2]+'/'+fp[1]+'/'+fp[0];}
     const taxIds=[];
     if(document.getElementById('cp-iva').checked){const iva=_cpImpuestos.find(t=>/iva/i.test(t.name)||t.rate===19);if(iva)taxIds.push(iva.id);}
     const payload={
@@ -2077,6 +2090,7 @@ document.getElementById('cp-guardar').onclick=async()=>{
       barcode:(document.getElementById('cp-barcode').value||'').trim(),
       trackStock:track,
       stockInicial:(track&&stockRaw)?Number(stockRaw):0,
+      fechaVencimiento:fechaVenc,
       taxIds:taxIds,
       activo:document.getElementById('cp-activo').checked
     };
