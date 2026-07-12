@@ -1072,7 +1072,15 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
       </div>
       <div class="mm-field" id="cp-fecha-field">
         <label>Fecha de vencimiento (opcional)</label>
-        <input id="cp-fecha" type="date" autocomplete="off" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+        <div class="fecha-wrap">
+          <input id="cp-fecha-dd" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="DD" autocomplete="off">
+          <span class="fecha-sep">/</span>
+          <input id="cp-fecha-mm" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="off">
+          <span class="fecha-sep">/</span>
+          <input id="cp-fecha-aaaa" class="fecha-seg fecha-seg-y" inputmode="numeric" maxlength="4" placeholder="AAAA" autocomplete="off">
+          <button type="button" class="fecha-cal-btn" id="cp-fecha-cal" aria-label="Elegir en calendario">📅</button>
+          <input type="date" id="cp-fecha" class="fecha-date-hidden" tabindex="-1">
+        </div>
         <div style="font-size:11px;color:var(--muted);margin-top:4px">Si la pones, el stock inicial queda registrado como lote y aparece en Vencimientos.</div>
       </div>
       <div class="mm-field">
@@ -2000,7 +2008,8 @@ document.getElementById('mas-q-crear').onclick=()=>{document.getElementById('mas
 document.getElementById('cp-cerrar').onclick=()=>cerrarModal('cp-ov');
 function cpAbrir(){cpReset();abrirModal('cp-ov');cpCargarCatalogo();}
 function cpReset(){
-  ['cp-nombre','cp-precio','cp-costo','cp-barcode','cp-stock','cp-fecha','cp-cat-nuevanom'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['cp-nombre','cp-precio','cp-costo','cp-barcode','cp-stock','cp-fecha-dd','cp-fecha-mm','cp-fecha-aaaa','cp-cat-nuevanom'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('cp-fecha').value='';
   document.getElementById('cp-track').checked=true;
   document.getElementById('cp-iva').checked=true;
   document.getElementById('cp-activo').checked=true;
@@ -2076,10 +2085,8 @@ document.getElementById('cp-guardar').onclick=async()=>{
     const costoRaw=(document.getElementById('cp-costo').value||'').replace(/[^\d]/g,'');
     const stockRaw=(document.getElementById('cp-stock').value||'').replace(',','.');
     const track=document.getElementById('cp-track').checked;
-    // Fecha de vencimiento opcional: el input date da AAAA-MM-DD; el backend espera DD/MM/AAAA
-    const fRaw=(document.getElementById('cp-fecha').value||'').trim();
-    let fechaVenc='';
-    if(fRaw){const fp=fRaw.split('-');if(fp.length===3)fechaVenc=fp[2]+'/'+fp[1]+'/'+fp[0];}
+    // Fecha de vencimiento opcional: mismo helper que usan Recepción y Vencimientos
+    const fechaVenc=fmtDateInputToDDMMAAAA(document.getElementById('cp-fecha').value);
     const taxIds=[];
     if(document.getElementById('cp-iva').checked){const iva=_cpImpuestos.find(t=>/iva/i.test(t.name)||t.rate===19);if(iva)taxIds.push(iva.id);}
     const payload={
@@ -2558,6 +2565,7 @@ function wireFechaSegmentada(ddId,mmId,yyId,hiddenId,calId){
 }
 wireFechaSegmentada('rc-fecha-dd','rc-fecha-mm','rc-fecha-aaaa','rc-fecha','rc-fecha-cal');
 wireFechaSegmentada('vc-fecha-dd','vc-fecha-mm','vc-fecha-aaaa','vc-fecha','vc-fecha-cal');
+wireFechaSegmentada('cp-fecha-dd','cp-fecha-mm','cp-fecha-aaaa','cp-fecha','cp-fecha-cal');
 async function vcLoad(){
   const box=document.getElementById('vc-list');
   box.innerHTML='<div class="vc-empty">Cargando…</div>';
@@ -2684,7 +2692,15 @@ async function vcRevisar(filaIndex,resultado,recargar){
       filaIndex:filaIndex,revisadoPor:'',resultado:resultado
     }})});
     const j=await res.json();
-    if(j&&j.ok){ if(recargar){showToast('✓ Lote revisado');vcLoad();} }
+    if(j&&j.ok){
+      if(recargar){
+        showToast('✓ Lote revisado');
+        // Ya no es un lote activo: se quita de la lista en memoria y se repinta,
+        // sin volver a pedir toda la lista al servidor.
+        _vcTodos=_vcTodos.filter(l=>String(l.filaIndex)!==String(filaIndex));
+        vcAplicarFiltro();
+      }
+    }
     else showToast('Error: '+((j&&j.error)||'no se pudo'));
   }catch(e){showToast('Error de conexión');}
 }
@@ -2803,7 +2819,22 @@ document.getElementById('vc-guardar').onclick=async()=>{
       sku:it.ref,cantidad:cantidad,lote:lote,fechaVencimiento:fecha
     }})});
     const j=await res.json();
-    if(j&&j.ok){showToast('✓ Lote registrado: '+it.nombre);vcShowList();vcLoad();}
+    if(j&&j.ok){
+      showToast('✓ Lote registrado: '+it.nombre);
+      // Agrega el lote nuevo a la lista en memoria y repinta YA, sin volver a pedir
+      // toda la lista al servidor (evita un viaje de red completo de más).
+      if(j.fila&&j.fila.filaIndex!=null){
+        _vcTodos=_vcTodos.filter(l=>l.filaIndex!==j.fila.filaIndex);   // por si acaso, evita duplicar
+        _vcTodos.push({
+          filaIndex:j.fila.filaIndex, sku:j.fila.sku, nombre:j.fila.nombre, categoria:j.fila.categoria,
+          unidad:j.fila.unidad, lote:j.fila.lote, cantidad:j.fila.cantidad, fechaVencimiento:j.fila.fechaVencimiento,
+          estado:j.fila.estado, prioridad:j.fila.prioridad, accion:j.fila.accion,
+          precioRecomendado:j.fila.precioRecomendado, costoUsado:j.fila.costoUsado, costoOrigen:j.fila.costoOrigen
+        });
+      }
+      vcShowList();
+      vcAplicarFiltro();
+    }
     else showToast('Error: '+((j&&j.error)||'no se pudo guardar'));
   }catch(e){showToast('Error de conexión al guardar el lote');}
   btn.disabled=false;btn.textContent='Guardar lote';vcValidar();
