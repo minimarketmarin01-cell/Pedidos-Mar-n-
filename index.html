@@ -2374,10 +2374,16 @@ document.getElementById('mm-save').onclick=async()=>{
   try{
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'merma',payload:{
       sku:it.ref,cantidad:cantidad,costoManual:costoManual,motivo:mmState.motivo,responsable:mmState.resp,
-      origen:mmState.origen||'manual',lote:mmState.lote||''
+      origen:mmState.origen||'manual',lote:mmState.lote||'',
+      snap:{id:it.id,vid:it.vid,nombre:it.nombre,prov:it.prov,peso:it.peso,precio:it.precio,costo:it.coste,stock:it.stock,track:it.track,barcode:it.barcode}
     }})});
     const j=await res.json();
     if(j&&j.ok){
+      // Actualiza la copia local del stock al instante (sin esperar a sincronizar)
+      if(j.fila&&j.fila.nuevoStock!=null){
+        const itLocal=(DB.items||[]).find(x=>x.ref===it.ref);
+        if(itLocal){itLocal.stock=j.fila.nuevoStock;persist();}
+      }
       let msg='✓ Merma registrada: '+it.nombre+' · '+peso(j.fila.costoTotal)+(j.fila.estadoCosto&&j.fila.estadoCosto.indexOf('⚠️')===0?' · ⚠️ revisar costo':'');
       if(j.fila.avisoStock)msg+=' · '+j.fila.avisoStock;
       showToast(msg);
