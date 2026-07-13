@@ -1653,8 +1653,12 @@ async function renderInsumosChart(){
 }
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');const dur=m.length>60?4600:2600;clearTimeout(window._toastT);window._toastT=setTimeout(()=>t.classList.remove('show'),dur);}
 
-// ===================== SINCRONIZACIÓN AUTOMÁTICA (Apps Script /exec) =====================
-const SYNC_URL='https://script.google.com/macros/s/AKfycbx9UGhWEOSfHHLDriwr5qEoQBQl9__kFZNwQU5QfWE0WweEoOVm1-qsipmVRn4Pb1s3bw/exec';
+// ===================== SINCRONIZACIÓN — Cloudflare Worker (D1) =====================
+const SYNC_URL='https://marin376-api.minimarketmarin01.workers.dev';
+// Respaldo temporal: funciones que TODAVÍA no están en el Worker nuevo
+// (crear/eliminar productos, categorías, costo, consumo interno) siguen
+// en Apps Script hasta que se migren en una próxima sesión.
+const SYNC_URL_LEGACY='https://script.google.com/macros/s/AKfycbx9UGhWEOSfHHLDriwr5qEoQBQl9__kFZNwQU5QfWE0WweEoOVm1-qsipmVRn4Pb1s3bw/exec';
 const SYNC_MAX_AGE=3600000; // 1 hora en ms
 
 function lastSyncTime(){const t=localStorage.getItem('marin_last_sync');return t?+t:0;}
@@ -1983,7 +1987,7 @@ async function smEliminar(){
   if(!confirm('¿Eliminar '+sel.length+' producto'+(sel.length===1?'':'s')+' de Loyverse?\n\nSe borran del catálogo de forma PERMANENTE. Esta acción no se puede deshacer.'+aviso))return;
   const b=document.getElementById('sm-del');b.disabled=true;b.textContent='Eliminando…';
   try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'eliminar_productos',payload:{
+    const res=await fetch(SYNC_URL_LEGACY,{method:'POST',body:JSON.stringify({action:'eliminar_productos',payload:{
       items:sel.map(p=>({id:p.id,sku:p.ref,nombre:p.nombre,categoria:p.prov,stock:p.stock}))
     }})});
     const j=await res.json();
@@ -2029,7 +2033,7 @@ async function cpCargarCatalogo(){
   if(_cpCargado){cpLlenarSelect();return;}
   sel.innerHTML='<option value="">Cargando…</option>';
   try{
-    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=catalogo_crear');
+    const res=await fetch(SYNC_URL_LEGACY+(SYNC_URL_LEGACY.indexOf('?')<0?'?':'&')+'action=catalogo_crear');
     const j=await res.json();
     if(j&&j.ok){_cpCats=j.categorias||[];_cpImpuestos=j.impuestos||[];_cpCargado=true;cpLlenarSelect();}
     else sel.innerHTML='<option value="">Error al cargar categorías</option>';
@@ -2055,7 +2059,7 @@ document.getElementById('cp-cat-crear').onclick=async()=>{
   if(!nom){showToast('Escribe el nombre de la categoría');return;}
   const btn=document.getElementById('cp-cat-crear');btn.disabled=true;
   try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'crear_categoria',payload:{nombre:nom}})});
+    const res=await fetch(SYNC_URL_LEGACY,{method:'POST',body:JSON.stringify({action:'crear_categoria',payload:{nombre:nom}})});
     const j=await res.json();
     if(j&&j.ok&&j.categoria){
       const c=j.categoria;
@@ -2108,7 +2112,7 @@ document.getElementById('cp-guardar').onclick=async()=>{
     const to=setTimeout(()=>ctrl.abort(),45000);
     let txt='';
     try{
-      const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'crear_producto',payload:payload}),signal:ctrl.signal});
+      const res=await fetch(SYNC_URL_LEGACY,{method:'POST',body:JSON.stringify({action:'crear_producto',payload:payload}),signal:ctrl.signal});
       txt=await res.text();
     }finally{clearTimeout(to);}
     let j=null;
@@ -2904,7 +2908,7 @@ async function scGuardar(ref){
   if(!costo||costo<=0){showToast('Escribe un costo válido');return;}
   btn.disabled=true;btn.textContent='Guardando…';
   try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'actualizar_costo',payload:{sku:ref,costo:costo}})});
+    const res=await fetch(SYNC_URL_LEGACY,{method:'POST',body:JSON.stringify({action:'actualizar_costo',payload:{sku:ref,costo:costo}})});
     const j=await res.json();
     if(j&&j.ok){
       showToast('✓ Costo actualizado en Loyverse: '+j.item.nombre+' → '+peso(j.item.costo));
@@ -3097,7 +3101,7 @@ document.getElementById('in-guardar').onclick=async()=>{
   btn.disabled=true;btn.textContent='Guardando…';
   try{
     const items=inCart.map(c=>({sku:c.ref,cantidad:c.cantidad,costoManual:c.coste>0?undefined:(Number(c.costoManual)||0)}));
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'consumo_interno',payload:{items:items,responsable:inResp}})});
+    const res=await fetch(SYNC_URL_LEGACY,{method:'POST',body:JSON.stringify({action:'consumo_interno',payload:{items:items,responsable:inResp}})});
     const j=await res.json();
     if(j&&j.ok){
       let msg='✓ Consumo registrado: '+j.resumen.n+' producto'+(j.resumen.n===1?'':'s')+' · '+peso(j.resumen.total);
