@@ -1026,22 +1026,22 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
   </div>
 </div>
 
-<div class="mm-ov hidden" id="rc-ov">
+<div class="mm-ov hidden" id="rk-ov">
   <div class="mm-card">
     <div class="mm-head"><h3>🔢 Reconteo de stock</h3></div>
-    <div class="mm-topbar"><button class="loadbtn" id="rc-cerrar" style="width:100%">Cerrar</button></div>
+    <div class="mm-topbar"><button class="loadbtn" id="rk-cerrar" style="width:100%">Cerrar</button></div>
     <div class="mm-body">
-      <div class="hm-summary"><span class="lbl" id="rc-lbl">—</span><span class="val" id="rc-val"></span></div>
-      <select id="rc-cat" style="width:100%;margin-bottom:8px;padding:10px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:14px">
+      <div class="hm-summary"><span class="lbl" id="rk-lbl">—</span><span class="val" id="rk-val"></span></div>
+      <select id="rk-cat" style="width:100%;margin-bottom:8px;padding:10px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:14px">
         <option value="">📋 Todas las categorías</option>
       </select>
       <div class="mm-search" style="margin:0 0 10px">
-        <input id="rc-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off" style="padding-right:104px">
-        <button class="mm-x" id="rc-x" type="button" aria-label="Limpiar" style="position:absolute;top:50%;transform:translateY(-50%);right:68px;background:var(--gris-bg);border:none;border-radius:8px;width:28px;height:24px;font-size:13px;cursor:pointer;display:none">✕</button>
-        <button class="mm-mic" id="rc-mic" type="button" aria-label="Buscar por voz">🎤</button>
-        <button class="mm-scan" id="rc-scan" type="button" aria-label="Escanear código">📷</button>
+        <input id="rk-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off" style="padding-right:104px">
+        <button class="mm-x" id="rk-x" type="button" aria-label="Limpiar" style="position:absolute;top:50%;transform:translateY(-50%);right:68px;background:var(--gris-bg);border:none;border-radius:8px;width:28px;height:24px;font-size:13px;cursor:pointer;display:none">✕</button>
+        <button class="mm-mic" id="rk-mic" type="button" aria-label="Buscar por voz">🎤</button>
+        <button class="mm-scan" id="rk-scan" type="button" aria-label="Escanear código">📷</button>
       </div>
-      <div id="rc-list"></div>
+      <div id="rk-list"></div>
     </div>
   </div>
 </div>
@@ -2004,24 +2004,24 @@ document.getElementById('sm-selall').onchange=e=>{
 };
 
 // ===================== RECONTEO DE STOCK =====================
-let _rcCatsLlenas=false;
-document.getElementById('mas-q-reconteo').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');rcAbrir();};
-document.getElementById('rc-cerrar').onclick=()=>cerrarModal('rc-ov');
-function rcAbrir(){
-  document.getElementById('rc-search').value='';
-  document.getElementById('rc-cat').value='';
-  if(!_rcCatsLlenas){
-    const sel=document.getElementById('rc-cat');
+let _rkCatsLlenas=false;
+document.getElementById('mas-q-reconteo').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');rkAbrir();};
+document.getElementById('rk-cerrar').onclick=()=>cerrarModal('rk-ov');
+function rkAbrir(){
+  document.getElementById('rk-search').value='';
+  document.getElementById('rk-cat').value='';
+  if(!_rkCatsLlenas){
+    const sel=document.getElementById('rk-cat');
     (DB.provs||[]).forEach(p=>{const o=document.createElement('option');o.value=p.prov;o.textContent=p.prov;sel.appendChild(o);});
-    _rcCatsLlenas=true;
+    _rkCatsLlenas=true;
   }
-  abrirModal('rc-ov');
-  rcRender();
+  abrirModal('rk-ov');
+  rkRender();
 }
-function rcFiltrados(){
-  const cat=document.getElementById('rc-cat').value;
-  const q=(document.getElementById('rc-search').value||'').toLowerCase().trim();
-  const x=document.getElementById('rc-x'); if(x)x.style.display=q?'block':'none';
+function rkFiltrados(){
+  const cat=document.getElementById('rk-cat').value;
+  const q=(document.getElementById('rk-search').value||'').toLowerCase().trim();
+  const x=document.getElementById('rk-x'); if(x)x.style.display=q?'block':'none';
   let lista=(DB.items||[]);
   if(cat)lista=lista.filter(it=>it.prov===cat);
   if(q){
@@ -2030,42 +2030,42 @@ function rcFiltrados(){
   }
   return lista;
 }
-const RC_LIMITE=150; // evita renderizar miles de filas de una — pide categoría o búsqueda para acotar
-function rcRender(){
-  const box=document.getElementById('rc-list');
-  const cat=document.getElementById('rc-cat').value;
-  const q=(document.getElementById('rc-search').value||'').trim();
-  const lista=rcFiltrados();
-  document.getElementById('rc-lbl').textContent=lista.length+' producto'+(lista.length===1?'':'s');
-  document.getElementById('rc-val').textContent=cat?cat:(q?'búsqueda':'elige categoría o busca');
+const RK_LIMITE=150; // evita renderizar miles de filas de una — pide categoría o búsqueda para acotar
+function rkRender(){
+  const box=document.getElementById('rk-list');
+  const cat=document.getElementById('rk-cat').value;
+  const q=(document.getElementById('rk-search').value||'').trim();
+  const lista=rkFiltrados();
+  document.getElementById('rk-lbl').textContent=lista.length+' producto'+(lista.length===1?'':'s');
+  document.getElementById('rk-val').textContent=cat?cat:(q?'búsqueda':'elige categoría o busca');
   if(!cat && !q){
     box.innerHTML='<div class="vc-empty">Elige una categoría o escribe/escanea para buscar — son '+lista.length+' productos en total, muy largo para listar todos a la vez.</div>';
     return;
   }
   if(!lista.length){box.innerHTML='<div class="vc-empty">Sin coincidencias.</div>';return;}
-  const truncado=lista.length>RC_LIMITE;
-  const visibles=lista.slice(0,RC_LIMITE);
-  box.innerHTML=(truncado?'<div class="vc-empty" style="padding:8px 0">Mostrando los primeros '+RC_LIMITE+' de '+lista.length+' — afina la búsqueda para ver el resto.</div>':'')+
+  const truncado=lista.length>RK_LIMITE;
+  const visibles=lista.slice(0,RK_LIMITE);
+  box.innerHTML=(truncado?'<div class="vc-empty" style="padding:8px 0">Mostrando los primeros '+RK_LIMITE+' de '+lista.length+' — afina la búsqueda para ver el resto.</div>':'')+
     visibles.map(p=>{
     const stockTxt=p.stock==null?'sin control':fmt1(p.stock);
     const sinControl=p.stock==null&&!p.track;
-    return `<div class="sm-row" data-rc-ref="${p.ref}">
+    return `<div class="sm-row" data-rk-ref="${p.ref}">
       <div class="sm-info">
         <div class="nom">${p.nombre}</div>
         <div class="meta">REF ${p.ref} · ${p.prov} · sistema: ${stockTxt}${p.barcode?' · '+p.barcode:''}</div>
       </div>
       <input type="number" step="any" inputmode="decimal" placeholder="${p.stock==null?'—':fmt1(p.stock)}"
-        data-rc-input="${p.ref}" ${sinControl?'disabled title="Sin control de stock en Loyverse"':''}
+        data-rk-input="${p.ref}" ${sinControl?'disabled title="Sin control de stock en Loyverse"':''}
         style="width:76px;padding:8px;border-radius:8px;border:1px solid var(--borde);text-align:center;font-size:15px">
     </div>`;
   }).join('');
-  box.querySelectorAll('input[data-rc-input]').forEach(inp=>{
+  box.querySelectorAll('input[data-rk-input]').forEach(inp=>{
     inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();inp.blur();}});
-    inp.addEventListener('blur',()=>rcGuardarFila(inp));
+    inp.addEventListener('blur',()=>rkGuardarFila(inp));
   });
 }
-async function rcGuardarFila(inp){
-  const ref=inp.dataset.rcInput;
+async function rkGuardarFila(inp){
+  const ref=inp.dataset.rkInput;
   const val=inp.value.trim();
   if(val==='')return; // no tocó nada, no manda petición
   const nuevo=Number(val);
@@ -2092,14 +2092,14 @@ async function rcGuardarFila(inp){
     inp.disabled=false;
   }
 }
-document.getElementById('rc-cat').onchange=rcRender;
-document.getElementById('rc-search').oninput=rcRender;
-document.getElementById('rc-x').onclick=()=>{document.getElementById('rc-search').value='';rcRender();document.getElementById('rc-search').focus();};
-document.getElementById('rc-mic').onclick=()=>voiceSearch(document.getElementById('rc-mic'),text=>{document.getElementById('rc-search').value=text;rcRender();});
-document.getElementById('rc-scan').onclick=()=>{
-  const reopen=()=>{document.getElementById('rc-ov').classList.remove('hidden');_sincronizarNav();};
-  document.getElementById('rc-ov').classList.add('hidden');
-  openScanner(code=>{reopen();document.getElementById('rc-search').value=code;rcRender();},reopen);
+document.getElementById('rk-cat').onchange=rkRender;
+document.getElementById('rk-search').oninput=rkRender;
+document.getElementById('rk-x').onclick=()=>{document.getElementById('rk-search').value='';rkRender();document.getElementById('rk-search').focus();};
+document.getElementById('rk-mic').onclick=()=>voiceSearch(document.getElementById('rk-mic'),text=>{document.getElementById('rk-search').value=text;rkRender();});
+document.getElementById('rk-scan').onclick=()=>{
+  const reopen=()=>{document.getElementById('rk-ov').classList.remove('hidden');_sincronizarNav();};
+  document.getElementById('rk-ov').classList.add('hidden');
+  openScanner(code=>{reopen();document.getElementById('rk-search').value=code;rkRender();},reopen);
 };
 
 async function smEliminar(){
