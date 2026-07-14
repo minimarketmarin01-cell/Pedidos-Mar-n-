@@ -484,7 +484,16 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .order-head .s{color:#aab0ba;font-size:12px;margin-top:3px}
 .wa-ico{width:20px;height:20px;background:var(--wa);border-radius:5px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:800;font-family:'Archivo'}
 .order-body{padding:12px 14px;max-height:36vh;overflow-y:auto}
-.oline{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line2);font-size:13px}
+.oline{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px dashed var(--line2);font-size:13px}
+.oline .on-wrap{flex:1;min-width:0}
+.oline .on{display:block;font-weight:700;white-space:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.oline .oline-sub{display:block;font-size:11px;color:var(--muted);font-family:'JetBrains Mono';margin-top:1px}
+.ostep{display:flex;align-items:center;gap:0;flex-shrink:0;border:1.5px solid var(--line);border-radius:10px;overflow:hidden}
+.ostep-btn{width:32px;height:32px;border:none;background:var(--gris-bg,#F3F1EA);font-size:17px;font-weight:700;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
+.ostep-btn:active{background:var(--line)}
+.ostep-val{min-width:34px;text-align:center;font-weight:700;font-size:14px;font-family:'JetBrains Mono'}
+.odel{flex-shrink:0;width:32px;height:32px;border:none;background:#FCE9E7;color:var(--rojo);border-radius:10px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
+.odel:active{background:#F8D2CE}
 .oline:last-child{border-bottom:none}.oline .on{font-weight:500;line-height:1.25}
 .oline .oq{font-family:'JetBrains Mono';font-weight:700;white-space:nowrap;text-align:right}
 .oline .oq small{display:block;font-size:9.5px;color:var(--gold);font-weight:700;font-family:'Archivo'}
@@ -1652,12 +1661,45 @@ function currentOrder(){const lines=[];const base=(state.search||state.allProv)?
 function renderOrder(){
   const lines=currentOrder();const body=document.getElementById('order-body');
   if(!lines.length)body.innerHTML='<div class="order-empty">Sin productos sugeridos con los parámetros actuales.</div>';
-  else body.innerHTML=lines.sort((a,b)=>b.q-a.q).map(l=>`<div class="oline"><span class="on">${l.nombre}</span><span class="oq">${l.it.fmt>1?l.packs+' '+plural(l.word,l.packs):l.q+' u'}${l.it.fmt>1?'<small>('+l.q+' u)</small>':''}</span></div>`).join('');
+  else body.innerHTML=lines.sort((a,b)=>b.q-a.q).map(l=>`<div class="oline" data-ref="${l.it.ref}">
+      <div class="on-wrap">
+        <span class="on">${l.nombre}</span>
+        <span class="oline-sub">${peso(l.cost)}${l.it.fmt>1?' · '+(l.q)+' u':''}</span>
+      </div>
+      <div class="ostep">
+        <button class="ostep-btn" data-act="-" aria-label="Restar">−</button>
+        <span class="ostep-val">${l.packs}</span>
+        <button class="ostep-btn" data-act="+" aria-label="Sumar">+</button>
+      </div>
+      <button class="odel" data-act="del" aria-label="Eliminar">🗑️</button>
+    </div>`).join('');
   const uds=lines.reduce((s,l)=>s+l.q,0),cost=lines.reduce((s,l)=>s+l.cost,0);
   document.getElementById('tot-skus').textContent=lines.length;document.getElementById('tot-uds').textContent=fmt.format(uds);document.getElementById('tot-cost').textContent=peso(cost);
   const badge=document.getElementById('cart-badge');
   if(badge){badge.textContent=lines.length>99?'99+':lines.length;badge.classList.toggle('on',lines.length>0);}
 }
+// Un solo listener delegado para +/-/eliminar en el carrito (se registra una vez, nunca se duplica en cada render)
+(function(){
+  const body=document.getElementById('order-body');
+  if(!body)return;
+  body.addEventListener('click',ev=>{
+    const btn=ev.target.closest('[data-act]');
+    if(!btn)return;
+    const row=btn.closest('.oline');
+    const ref=row&&row.dataset.ref;
+    if(!ref)return;
+    const it=DB.items.find(i=>i.ref===ref);
+    if(!it)return;
+    const act=btn.dataset.act;
+    if(act==='del'){state.edits[ref]=0;}
+    else{
+      const packsActuales=packsOf(it,qOf(it,analyze(it)));
+      const nuevo=Math.max(0,packsActuales+(act==='+'?1:-1));
+      state.edits[ref]=nuevo*it.fmt;
+    }
+    renderOrder();
+  });
+})();
 function renderOverview(){
   // Gráfico: venta semanal estimada por categoría (u7 × precio)
   const catRev={};
