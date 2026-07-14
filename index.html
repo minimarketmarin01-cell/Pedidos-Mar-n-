@@ -383,7 +383,8 @@ input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .legend span{display:inline-flex;align-items:center;gap:5px}.ldot{width:9px;height:9px;border-radius:50%}
 .tablecard{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0;max-width:100%}
 @media(min-width:680px){#tab-pedido .tablecard{max-width:1520px;margin:0 auto}}
-.tbl-scroll{overflow-y:auto;overflow-x:auto;max-height:calc(100vh - 280px);-webkit-overflow-scrolling:touch;max-width:100%}
+.tbl-scroll{overflow-y:auto;overflow-x:auto;max-height:calc(100vh - 280px);-webkit-overflow-scrolling:touch;max-width:100%;transition:max-height .22s ease}
+.tbl-scroll.nav-hidden{max-height:calc(100vh - 210px)}
 table{border-collapse:collapse;width:100%;table-layout:fixed}
 thead th{background:#FAF9F5;text-align:right;font-size:10.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;padding:7px 6px;border-bottom:1.5px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none;position:sticky;top:0;z-index:6;box-shadow:0 1px 0 var(--line)}
 thead th.l{text-align:left}thead th .ar{opacity:.4;font-size:9px}thead th.sorted .ar{opacity:1;color:var(--ink)}
@@ -1849,7 +1850,7 @@ function playTabAnim(name){
   el.classList.remove('tab-anim'); void el.offsetWidth; // reinicia la animación aunque sea la misma pantalla
   el.classList.add('tab-anim');
 }
-document.getElementById('bn-pedidos').onclick=()=>showScreen('pedido');
+// (bn-pedidos se maneja en el listener delegado de .bottom-nav más abajo — evita duplicar el evento)
 
 // Abre un modal de forma robusta: quita 'hidden' por clase Y por estilo inline
 // (redundante a propósito, para que nunca quede un modal que no se puede reabrir).
@@ -1924,24 +1925,25 @@ document.querySelector('.bottom-nav').addEventListener('click',(e)=>{
   const btn=e.target.closest('.bn-item');
   if(!btn)return;
   try{
-    if(btn.id==='bn-pedidos'){showScreen('pedido');}
+    if(btn.id==='bn-pedidos'){cerrarOverlays();showScreen('pedido');}
     else if(btn.id==='bn-recepcion'){cerrarOverlays();abrirModal('rc-ov');try{rcReset();}catch(_){}}
     else if(btn.id==='bn-vencimientos'){cerrarOverlays();abrirModal('vc-ov');try{vcShowList();vcLoad();}catch(_){}}
-    else if(btn.id==='bn-mas'){abrirModal('mas-ov');}
+    else if(btn.id==='bn-mas'){cerrarOverlays();abrirModal('mas-ov');}
   }catch(err){showToast('Ocurrió un error al abrir. Intenta de nuevo.');}
 });
 document.getElementById('mas-cerrar').onclick=()=>cerrarModal('mas-ov');
 
 // ===================== BARRA INFERIOR: se oculta al bajar, aparece al subir =====================
+// (y la tabla de productos aprovecha ese espacio liberado, expandiéndose)
 (function(){
   const nav=document.querySelector('.bottom-nav');
   let lastY=0,hidden=false;
   function onScroll(el){
     const y=el.scrollTop;
     const delta=y-lastY;
-    if(y<24){if(hidden){nav.classList.remove('bn-hide');hidden=false;}lastY=y;return;} // arriba del todo: siempre visible
-    if(delta>6&&!hidden){nav.classList.add('bn-hide');hidden=true;}
-    else if(delta<-6&&hidden){nav.classList.remove('bn-hide');hidden=false;}
+    if(y<24){if(hidden){nav.classList.remove('bn-hide');el.classList.remove('nav-hidden');hidden=false;}lastY=y;return;} // arriba del todo: siempre visible
+    if(delta>6&&!hidden){nav.classList.add('bn-hide');el.classList.add('nav-hidden');hidden=true;}
+    else if(delta<-6&&hidden){nav.classList.remove('bn-hide');el.classList.remove('nav-hidden');hidden=false;}
     lastY=y;
   }
   // Se re-conecta cada vez que la tabla se re-renderiza (el contenedor .tbl-scroll es fijo, esto solo se hace una vez)
