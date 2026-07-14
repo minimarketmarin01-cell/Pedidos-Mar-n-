@@ -66,7 +66,7 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .micbtn.listening{background:var(--rojo);color:#fff;animation:micpulse 1s infinite}
 @keyframes micpulse{0%,100%{opacity:1}50%{opacity:.55}}
 .search{padding-right:112px}
-.scan-ov{position:fixed;inset:0;background:#000;z-index:200;display:flex;flex-direction:column}
+.scan-ov{position:fixed;inset:0;background:#000;z-index:320;display:flex;flex-direction:column}
 .scan-ov.hidden{display:none}
 .scan-ov video{flex:1;width:100%;object-fit:cover}
 .scan-top{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:14px 16px;color:#fff;font-family:'Archivo';font-weight:700;font-size:14px;background:linear-gradient(rgba(0,0,0,.6),transparent);z-index:2}
@@ -74,7 +74,7 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .scan-frame{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:82%;max-width:440px;height:0;border:none;border-top:2px solid rgba(255,255,255,.35);box-shadow:none;z-index:1;pointer-events:none}
 .scan-frame::after{content:"";position:absolute;top:-1px;left:0;right:0;height:2px;background:#ff2d2d;box-shadow:0 0 8px 1px rgba(255,45,45,.7)}
 .scan-hint{position:absolute;bottom:26px;left:0;right:0;text-align:center;color:#fff;font-size:13px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.7);z-index:2}
-.mm-ov{position:fixed;inset:0;background:rgba(21,25,31,.55);z-index:210;display:flex;align-items:flex-end;justify-content:center}
+.mm-ov{position:fixed;inset:0;background:rgba(21,25,31,.55);z-index:210;display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(70px + env(safe-area-inset-bottom))}
 .mm-ov.hidden{display:none}
 .mm-card{background:var(--card);width:100%;max-width:480px;max-height:92vh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;overflow:hidden}
 .mm-head{display:flex;justify-content:space-between;align-items:center;padding:16px 16px 0 16px;flex:none;margin-bottom:12px}
@@ -542,7 +542,7 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .hidden{display:none!important}
 
 /* ===== Barra de navegación inferior fija (acceso rápido a Inicio/Pedido/Resumen/Más) ===== */
-.bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:150;background:var(--ink);border-top:1px solid #2a3038;display:flex;gap:4px;padding:8px max(10px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));box-shadow:0 -4px 16px rgba(0,0,0,.18);transform:translateY(0);transition:transform .22s ease}
+.bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:300;background:var(--ink);border-top:1px solid #2a3038;display:flex;gap:4px;padding:8px max(10px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));box-shadow:0 -4px 16px rgba(0,0,0,.18);transform:translateY(0);transition:transform .22s ease}
 .bottom-nav.bn-hide{transform:translateY(100%)}
 .bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:#9aa1ac;font-family:'Archivo';font-weight:700;font-size:10.5px;padding:7px 2px;min-height:54px;cursor:pointer;position:relative;border-radius:14px;transition:color .18s ease,background .18s ease;-webkit-tap-highlight-color:transparent}
 .bn-item .ic{font-size:22px;line-height:1;transition:transform .15s ease;position:relative;z-index:1}
@@ -1882,11 +1882,15 @@ function _overlaySuperior(){
   return vis.sort((a,b)=>(parseInt(getComputedStyle(b).zIndex,10)||0)-(parseInt(getComputedStyle(a).zIndex,10)||0))[0];
 }
 // Barra inferior: solo una pestaña activa a la vez, reflejando la ventana abierta.
+// rc-ov (Recepción) y vc-ov (Vencimientos) tienen su propio botón directo en la barra;
+// TODO lo demás (Merma, Sin movimiento, Reconteo, Historial, Llegadas, Sin costo,
+// Crear producto, etc.) se abre desde el menú "Más", así que por defecto caen ahí.
 function _sincronizarNav(){
-  const map={'rc-ov':'bn-recepcion','vc-ov':'bn-vencimientos','mas-ov':'bn-mas'};
+  const directos={'rc-ov':'bn-recepcion','vc-ov':'bn-vencimientos'};
   const ov=_overlaySuperior();
-  const activeId=(ov&&map[ov.id])?map[ov.id]:'bn-pedidos';
-  document.querySelectorAll('.bn-item').forEach(b=>b.classList.toggle('active',b.id===activeId));
+  let activeId='bn-pedidos';
+  if(ov){activeId=directos[ov.id]||(ov.id==='scan-ov'?null:'bn-mas');}
+  if(activeId)document.querySelectorAll('.bn-item').forEach(b=>b.classList.toggle('active',b.id===activeId));
 }
 // Botón físico "Atrás" de Android: cierra SOLO la ventana abierta; si no hay
 // ninguna y estás en el carrito, vuelve a Pedidos; y solo sale de la app cuando
