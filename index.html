@@ -289,7 +289,7 @@ input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .wrap{display:grid;grid-template-columns:1fr 340px;gap:16px;padding:16px;align-items:start;max-width:1520px;margin:0 auto;width:100%}
 #tab-pedido .wrap{grid-template-columns:1fr}
 @media(max-width:1080px){.wrap{grid-template-columns:1fr}}
-@media(max-width:680px){#tab-pedido .wrap{padding:8px 6px}}
+@media(max-width:680px){#tab-pedido .wrap{padding:0 2px 8px}}
 .wrap>*{min-width:0}
 .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:13px}
 @media(max-width:680px){.kpis{grid-template-columns:repeat(2,1fr)}}
@@ -404,8 +404,8 @@ input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .legend span{display:inline-flex;align-items:center;gap:5px}.ldot{width:9px;height:9px;border-radius:50%}
 .tablecard{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0;max-width:100%}
 @media(min-width:680px){#tab-pedido .tablecard{max-width:1520px;margin:0 auto}}
-.tbl-scroll{overflow-y:auto;overflow-x:auto;max-height:calc(100vh - 235px);-webkit-overflow-scrolling:touch;max-width:100%;transition:max-height .22s ease}
-.tbl-scroll.nav-hidden{max-height:calc(100vh - 165px)}
+.tbl-scroll{overflow-y:auto;overflow-x:auto;max-height:calc(100vh - 210px);max-height:calc(100dvh - 210px);-webkit-overflow-scrolling:touch;max-width:100%;transition:max-height .22s ease}
+.tbl-scroll.nav-hidden{max-height:calc(100vh - 140px);max-height:calc(100dvh - 140px)}
 table{border-collapse:collapse;width:100%;table-layout:fixed}
 thead th{background:#FAF9F5;text-align:right;font-size:10.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;padding:7px 6px;border-bottom:1.5px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none;position:sticky;top:0;z-index:6;box-shadow:0 1px 0 var(--line)}
 thead th.l{text-align:left}thead th .ar{opacity:.4;font-size:9px}thead th.sorted .ar{opacity:1;color:var(--ink)}
@@ -413,24 +413,25 @@ tbody td{padding:5px 6px;border-bottom:1px solid var(--line2);text-align:right;w
 tbody td.num,tbody td.tdc{overflow:visible}
 tbody tr:hover td{background:#fafaf7}
 tbody td.l{text-align:left;white-space:normal;overflow:visible}
-/* Anchos por columna: Producto flexible, el resto ajustado a su contenido */
+/* Anchos por columna en % — siempre suman 100% del ancho real de la pantalla,
+   así nunca hay scroll horizontal. Producto tiene la mayor prioridad de ancho. */
 #ptable{min-width:100%}
-#ptable th:nth-child(1),#ptable td:nth-child(1){width:130px;min-width:130px}
-#ptable th:nth-child(2),#ptable td:nth-child(2){width:52px}
-#ptable th:nth-child(3),#ptable td:nth-child(3){width:34px}
-#ptable th:nth-child(4),#ptable td:nth-child(4){width:48px}
-#ptable th:nth-child(5),#ptable td:nth-child(5){width:52px}
-#ptable th:nth-child(6),#ptable td:nth-child(6){width:100px}
+#ptable th:nth-child(1),#ptable td:nth-child(1){width:32%;min-width:0}
+#ptable th:nth-child(2),#ptable td:nth-child(2){width:12%}
+#ptable th:nth-child(3),#ptable td:nth-child(3){width:7%}
+#ptable th:nth-child(4),#ptable td:nth-child(4){width:12%}
+#ptable th:nth-child(5),#ptable td:nth-child(5){width:13%}
+#ptable th:nth-child(6),#ptable td:nth-child(6){width:24%}
 /* En pantallas anchas (tablet/PC): reparte el ancho entre TODAS las columnas y
    CENTRA los números en su celda, para que se vean equidistantes y sin hueco
    vacío entre el nombre y las cifras. */
 @media(min-width:560px){
   #ptable{table-layout:fixed}
-  #ptable th:nth-child(1),#ptable td:nth-child(1){width:30%;min-width:0}
-  #ptable th:nth-child(2),#ptable td:nth-child(2){width:13%}
-  #ptable th:nth-child(3),#ptable td:nth-child(3){width:10%}
-  #ptable th:nth-child(4),#ptable td:nth-child(4){width:13%}
-  #ptable th:nth-child(5),#ptable td:nth-child(5){width:14%}
+  #ptable th:nth-child(1),#ptable td:nth-child(1){width:34%;min-width:0}
+  #ptable th:nth-child(2),#ptable td:nth-child(2){width:12%}
+  #ptable th:nth-child(3),#ptable td:nth-child(3){width:9%}
+  #ptable th:nth-child(4),#ptable td:nth-child(4){width:12%}
+  #ptable th:nth-child(5),#ptable td:nth-child(5){width:13%}
   #ptable th:nth-child(6),#ptable td:nth-child(6){width:20%}
   /* números y encabezados numéricos centrados = se ven equidistantes */
   #ptable thead th:not(.l),#ptable tbody td.num,#ptable tbody td.tdc{text-align:center}
@@ -438,7 +439,15 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 }
 #ptable td:nth-child(6){padding-left:2px;padding-right:4px}
 .tdc{text-align:center!important;padding-left:2px!important;padding-right:2px!important}
-.prod-name{font-weight:800;font-size:13.5px;line-height:1.2;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.prod-name-wrap{display:flex;align-items:center;gap:3px;min-width:0}
+.prod-name{font-weight:800;font-size:14.5px;line-height:1.25;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;flex:1;min-width:0}
+.prod-info-btn{flex-shrink:0;width:17px;height:17px;border:none;background:var(--gris-bg,#F3F1EA);border-radius:50%;font-size:10.5px;line-height:1;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent}
+.prod-info-btn:active{background:var(--line)}
+@media (min-width:700px){.prod-name{font-size:17px}.prod-info-btn{width:19px;height:19px;font-size:12px}}
+.name-popup{position:fixed;inset:0;background:rgba(21,25,31,.5);z-index:340;display:flex;align-items:center;justify-content:center;padding:24px}
+.name-popup-card{background:#fff;border-radius:14px;padding:18px 20px;max-width:420px;width:100%;box-shadow:0 12px 32px rgba(0,0,0,.25);display:flex;align-items:flex-start;gap:12px}
+.name-popup-text{flex:1;font-weight:800;font-size:16px;line-height:1.35;color:var(--ink)}
+.name-popup-close{flex-shrink:0;width:26px;height:26px;border:none;background:var(--gris-bg,#F3F1EA);border-radius:50%;font-size:13px;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer}
 .sm-info{cursor:pointer}
 .prod-ref{font-size:10px;color:var(--muted);font-family:'JetBrains Mono'}
 .prod-meta{font-size:9.5px;color:var(--muted);font-weight:600;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -472,13 +481,13 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .qcell{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
 .qstep{display:inline-flex;align-items:center;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
 .qstep.has{border-color:var(--wa)}
-.qbtn{border:none;background:#F4F3EE;width:30px;height:38px;font-size:19px;font-weight:700;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;user-select:none;-webkit-user-select:none}
+.qbtn{border:none;background:#F4F3EE;width:23px;height:32px;font-size:16px;font-weight:700;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;user-select:none;-webkit-user-select:none}
 .qbtn:active{background:var(--wa);color:#fff}
-.qty-in{width:34px;text-align:center;font-family:'JetBrains Mono';font-weight:700;padding:6px 1px;border:none;border-left:1px solid var(--line);border-right:1px solid var(--line);font-size:15px}
+.qty-in{width:27px;text-align:center;font-family:'JetBrains Mono';font-weight:700;padding:6px 1px;border:none;border-left:1px solid var(--line);border-right:1px solid var(--line);font-size:13.5px}
 .qty-in:focus{outline:none;background:#F1FBF5}
-.qword{font-size:9.5px;color:var(--muted);font-weight:600;font-family:'Archivo'}
+.qword{font-size:9.5px;color:var(--muted);font-weight:600;font-family:'Archivo';white-space:normal;text-align:right;max-width:78px}
 .qword.gold{color:var(--gold)}
-.qpacks{font-size:9.5px;color:var(--gold);font-weight:700;font-family:'Archivo'}
+.qpacks{font-size:9.5px;color:var(--gold);font-weight:700;font-family:'Archivo';white-space:normal;text-align:right;max-width:78px}
 .row-urgent td{box-shadow:inset 3px 0 0 var(--rojo)}
 .rcol{display:flex;flex-direction:column;gap:13px;position:sticky;top:16px}
 @media(max-width:1080px){.rcol{position:static}}
@@ -612,6 +621,12 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
   </div>
 </div>
 <button class="cart-fab" id="cart-fab" aria-label="Ver carrito">🛍️<span class="cart-badge" id="cart-badge"></span></button>
+<div class="name-popup hidden" id="name-popup">
+  <div class="name-popup-card">
+    <span class="name-popup-text" id="name-popup-text"></span>
+    <button class="name-popup-close" id="name-popup-close" type="button" aria-label="Cerrar">✕</button>
+  </div>
+</div>
 <div id="tab-pedido">
 <div class="sticky-hdr" id="sticky-hdr">
   <div class="shc-inner">
@@ -619,11 +634,15 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
     <span>📦 Proveedores de hoy</span><span class="prov-acc-caret" id="prov-acc-caret">▾</span>
   </button>
   <div class="provday hidden" id="provday"></div>
-  <div class="shc-row shc-wrap">
-    <div class="prov-combo" id="prov-combo"><span class="prov-icon">🏷️</span><input class="prov-all" id="prov-all" placeholder="Proveedor o producto… escribe o toca" autocomplete="off" inputmode="text"><button class="prov-mic" id="prov-mic" type="button" tabindex="-1" aria-label="Buscar por voz">🎤</button><button class="prov-scan" id="prov-scan" type="button" tabindex="-1" aria-label="Escanear código">📷</button><button class="prov-x" id="prov-x" type="button" tabindex="-1" aria-label="Borrar">✕</button><div class="prov-menu hidden" id="prov-menu"></div></div>
-    <div class="seg sm" id="seg-basis"><button data-b="7" class="active">7d</button><button data-b="14">14d</button><button data-b="30">30d</button><button data-b="90">90d</button></div>
-    <div class="shc-mini"><label>Entrega</label><input type="number" id="lead" value="3" min="0" max="30"></div>
-    <div class="shc-mini"><label>Cobertura</label><input type="number" id="cover" value="10" min="1" max="60"></div>
+  <div style="position:relative">
+    <div class="shc-row shc-wrap">
+      <div class="prov-combo" id="prov-combo"><span class="prov-icon">🏷️</span><input class="prov-all" id="prov-all" placeholder="Proveedor o producto… escribe o toca" autocomplete="off" inputmode="text"><button class="prov-mic" id="prov-mic" type="button" tabindex="-1" aria-label="Buscar por voz">🎤</button><button class="prov-scan" id="prov-scan" type="button" tabindex="-1" aria-label="Escanear código">📷</button><button class="prov-x" id="prov-x" type="button" tabindex="-1" aria-label="Borrar">✕</button></div>
+      <div class="seg sm" id="seg-basis"><button data-b="7" class="active">7d</button><button data-b="14">14d</button><button data-b="30">30d</button><button data-b="90">90d</button></div>
+      <div class="shc-mini"><label>Entrega</label><input type="number" id="lead" value="3" min="0" max="30"></div>
+      <div class="shc-mini"><label>Cobertura</label><input type="number" id="cover" value="10" min="1" max="60"></div>
+    </div>
+    <div class="prov-menu hidden" id="prov-menu"></div>
+  </div>
   </div>
   <div class="legend sm">
     <span><i class="ldot" style="background:var(--rojo)"></i>Urgente</span>
@@ -1498,7 +1517,7 @@ function buildChips(){
     else if(e.key==='Escape'){menu.classList.add('hidden');if(sel.value.trim())setProvInputValue();sel.blur();}
   };
   if(!window._provDocBound){window._provDocBound=true;
-    document.addEventListener('pointerdown',function(ev){const combo=document.getElementById('prov-combo');const m=document.getElementById('prov-menu');if(m&&!m.classList.contains('hidden')&&combo&&!combo.contains(ev.target)){m.classList.add('hidden');const s=document.getElementById('prov-all');if(s&&s.value.trim())setProvInputValue();}},true);
+    document.addEventListener('pointerdown',function(ev){const combo=document.getElementById('prov-combo');const m=document.getElementById('prov-menu');if(m&&!m.classList.contains('hidden')&&combo&&!combo.contains(ev.target)&&!m.contains(ev.target)){m.classList.add('hidden');const s=document.getElementById('prov-all');if(s&&s.value.trim())setProvInputValue();}},true);
   }
 }
 function setProvInputValue(){const sel=document.getElementById('prov-all');if(!sel)return;if(document.activeElement===sel)return;/* el usuario está escribiendo ahí: no lo interrumpimos */if(state.search)return;const allMode=state.allProv&&!state.search;sel.value=allMode?'📋 Todos los proveedores':(DB.provs.some(p=>p.prov===state.prov)?state.prov:(DB.provs[0]?DB.provs[0].prov:''));}
@@ -1655,7 +1674,7 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
   const bundles=it.fmt>1?Math.round(sug/it.fmt):sug;
   const covTxt=a.cov==null?'—':a.cov===Infinity?'∞':(a.cov>=100?'99+':fmt1(a.cov)+'d');
   const dotColor={urgente:'var(--rojo)',pedir:'var(--ambar)',ok:'var(--verde)',sobre:'var(--gris)',sinstock:'var(--azul)'}[a.status]||'var(--gris)';
-  const tooltip=it.nombre+' · #'+it.ref+(it.scale?' · escala ⚡':'')+' · '+SL[a.status];
+  const tooltip='#'+it.ref+(it.scale?' · escala ⚡':'')+' · '+SL[a.status];
   const precioVal=it.precio!=null?peso(it.precio):'—';
   const costoVal=it.coste!=null?peso(it.coste):'—';
   const mg=(it.precio>0&&it.coste!=null)?Math.round((it.precio-it.coste)/it.precio*100):null;
@@ -1664,7 +1683,7 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
   const showProv=(state.search||state.allProv);
   const priceLine=`<div class="prod-prices"><span class="pp-v" title="Venta">V ${precioVal}</span><span class="pp-sep">·</span><span class="pp-c" title="Costo">C ${costoVal}</span><span class="pp-sep">·</span><span class="price-mg ${mgCls}" title="Margen">${mgVal}</span></div>`;
   const ventasPeriodo=state.basis===7?it.u7:state.basis===14?it.u14:state.basis===90?it.u90:it.u30;
-  return `<tr data-ref="${it.ref}" class="${a.status==='urgente'?'row-urgent':''}"><td class="l" title="${tooltip}"><span class="row-dot" style="background:${dotColor}"></span><div class="prod-name">${it.nombre}</div>${showProv?`<div class="prod-meta">${it.prov}</div>`:''}${priceLine}</td>`+
+  return `<tr data-ref="${it.ref}" class="${a.status==='urgente'?'row-urgent':''}"><td class="l" title="${tooltip}"><span class="row-dot" style="background:${dotColor}"></span><div class="prod-name-wrap"><span class="prod-name">${it.nombre}</span><button class="prod-info-btn" type="button" aria-label="Ver nombre completo">ⓘ</button></div>${showProv?`<div class="prod-meta">${it.prov}</div>`:''}${priceLine}</td>`+
     `<td class="num">${fmt1(ventasPeriodo)}</td>`+
     `<td class="tdc"><span class="trend ${a.trend.k}">${a.trend.t}</span></td>`+
     `<td class="num">${it.stock==null?'<span style="color:var(--azul)">s/c</span>':fmt.format(it.stock)}${(a.vencido>0)?`<br><span style="color:var(--rojo);font-size:9.5px;font-weight:700">-${fmt.format(a.vencido)}</span>`:''}</td>`+
@@ -1787,6 +1806,48 @@ async function renderInsumosChart(){
   }catch(e){cc.innerHTML='<div class="cc-empty">Error de conexión.</div>';}
 }
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');const dur=m.length>60?4600:2600;clearTimeout(window._toastT);window._toastT=setTimeout(()=>t.classList.remove('show'),dur);}
+
+// ===================== VERSIÓN Y AUTO-ACTUALIZACIÓN =====================
+// Cada vez que se sube un cambio a GitHub Pages, este texto cambia. La app se revisa a sí
+// misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
+// limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
+// sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
+const APP_VERSION='2026-07-15.4';
+(function(){
+  async function hayAlgoAbierto(){
+    return !!document.querySelector('.mm-ov:not(.hidden)');
+  }
+  async function limpiarCacheYActualizarSW(){
+    try{
+      if('caches' in window){
+        const keys=await caches.keys();
+        await Promise.all(keys.map(k=>caches.delete(k)));
+      }
+    }catch(_){}
+    try{
+      if('serviceWorker' in navigator){
+        const regs=await navigator.serviceWorker.getRegistrations();
+        for(const r of regs){try{await r.update();}catch(_){}}
+      }
+    }catch(_){}
+  }
+  async function chequearVersion(){
+    try{
+      const res=await fetch(location.pathname+'?_v='+Date.now(),{cache:'no-store'});
+      if(!res.ok)return;
+      const txt=await res.text();
+      const m=txt.match(/const APP_VERSION=['"]([^'"]+)['"]/);
+      if(!m||!m[1]||m[1]===APP_VERSION)return; // sin novedad
+      if(await hayAlgoAbierto())return; // hay algo abierto — no interrumpe, reintenta en el próximo chequeo
+      await limpiarCacheYActualizarSW();
+      showToast('🔄 Nueva versión disponible, actualizando…');
+      setTimeout(()=>location.reload(),900);
+    }catch(_){/* sin conexión u otro problema — no molesta, reintenta después */}
+  }
+  chequearVersion();
+  setInterval(chequearVersion,5*60*1000);           // revisa cada 5 minutos
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')chequearVersion();});
+})();
 
 // ===================== SINCRONIZACIÓN — Cloudflare Worker (D1) =====================
 const SYNC_URL='https://marin376-api.minimarketmarin01.workers.dev';
@@ -2414,10 +2475,25 @@ async function fpGuardarEdicion(sku){
 // Puntos de entrada a la ficha: tocar el nombre del producto en la tabla de Pedidos o en Reconteo.
 // Un solo listener delegado por lista (no se duplica en cada render).
 document.getElementById('ptbody').addEventListener('click',ev=>{
+  const info=ev.target.closest('.prod-info-btn');
+  if(info){
+    const tr=info.closest('tr[data-ref]');
+    const it=tr&&DB.items.find(x=>x.ref===tr.dataset.ref);
+    if(it)mostrarNombreCompleto(it.nombre);
+    return;
+  }
   const nom=ev.target.closest('.prod-name');
   if(!nom)return;
   const tr=nom.closest('tr[data-ref]');
   if(tr)fpAbrir(tr.dataset.ref);
+});
+function mostrarNombreCompleto(nombre){
+  document.getElementById('name-popup-text').textContent=nombre;
+  document.getElementById('name-popup').classList.remove('hidden');
+}
+document.getElementById('name-popup-close').onclick=()=>document.getElementById('name-popup').classList.add('hidden');
+document.getElementById('name-popup').addEventListener('click',ev=>{
+  if(ev.target.id==='name-popup')document.getElementById('name-popup').classList.add('hidden'); // toca fuera de la tarjeta = cierra
 });
 document.getElementById('rk-list').addEventListener('click',ev=>{
   const nom=ev.target.closest('.sm-info');
