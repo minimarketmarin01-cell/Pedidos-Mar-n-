@@ -2219,8 +2219,10 @@ function fpPintar(f){
     fpRow('Descripción',p.descripcion||'—')+
     fpRow('Unidad',p.soldByWeight?'Kilo (venta por peso)':'Unidad')+
     fpRow('Seguir inventario',p.trackStock?'✅ Activado':'❌ Desactivado')+
-    fpRow('Última modificación',p.ultimaModificacion||'Sin registros de cambios aún');
+    fpRow('Última modificación',p.ultimaModificacion||'Sin registros de cambios aún')+
+    '<button id="fp-eliminar-btn" style="width:100%;padding:10px;margin-top:14px;border-radius:10px;border:1.5px solid var(--rojo);background:#FCE9E7;color:var(--rojo);font-weight:700;font-size:13px;cursor:pointer">🗑️ Eliminar este producto de Loyverse</button>';
   document.getElementById('fp-editar-btn').onclick=()=>fpModoEdicion(f);
+  document.getElementById('fp-eliminar-btn').onclick=()=>fpEliminarProducto(f);
 
   // --- Inventario ---
   const v=f.ventas;
@@ -2342,6 +2344,35 @@ async function fpGuardarPrecio(sku){
   }catch(e){
     showToast('❌ Error de conexión al guardar');
     btn.disabled=false;btn.textContent='💾 Guardar cambios';
+  }
+}
+async function fpEliminarProducto(f){
+  const p=f.producto;
+  if(!confirm('¿Eliminar "'+p.nombre+'" de Loyverse?\n\nSe borra del catálogo de forma PERMANENTE. Esta acción no se puede deshacer.'))return;
+  const btn=document.getElementById('fp-eliminar-btn');
+  btn.disabled=true;btn.textContent='Eliminando…';
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'eliminar_productos',payload:{
+      items:[{id:p.idLoyverse,sku:p.sku,nombre:p.nombre,categoria:p.categoria,stock:p.stock}]
+    }})});
+    const j=await res.json();
+    console.log('[fpEliminarProducto] respuesta completa del Worker:',j);
+    const r=(j&&j.resultados&&j.resultados[0])||null;
+    if(j&&j.ok&&r&&r.ok){
+      DB.items=(DB.items||[]).filter(it=>it.ref!==p.sku);
+      persist();
+      showToast('✓ '+p.nombre+' eliminado de Loyverse');
+      cerrarModal('fp-ov');
+      try{render();}catch(_){}
+      try{smRender();}catch(_){}   // si Sin movimiento está abierto detrás, también se actualiza
+    }else{
+      console.warn('[fpEliminarProducto] error:',r);
+      showToast('❌ '+((r&&r.error)||(j&&j.error)||'No se pudo eliminar'));
+      btn.disabled=false;btn.textContent='🗑️ Eliminar este producto de Loyverse';
+    }
+  }catch(e){
+    showToast('❌ Error de conexión al eliminar');
+    btn.disabled=false;btn.textContent='🗑️ Eliminar este producto de Loyverse';
   }
 }
 async function fpGuardarEdicion(sku){
@@ -2583,13 +2614,15 @@ async function smEliminar(){
       items:sel.map(p=>({id:p.id,sku:p.ref,nombre:p.nombre,categoria:p.prov,stock:p.stock}))
     }})});
     const j=await res.json();
+    console.log('[eliminar_productos] respuesta completa del Worker:',j);
     if(j&&j.ok){
       const okRefs=new Set((j.resultados||[]).filter(r=>r.ok).map(r=>r.sku));
       if(okRefs.size){DB.items=(DB.items||[]).filter(it=>!okRefs.has(it.ref));persist();}
       _smTodos=_smTodos.filter(p=>!okRefs.has(p.ref));_smSel={};
-      const fallos=(j.resultados||[]).filter(r=>!r.ok).length;
+      const conError=(j.resultados||[]).filter(r=>!r.ok);
+      if(conError.length)console.warn('[eliminar_productos] productos con error:',conError);
       let m='✓ '+j.eliminados+' producto'+(j.eliminados===1?'':'s')+' eliminado'+(j.eliminados===1?'':'s');
-      if(fallos)m+=' · '+fallos+' con error (revisa ♻️ Catálogo)';
+      if(conError.length)m+=' · '+conError.length+' con error: '+conError.map(r=>r.error).slice(0,2).join(' / ');
       showToast(m);smRender();
       try{render();}catch(_){}   // refresca el tablero de Pedidos
     }else showToast('Error: '+((j&&j.error)||'no se pudo eliminar'));
