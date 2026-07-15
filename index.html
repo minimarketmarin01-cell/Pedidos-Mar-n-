@@ -2232,20 +2232,48 @@ function rkRender(){
     visibles.map(p=>{
     const stockTxt=p.stock==null?'sin control':fmt1(p.stock);
     const sinControl=p.stock==null&&!p.track;
+    const campo=sinControl
+      ? `<button class="rk-activar" data-rk-activar="${p.ref}" style="padding:8px 10px;border-radius:8px;border:1.5px solid var(--azul);background:var(--azul-bg);color:var(--azul);font-weight:700;font-size:12.5px;cursor:pointer;white-space:nowrap">🔓 Activar inventario</button>`
+      : `<input type="number" step="any" inputmode="decimal" placeholder="${p.stock==null?'—':fmt1(p.stock)}"
+          data-rk-input="${p.ref}"
+          style="width:76px;padding:8px;border-radius:8px;border:1px solid var(--borde);text-align:center;font-size:15px">`;
     return `<div class="sm-row" data-rk-ref="${p.ref}">
       <div class="sm-info">
         <div class="nom">${p.nombre}</div>
-        <div class="meta">REF ${p.ref} · ${p.prov} · sistema: ${stockTxt}${p.barcode?' · '+p.barcode:''}${sinControl?' · 🔓 al guardar se activa el seguimiento':''}</div>
+        <div class="meta">REF ${p.ref} · ${p.prov} · sistema: ${stockTxt}${p.barcode?' · '+p.barcode:''}</div>
       </div>
-      <input type="number" step="any" inputmode="decimal" placeholder="${p.stock==null?'—':fmt1(p.stock)}"
-        data-rk-input="${p.ref}"
-        style="width:76px;padding:8px;border-radius:8px;border:1px solid var(--borde);text-align:center;font-size:15px">
+      ${campo}
     </div>`;
   }).join('');
   box.querySelectorAll('input[data-rk-input]').forEach(inp=>{
     inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();inp.blur();}});
     inp.addEventListener('blur',()=>rkGuardarFila(inp));
   });
+  box.querySelectorAll('button[data-rk-activar]').forEach(btn=>{
+    btn.addEventListener('click',()=>rkActivarInventario(btn));
+  });
+}
+async function rkActivarInventario(btn){
+  const ref=btn.dataset.rkActivar;
+  const txtOriginal=btn.textContent;
+  btn.disabled=true;btn.textContent='Activando…';
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'habilitar_track_stock',payload:{sku:ref}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      const it=DB.items.find(x=>x.ref===ref);
+      if(it){it.track=true;if(it.stock==null)it.stock=0;}
+      persist();
+      showToast('🔓 Seguimiento activado · '+(it?it.nombre:ref)+' — ahora ingresa el conteo');
+      rkRender(); // vuelve a dibujar esta fila ya con el campo de conteo habilitado
+    }else{
+      showToast('❌ '+(j&&j.error?j.error:'No se pudo activar en Loyverse'));
+      btn.disabled=false;btn.textContent=txtOriginal;
+    }
+  }catch(e){
+    showToast('❌ Error de conexión al activar');
+    btn.disabled=false;btn.textContent=txtOriginal;
+  }
 }
 async function rkGuardarFila(inp){
   const ref=inp.dataset.rkInput;
