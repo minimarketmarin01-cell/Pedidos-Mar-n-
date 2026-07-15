@@ -2169,6 +2169,7 @@ document.querySelectorAll('#fp-tabs .fp-tab').forEach(btn=>{
     document.getElementById('fp-pane-'+btn.dataset.tab).classList.remove('hidden');
   };
 });
+let _fpActual=null;
 async function fpAbrir(ref){
   const it=DB.items.find(x=>x.ref===ref);
   document.getElementById('fp-titulo').textContent='📇 '+(it?it.nombre:ref);
@@ -2182,6 +2183,7 @@ async function fpAbrir(ref){
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=ficha_producto&sku='+encodeURIComponent(ref));
     const j=await res.json();
     if(!j||!j.ok){document.getElementById('fp-loading').textContent='❌ '+((j&&j.error)||'No se pudo cargar la ficha');return;}
+    _fpActual=j.ficha;
     fpPintar(j.ficha);
     document.getElementById('fp-loading').classList.add('hidden');
     document.getElementById('fp-content').classList.remove('hidden');
@@ -2207,13 +2209,16 @@ function fpPintar(f){
 
   // --- General ---
   document.getElementById('fp-pane-general').innerHTML=
+    '<button id="fp-editar-btn" style="width:100%;padding:10px;margin-bottom:12px;border-radius:10px;border:1.5px solid var(--azul);background:var(--azul-bg);color:var(--azul);font-weight:700;font-size:13px;cursor:pointer">✏️ Editar nombre, categoría o descripción</button>'+
     fpRow('Nombre',p.nombre)+
     fpRow('SKU / REF',p.sku)+
     fpRow('Código de barras',p.barcode||'—')+
     fpRow('Categoría',p.categoria)+
+    fpRow('Descripción',p.descripcion||'—')+
     fpRow('Unidad',p.soldByWeight?'Kilo (venta por peso)':'Unidad')+
     fpRow('Seguir inventario',p.trackStock?'✅ Activado':'❌ Desactivado')+
     fpRow('Última modificación',p.ultimaModificacion||'Sin registros de cambios aún');
+  document.getElementById('fp-editar-btn').onclick=()=>fpModoEdicion(f);
 
   // --- Inventario ---
   const v=f.ventas;
@@ -2253,6 +2258,52 @@ function fpPintar(f){
   }
 }
 function fpRow(k,v){return '<div class="fp-row"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>';}
+function fpModoEdicion(f){
+  const p=f.producto;
+  const opcionesCat=(DB.provs||[]).map(c=>`<option value="${c.prov}" ${c.prov===p.categoria?'selected':''}>${c.prov}</option>`).join('');
+  document.getElementById('fp-pane-general').innerHTML=`
+    <div class="mm-field"><label>Nombre</label>
+      <input id="fp-e-nombre" value="${(p.nombre||'').replace(/"/g,'&quot;')}" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+    </div>
+    <div class="mm-field" style="margin-top:10px"><label>Categoría</label>
+      <select id="fp-e-cat" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;background:#fff">${opcionesCat}</select>
+    </div>
+    <div class="mm-field" style="margin-top:10px"><label>Descripción (opcional)</label>
+      <textarea id="fp-e-desc" rows="3" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit;resize:vertical">${(p.descripcion||'').replace(/</g,'&lt;')}</textarea>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button id="fp-e-cancelar" style="flex:1;padding:11px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:13px;cursor:pointer">Cancelar</button>
+      <button id="fp-e-guardar" style="flex:2;padding:11px;border-radius:10px;border:none;background:var(--verde);color:#fff;font-weight:700;font-size:13px;cursor:pointer">💾 Guardar cambios</button>
+    </div>`;
+  document.getElementById('fp-e-cancelar').onclick=()=>fpPintar(_fpActual);
+  document.getElementById('fp-e-guardar').onclick=()=>fpGuardarEdicion(p.sku);
+}
+async function fpGuardarEdicion(sku){
+  const btn=document.getElementById('fp-e-guardar');
+  const nombre=document.getElementById('fp-e-nombre').value.trim();
+  const categoria=document.getElementById('fp-e-cat').value;
+  const descripcion=document.getElementById('fp-e-desc').value.trim();
+  if(!nombre){showToast('⚠️ El nombre no puede quedar vacío');return;}
+  btn.disabled=true;btn.textContent='Guardando…';
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_producto',payload:{sku,nombre,categoria,descripcion,responsable:''}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      const it=DB.items.find(x=>x.ref===sku);
+      if(it){it.nombre=nombre;it.prov=categoria;it.descripcion=descripcion;}
+      persist();
+      showToast(j.sinCambios?'Sin cambios que guardar':'✅ Producto actualizado');
+      await fpAbrir(sku); // recarga la ficha completa con los datos ya confirmados desde el servidor
+      render(); // refleja el nombre/categoría nuevos en la tabla principal, sin recargar la página
+    }else{
+      showToast('❌ '+(j&&j.error?j.error:'No se pudo guardar'));
+      btn.disabled=false;btn.textContent='💾 Guardar cambios';
+    }
+  }catch(e){
+    showToast('❌ Error de conexión al guardar');
+    btn.disabled=false;btn.textContent='💾 Guardar cambios';
+  }
+}
 // Puntos de entrada a la ficha: tocar el nombre del producto en la tabla de Pedidos o en Reconteo.
 // Un solo listener delegado por lista (no se duplica en cada render).
 document.getElementById('ptbody').addEventListener('click',ev=>{
