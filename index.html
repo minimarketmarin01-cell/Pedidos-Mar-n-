@@ -85,10 +85,12 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .mm-field{margin-bottom:12px}
 .mm-field label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:5px}
 .mm-search{position:relative}
-.mm-search input{width:100%;padding:11px 76px 11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:15px}
-.mm-search .mm-mic,.mm-search .mm-scan{position:absolute;top:50%;transform:translateY(-50%);background:var(--gris-bg);border:none;border-radius:8px;width:28px;height:24px;font-size:14px;cursor:pointer}
-.mm-search .mm-mic{right:38px}
+.mm-search input,.prov-all{border:1.5px solid var(--line);border-radius:10px;font-size:15px;padding-top:11px;padding-bottom:11px;background:#fff;color:var(--text);font-family:'Inter'}
+.mm-search input{width:100%;padding-left:14px;padding-right:70px}
+.mm-search .mm-mic,.mm-search .mm-scan,.mm-x{position:absolute;top:50%;transform:translateY(-50%);width:24px;height:24px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2}
+.mm-search .mm-mic{right:34px}
 .mm-search .mm-scan{right:6px}
+.mm-x{right:62px}
 .mm-picked{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:8px;display:none}
 .mm-picked.on{display:block}
 .mm-picked .nom{font-weight:700;font-size:14px}
@@ -190,6 +192,12 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .sc-summary{font-size:12.5px;color:var(--muted);margin-bottom:10px;line-height:1.5}
 .sc-warn{background:var(--rojo-bg);border:1px solid var(--rojo);border-radius:10px;padding:9px 12px;font-size:12px;color:var(--rojo);font-weight:600;margin-bottom:12px;line-height:1.4}
 .hm-summary{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.rk-head{display:flex;gap:0;position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1.5px solid var(--line);margin-bottom:2px}
+.rk-hcol{flex:1;text-align:right;background:none;border:none;padding:8px 6px;font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.rk-hcol.l{text-align:left;flex:2}
+.rk-hcol .ar{opacity:.4;font-size:9px}
+.rk-hcol.sorted{color:var(--ink)}
+.rk-hcol.sorted .ar{opacity:1}
 .ll-row{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
 .ll-row .nom{font-weight:700;font-size:13.5px}
 .ll-row .cat{font-size:11.5px;color:var(--muted);margin-top:2px}
@@ -700,7 +708,7 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
           <div id="vc-view-lista">
           <div class="mm-search" style="margin:0 0 10px">
             <input id="vc-lsearch" placeholder="Buscar producto: nombre, código o SKU…" autocomplete="off" style="padding-right:104px">
-            <button class="mm-x" id="vc-lx" type="button" aria-label="Limpiar" style="position:absolute;top:50%;transform:translateY(-50%);right:68px;background:var(--gris-bg);border:none;border-radius:8px;width:28px;height:24px;font-size:13px;cursor:pointer;display:none">✕</button>
+            <button class="mm-x" id="vc-lx" type="button" aria-label="Limpiar" style="display:none">✕</button>
             <button class="mm-mic" id="vc-lmic" type="button" aria-label="Buscar por voz">🎤</button>
             <button class="mm-scan" id="vc-lscan" type="button" aria-label="Escanear código">📷</button>
           </div>
@@ -787,7 +795,7 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
         <div class="hm-summary"><span class="lbl" id="hm-lbl">Cargando…</span><span class="val" id="hm-val"></span></div>
         <div class="mm-search" style="margin:0 0 10px">
           <input id="hm-lsearch" placeholder="Buscar en el historial…" autocomplete="off" style="padding-right:104px">
-          <button class="mm-x" id="hm-lx" type="button" aria-label="Limpiar" style="position:absolute;top:50%;transform:translateY(-50%);right:68px;background:var(--gris-bg);border:none;border-radius:8px;width:28px;height:24px;font-size:13px;cursor:pointer;display:none">✕</button>
+          <button class="mm-x" id="hm-lx" type="button" aria-label="Limpiar" style="display:none">✕</button>
           <button class="mm-mic" id="hm-lmic" type="button" aria-label="Buscar por voz">🎤</button>
           <button class="mm-scan" id="hm-lscan" type="button" aria-label="Escanear código">📷</button>
         </div>
@@ -1030,7 +1038,7 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
       </div>
       <div class="mm-search" style="margin:0 0 10px">
         <input id="sm-search" placeholder="Buscar en la lista…" autocomplete="off" style="padding-right:104px">
-        <button class="mm-x" id="sm-x" type="button" aria-label="Limpiar" style="position:absolute;top:50%;transform:translateY(-50%);right:68px;background:var(--gris-bg);border:none;border-radius:8px;width:28px;height:24px;font-size:13px;cursor:pointer;display:none">✕</button>
+        <button class="mm-x" id="sm-x" type="button" aria-label="Limpiar" style="display:none">✕</button>
         <button class="mm-mic" id="sm-mic" type="button" aria-label="Buscar por voz">🎤</button>
         <button class="mm-scan" id="sm-scan" type="button" aria-label="Escanear código">📷</button>
       </div>
@@ -1049,14 +1057,17 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
     <div class="mm-topbar"><button class="loadbtn" id="rk-cerrar" style="width:100%">Cerrar</button></div>
     <div class="mm-body">
       <div class="hm-summary"><span class="lbl" id="rk-lbl">—</span><span class="val" id="rk-val"></span></div>
-      <select id="rk-cat" style="width:100%;margin-bottom:8px;padding:10px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:14px">
-        <option value="">📋 Todas las categorías</option>
-      </select>
-      <div class="mm-search" style="margin:0 0 10px">
-        <input id="rk-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off" style="padding-right:104px">
-        <button class="mm-x" id="rk-x" type="button" aria-label="Limpiar" style="position:absolute;top:50%;transform:translateY(-50%);right:68px;background:var(--gris-bg);border:none;border-radius:8px;width:28px;height:24px;font-size:13px;cursor:pointer;display:none">✕</button>
-        <button class="mm-mic" id="rk-mic" type="button" aria-label="Buscar por voz">🎤</button>
-        <button class="mm-scan" id="rk-scan" type="button" aria-label="Escanear código">📷</button>
+      <div class="prov-combo" id="rk-combo" style="margin-bottom:10px">
+        <span class="prov-icon">🏷️</span>
+        <input class="prov-all" id="rk-all" placeholder="Proveedor o producto… escribe o toca" autocomplete="off" inputmode="text">
+        <button class="prov-mic" id="rk-mic" type="button" tabindex="-1" aria-label="Buscar por voz">🎤</button>
+        <button class="prov-scan" id="rk-scan" type="button" tabindex="-1" aria-label="Escanear código">📷</button>
+        <button class="prov-x" id="rk-x" type="button" tabindex="-1" aria-label="Borrar">✕</button>
+        <div class="prov-menu hidden" id="rk-menu"></div>
+      </div>
+      <div class="rk-head" id="rk-head">
+        <button class="rk-hcol l" data-s="nombre">Artículo <span class="ar">▲▼</span></button>
+        <button class="rk-hcol" data-s="stock">Sistema <span class="ar">▲▼</span></button>
       </div>
       <div id="rk-list"></div>
     </div>
@@ -2100,37 +2111,97 @@ document.getElementById('sm-selall').onchange=e=>{
 };
 
 // ===================== RECONTEO DE STOCK =====================
-let _rkCatsLlenas=false;
+const rkState={cat:'',search:'',sort:'nombre',dir:1};
 document.getElementById('mas-q-reconteo').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');rkAbrir();};
 document.getElementById('rk-cerrar').onclick=()=>cerrarModal('rk-ov');
 function rkAbrir(){
-  document.getElementById('rk-search').value='';
-  document.getElementById('rk-cat').value='';
-  if(!_rkCatsLlenas){
-    const sel=document.getElementById('rk-cat');
-    (DB.provs||[]).forEach(p=>{const o=document.createElement('option');o.value=p.prov;o.textContent=p.prov;sel.appendChild(o);});
-    _rkCatsLlenas=true;
-  }
+  rkState.cat='';rkState.search='';rkState.sort='nombre';rkState.dir=1;
+  const inp=document.getElementById('rk-all');if(inp)inp.value='';
+  document.getElementById('rk-x').classList.remove('on');
   abrirModal('rk-ov');
   rkRender();
 }
+// ---- combo fusionado proveedor/producto (mismo patrón visual que prov-combo de Armar Pedido) ----
+function rkOpenMenu(filter){
+  const menu=document.getElementById('rk-menu');
+  const q=normTxt(filter||'').trim();
+  menu.innerHTML='';
+  menu.appendChild(rkOpt('📋 Todas las categorías','',!q));
+  (DB.provs||[]).filter(p=>!q||normTxt(p.prov).indexOf(q)>-1).forEach(p=>menu.appendChild(rkOpt(p.prov,p.prov,false)));
+  if(!menu.querySelector('.prov-opt')){const e=document.createElement('div');e.className='prov-opt';e.style.color='var(--muted)';e.textContent='Sin proveedores — mostrando productos abajo ↓';menu.appendChild(e);}
+  menu.classList.remove('hidden');
+}
+function rkOpt(label,val,active){
+  const d=document.createElement('div');
+  d.className='prov-opt'+(active?' act':'');
+  d.dataset.val=val;
+  d.textContent=label;
+  d.onclick=ev=>{ev.preventDefault();ev.stopPropagation();rkPick(val);};
+  return d;
+}
+function rkPick(val){
+  rkState.cat=val;rkState.search='';rkState.sort='stock';rkState.dir=1; // ordena por stock ascendente al elegir proveedor
+  const inp=document.getElementById('rk-all');
+  if(inp)inp.value=val;
+  document.getElementById('rk-x').classList.remove('on');
+  document.getElementById('rk-menu').classList.add('hidden');
+  if(inp)inp.blur();
+  rkRender();
+}
+(function(){
+  const inp=document.getElementById('rk-all');
+  inp.onfocus=()=>rkOpenMenu(inp.value);
+  inp.oninput=()=>{rkOpenMenu(inp.value);rkState.search=inp.value.trim();rkState.cat='';document.getElementById('rk-x').classList.toggle('on',!!rkState.search);clearTimeout(window._rkSearchT);window._rkSearchT=setTimeout(rkRender,200);};
+  document.getElementById('rk-x').onclick=ev=>{ev.preventDefault();ev.stopPropagation();inp.value='';rkState.search='';rkState.cat='';document.getElementById('rk-x').classList.remove('on');clearTimeout(window._rkSearchT);rkOpenMenu('');inp.focus();rkRender();};
+  inp.addEventListener('keydown',e=>{
+    const menu=document.getElementById('rk-menu');
+    if(e.key==='Enter'){e.preventDefault();const a=menu.querySelector('.prov-opt.act')||menu.querySelector('.prov-opt[data-val="'+CSS.escape(inp.value)+'"]');menu.classList.add('hidden');if(a)rkPick(a.dataset.val);else inp.blur();}
+    else if(e.key==='Escape'){menu.classList.add('hidden');inp.blur();}
+  });
+  document.addEventListener('pointerdown',ev=>{
+    const combo=document.getElementById('rk-combo');const menu=document.getElementById('rk-menu');
+    if(menu&&!menu.classList.contains('hidden')&&combo&&!combo.contains(ev.target))menu.classList.add('hidden');
+  },true);
+  document.getElementById('rk-mic').onclick=()=>voiceSearch(document.getElementById('rk-mic'),text=>{inp.value=text;rkState.search=text;rkState.cat='';document.getElementById('rk-x').classList.toggle('on',!!text);rkRender();});
+  document.getElementById('rk-scan').onclick=()=>{
+    const reopen=()=>{document.getElementById('rk-ov').classList.remove('hidden');_sincronizarNav();};
+    document.getElementById('rk-ov').classList.add('hidden');
+    openScanner(code=>{reopen();inp.value=code;rkState.search=code;rkState.cat='';document.getElementById('rk-x').classList.add('on');rkRender();},reopen);
+  };
+})();
+// ---- encabezado con orden ▲▼ (Artículo / Sistema) ----
+document.querySelectorAll('#rk-head .rk-hcol').forEach(btn=>{
+  btn.onclick=()=>{
+    const s=btn.dataset.s;
+    if(rkState.sort===s)rkState.dir*=-1;else{rkState.sort=s;rkState.dir=(s==='stock')?1:1;}
+    rkRender();
+  };
+});
 function rkFiltrados(){
-  const cat=document.getElementById('rk-cat').value;
-  const q=(document.getElementById('rk-search').value||'').toLowerCase().trim();
-  const x=document.getElementById('rk-x'); if(x)x.style.display=q?'block':'none';
   let lista=(DB.items||[]);
-  if(cat)lista=lista.filter(it=>it.prov===cat);
+  if(rkState.cat)lista=lista.filter(it=>it.prov===rkState.cat);
+  const q=normTxt(rkState.search).trim();
   if(q){
     const words=q.split(/\s+/).filter(Boolean);
-    lista=lista.filter(it=>{const s=((it.nombre||'')+' '+(it.ref||'')+' '+(it.barcode||'')).toLowerCase();return words.every(w=>s.includes(w));});
+    lista=lista.filter(it=>{const s=normTxt((it.nombre||'')+' '+(it.ref||'')+' '+(it.barcode||''));return words.every(w=>s.includes(w));});
+  }
+  const dir=rkState.dir;
+  if(rkState.sort==='stock'){
+    lista=lista.slice().sort((a,b)=>{const sa=a.stock==null?-1:a.stock,sb=b.stock==null?-1:b.stock;return (sa-sb)*dir;});
+  }else{
+    lista=lista.slice().sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||'')*dir);
   }
   return lista;
 }
 const RK_LIMITE=150; // evita renderizar miles de filas de una — pide categoría o búsqueda para acotar
 function rkRender(){
   const box=document.getElementById('rk-list');
-  const cat=document.getElementById('rk-cat').value;
-  const q=(document.getElementById('rk-search').value||'').trim();
+  document.querySelectorAll('#rk-head .rk-hcol').forEach(b=>{
+    const on=b.dataset.s===rkState.sort;
+    b.classList.toggle('sorted',on);
+    b.querySelector('.ar').textContent=on?(rkState.dir===1?'▲':'▼'):'▲▼';
+  });
+  const cat=rkState.cat,q=rkState.search;
   const lista=rkFiltrados();
   document.getElementById('rk-lbl').textContent=lista.length+' producto'+(lista.length===1?'':'s');
   document.getElementById('rk-val').textContent=cat?cat:(q?'búsqueda':'elige categoría o busca');
@@ -2188,15 +2259,6 @@ async function rkGuardarFila(inp){
     inp.disabled=false;
   }
 }
-document.getElementById('rk-cat').onchange=rkRender;
-document.getElementById('rk-search').oninput=rkRender;
-document.getElementById('rk-x').onclick=()=>{document.getElementById('rk-search').value='';rkRender();document.getElementById('rk-search').focus();};
-document.getElementById('rk-mic').onclick=()=>voiceSearch(document.getElementById('rk-mic'),text=>{document.getElementById('rk-search').value=text;rkRender();});
-document.getElementById('rk-scan').onclick=()=>{
-  const reopen=()=>{document.getElementById('rk-ov').classList.remove('hidden');_sincronizarNav();};
-  document.getElementById('rk-ov').classList.add('hidden');
-  openScanner(code=>{reopen();document.getElementById('rk-search').value=code;rkRender();},reopen);
-};
 
 async function smEliminar(){
   const sel=_smTodos.filter(p=>_smSel[p.ref]);
