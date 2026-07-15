@@ -619,11 +619,15 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
     <span>📦 Proveedores de hoy</span><span class="prov-acc-caret" id="prov-acc-caret">▾</span>
   </button>
   <div class="provday hidden" id="provday"></div>
-  <div class="shc-row shc-wrap">
-    <div class="prov-combo" id="prov-combo"><span class="prov-icon">🏷️</span><input class="prov-all" id="prov-all" placeholder="Proveedor o producto… escribe o toca" autocomplete="off" inputmode="text"><button class="prov-mic" id="prov-mic" type="button" tabindex="-1" aria-label="Buscar por voz">🎤</button><button class="prov-scan" id="prov-scan" type="button" tabindex="-1" aria-label="Escanear código">📷</button><button class="prov-x" id="prov-x" type="button" tabindex="-1" aria-label="Borrar">✕</button><div class="prov-menu hidden" id="prov-menu"></div></div>
-    <div class="seg sm" id="seg-basis"><button data-b="7" class="active">7d</button><button data-b="14">14d</button><button data-b="30">30d</button><button data-b="90">90d</button></div>
-    <div class="shc-mini"><label>Entrega</label><input type="number" id="lead" value="3" min="0" max="30"></div>
-    <div class="shc-mini"><label>Cobertura</label><input type="number" id="cover" value="10" min="1" max="60"></div>
+  <div style="position:relative">
+    <div class="shc-row shc-wrap">
+      <div class="prov-combo" id="prov-combo"><span class="prov-icon">🏷️</span><input class="prov-all" id="prov-all" placeholder="Proveedor o producto… escribe o toca" autocomplete="off" inputmode="text"><button class="prov-mic" id="prov-mic" type="button" tabindex="-1" aria-label="Buscar por voz">🎤</button><button class="prov-scan" id="prov-scan" type="button" tabindex="-1" aria-label="Escanear código">📷</button><button class="prov-x" id="prov-x" type="button" tabindex="-1" aria-label="Borrar">✕</button></div>
+      <div class="seg sm" id="seg-basis"><button data-b="7" class="active">7d</button><button data-b="14">14d</button><button data-b="30">30d</button><button data-b="90">90d</button></div>
+      <div class="shc-mini"><label>Entrega</label><input type="number" id="lead" value="3" min="0" max="30"></div>
+      <div class="shc-mini"><label>Cobertura</label><input type="number" id="cover" value="10" min="1" max="60"></div>
+    </div>
+    <div class="prov-menu hidden" id="prov-menu"></div>
+  </div>
   </div>
   <div class="legend sm">
     <span><i class="ldot" style="background:var(--rojo)"></i>Urgente</span>
@@ -1498,7 +1502,7 @@ function buildChips(){
     else if(e.key==='Escape'){menu.classList.add('hidden');if(sel.value.trim())setProvInputValue();sel.blur();}
   };
   if(!window._provDocBound){window._provDocBound=true;
-    document.addEventListener('pointerdown',function(ev){const combo=document.getElementById('prov-combo');const m=document.getElementById('prov-menu');if(m&&!m.classList.contains('hidden')&&combo&&!combo.contains(ev.target)){m.classList.add('hidden');const s=document.getElementById('prov-all');if(s&&s.value.trim())setProvInputValue();}},true);
+    document.addEventListener('pointerdown',function(ev){const combo=document.getElementById('prov-combo');const m=document.getElementById('prov-menu');if(m&&!m.classList.contains('hidden')&&combo&&!combo.contains(ev.target)&&!m.contains(ev.target)){m.classList.add('hidden');const s=document.getElementById('prov-all');if(s&&s.value.trim())setProvInputValue();}},true);
   }
 }
 function setProvInputValue(){const sel=document.getElementById('prov-all');if(!sel)return;if(document.activeElement===sel)return;/* el usuario está escribiendo ahí: no lo interrumpimos */if(state.search)return;const allMode=state.allProv&&!state.search;sel.value=allMode?'📋 Todos los proveedores':(DB.provs.some(p=>p.prov===state.prov)?state.prov:(DB.provs[0]?DB.provs[0].prov:''));}
@@ -1787,6 +1791,48 @@ async function renderInsumosChart(){
   }catch(e){cc.innerHTML='<div class="cc-empty">Error de conexión.</div>';}
 }
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');const dur=m.length>60?4600:2600;clearTimeout(window._toastT);window._toastT=setTimeout(()=>t.classList.remove('show'),dur);}
+
+// ===================== VERSIÓN Y AUTO-ACTUALIZACIÓN =====================
+// Cada vez que se sube un cambio a GitHub Pages, este texto cambia. La app se revisa a sí
+// misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
+// limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
+// sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
+const APP_VERSION='2026-07-15.1';
+(function(){
+  async function hayAlgoAbierto(){
+    return !!document.querySelector('.mm-ov:not(.hidden)');
+  }
+  async function limpiarCacheYActualizarSW(){
+    try{
+      if('caches' in window){
+        const keys=await caches.keys();
+        await Promise.all(keys.map(k=>caches.delete(k)));
+      }
+    }catch(_){}
+    try{
+      if('serviceWorker' in navigator){
+        const regs=await navigator.serviceWorker.getRegistrations();
+        for(const r of regs){try{await r.update();}catch(_){}}
+      }
+    }catch(_){}
+  }
+  async function chequearVersion(){
+    try{
+      const res=await fetch(location.pathname+'?_v='+Date.now(),{cache:'no-store'});
+      if(!res.ok)return;
+      const txt=await res.text();
+      const m=txt.match(/const APP_VERSION=['"]([^'"]+)['"]/);
+      if(!m||!m[1]||m[1]===APP_VERSION)return; // sin novedad
+      if(await hayAlgoAbierto())return; // hay algo abierto — no interrumpe, reintenta en el próximo chequeo
+      await limpiarCacheYActualizarSW();
+      showToast('🔄 Nueva versión disponible, actualizando…');
+      setTimeout(()=>location.reload(),900);
+    }catch(_){/* sin conexión u otro problema — no molesta, reintenta después */}
+  }
+  chequearVersion();
+  setInterval(chequearVersion,5*60*1000);           // revisa cada 5 minutos
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')chequearVersion();});
+})();
 
 // ===================== SINCRONIZACIÓN — Cloudflare Worker (D1) =====================
 const SYNC_URL='https://marin376-api.minimarketmarin01.workers.dev';
