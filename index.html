@@ -1107,11 +1107,13 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
           <button class="fp-tab active" data-tab="general">General</button>
           <button class="fp-tab" data-tab="inventario">Inventario</button>
           <button class="fp-tab" data-tab="lotes">Lotes</button>
+          <button class="fp-tab" data-tab="precios">Precios</button>
           <button class="fp-tab" data-tab="mov">Movimientos</button>
         </div>
         <div id="fp-pane-general" class="fp-pane"></div>
         <div id="fp-pane-inventario" class="fp-pane hidden"></div>
         <div id="fp-pane-lotes" class="fp-pane hidden"></div>
+        <div id="fp-pane-precios" class="fp-pane hidden"></div>
         <div id="fp-pane-mov" class="fp-pane hidden"></div>
       </div>
     </div>
@@ -2245,6 +2247,19 @@ function fpPintar(f){
     </div>`).join('');
   }
 
+  // --- Precios ---
+  const paneP=document.getElementById('fp-pane-precios');
+  const hist=f.historialPrecios||[];
+  paneP.innerHTML=
+    '<button id="fp-precio-btn" style="width:100%;padding:10px;margin-bottom:12px;border-radius:10px;border:1.5px solid var(--azul);background:var(--azul-bg);color:var(--azul);font-weight:700;font-size:13px;cursor:pointer">✏️ Editar precio o costo</button>'+
+    fpRow('Precio de venta',peso(p.precio))+
+    fpRow('Precio de costo',peso(p.costo))+
+    fpRow('Margen',p.margen!=null?p.margen+'%':'—')+
+    '<div style="margin:14px 0 6px;font-weight:700;font-size:12.5px;color:var(--muted)">Historial de cambios</div>'+
+    (hist.length?hist.map(h=>`<div class="fp-row"><span class="k">${h.fecha}</span><span class="v" style="text-align:right;font-weight:600">${peso(h.precioAntes)} → ${peso(h.precioDespues)} · costo ${peso(h.costoAntes)} → ${peso(h.costoDespues)}${h.responsable?' · '+h.responsable:''}</span></div>`).join('')
+      :'<div class="vc-empty">Sin cambios de precio registrados todavía.</div>');
+  document.getElementById('fp-precio-btn').onclick=()=>fpModoEdicionPrecio(f);
+
   // --- Movimientos (auditoría + mermas recientes juntos, orden por fecha texto tal cual vienen) ---
   const paneMov=document.getElementById('fp-pane-mov');
   const movs=[
@@ -2288,6 +2303,46 @@ function fpModoEdicion(f){
     document.getElementById('fp-ov').classList.add('hidden');
     openScanner(code=>{reopen();document.getElementById('fp-e-barcode').value=code;},reopen);
   };
+}
+function fpModoEdicionPrecio(f){
+  const p=f.producto;
+  document.getElementById('fp-pane-precios').innerHTML=`
+    <div class="mm-field"><label>Precio de venta</label>
+      <input id="fp-p-precio" type="number" inputmode="decimal" value="${p.precio!=null?p.precio:''}" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+    </div>
+    <div class="mm-field" style="margin-top:10px"><label>Precio de costo</label>
+      <input id="fp-p-costo" type="number" inputmode="decimal" value="${p.costo!=null?p.costo:''}" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button id="fp-p-cancelar" style="flex:1;padding:11px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:13px;cursor:pointer">Cancelar</button>
+      <button id="fp-p-guardar" style="flex:2;padding:11px;border-radius:10px;border:none;background:var(--verde);color:#fff;font-weight:700;font-size:13px;cursor:pointer">💾 Guardar cambios</button>
+    </div>`;
+  document.getElementById('fp-p-cancelar').onclick=()=>fpPintar(_fpActual);
+  document.getElementById('fp-p-guardar').onclick=()=>fpGuardarPrecio(p.sku);
+}
+async function fpGuardarPrecio(sku){
+  const btn=document.getElementById('fp-p-guardar');
+  const precio=document.getElementById('fp-p-precio').value.trim();
+  const costo=document.getElementById('fp-p-costo').value.trim();
+  btn.disabled=true;btn.textContent='Guardando…';
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_precio',payload:{sku,precio,costo,responsable:''}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      const it=DB.items.find(x=>x.ref===sku);
+      if(it){if(j.precio!=null)it.precio=j.precio;if(j.costo!=null)it.coste=j.costo;}
+      persist();
+      showToast(j.sinCambios?'Sin cambios que guardar':('✅ Precio actualizado'+(j.advertencia?' — '+j.advertencia:'')));
+      await fpAbrir(sku);
+      render();
+    }else{
+      showToast('❌ '+(j&&j.error?j.error:'No se pudo guardar'));
+      btn.disabled=false;btn.textContent='💾 Guardar cambios';
+    }
+  }catch(e){
+    showToast('❌ Error de conexión al guardar');
+    btn.disabled=false;btn.textContent='💾 Guardar cambios';
+  }
 }
 async function fpGuardarEdicion(sku){
   const btn=document.getElementById('fp-e-guardar');
