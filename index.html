@@ -1026,7 +1026,7 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
     <div class="mm-topbar"><button class="loadbtn" id="sm-cerrar" style="width:100%">Cerrar</button></div>
     <div class="mm-body">
       <div class="hm-summary"><span class="lbl" id="sm-lbl">—</span><span class="val" id="sm-val"></span></div>
-      <div class="sm-filters" style="display:flex;gap:6px;margin-bottom:8px">
+      <div class="sm-filters" style="display:flex;gap:6px;margin-bottom:6px">
         <select id="sm-cat" style="flex:1;min-width:0;padding:8px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:12.5px">
           <option value="">📋 Todas las categorías</option>
         </select>
@@ -1034,6 +1034,15 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
           <option value="">Todo el stock</option>
           <option value="sin">Sin stock (0)</option>
           <option value="con">Con stock</option>
+        </select>
+      </div>
+      <div class="sm-filters" style="display:flex;gap:6px;margin-bottom:8px">
+        <select id="sm-antig" style="flex:1;min-width:0;padding:8px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:12.5px">
+          <option value="">📅 Cualquier antigüedad</option>
+          <option value="30">Ingresado hace +30 días</option>
+          <option value="60">Ingresado hace +60 días</option>
+          <option value="90">Ingresado hace +90 días</option>
+          <option value="180">Ingresado hace +180 días</option>
         </select>
       </div>
       <div class="mm-search" style="margin:0 0 10px">
@@ -1778,7 +1787,7 @@ function buildDBfromCloud(items, ventas){
       stock:inv.stock!=null?inv.stock:null,
       precio:inv.precio!=null?inv.precio:null,
       coste:inv.costo!=null?inv.costo:null,
-      track:!!inv.track, barcode:inv.barcode||'', peso:!!inv.peso,
+      track:!!inv.track, barcode:inv.barcode||'', peso:!!inv.peso, creado:inv.creado||null,
       fmt:t.fmt, min:t.min, scale:t.scale, role:t.role, word:t.word,
       hoyU:hoyU
     });
@@ -2030,6 +2039,7 @@ function smAbrir(){
   document.getElementById('sm-search').value='';
   document.getElementById('sm-cat').value='';
   document.getElementById('sm-stock').value='';
+  document.getElementById('sm-antig').value='';
   _smSel={};
   if(!_smCatsLlenas){
     const sel=document.getElementById('sm-cat');
@@ -2041,10 +2051,12 @@ function smAbrir(){
 function smCalcular(){
   // "Sin movimiento" = 0 ventas en los últimos 90 días (u90===0). Se calcula al
   // instante desde la copia local del catálogo — sin llamadas a Sheets ni Loyverse.
+  const hoyMs=Date.now();
   _smTodos=(DB.items||[]).filter(it=>(it.u90||0)===0).map(it=>{
     const stock=(it.stock!=null?it.stock:null);
     const valor=Math.max(0,stock||0)*(it.coste||0);
-    return {ref:it.ref,id:it.id||'',nombre:it.nombre,prov:it.prov,stock:stock,coste:it.coste||0,valor:valor,tuvoVentas:(it.u_all||0)>0};
+    const dias=it.creado?Math.floor((hoyMs-new Date(it.creado+'T00:00:00').getTime())/86400000):null;
+    return {ref:it.ref,id:it.id||'',nombre:it.nombre,prov:it.prov,stock:stock,coste:it.coste||0,valor:valor,tuvoVentas:(it.u_all||0)>0,dias:dias};
   }).sort((a,b)=>b.valor-a.valor||((b.stock||0)-(a.stock||0)));
   smRender();
 }
@@ -2053,10 +2065,12 @@ function smFiltrados(){
   const x=document.getElementById('sm-x'); if(x)x.style.display=q?'block':'none';
   const cat=document.getElementById('sm-cat').value;
   const stockFiltro=document.getElementById('sm-stock').value;
+  const antigMin=+document.getElementById('sm-antig').value||0;
   let lista=_smTodos;
   if(cat)lista=lista.filter(p=>p.prov===cat);
   if(stockFiltro==='sin')lista=lista.filter(p=>!p.stock||p.stock<=0);
   else if(stockFiltro==='con')lista=lista.filter(p=>p.stock>0);
+  if(antigMin)lista=lista.filter(p=>p.dias!=null&&p.dias>=antigMin); // sin fecha de ingreso conocida → se excluye para no mezclar con lo recién llegado
   if(!q)return lista;
   const words=q.split(/\s+/).filter(Boolean);
   return lista.filter(p=>{const s=normTxt((p.nombre||'')+' '+(p.ref||'')+' '+(p.prov||''));return words.every(w=>s.includes(w));});
@@ -2075,7 +2089,7 @@ function smRender(){
       <input type="checkbox" data-ref="${p.ref}" ${_smSel[p.ref]?'checked':''}>
       <div class="sm-info">
         <div class="nom">${p.nombre}</div>
-        <div class="meta">REF ${p.ref} · ${p.prov} · stock ${stockTxt} · ${p.tuvoVentas?'sin ventas ≥90d':'nunca vendido'}</div>
+        <div class="meta">REF ${p.ref} · ${p.prov} · stock ${stockTxt} · ${p.tuvoVentas?'sin ventas ≥90d':'nunca vendido'}${p.dias!=null?' · '+p.dias+' días en catálogo':''}</div>
       </div>
       <div class="val">${p.valor>0?peso(p.valor):'—'}</div>
     </div>`;
@@ -2098,6 +2112,7 @@ document.getElementById('sm-search').oninput=smRender;
 document.getElementById('sm-x').onclick=()=>{document.getElementById('sm-search').value='';smRender();document.getElementById('sm-search').focus();};
 document.getElementById('sm-cat').onchange=smRender;
 document.getElementById('sm-stock').onchange=smRender;
+document.getElementById('sm-antig').onchange=smRender;
 document.getElementById('sm-mic').onclick=()=>voiceSearch(document.getElementById('sm-mic'),text=>{document.getElementById('sm-search').value=text;smRender();});
 document.getElementById('sm-scan').onclick=()=>{
   const reopen=()=>{document.getElementById('sm-ov').classList.remove('hidden');_sincronizarNav();};
