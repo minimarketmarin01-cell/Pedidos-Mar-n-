@@ -2179,7 +2179,8 @@ function rkPick(val){
   },true);
   document.getElementById('rk-mic').onclick=()=>voiceSearch(document.getElementById('rk-mic'),text=>{inp.value=text;rkState.search=text;rkState.cat='';document.getElementById('rk-x').classList.toggle('on',!!text);rkRender();});
   document.getElementById('rk-scan').onclick=()=>{
-    const reopen=()=>{document.getElementById('rk-ov').classList.remove('hidden');_sincronizarNav();};
+    document.getElementById('rk-menu').classList.add('hidden'); // el desplegable nunca debe verse con la cámara activa
+    const reopen=()=>{document.getElementById('rk-ov').classList.remove('hidden');document.getElementById('rk-menu').classList.add('hidden');_sincronizarNav();};
     document.getElementById('rk-ov').classList.add('hidden');
     openScanner(code=>{reopen();inp.value=code;rkState.search=code;rkState.cat='';document.getElementById('rk-x').classList.add('on');rkRender();},reopen);
   };
