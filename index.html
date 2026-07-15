@@ -2268,6 +2268,12 @@ function fpModoEdicion(f){
     <div class="mm-field" style="margin-top:10px"><label>Categoría</label>
       <select id="fp-e-cat" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;background:#fff">${opcionesCat}</select>
     </div>
+    <div class="mm-field" style="margin-top:10px"><label>Código de barras (opcional)</label>
+      <div class="mm-search">
+        <input id="fp-e-barcode" value="${(p.barcode||'').replace(/"/g,'&quot;')}" placeholder="Escanea o escribe" autocomplete="off" style="padding-right:44px">
+        <button class="mm-scan" id="fp-e-scan" type="button" aria-label="Escanear">📷</button>
+      </div>
+    </div>
     <div class="mm-field" style="margin-top:10px"><label>Descripción (opcional)</label>
       <textarea id="fp-e-desc" rows="3" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit;resize:vertical">${(p.descripcion||'').replace(/</g,'&lt;')}</textarea>
     </div>
@@ -2277,28 +2283,41 @@ function fpModoEdicion(f){
     </div>`;
   document.getElementById('fp-e-cancelar').onclick=()=>fpPintar(_fpActual);
   document.getElementById('fp-e-guardar').onclick=()=>fpGuardarEdicion(p.sku);
+  document.getElementById('fp-e-scan').onclick=()=>{
+    const reopen=()=>{document.getElementById('fp-ov').classList.remove('hidden');_sincronizarNav();};
+    document.getElementById('fp-ov').classList.add('hidden');
+    openScanner(code=>{reopen();document.getElementById('fp-e-barcode').value=code;},reopen);
+  };
 }
 async function fpGuardarEdicion(sku){
   const btn=document.getElementById('fp-e-guardar');
   const nombre=document.getElementById('fp-e-nombre').value.trim();
   const categoria=document.getElementById('fp-e-cat').value;
   const descripcion=document.getElementById('fp-e-desc').value.trim();
+  const barcode=document.getElementById('fp-e-barcode').value.trim();
   if(!nombre){showToast('⚠️ El nombre no puede quedar vacío');return;}
   btn.disabled=true;btn.textContent='Guardando…';
   try{
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_producto',payload:{sku,nombre,categoria,descripcion,responsable:''}})});
     const j=await res.json();
-    if(j&&j.ok){
-      const it=DB.items.find(x=>x.ref===sku);
-      if(it){it.nombre=nombre;it.prov=categoria;it.descripcion=descripcion;}
-      persist();
-      showToast(j.sinCambios?'Sin cambios que guardar':'✅ Producto actualizado');
-      await fpAbrir(sku); // recarga la ficha completa con los datos ya confirmados desde el servidor
-      render(); // refleja el nombre/categoría nuevos en la tabla principal, sin recargar la página
-    }else{
+    if(!j||!j.ok){
       showToast('❌ '+(j&&j.error?j.error:'No se pudo guardar'));
       btn.disabled=false;btn.textContent='💾 Guardar cambios';
+      return;
     }
+    // Código de barras se guarda aparte (vive en la variante, no en el ítem general) —
+    // si falla por duplicado, el resto de los cambios ya quedó guardado igual.
+    let avisoBarcode='';
+    const resB=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_codigo_barras',payload:{sku,barcode,responsable:''}})});
+    const jb=await resB.json();
+    if(!jb||!jb.ok)avisoBarcode=' — ⚠️ código de barras: '+((jb&&jb.error)||'no se pudo guardar');
+
+    const it=DB.items.find(x=>x.ref===sku);
+    if(it){it.nombre=nombre;it.prov=categoria;it.descripcion=descripcion;if(!avisoBarcode)it.barcode=barcode;}
+    persist();
+    showToast('✅ Producto actualizado'+avisoBarcode);
+    await fpAbrir(sku); // recarga la ficha completa con los datos ya confirmados desde el servidor
+    render(); // refleja el nombre/categoría nuevos en la tabla principal, sin recargar la página
   }catch(e){
     showToast('❌ Error de conexión al guardar');
     btn.disabled=false;btn.textContent='💾 Guardar cambios';
