@@ -56,8 +56,8 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .legend.sm{gap:8px;margin-top:5px;font-size:10px}
 .legend.sm .ldot{width:6px;height:6px}
 .row-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;flex:none}
-.cart-fab{position:fixed;right:max(14px,env(safe-area-inset-right));bottom:calc(78px + env(safe-area-inset-bottom));z-index:270;width:52px;height:52px;border-radius:50%;background:var(--wa);color:#fff;border:none;font-size:22px;box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer;display:flex;align-items:center;justify-content:center}
-.cart-fab:active{background:var(--wa-d)}
+.cart-fab{position:fixed;right:max(14px,env(safe-area-inset-right));bottom:calc(78px + env(safe-area-inset-bottom));z-index:270;width:54px;height:54px;border-radius:50%;background:var(--wa);color:#fff;border:2px solid rgba(255,255,255,.35);font-size:22px;box-shadow:0 8px 20px rgba(0,0,0,.28),0 2px 6px rgba(0,0,0,.15);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.cart-fab:active{background:var(--wa-d);transform:scale(.96)}
 /* Panel del carrito: SIEMPRE montado, se muestra/oculta solo con CSS (transform+opacity+pointer-events)
    — nunca con display:none, para conservar scroll/estado y no tener que re-renderizar al abrir. */
 #tab-carrito{position:fixed;inset:0;z-index:250;background:var(--paper);overflow:hidden;padding-bottom:calc(78px + env(safe-area-inset-bottom));transform:translateY(100%);opacity:0;pointer-events:none;transition:transform .25s ease,opacity .25s ease}
@@ -560,17 +560,29 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .cat-opt:hover,.cat-opt:active{background:var(--paper)}
 .cat-opt-new{color:var(--wa-d);font-weight:700}
 .cat-opt-empty{padding:16px 13px;color:var(--muted);text-align:center;font-size:12.5px}
-.fc-row{border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:9px;background:#fff}
-.fc-row-name{width:100%;border:none;border-bottom:1px solid var(--line2);font-weight:700;font-size:13.5px;padding:2px 0 6px;margin-bottom:8px;background:transparent}
+.fc-row{border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:9px;background:#fff;overflow:hidden}
+.fc-row-name{width:100%;min-width:0;box-sizing:border-box;border:none;border-bottom:1px solid var(--line2);font-weight:700;font-size:13.5px;padding:2px 0 6px;margin-bottom:8px;background:transparent}
 .fc-row-name:focus{outline:none;border-bottom-color:var(--wa)}
-.fc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.fc-field{display:flex;flex-direction:column;gap:2px}
+.fc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;min-width:0}
+.fc-field{display:flex;flex-direction:column;gap:2px;min-width:0}
 .fc-field label{font-size:9.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.03em}
-.fc-field input{border:1.5px solid var(--line);border-radius:8px;padding:7px 8px;font-size:13px;font-family:'JetBrains Mono';font-weight:700;background:#fff}
+.fc-field input{width:100%;min-width:0;box-sizing:border-box;border:1.5px solid var(--line);border-radius:8px;padding:9px 8px;font-size:13px;font-family:'JetBrains Mono';font-weight:700;background:#fff}
 .fc-field input:focus{outline:none;border-color:var(--wa)}
 .fc-field.fc-out input{background:var(--paper);color:var(--ink2);border-color:var(--line2)}
 .fc-field.fc-psico input{font-weight:800;color:var(--ink);font-size:14px}
 .fc-row-meta{font-size:10.5px;color:var(--muted);margin-top:6px}
+#fc-ov .mm-body{overflow-x:hidden}
+.fc-hist-item{border:1px solid var(--line2);border-radius:10px;margin-bottom:8px;overflow:hidden}
+.fc-hist-item:last-child{margin-bottom:0}
+.fc-hist-item-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 11px;cursor:pointer;-webkit-tap-highlight-color:transparent;background:var(--paper)}
+.fc-hist-item-head b{font-size:12.5px}
+.fc-hist-item-head .accordion-chev{width:14px;height:14px;color:var(--muted);transition:transform .2s ease;flex-shrink:0}
+.fc-hist-item-head.open .accordion-chev{transform:rotate(180deg)}
+.fc-hist-item-meta{display:block;font-size:10px;color:var(--muted);margin-top:1px}
+.fc-hist-item-body{padding:0 11px}
+.fc-hist-item-body:not(.collapsed){padding:8px 11px}
+.fc-hist-line{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed var(--line2);font-size:11.5px}
+.fc-hist-line:last-child{border-bottom:none}
 .qstep{display:inline-flex;align-items:center;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
 .qstep.has{border-color:var(--wa)}
 .qbtn{border:none;background:#F4F3EE;width:23px;height:32px;font-size:16px;font-weight:700;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;user-select:none;-webkit-user-select:none}
@@ -628,6 +640,11 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .btn{width:100%;border:none;border-radius:9px;padding:13px;font-family:'Archivo';font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
 .btn-wa{background:var(--wa);color:#fff}.btn-wa:active{background:var(--wa-d)}
 .btn-ghost{background:none;color:var(--muted);font-size:12px;padding:8px;width:auto;font-weight:600}
+.order-actions{display:flex;gap:8px;align-items:stretch}
+.oact-btn{flex-shrink:0;width:46px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink2);display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.oact-btn:active{background:var(--paper)}
+.oact-btn.oact-danger{color:var(--rojo);border-color:#F3D4D0}
+.oact-btn.oact-danger:active{background:#FCE9E7}
 .copied{background:var(--verde)!important}
 .ov-prov{font-family:'Archivo';font-weight:700;font-size:13px;cursor:pointer;color:var(--ink)}
 .method{background:var(--ink);color:#d7dbe1;border-radius:12px;padding:18px 20px;margin:4px 16px 24px;max-width:1490px;margin-left:auto;margin-right:auto}
@@ -712,7 +729,7 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
     <span class="upd" id="updlabel"></span>
   </div>
 </div>
-<button class="cart-fab" id="cart-fab" aria-label="Ver carrito">🛍️<span class="cart-badge" id="cart-badge"></span></button>
+<button class="cart-fab" id="cart-fab" aria-label="Ver carrito"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M3 4h2l2.2 11h9.6L19 8H6.4"/></svg><span class="cart-badge" id="cart-badge"></span></button>
 <div id="tab-pedido">
 <div class="sticky-hdr" id="sticky-hdr">
   <div class="shc-inner">
@@ -1056,13 +1073,11 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
         <div class="order-head"><div class="t"><span class="wa-ico">W</span>Carrito del pedido</div><div class="s" id="order-sub">Proveedor —</div></div>
         <div class="order-body" id="order-body"></div>
         <div class="order-foot">
-          <div class="tot-line">Líneas a pedir <b id="tot-skus">0</b></div>
-          <div class="tot-line">Unidades totales <b id="tot-uds">0</b></div>
           <div class="tot-big"><span class="l">Costo estimado</span><span class="v mono" id="tot-cost">$0</span></div>
-          <button class="btn btn-wa" id="btn-copy"><span class="wa-ico" style="background:rgba(255,255,255,.25)">W</span>Copiar pedido para WhatsApp</button>
-          <div style="display:flex;gap:8px;justify-content:center;margin-top:2px">
-            <button class="btn btn-ghost" id="btn-suggest">↺ Volver a sugerido</button>
-            <button class="btn btn-ghost" id="btn-clear">✕ Vaciar (0)</button>
+          <div class="order-actions">
+            <button class="btn btn-wa" id="btn-copy" style="flex:1;min-width:0"><span class="wa-ico" style="background:rgba(255,255,255,.25)">W</span>Copiar pedido para WhatsApp</button>
+            <button class="oact-btn" id="btn-suggest" aria-label="Volver a sugerido" title="Volver a sugerido"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg></button>
+            <button class="oact-btn oact-danger" id="btn-clear" aria-label="Vaciar carrito" title="Vaciar carrito"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg></button>
           </div>
         </div>
       </div>
@@ -1313,11 +1328,18 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
     <div class="mm-head"><h3>📷 Escanear factura</h3></div>
     <div class="mm-body">
       <div id="fc-paso-foto">
-        <label class="loadbtn" id="fc-foto-label" style="display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg>
-          Tomar foto de la factura
-          <input type="file" accept="image/*" capture="environment" id="fc-input" style="display:none">
-        </label>
+        <div style="display:flex;gap:8px">
+          <label class="loadbtn" id="fc-foto-label" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;white-space:nowrap;font-size:12.5px">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg>
+            Tomar foto
+            <input type="file" accept="image/*" capture="environment" id="fc-input" style="display:none">
+          </label>
+          <label class="loadbtn" id="fc-galeria-label" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;white-space:nowrap;font-size:12.5px">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            Subir de Galería
+            <input type="file" accept="image/*" id="fc-input-galeria" style="display:none">
+          </label>
+        </div>
         <div id="fc-preview-wrap" class="hidden" style="margin-top:12px">
           <img id="fc-preview" style="width:100%;border-radius:10px;border:1px solid var(--line);display:block">
           <button class="mm-save" id="fc-procesar" style="width:100%;margin-top:10px">Procesar factura</button>
@@ -1330,6 +1352,10 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
         <div id="fc-list"></div>
         <button class="mm-save" id="fc-guardar" style="margin-top:6px">Guardar cálculos</button>
         <button class="loadbtn" id="fc-otra" style="width:100%;margin-top:8px">Escanear otra factura</button>
+      </div>
+      <div class="scalecard hidden" id="fc-hist-card" style="margin-top:14px">
+        <div class="scale-head" id="fc-hist-head"><div><div class="t">🗂️ Historial de facturas calculadas</div><div class="s" id="fc-hist-sub">0 guardadas en esta sesión</div></div><svg class="accordion-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+        <div class="scale-body accordion-body collapsed" id="fc-hist-body"></div>
       </div>
       <button class="loadbtn" id="fc-cerrar" style="width:100%;margin-top:8px">Cerrar</button>
     </div>
@@ -1943,9 +1969,7 @@ function currentOrder(){const lines=[];const base=(state.search||state.allProv)?
 // puede aparecer una fila nueva que antes no existía).
 function cartUpdateTotals(){
   const lines=currentOrder();
-  const uds=lines.reduce((s,l)=>s+l.q,0),cost=lines.reduce((s,l)=>s+l.cost,0);
-  document.getElementById('tot-skus').textContent=lines.length;
-  document.getElementById('tot-uds').textContent=fmt.format(uds);
+  const cost=lines.reduce((s,l)=>s+l.cost,0);
   document.getElementById('tot-cost').textContent=peso(cost);
   const badge=document.getElementById('cart-badge');
   if(badge){badge.textContent=lines.length>99?'99+':lines.length;badge.classList.toggle('on',lines.length>0);}
@@ -2048,7 +2072,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-16.11';
+const APP_VERSION='2026-07-16.12';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -3165,13 +3189,14 @@ let _fcImagenB64=null,_fcMediaType='image/jpeg',_fcItems=[];
 function fcReset(){
   _fcImagenB64=null;_fcItems=[];
   document.getElementById('fc-input').value='';
+  document.getElementById('fc-input-galeria').value='';
   document.getElementById('fc-preview-wrap').classList.add('hidden');
   document.getElementById('fc-loading').classList.add('hidden');
   document.getElementById('fc-error').classList.add('hidden');
   document.getElementById('fc-resultados').classList.add('hidden');
   document.getElementById('fc-paso-foto').classList.remove('hidden');
 }
-document.getElementById('fc-input').addEventListener('change',ev=>{
+function fcCargarArchivo(ev){
   const file=ev.target.files&&ev.target.files[0];
   if(!file)return;
   _fcMediaType=file.type||'image/jpeg';
@@ -3183,7 +3208,9 @@ document.getElementById('fc-input').addEventListener('change',ev=>{
     document.getElementById('fc-error').classList.add('hidden');
   };
   reader.readAsDataURL(file);
-});
+}
+document.getElementById('fc-input').addEventListener('change',fcCargarArchivo);
+document.getElementById('fc-input-galeria').addEventListener('change',fcCargarArchivo);
 document.getElementById('fc-procesar').onclick=async()=>{
   if(!_fcImagenB64)return;
   const err=document.getElementById('fc-error');err.classList.add('hidden');
@@ -3243,11 +3270,40 @@ document.getElementById('fc-guardar').onclick=async()=>{
   try{
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'guardar_calculo_precio',payload:{items}})});
     const j=await res.json();
-    if(j&&j.ok){showToast('✓ Guardado: '+j.guardados+' producto(s)');fcReset();cerrarModal('fc-ov');}
+    if(j&&j.ok){
+      showToast('✓ Guardado: '+j.guardados+' producto(s)');
+      fcAgregarAlHistorial(j.factura_id,items);
+      fcReset();cerrarModal('fc-ov');
+    }
     else showToast('Error: '+((j&&j.error)||'no se pudo guardar'));
   }catch(e){showToast('Error de conexión');}
   finally{btn.disabled=false;}
 };
+// ---- Historial de facturas calculadas (sesión actual) ----
+// Confirma visualmente que el guardado se registró. Vive solo en memoria del navegador
+// mientras la pestaña sigue abierta — no reemplaza la tabla D1 (esa es la fuente real),
+// es solo una bitácora rápida para tranquilidad del usuario en la misma sesión.
+let _fcHistorial=[];
+function fcAgregarAlHistorial(facturaId,items){
+  const fecha=new Date().toLocaleString('es-CL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+  _fcHistorial.unshift({facturaId,fecha,items});
+  document.getElementById('fc-hist-card').classList.remove('hidden');
+  fcRenderHistorial();
+  toggleAccordion(document.getElementById('fc-hist-head'),document.getElementById('fc-hist-body'),true);
+}
+function fcRenderHistorial(){
+  document.getElementById('fc-hist-sub').textContent=_fcHistorial.length+(_fcHistorial.length===1?' guardada en esta sesión':' guardadas en esta sesión');
+  document.getElementById('fc-hist-body').innerHTML=_fcHistorial.map(f=>`<div class="fc-hist-item">
+      <div class="fc-hist-item-head"><div><b>${f.items.length} producto(s)</b><span class="fc-hist-item-meta">${f.fecha} · ${f.facturaId}</span></div><svg class="accordion-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+      <div class="fc-hist-item-body accordion-body collapsed">${f.items.map(it=>`<div class="fc-hist-line"><span>${it.producto}</span><span>${peso(it.precio_psicologico||it.precio_venta)}</span></div>`).join('')}</div>
+    </div>`).join('');
+}
+document.getElementById('fc-hist-head').onclick=()=>{toggleAccordion(document.getElementById('fc-hist-head'),document.getElementById('fc-hist-body'));};
+document.getElementById('fc-hist-body').addEventListener('click',ev=>{
+  const head=ev.target.closest('.fc-hist-item-head');
+  if(!head)return;
+  toggleAccordion(head,head.closest('.fc-hist-item').querySelector('.fc-hist-item-body'));
+});
 document.getElementById('fc-otra').onclick=fcReset;
 document.getElementById('fc-cerrar').onclick=()=>{cerrarModal('fc-ov');fcReset();};
 document.getElementById('mas-q-factura').onclick=()=>{cerrarModal('mas-ov');abrirModal('fc-ov');fcReset();};
