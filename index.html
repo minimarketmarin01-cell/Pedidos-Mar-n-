@@ -58,6 +58,7 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .row-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;flex:none}
 .cart-fab{position:fixed;right:max(14px,env(safe-area-inset-right));bottom:calc(78px + env(safe-area-inset-bottom));z-index:270;width:54px;height:54px;border-radius:50%;background:var(--wa);color:#fff;border:2px solid rgba(255,255,255,.35);font-size:22px;box-shadow:0 8px 20px rgba(0,0,0,.28),0 2px 6px rgba(0,0,0,.15);cursor:pointer;display:flex;align-items:center;justify-content:center}
 .cart-fab:active{background:var(--wa-d);transform:scale(.96)}
+.cart-fab.fab-oculto{display:none}
 /* Panel del carrito: SIEMPRE montado, se muestra/oculta solo con CSS (transform+opacity+pointer-events)
    — nunca con display:none, para conservar scroll/estado y no tener que re-renderizar al abrir. */
 #tab-carrito{position:fixed;inset:0;z-index:250;background:var(--paper);overflow:hidden;padding-bottom:calc(78px + env(safe-area-inset-bottom));transform:translateY(100%);opacity:0;pointer-events:none;transition:transform .25s ease,opacity .25s ease}
@@ -583,11 +584,22 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .fc-hist-act:active{background:var(--line)}
 .fc-hist-act-danger{color:var(--rojo)}
 .fc-hist-act-danger:active{background:#FCE9E7}
+.fc-scan-box{padding:22px 8px 6px;text-align:center}.fc-scan-frame{position:relative;width:100%;max-width:220px;height:118px;margin:0 auto 14px;border-radius:12px;overflow:hidden;background:linear-gradient(135deg,var(--paper),#EFEBDF);border:1.5px solid var(--line)}
+.fc-scan-frame::before{content:'';position:absolute;inset:0;opacity:.35;background:
+  linear-gradient(var(--line2) 1px,transparent 1px) 0 0/100% 25%,
+  linear-gradient(90deg,var(--line2) 1px,transparent 1px) 0 0/25% 100%}
+.fc-scan-beam{position:absolute;left:0;right:0;top:-34%;height:34%;background:linear-gradient(180deg,rgba(31,168,85,0) 0%,rgba(31,168,85,.4) 45%,rgba(31,168,85,.9) 50%,rgba(31,168,85,.4) 55%,rgba(31,168,85,0) 100%);animation:fcScanMove 1.8s ease-in-out infinite}
+@keyframes fcScanMove{0%{top:-34%}50%{top:100%}100%{top:-34%}}
+.fc-scan-txt{color:var(--muted);font-size:13px;font-weight:600}
+@media(prefers-reduced-motion:reduce){.fc-scan-beam{animation:none;top:33%}}
 .fc-hist-item-meta{display:block;font-size:10px;color:var(--muted);margin-top:1px}
 .fc-hist-item-body{padding:0 11px}
 .fc-hist-item-body:not(.collapsed){padding:8px 11px}
-.fc-hist-line{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed var(--line2);font-size:11.5px}
+.fc-hist-line{padding:6px 0;border-bottom:1px dashed var(--line2)}
 .fc-hist-line:last-child{border-bottom:none}
+.fc-hist-line-name{font-size:11.5px;font-weight:700;margin-bottom:3px}
+.fc-hist-line-nums{display:flex;gap:11px;font-size:10.5px;color:var(--muted);font-family:'JetBrains Mono'}
+.fc-hist-line-nums b{color:var(--ink2);font-weight:700}
 .qstep{display:inline-flex;align-items:center;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
 .qstep.has{border-color:var(--wa)}
 .qbtn{border:none;background:#F4F3EE;width:23px;height:32px;font-size:16px;font-weight:700;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;user-select:none;-webkit-user-select:none}
@@ -1355,7 +1367,10 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
           <img id="fc-preview" style="width:100%;border-radius:10px;border:1px solid var(--line);display:block">
           <button class="mm-save" id="fc-procesar" style="width:100%;margin-top:10px">Procesar factura</button>
         </div>
-        <div id="fc-loading" class="hidden" style="text-align:center;padding:24px 8px;color:var(--muted);font-size:13px">Analizando factura con Claude…</div>
+        <div id="fc-loading" class="hidden fc-scan-box">
+          <div class="fc-scan-frame"><div class="fc-scan-beam"></div></div>
+          <div class="fc-scan-txt">Analizando factura con Claude…</div>
+        </div>
         <div id="fc-error" class="hidden" style="margin-top:10px;padding:10px 12px;border-radius:10px;background:#FCE9E7;color:var(--rojo);font-size:12.5px"></div>
       </div>
       <div id="fc-resultados" class="hidden">
@@ -2083,7 +2098,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-16.13';
+const APP_VERSION='2026-07-16.14';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -2274,6 +2289,7 @@ function showScreen(name){
   if(name==='pedido')document.getElementById('bn-pedidos').classList.add('active');
   playTabAnim(name);
   persistUI();
+  _actualizarVisibilidadFab();
 }
 // El carrito YA NO es una "pantalla" (showScreen) — es un panel superpuesto, siempre montado,
 // que se muestra/oculta con una clase CSS. El contenido ya se mantiene al día solo con que
@@ -2307,16 +2323,19 @@ function abrirModal(id){
   el.style.removeProperty('display');
   void el.offsetWidth;   // fuerza a que el navegador aplique el cambio ya mismo
   _sincronizarNav();
+  _actualizarVisibilidadFab();
 }
 function cerrarModal(id){
   const el=document.getElementById(id);
   if(el){el.classList.add('hidden');el.style.removeProperty('display');}
   _sincronizarNav();
+  _actualizarVisibilidadFab();
 }
 function cerrarOverlays(){
   document.querySelectorAll('.mm-ov, .scan-ov').forEach(o=>{o.classList.add('hidden');o.style.removeProperty('display');});
   if(typeof toggleCarrito==='function')toggleCarrito(false); // en celular cierra el panel; en tablet/escritorio no tiene efecto (CSS lo mantiene visible)
   _sincronizarNav();
+  _actualizarVisibilidadFab();
 }
 
 // ===================== NAVEGACIÓN + BOTÓN ATRÁS (PWA) =====================
@@ -2336,6 +2355,19 @@ function _sincronizarNav(){
   let activeId='bn-pedidos';
   if(ov){activeId=directos[ov.id]||(ov.id==='scan-ov'?null:'bn-mas');}
   if(activeId)document.querySelectorAll('.bn-item').forEach(b=>b.classList.toggle('active',b.id===activeId));
+}
+// ---- Visibilidad condicional del FAB del carrito ----
+// Solo debe verse en "Armar pedido" (Pedidos) y nunca tapado por un modal abierto encima
+// (Recepción, Vencimientos, Más, Escanear factura, etc.). En tablet/escritorio el FAB ya
+// queda oculto siempre por CSS (html.carrito-fijo .cart-fab{display:none}), así que esto
+// solo importa en celular — no interfiere con esa regla existente.
+function _actualizarVisibilidadFab(){
+  const fab=document.getElementById('cart-fab');
+  const tab=document.getElementById('tab-pedido');
+  if(!fab||!tab)return;
+  const enPedidos=!tab.classList.contains('hidden');
+  const hayModal=!!_overlaySuperior();
+  fab.classList.toggle('fab-oculto',!enPedidos||hayModal);
 }
 // Botón físico "Atrás" de Android: cierra SOLO la ventana abierta; si no hay
 // ninguna y estás en el carrito, vuelve a Pedidos; y solo sale de la app cuando
@@ -3241,22 +3273,61 @@ document.getElementById('fc-procesar').onclick=async()=>{
     document.getElementById('fc-loading').classList.add('hidden');
   }
 };
+// ---- IVA inteligente ----
+// Si el costo extraído de la factura NO incluye IVA (o Claude no está seguro), se le suma
+// automáticamente el 19% para usar el costo BRUTO real como base del margen y precio de
+// venta — así el margen calculado nunca queda inflado por estar comparando venta (con IVA)
+// contra un costo neto (sin IVA).
+const FC_IVA=0.19;
+function fcCostoConIva(costoRaw,incluyeIva){
+  costoRaw=Number(costoRaw)||0;
+  if(costoRaw<=0)return 0;
+  return incluyeIva?costoRaw:costoRaw*(1+FC_IVA);
+}
+// ---- Parser de unidades desde el nombre del artículo ----
+// Las facturas suelen imprimir el costo de la LÍNEA completa (una caja/display), no el
+// costo real por unidad suelta. Se deduce cuántas unidades trae el nombre para dividir el
+// costo y calcular el margen sobre el costo unitario real, no sobre el de la caja entera.
+// "CHOCMAN 32X33 GR" -> 32 (dos números: se toma el primero)
+// "COSTA OBSESION 1X24X85 GR" -> 24 (tres números: se toma el del medio — caja x unidades x gramaje)
+// "NECTAR VIVO DURAZNO 12X1 LT" -> 12
+// "PV PANCHITOS PROMO 12 UN 12X180 GR" -> 12 (patrón explícito "N UN" tiene prioridad)
+function fcExtraerUnidades(nombre){
+  const s=String(nombre||'').toUpperCase();
+  let m=s.match(/(\d+)\s*UN\b/);
+  if(m)return parseInt(m[1],10)||1;
+  m=s.match(/(\d+)\s*X\s*(\d+)\s*X\s*(\d+)/);
+  if(m)return parseInt(m[2],10)||1;
+  m=s.match(/(\d+)\s*X\s*(\d+)/);
+  if(m)return parseInt(m[1],10)||1;
+  return 1;
+}
 function fcRenderResultados(){
   document.getElementById('fc-paso-foto').classList.add('hidden');
   const wrap=document.getElementById('fc-resultados');wrap.classList.remove('hidden');
   const list=document.getElementById('fc-list');
   list.innerHTML=_fcItems.map(it=>{
-    const margen=(it.margen!=null?it.margen:(FC_MARGEN_POR_CATEGORIA[it.categoria_sugerida]||FC_MARGEN_POR_CATEGORIA.otro));
-    const venta=fcVenta(it.costo_unitario,margen),psico=fcPsico(venta);
+    const esEdicion=it.margen!=null;
+    const margen=esEdicion?it.margen:(FC_MARGEN_POR_CATEGORIA[it.categoria_sugerida]||FC_MARGEN_POR_CATEGORIA.otro);
+    const costoBruto=esEdicion?it.costo_unitario:fcCostoConIva(it.costo_unitario,it.incluye_iva);
+    const unidades=esEdicion?1:fcExtraerUnidades(it.producto);
+    const costoFinal=costoBruto/(unidades||1);
+    const venta=fcVenta(costoFinal,margen),psico=fcPsico(venta);
+    const meta=esEdicion?['Editando cálculo guardado — vuelve a guardar para actualizarlo']:[
+      it.cantidad?('Cantidad en factura: '+it.cantidad):null,
+      it.incluye_iva?'costo ya incluía IVA':'+19% IVA aplicado',
+      unidades>1?(peso(costoBruto)+' ÷ '+unidades+' u = '+peso(costoFinal)+'/u'):null,
+      'categoría sugerida: '+it.categoria_sugerida
+    ].filter(Boolean);
     return `<div class="fc-row" data-id="${it.id}">
       <input class="fc-row-name" value="${String(it.producto).replace(/"/g,'&quot;')}" data-f="producto">
       <div class="fc-grid">
-        <div class="fc-field"><label>Costo unitario</label><input inputmode="numeric" value="${Math.round(it.costo_unitario)}" data-f="costo"></div>
+        <div class="fc-field"><label>Costo unitario</label><input inputmode="numeric" value="${Math.round(costoFinal)}" data-f="costo"></div>
         <div class="fc-field"><label>Margen %</label><input inputmode="numeric" value="${margen}" data-f="margen"></div>
         <div class="fc-field fc-out"><label>Precio venta</label><input inputmode="numeric" value="${Math.round(venta)}" data-f="venta"></div>
         <div class="fc-field fc-out fc-psico"><label>Precio psicológico</label><input inputmode="numeric" value="${psico}" data-f="psico"></div>
       </div>
-      <div class="fc-row-meta">${it.cantidad?('Cantidad en factura: '+it.cantidad+' · '):''}${it.incluye_iva?'Costo incluye IVA':'Costo neto (sin IVA)'} · categoría sugerida: ${it.categoria_sugerida}</div>
+      <div class="fc-row-meta">${meta.join(' · ')}</div>
     </div>`;
   }).join('');
 }
@@ -3316,7 +3387,10 @@ function fcRenderHistorial(){
           <svg class="accordion-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
       </div>
-      <div class="fc-hist-item-body accordion-body collapsed">${f.items.map(it=>`<div class="fc-hist-line"><span>${it.producto}</span><span>${peso(it.precio_psicologico||it.precio_venta)}</span></div>`).join('')}</div>
+      <div class="fc-hist-item-body accordion-body collapsed">${f.items.map(it=>`<div class="fc-hist-line">
+          <div class="fc-hist-line-name">${it.producto}</div>
+          <div class="fc-hist-line-nums"><span>Costo <b>${peso(it.costo_unitario)}</b></span><span>Venta <b>${peso(it.precio_venta)}</b></span><span>Margen <b>${Math.round(it.margen)||0}%</b></span></div>
+        </div>`).join('')}</div>
     </div>`;
   }).join('');
 }
@@ -4877,6 +4951,7 @@ requestAnimationFrame(()=>requestAnimationFrame(()=>{
   window.dispatchEvent(new Event('resize'));
 }));
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(_actualizarLayout);
+_actualizarVisibilidadFab();
 // guarda la posición de scroll mientras navegas, y al salir/cambiar de app
 let _scrollT=null;
 window.addEventListener('scroll',()=>{clearTimeout(_scrollT);_scrollT=setTimeout(persistUI,200);},{passive:true});
