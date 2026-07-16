@@ -549,6 +549,17 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .b-sobre{background:var(--gris-bg);color:var(--gris)}.b-sobre .d{background:var(--gris)}
 .b-sinstock{background:var(--azul-bg);color:var(--azul)}.b-sinstock .d{background:var(--azul)}
 .qcell{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.cat-combo{position:relative;flex:1;min-width:0}
+.cat-combo-input{width:100%;padding:11px 34px 11px 10px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;background:#fff;color:var(--text);cursor:pointer}
+.cat-combo-input:focus{outline:none;border-color:var(--wa)}
+.cat-combo-chev{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--muted);pointer-events:none}
+.cat-combo-menu{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.16);max-height:260px;overflow-y:auto;-webkit-overflow-scrolling:touch;z-index:400}
+.cat-combo-menu.hidden{display:none}
+.cat-opt{padding:11px 13px;font-size:13.5px;cursor:pointer;border-bottom:1px solid var(--line2);-webkit-tap-highlight-color:transparent}
+.cat-opt:last-child{border-bottom:none}
+.cat-opt:hover,.cat-opt:active{background:var(--paper)}
+.cat-opt-new{color:var(--wa-d);font-weight:700}
+.cat-opt-empty{padding:16px 13px;color:var(--muted);text-align:center;font-size:12.5px}
 .qstep{display:inline-flex;align-items:center;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
 .qstep.has{border-color:var(--wa)}
 .qbtn{border:none;background:#F4F3EE;width:23px;height:32px;font-size:16px;font-weight:700;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;user-select:none;-webkit-user-select:none}
@@ -1218,7 +1229,12 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
       <div class="mm-field">
         <label>Categoría *</label>
         <div style="display:flex;gap:8px">
-          <select id="cp-cat" style="flex:1;min-width:0;padding:11px 10px;border:1.5px solid var(--line);border-radius:10px;font-size:14px"><option value="">Cargando…</option></select>
+          <div class="cat-combo" id="cat-combo">
+            <input id="cp-cat-input" class="cat-combo-input" placeholder="Elige una categoría…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+            <svg class="cat-combo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            <select id="cp-cat" style="display:none"><option value="">Cargando…</option></select>
+            <div class="cat-combo-menu hidden" id="cat-combo-menu" role="listbox"></div>
+          </div>
           <button class="loadbtn" id="cp-cat-nueva" type="button" style="white-space:nowrap">➕ Nueva</button>
         </div>
         <div id="cp-cat-nuevabox" class="hidden" style="gap:8px;margin-top:8px">
@@ -1954,7 +1970,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-16.9';
+const APP_VERSION='2026-07-16.10';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -2891,6 +2907,8 @@ function cpLlenarSelect(preselectId){
   s.innerHTML='<option value="">Elige una categoría…</option>'+_cpCats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
   if(prev)s.value=prev;
   cpValidar();
+  const input=document.getElementById('cp-cat-input');
+  if(input){const chosen=_cpCats.find(c=>String(c.id)===String(s.value));input.value=chosen?chosen.name:'';}
 }
 function cpValidar(){
   const nombre=(document.getElementById('cp-nombre').value||'').trim();
@@ -2918,6 +2936,96 @@ document.getElementById('cp-cat-crear').onclick=async()=>{
   }catch(e){showToast('Error de conexión');}
   finally{btn.disabled=false;}
 };
+// ---- Combobox de categoría con búsqueda (Crear producto) ----
+// El <select> #cp-cat original queda oculto en el DOM como única fuente de verdad:
+// cpValidar(), cpLlenarSelect() y el flujo de "crear categoría nueva" siguen intactos.
+// Este bloque solo lee _cpCats, escribe sel.value y dispara 'change'. El desplegable se
+// monta en <body> (portal) mientras está abierto — igual que el buscador de proveedor —
+// para no quedar recortado por .mm-card{overflow:hidden} ni por el scroll de .mm-body.
+let _catComboHome=null;
+function catComboItems(){return _cpCats.slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),'es'));}
+function catComboPosition(){
+  const anchor=document.getElementById('cat-combo'),menu=document.getElementById('cat-combo-menu');
+  if(!anchor||!menu||menu.classList.contains('hidden'))return;
+  const r=anchor.getBoundingClientRect();
+  menu.style.left=r.left+'px';menu.style.top=(r.bottom+4)+'px';menu.style.width=r.width+'px';
+}
+function catComboMount(){
+  const menu=document.getElementById('cat-combo-menu');
+  if(!menu||_catComboHome)return;
+  _catComboHome={parent:menu.parentNode,next:menu.nextSibling};
+  document.body.appendChild(menu);
+  menu.style.position='fixed';
+  catComboPosition();
+}
+function catComboUnmount(){
+  const menu=document.getElementById('cat-combo-menu');
+  if(!menu||!_catComboHome)return;
+  menu.style.position='';menu.style.left='';menu.style.top='';menu.style.width='';
+  const{parent,next}=_catComboHome;
+  if(next&&next.parentNode===parent)parent.insertBefore(menu,next);else parent.appendChild(menu);
+  _catComboHome=null;
+}
+function catComboRender(query){
+  const menu=document.getElementById('cat-combo-menu');
+  if(!menu)return;
+  const q=normTxt(query||'');
+  const items=catComboItems().filter(c=>!q||normTxt(c.name).indexOf(q)>-1);
+  let html=items.length
+    ?items.map(c=>`<div class="cat-opt" role="option" data-id="${c.id}" data-name="${String(c.name).replace(/"/g,'&quot;')}">${c.name}</div>`).join('')
+    :'<div class="cat-opt-empty">No se encontraron categorías</div>';
+  html+=`<div class="cat-opt cat-opt-new" data-new="1">➕ Nueva categoría${query?` "${query.trim()}"`:''}</div>`;
+  menu.innerHTML=html;
+}
+function catComboOpen(){
+  const menu=document.getElementById('cat-combo-menu'),input=document.getElementById('cp-cat-input');
+  if(!menu||!input)return;
+  catComboRender(input.value);
+  menu.classList.remove('hidden');
+  input.setAttribute('aria-expanded','true');
+  catComboMount();
+}
+function catComboClose(){
+  const menu=document.getElementById('cat-combo-menu'),input=document.getElementById('cp-cat-input');
+  if(!menu)return;
+  menu.classList.add('hidden');
+  if(input)input.setAttribute('aria-expanded','false');
+  catComboUnmount();
+}
+function catComboChoose(id,name){
+  const sel=document.getElementById('cp-cat');
+  sel.value=id;
+  sel.dispatchEvent(new Event('change'));
+  document.getElementById('cp-cat-input').value=name;
+  catComboClose();
+}
+(function(){
+  const input=document.getElementById('cp-cat-input'),menu=document.getElementById('cat-combo-menu');
+  if(!input||!menu)return;
+  input.addEventListener('focus',catComboOpen);
+  input.addEventListener('click',()=>{if(menu.classList.contains('hidden'))catComboOpen();});
+  input.addEventListener('input',()=>{catComboRender(input.value);if(menu.classList.contains('hidden')){menu.classList.remove('hidden');catComboMount();}else catComboPosition();});
+  menu.addEventListener('click',ev=>{
+    const opt=ev.target.closest('.cat-opt');
+    if(!opt||opt.classList.contains('cat-opt-empty'))return;
+    if(opt.dataset.new){
+      catComboClose();
+      document.getElementById('cp-cat-nuevabox').classList.remove('hidden');
+      const nombreInp=document.getElementById('cp-cat-nuevanom');
+      nombreInp.value=input.value.trim();
+      nombreInp.focus();
+      return;
+    }
+    catComboChoose(opt.dataset.id,opt.dataset.name);
+  });
+  document.addEventListener('pointerdown',ev=>{
+    if(menu.classList.contains('hidden'))return;
+    if(input.contains(ev.target)||menu.contains(ev.target))return;
+    catComboClose();
+  });
+  window.addEventListener('resize',()=>{if(_catComboHome)catComboPosition();});
+  window.addEventListener('scroll',()=>{if(_catComboHome)catComboPosition();},true);
+})();
 document.getElementById('cp-scan').onclick=()=>{
   const reopen=()=>{document.getElementById('cp-ov').classList.remove('hidden');_sincronizarNav();};
   document.getElementById('cp-ov').classList.add('hidden');
