@@ -36,6 +36,12 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .upd b{color:#c7ccd3}
 /* ===== Encabezado fijo (sticky) de Pedidos: compacto, sin chips ni gráficos ===== */
 .sticky-hdr{position:sticky;top:0;z-index:120;background:var(--card);border-bottom:1px solid var(--line);padding:4px max(10px,env(safe-area-inset-right)) 5px max(10px,env(safe-area-inset-left));box-shadow:0 2px 10px rgba(0,0,0,.05)}
+/* Con el carrito fijo en tablet (z-index 250) siempre visible, el contenedor del buscador
+   quedaba "atrapado" debajo de él (aunque el propio menú tuviera más z-index, no alcanza
+   si su contenedor padre tiene menos) — se soluciona subiendo sticky-hdr, pero SOLO mientras
+   el menú desplegable está realmente abierto, para no interferir con nada más el resto del
+   tiempo. :has() reacciona solo a la clase .hidden que ya se togglea hoy — cero JS nuevo. */
+#sticky-hdr:has(#prov-menu:not(.hidden)){z-index:260}
 .prov-acc-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:5px 10px;font-family:'Archivo';font-weight:800;font-size:11.5px;color:var(--ink);cursor:pointer;margin-bottom:4px}
 .prov-acc-toggle:active{background:var(--line)}
 .prov-acc-caret{transition:transform .2s ease;color:var(--muted);font-size:12px}
@@ -71,7 +77,7 @@ html.carrito-fijo{
 }
 html.carrito-fijo .cart-fab{display:none} /* el panel ya está siempre visible, no hace falta el botón */
 html.carrito-fijo #tab-carrito{
-  top:var(--hdr-h,64px);
+  top:var(--top-h,52px);
   bottom:var(--nav-h,78px);
   width:var(--cart-w);
   left:auto;right:0;
@@ -334,7 +340,7 @@ input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .prov-mic.listening{background:var(--rojo);color:#fff;animation:micpulse 1s infinite}
 .prov-scan{position:absolute;top:50%;right:26px;transform:translateY(-50%);width:19px;height:19px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:10.5px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
 .prov-scan:active{background:var(--line)}
-.prov-menu{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.16);max-height:min(320px,46vh);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;z-index:60}
+.prov-menu{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.16);max-height:min(320px,46vh);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;z-index:260}
 .prov-menu.hidden{display:none}
 .prov-opt{padding:11px 13px;font-size:14px;cursor:pointer;border-bottom:1px solid #F2F1EC;display:flex;justify-content:space-between;align-items:center;gap:10px}
 .prov-opt:last-child{border-bottom:none}
@@ -486,8 +492,10 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .card-thumb{width:44px;height:44px;border-radius:10px;object-fit:cover;background:var(--gris-bg,#F3F1EA);display:block}
 .card-thumb-dot{width:14px;height:14px;border-radius:50%;margin:15px}
 .card-main{flex:1;min-width:0}
-.card-stats{display:flex;gap:10px;margin-top:4px;font-size:11px;font-weight:600;color:var(--muted);flex-wrap:wrap}
+.card-stats{display:flex;gap:10px;margin-top:4px;font-size:11.5px;font-weight:700;color:var(--ink);flex-wrap:wrap}
 .card-stats .cstat{display:flex;align-items:center;gap:2px}
+.card-stats .cstat-label{color:var(--muted);font-weight:600;margin-right:1px}
+.card-stats .cstat-stock{font-weight:800;color:var(--ink)}
 .card-stepper{flex-shrink:0;display:flex;align-items:center}
 .tdc{text-align:center!important;padding-left:2px!important;padding-right:2px!important}
 .prod-name-wrap{display:flex;align-items:flex-start;gap:3px;min-width:0}
@@ -504,7 +512,7 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .prod-meta{font-size:9.5px;color:var(--muted);font-weight:600;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .prod-prov{font-size:9.5px;font-weight:700;color:var(--muted);font-family:'Archivo';text-transform:uppercase;letter-spacing:.04em;padding-right:6px;border-right:1px solid var(--line)}
 .prod-prices{display:flex;align-items:center;gap:4px;margin-top:1px;font-size:10.5px;font-family:'JetBrains Mono';font-weight:600;line-height:1.15;flex-wrap:wrap}
-.pp-v{color:var(--text)}
+.pp-v{color:var(--ink);font-weight:800;font-size:11.5px}
 .pp-c{color:var(--gold)}
 .pp-sep{color:var(--line);font-weight:400}
 .prod-prices .price-mg{font-weight:800}
@@ -1746,9 +1754,9 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
         `${showProv?`<div class="prod-meta">${it.prov}</div>`:''}`+
         priceLine+
         `<div class="card-stats">`+
-          `<span class="cstat"><span class="trend ${a.trend.k}">${a.trend.t}</span>VTA ${fmt1(ventasPeriodo)}</span>`+
-          `<span class="cstat">STK ${statStock}</span>`+
-          `<span class="cstat" style="color:${covColor(a)}">COB ${covTxt}</span>`+
+          `<span class="cstat"><span class="trend ${a.trend.k}">${a.trend.t}</span><span class="cstat-label">VTA</span> ${fmt1(ventasPeriodo)}</span>`+
+          `<span class="cstat cstat-stock"><span class="cstat-label">STK</span> ${statStock}</span>`+
+          `<span class="cstat" style="color:${covColor(a)}"><span class="cstat-label" style="color:inherit">COB</span> ${covTxt}</span>`+
         `</div>`+
       `</div>`+
       `<div class="card-stepper"><div class="qcell"><div class="qstep ${sug>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}" data-step="${inStep(it)}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${(it.fmt>1||multOf(it)>1)?'gold':''}">${labelFor(it,bundles)}</span></div></div>`+
@@ -1877,7 +1885,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-16.2';
+const APP_VERSION='2026-07-16.3';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -4338,6 +4346,7 @@ function retagAll(){if(DB&&DB.items)DB.items.forEach(it=>{const t=tag(it.nombre,
 function _actualizarAlturaTop(){
   const top=document.querySelector('.top');
   const hdr=document.querySelector('.sticky-hdr');
+  document.documentElement.style.setProperty('--top-h',(top?top.offsetHeight:0)+'px');
   const h=(top?top.offsetHeight:0)+(hdr?hdr.offsetHeight:0);
   document.documentElement.style.setProperty('--hdr-h',h+'px');
   const nav=document.querySelector('.bottom-nav');
