@@ -466,35 +466,29 @@ input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .tbl-scroll{overflow-y:auto;overflow-x:auto;max-height:calc(100vh - 195px);max-height:calc(100dvh - 195px);-webkit-overflow-scrolling:touch;max-width:100%;transition:max-height .22s ease}
 .tbl-scroll.nav-hidden{max-height:calc(100vh - 125px);max-height:calc(100dvh - 125px)}
 table{border-collapse:collapse;width:100%;table-layout:fixed}
-thead th{background:#FAF9F5;text-align:right;font-size:10.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;padding:7px 6px;border-bottom:1.5px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none;position:sticky;top:0;z-index:6;box-shadow:0 1px 0 var(--line)}
-thead th.l{text-align:left}thead th .ar{opacity:.4;font-size:9px}thead th.sorted .ar{opacity:1;color:var(--ink)}
+thead th{background:var(--paper);text-align:center;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;padding:6px 4px;white-space:nowrap;cursor:pointer;user-select:none;position:sticky;top:0;z-index:6;border-bottom:1.5px solid var(--line)}
+thead th:first-child{text-align:left;padding-left:10px}
+thead th .ar{opacity:.4;font-size:9px;display:inline-block;margin-left:2px}
+thead th.sorted{color:var(--ink);background:#F0EDE4}
+thead th.sorted .ar{opacity:1}
+thead th.l{text-align:left}
 tbody td{padding:5px 6px;border-bottom:1px solid var(--line2);text-align:right;white-space:nowrap;font-size:13px}
 tbody td.num,tbody td.tdc{overflow:visible}
 tbody tr:hover td{background:#fafaf7}
 tbody td.l{text-align:left;white-space:normal;overflow:visible}
-/* Anchos por columna en % — siempre suman 100% del ancho real de la pantalla,
-   así nunca hay scroll horizontal. Producto tiene la mayor prioridad de ancho. */
-#ptable{min-width:100%}
-#ptable th:nth-child(1),#ptable td:nth-child(1){width:37%;min-width:0}
-#ptable th:nth-child(2),#ptable td:nth-child(2){width:14%}
-#ptable th:nth-child(3),#ptable td:nth-child(3){width:12%}
-#ptable th:nth-child(4),#ptable td:nth-child(4){width:13%}
-#ptable th:nth-child(5),#ptable td:nth-child(5){width:24%}
-/* En pantallas anchas (tablet/PC): reparte el ancho entre TODAS las columnas y
-   CENTRA los números en su celda, para que se vean equidistantes y sin hueco
-   vacío entre el nombre y las cifras. */
-@media(min-width:560px){
-  #ptable{table-layout:fixed}
-  #ptable th:nth-child(1),#ptable td:nth-child(1){width:40%;min-width:0}
-  #ptable th:nth-child(2),#ptable td:nth-child(2){width:13%}
-  #ptable th:nth-child(3),#ptable td:nth-child(3){width:12%}
-  #ptable th:nth-child(4),#ptable td:nth-child(4){width:13%}
-  #ptable th:nth-child(5),#ptable td:nth-child(5){width:22%}
-  /* números y encabezados numéricos centrados = se ven equidistantes */
-  #ptable thead th:not(.l),#ptable tbody td.num,#ptable tbody td.tdc{text-align:center}
-  #ptable tbody td:nth-child(5) .qcell{align-items:center}
-}
-#ptable td:nth-child(5){padding-left:2px;padding-right:4px}
+/* Ya no hay columnas que alinear — cada fila es una sola celda (colspan) con la
+   tarjeta completa adentro. El encabezado de arriba quedó como una barra de
+   chips de orden, independiente del ancho de las tarjetas. */
+#ptable{min-width:100%;table-layout:auto}
+.card-cell{padding:10px !important;white-space:normal !important;text-align:left !important}
+.card-row{display:flex;align-items:flex-start;gap:9px;min-width:0}
+.card-thumb-wrap{flex-shrink:0;width:44px;height:44px}
+.card-thumb{width:44px;height:44px;border-radius:10px;object-fit:cover;background:var(--gris-bg,#F3F1EA);display:block}
+.card-thumb-dot{width:14px;height:14px;border-radius:50%;margin:15px}
+.card-main{flex:1;min-width:0}
+.card-stats{display:flex;gap:10px;margin-top:4px;font-size:11px;font-weight:600;color:var(--muted);flex-wrap:wrap}
+.card-stats .cstat{display:flex;align-items:center;gap:2px}
+.card-stepper{flex-shrink:0;display:flex;align-items:center}
 .tdc{text-align:center!important;padding-left:2px!important;padding-right:2px!important}
 .prod-name-wrap{display:flex;align-items:flex-start;gap:3px;min-width:0}
 .prod-name{font-weight:800;font-size:14px;line-height:1.2;letter-spacing:-.01em;white-space:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;cursor:pointer;flex:1;min-width:0}
@@ -1740,11 +1734,26 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
   const showProv=(state.search||state.allProv);
   const priceLine=`<div class="prod-prices"><span class="pp-v" title="Venta">V ${precioVal}</span><span class="pp-sep">·</span><span class="pp-c" title="Costo">C ${costoVal}</span><span class="pp-sep">·</span><span class="price-mg ${mgCls}" title="Margen">${mgVal}</span></div>`;
   const ventasPeriodo=state.basis===7?it.u7:state.basis===14?it.u14:state.basis===90?it.u90:it.u30;
-  return `<tr data-ref="${it.ref}" class="${a.status==='urgente'?'row-urgent':''}"><td class="l" title="${tooltip}"><span class="row-dot" style="background:${dotColor}"></span><div class="prod-name-wrap"><span class="prod-name">${it.nombre}</span><button class="prod-info-btn" type="button" aria-label="Ver nombre completo">ⓘ</button></div>${showProv?`<div class="prod-meta">${it.prov}</div>`:''}${priceLine}</td>`+
-    `<td class="num"><span class="trend ${a.trend.k}">${a.trend.t}</span>${fmt1(ventasPeriodo)}</td>`+
-    `<td class="num">${it.stock==null?'<span style="color:var(--azul)">s/c</span>':fmt.format(it.stock)}${(a.vencido>0)?`<br><span style="color:var(--rojo);font-size:9.5px;font-weight:700">-${fmt.format(a.vencido)}</span>`:''}</td>`+
-    `<td class="num" style="color:${covColor(a)}">${covTxt}</td>`+
-    `<td><div class="qcell"><div class="qstep ${sug>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}" data-step="${inStep(it)}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${(it.fmt>1||multOf(it)>1)?'gold':''}">${labelFor(it,bundles)}</span></div></td></tr>`;
+  const thumb=it.imagen
+    ?`<img class="card-thumb" src="${it.imagen}" loading="lazy" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'row-dot card-thumb-dot',style:'background:${dotColor}'}))">`
+    :`<span class="row-dot card-thumb-dot" style="background:${dotColor}"></span>`;
+  const statStock=it.stock==null?'<span style="color:var(--azul)">s/c</span>':fmt.format(it.stock)+(a.vencido>0?` <span style="color:var(--rojo);font-weight:700">(-${fmt.format(a.vencido)})</span>`:'');
+  return `<tr data-ref="${it.ref}" class="${a.status==='urgente'?'row-urgent':''}" title="${tooltip}"><td class="card-cell" colspan="5">`+
+    `<div class="card-row">`+
+      `<div class="card-thumb-wrap">${thumb}</div>`+
+      `<div class="card-main">`+
+        `<div class="prod-name-wrap"><span class="prod-name">${it.nombre}</span><button class="prod-info-btn" type="button" aria-label="Ver nombre completo">ⓘ</button></div>`+
+        `${showProv?`<div class="prod-meta">${it.prov}</div>`:''}`+
+        priceLine+
+        `<div class="card-stats">`+
+          `<span class="cstat"><span class="trend ${a.trend.k}">${a.trend.t}</span>VTA ${fmt1(ventasPeriodo)}</span>`+
+          `<span class="cstat">STK ${statStock}</span>`+
+          `<span class="cstat" style="color:${covColor(a)}">COB ${covTxt}</span>`+
+        `</div>`+
+      `</div>`+
+      `<div class="card-stepper"><div class="qcell"><div class="qstep ${sug>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}" data-step="${inStep(it)}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${(it.fmt>1||multOf(it)>1)?'gold':''}">${labelFor(it,bundles)}</span></div></div>`+
+    `</div>`+
+  `</td></tr>`;
 }
 function tableScrollEl(){const tb=document.getElementById('ptbody');return tb?tb.closest('.tbl-scroll'):null;}
 function tableMore(){
@@ -1868,7 +1877,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-16.1';
+const APP_VERSION='2026-07-16.2';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -1943,7 +1952,7 @@ function buildDBfromCloud(items, ventas){
       stock:inv.stock!=null?inv.stock:null,
       precio:inv.precio!=null?inv.precio:null,
       coste:inv.costo!=null?inv.costo:null,
-      track:!!inv.track, barcode:inv.barcode||'', peso:!!inv.peso, creado:inv.creado||null,
+      track:!!inv.track, barcode:inv.barcode||'', peso:!!inv.peso, creado:inv.creado||null, imagen:inv.imagen||'',
       fmt:t.fmt, min:t.min, scale:t.scale, role:t.role, word:t.word,
       hoyU:hoyU
     });
@@ -2922,7 +2931,7 @@ function cpAgregarLocal(p){
     ref:p.ref,nombre:p.nombre,prov:prov,id:p.id||'',vid:p.vid||'',
     u_all:0,u7:0,u14:0,u30:0,u90:0,rev:0,prof:0,ant:0,vs_ant_pct:null,
     stock:p.stock!=null?p.stock:null,precio:p.precio!=null?p.precio:null,coste:p.costo!=null?p.costo:0,
-    track:!!p.track,barcode:p.barcode||'',peso:!!p.peso,
+    track:!!p.track,barcode:p.barcode||'',peso:!!p.peso,imagen:'',
     fmt:t.fmt,min:t.min,scale:t.scale,role:t.role,word:t.word,hoyU:0
   });
   persist();
