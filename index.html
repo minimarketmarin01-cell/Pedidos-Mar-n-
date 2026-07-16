@@ -78,8 +78,22 @@ html.carrito-fijo #tab-carrito{
   transform:none!important;opacity:1!important;pointer-events:auto!important; /* siempre visible, sin importar el toggle */
   border-left:1px solid var(--line);
   box-shadow:-6px 0 18px rgba(0,0,0,.06);
-  padding-bottom:16px;
+  padding-bottom:0;
+  transition:bottom .22s ease; /* mismo ritmo que el resto de la barra al ocultarse/mostrarse */
 }
+html.carrito-fijo #tab-carrito.nav-hidden{bottom:0}
+/* Encabezado ("Carrito del pedido") y pie (totales + botón de WhatsApp) quedan fijos —
+   solo la lista de productos en el medio (.order-body) se desplaza. Es la misma cadena
+   flex que ya usamos para la tabla: cada nivel necesita min-height:0 explícito, si no,
+   el navegador no deja que un contenedor se encoja por debajo del tamaño de su contenido. */
+html.carrito-fijo #tab-carrito{display:flex;flex-direction:column;overflow:hidden;padding-bottom:0}
+html.carrito-fijo #tab-carrito>.wrap{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;padding:16px}
+html.carrito-fijo #tab-carrito>.wrap>div{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+html.carrito-fijo #cart-back{flex-shrink:0}
+html.carrito-fijo .order{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+html.carrito-fijo .order-head{flex-shrink:0}
+html.carrito-fijo .order-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+html.carrito-fijo .order-foot{flex-shrink:0}
 /* Grid real (no margin-right): la tabla es una columna minmax(0,1fr) — el "0" es la parte
    clave: sin eso, si algo dentro de la tabla se niega a encogerse (un stepper, una celda
    con nowrap), el navegador puede terminar alejando el ZOOM de toda la página para que
@@ -1854,7 +1868,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-15.16';
+const APP_VERSION='2026-07-16.1';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -2086,6 +2100,7 @@ function cerrarModal(id){
 }
 function cerrarOverlays(){
   document.querySelectorAll('.mm-ov, .scan-ov').forEach(o=>{o.classList.add('hidden');o.style.removeProperty('display');});
+  if(typeof toggleCarrito==='function')toggleCarrito(false); // en celular cierra el panel; en tablet/escritorio no tiene efecto (CSS lo mantiene visible)
   _sincronizarNav();
 }
 
@@ -2150,13 +2165,14 @@ document.getElementById('mas-cerrar').onclick=()=>cerrarModal('mas-ov');
 // (y la tabla de productos aprovecha ese espacio liberado, expandiéndose)
 (function(){
   const nav=document.querySelector('.bottom-nav');
+  const cart=document.getElementById('tab-carrito');
   let lastY=0,hidden=false;
   function onScroll(el){
     const y=el.scrollTop;
     const delta=y-lastY;
-    if(y<24){if(hidden){nav.classList.remove('bn-hide');el.classList.remove('nav-hidden');hidden=false;}lastY=y;return;} // arriba del todo: siempre visible
-    if(delta>6&&!hidden){nav.classList.add('bn-hide');el.classList.add('nav-hidden');hidden=true;}
-    else if(delta<-6&&hidden){nav.classList.remove('bn-hide');el.classList.remove('nav-hidden');hidden=false;}
+    if(y<24){if(hidden){nav.classList.remove('bn-hide');el.classList.remove('nav-hidden');if(cart)cart.classList.remove('nav-hidden');hidden=false;}lastY=y;return;} // arriba del todo: siempre visible
+    if(delta>6&&!hidden){nav.classList.add('bn-hide');el.classList.add('nav-hidden');if(cart)cart.classList.add('nav-hidden');hidden=true;}
+    else if(delta<-6&&hidden){nav.classList.remove('bn-hide');el.classList.remove('nav-hidden');if(cart)cart.classList.remove('nav-hidden');hidden=false;}
     lastY=y;
   }
   // Se re-conecta cada vez que la tabla se re-renderiza (el contenedor .tbl-scroll es fijo, esto solo se hace una vez)
