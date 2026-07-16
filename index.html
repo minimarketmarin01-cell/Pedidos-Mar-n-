@@ -57,7 +57,8 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 #tab-carrito{position:fixed;inset:0;z-index:250;background:var(--paper);overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(78px + env(safe-area-inset-bottom));transform:translateY(100%);opacity:0;pointer-events:none;transition:transform .25s ease,opacity .25s ease}
 /* ===== ≥1024px: el panel "Copiar a WhatsApp" pasa de overlay oculto a columna fija ==========
    Reutiliza el MISMO #tab-carrito (nunca se duplica) — solo se le pisa el estado con CSS.
-   --top-h la calcula JS una sola vez (mide el alto real del header, en vez de adivinar un
+   --hdr-h la calcula JS una sola vez (mide el alto real del header completo: barra superior +
+   buscador/filtros/leyenda — en vez de adivinar un
    número fijo que podría no calzar según el contenido).
    IMPORTANTE: este bloque debe ir DESPUÉS de la regla base de #tab-carrito en el archivo —
    con la misma especificidad, en CSS gana quien aparece último, sin importar el @media. */
@@ -66,7 +67,7 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
   :root{--cart-w:clamp(340px,38vw,400px)}
   .cart-fab{display:none} /* el panel ya está siempre visible, no hace falta el botón */
   #tab-carrito{
-    top:var(--top-h,64px);
+    top:var(--hdr-h,64px);
     bottom:var(--nav-h,78px);
     width:var(--cart-w);
     left:auto;right:0;
@@ -1839,7 +1840,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-15.13';
+const APP_VERSION='2026-07-15.14';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -2155,6 +2156,7 @@ document.getElementById('prov-acc-toggle').onclick=()=>{
   const abrir=pd.classList.contains('hidden');
   pd.classList.toggle('hidden',!abrir);
   t.setAttribute('aria-expanded',abrir?'true':'false');
+  setTimeout(()=>{if(typeof _actualizarAlturaTop==='function')_actualizarAlturaTop();},0); // el acordeón cambia el alto de .sticky-hdr sin disparar 'resize'
 };
 document.getElementById('cart-fab').onclick=()=>toggleCarrito();
 document.getElementById('cart-back').onclick=()=>toggleCarrito(false);
@@ -4290,12 +4292,15 @@ function restoreScroll(u){
 
 // ===================== INICIO =====================
 function retagAll(){if(DB&&DB.items)DB.items.forEach(it=>{const t=tag(it.nombre,it.prov);it.fmt=t.fmt;it.min=t.min;it.scale=t.scale;it.role=t.role;it.word=t.word;});}
-// Mide el alto real de .top y de la barra inferior (en vez de adivinar números fijos) —
-// los usa el panel del carrito en pantallas ≥1024px para calzar exacto con el área visible
-// de la tabla, sin sobrepasarla ni dejar hueco. Solo lectura, no toca nada existente.
+// Mide el alto real de .top + .sticky-hdr (buscador, filtros y leyenda) juntos — no solo el
+// header negro — para que el panel del carrito arranque justo donde arranca el encabezado
+// de la tabla, ni un pixel más arriba. Usa offsetHeight (el tamaño propio del contenido) en
+// vez de la posición visual en pantalla, para que no cambie según cuánto hayas scrolleado.
 function _actualizarAlturaTop(){
-  const el=document.querySelector('.top');
-  if(el)document.documentElement.style.setProperty('--top-h',el.offsetHeight+'px');
+  const top=document.querySelector('.top');
+  const hdr=document.querySelector('.sticky-hdr');
+  const h=(top?top.offsetHeight:0)+(hdr?hdr.offsetHeight:0);
+  document.documentElement.style.setProperty('--hdr-h',h+'px');
   const nav=document.querySelector('.bottom-nav');
   if(nav)document.documentElement.style.setProperty('--nav-h',nav.offsetHeight+'px');
 }
