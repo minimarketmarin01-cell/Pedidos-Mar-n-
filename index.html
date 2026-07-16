@@ -461,31 +461,29 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 /* Anchos por columna en % — siempre suman 100% del ancho real de la pantalla,
    así nunca hay scroll horizontal. Producto tiene la mayor prioridad de ancho. */
 #ptable{min-width:100%}
-#ptable th:nth-child(1),#ptable td:nth-child(1){width:32%;min-width:0}
-#ptable th:nth-child(2),#ptable td:nth-child(2){width:12%}
-#ptable th:nth-child(3),#ptable td:nth-child(3){width:7%}
-#ptable th:nth-child(4),#ptable td:nth-child(4){width:12%}
-#ptable th:nth-child(5),#ptable td:nth-child(5){width:13%}
-#ptable th:nth-child(6),#ptable td:nth-child(6){width:24%}
+#ptable th:nth-child(1),#ptable td:nth-child(1){width:37%;min-width:0}
+#ptable th:nth-child(2),#ptable td:nth-child(2){width:14%}
+#ptable th:nth-child(3),#ptable td:nth-child(3){width:12%}
+#ptable th:nth-child(4),#ptable td:nth-child(4){width:13%}
+#ptable th:nth-child(5),#ptable td:nth-child(5){width:24%}
 /* En pantallas anchas (tablet/PC): reparte el ancho entre TODAS las columnas y
    CENTRA los números en su celda, para que se vean equidistantes y sin hueco
    vacío entre el nombre y las cifras. */
 @media(min-width:560px){
   #ptable{table-layout:fixed}
-  #ptable th:nth-child(1),#ptable td:nth-child(1){width:34%;min-width:0}
-  #ptable th:nth-child(2),#ptable td:nth-child(2){width:12%}
-  #ptable th:nth-child(3),#ptable td:nth-child(3){width:9%}
-  #ptable th:nth-child(4),#ptable td:nth-child(4){width:12%}
-  #ptable th:nth-child(5),#ptable td:nth-child(5){width:13%}
-  #ptable th:nth-child(6),#ptable td:nth-child(6){width:20%}
+  #ptable th:nth-child(1),#ptable td:nth-child(1){width:40%;min-width:0}
+  #ptable th:nth-child(2),#ptable td:nth-child(2){width:13%}
+  #ptable th:nth-child(3),#ptable td:nth-child(3){width:12%}
+  #ptable th:nth-child(4),#ptable td:nth-child(4){width:13%}
+  #ptable th:nth-child(5),#ptable td:nth-child(5){width:22%}
   /* números y encabezados numéricos centrados = se ven equidistantes */
   #ptable thead th:not(.l),#ptable tbody td.num,#ptable tbody td.tdc{text-align:center}
-  #ptable tbody td:nth-child(6) .qcell{align-items:center}
+  #ptable tbody td:nth-child(5) .qcell{align-items:center}
 }
-#ptable td:nth-child(6){padding-left:2px;padding-right:4px}
+#ptable td:nth-child(5){padding-left:2px;padding-right:4px}
 .tdc{text-align:center!important;padding-left:2px!important;padding-right:2px!important}
-.prod-name-wrap{display:flex;align-items:center;gap:3px;min-width:0}
-.prod-name{font-weight:800;font-size:14.5px;line-height:1.25;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;flex:1;min-width:0}
+.prod-name-wrap{display:flex;align-items:flex-start;gap:3px;min-width:0}
+.prod-name{font-weight:800;font-size:14px;line-height:1.2;letter-spacing:-.01em;white-space:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;cursor:pointer;flex:1;min-width:0}
 .prod-info-btn{flex-shrink:0;width:17px;height:17px;border:none;background:var(--gris-bg,#F3F1EA);border-radius:50%;font-size:10.5px;line-height:1;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent}
 .prod-info-btn:active{background:var(--line)}
 @media (min-width:700px){.prod-name{font-size:17px}.prod-info-btn{width:19px;height:19px;font-size:12px}}
@@ -513,7 +511,7 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .price-scale{font-size:9.5px;font-weight:700;font-family:'Archivo';color:var(--gold)}
 .fmt-tag{display:inline-block;background:var(--gold-bg);color:var(--gold);font-size:9px;font-weight:700;font-family:'Archivo';padding:1px 5px;border-radius:4px;margin-left:5px}
 .num{font-family:'JetBrains Mono';font-weight:500}
-.trend{font-size:11px;font-weight:700;font-family:'JetBrains Mono'}
+.trend{font-size:9.5px;font-weight:700;font-family:'JetBrains Mono';margin-right:2px;display:inline-block}
 .trend.up{color:var(--verde)}.trend.down{color:var(--rojo)}.trend.flat{color:var(--gris)}
 .cov{font-family:'JetBrains Mono';font-weight:700}
 .badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:7px;font-size:11px;font-weight:700;font-family:'Archivo'}
@@ -996,7 +994,6 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
       <thead><tr>
         <th class="l" data-s="nombre">Producto <span class="ar">▲▼</span></th>
         <th data-s="rate" id="th-rate">Rot <span class="ar">▲▼</span></th>
-        <th class="tdc" data-s="trend">Tnd <span class="ar">▲▼</span></th>
         <th data-s="stock">Stk <span class="ar">▲▼</span></th>
         <th data-s="cov" class="sorted">Cob <span class="ar">▲▼</span></th>
         <th data-s="sug">Pedir <span class="ar">▲▼</span></th>
@@ -1730,8 +1727,7 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
   const priceLine=`<div class="prod-prices"><span class="pp-v" title="Venta">V ${precioVal}</span><span class="pp-sep">·</span><span class="pp-c" title="Costo">C ${costoVal}</span><span class="pp-sep">·</span><span class="price-mg ${mgCls}" title="Margen">${mgVal}</span></div>`;
   const ventasPeriodo=state.basis===7?it.u7:state.basis===14?it.u14:state.basis===90?it.u90:it.u30;
   return `<tr data-ref="${it.ref}" class="${a.status==='urgente'?'row-urgent':''}"><td class="l" title="${tooltip}"><span class="row-dot" style="background:${dotColor}"></span><div class="prod-name-wrap"><span class="prod-name">${it.nombre}</span><button class="prod-info-btn" type="button" aria-label="Ver nombre completo">ⓘ</button></div>${showProv?`<div class="prod-meta">${it.prov}</div>`:''}${priceLine}</td>`+
-    `<td class="num">${fmt1(ventasPeriodo)}</td>`+
-    `<td class="tdc"><span class="trend ${a.trend.k}">${a.trend.t}</span></td>`+
+    `<td class="num"><span class="trend ${a.trend.k}">${a.trend.t}</span>${fmt1(ventasPeriodo)}</td>`+
     `<td class="num">${it.stock==null?'<span style="color:var(--azul)">s/c</span>':fmt.format(it.stock)}${(a.vencido>0)?`<br><span style="color:var(--rojo);font-size:9.5px;font-weight:700">-${fmt.format(a.vencido)}</span>`:''}</td>`+
     `<td class="num" style="color:${covColor(a)}">${covTxt}</td>`+
     `<td><div class="qcell"><div class="qstep ${sug>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}" data-step="${inStep(it)}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${(it.fmt>1||multOf(it)>1)?'gold':''}">${labelFor(it,bundles)}</span></div></td></tr>`;
@@ -1858,7 +1854,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-15.15';
+const APP_VERSION='2026-07-15.16';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
