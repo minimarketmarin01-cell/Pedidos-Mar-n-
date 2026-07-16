@@ -2098,7 +2098,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-16.14';
+const APP_VERSION='2026-07-16.15';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -3228,9 +3228,9 @@ function fcVenta(costo,margenPct){
   if(costo<=0||m<=0)return 0;
   return costo/(1-m);
 }
-let _fcImagenB64=null,_fcMediaType='image/jpeg',_fcItems=[];
+let _fcImagenB64=null,_fcMediaType='image/jpeg',_fcItems=[],_fcEditandoIdx=null;
 function fcReset(){
-  _fcImagenB64=null;_fcItems=[];
+  _fcImagenB64=null;_fcItems=[];_fcEditandoIdx=null;
   document.getElementById('fc-input').value='';
   document.getElementById('fc-input-galeria').value='';
   document.getElementById('fc-preview-wrap').classList.add('hidden');
@@ -3310,13 +3310,20 @@ function fcRenderResultados(){
     const esEdicion=it.margen!=null;
     const margen=esEdicion?it.margen:(FC_MARGEN_POR_CATEGORIA[it.categoria_sugerida]||FC_MARGEN_POR_CATEGORIA.otro);
     const costoBruto=esEdicion?it.costo_unitario:fcCostoConIva(it.costo_unitario,it.incluye_iva);
-    const unidades=esEdicion?1:fcExtraerUnidades(it.producto);
-    const costoFinal=costoBruto/(unidades||1);
+    // Unidades físicas reales = cantidad comprada en la factura × multiplicador de empaque
+    // que trae el nombre (ej: "CHOCMAN 32X33 GR" con cantidad 2 → 2 cajas × 32 u/caja = 64
+    // unidades físicas). Si el nombre no trae multiplicador reconocible (ej: "COCA COLA
+    // 1.5L"), fcExtraerUnidades ya devuelve 1, así que las unidades físicas quedan iguales
+    // a la cantidad comprada (unidades sueltas), tal como corresponde.
+    const multiplicador=esEdicion?1:fcExtraerUnidades(it.producto);
+    const cantidadFactura=esEdicion?1:Math.max(1,+it.cantidad||1);
+    const unidadesFisicas=esEdicion?1:(cantidadFactura*multiplicador);
+    const costoTotalLinea=esEdicion?it.costo_unitario:(costoBruto*cantidadFactura);
+    const costoFinal=costoTotalLinea/(unidadesFisicas||1);
     const venta=fcVenta(costoFinal,margen),psico=fcPsico(venta);
     const meta=esEdicion?['Editando cálculo guardado — vuelve a guardar para actualizarlo']:[
-      it.cantidad?('Cantidad en factura: '+it.cantidad):null,
       it.incluye_iva?'costo ya incluía IVA':'+19% IVA aplicado',
-      unidades>1?(peso(costoBruto)+' ÷ '+unidades+' u = '+peso(costoFinal)+'/u'):null,
+      unidadesFisicas>1?(cantidadFactura+' × '+multiplicador+' u/paquete = '+unidadesFisicas+' unidades físicas · '+peso(costoTotalLinea)+' ÷ '+unidadesFisicas+' = '+peso(costoFinal)+'/u'):null,
       'categoría sugerida: '+it.categoria_sugerida
     ].filter(Boolean);
     return `<div class="fc-row" data-id="${it.id}">
@@ -3348,13 +3355,24 @@ document.getElementById('fc-guardar').onclick=async()=>{
     const g=f=>row.querySelector(`[data-f="${f}"]`).value;
     return {producto:g('producto').trim(),costo_unitario:+g('costo')||0,margen:+g('margen')||0,precio_venta:+g('venta')||0,precio_psicologico:+g('psico')||0,categoria:row.querySelector('.fc-row-meta').textContent};
   }).filter(it=>it.producto);
+  const editandoIdx=_fcEditandoIdx;
+  const facturaIdExistente=(editandoIdx!=null&&_fcHistorial[editandoIdx])?_fcHistorial[editandoIdx].facturaId:null;
   const btn=document.getElementById('fc-guardar');btn.disabled=true;
   try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'guardar_calculo_precio',payload:{items}})});
+    const payload=facturaIdExistente?{items,factura_id:facturaIdExistente}:{items};
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'guardar_calculo_precio',payload})});
     const j=await res.json();
     if(j&&j.ok){
-      showToast('✓ Guardado: '+j.guardados+' producto(s)');
-      fcAgregarAlHistorial(j.factura_id,items);
+      if(facturaIdExistente&&_fcHistorial[editandoIdx]){
+        // Edición: se actualiza el registro EN SU MISMO LUGAR, nunca se agrega uno nuevo.
+        _fcHistorial[editandoIdx].items=items;
+        _fcHistorial[editandoIdx].fecha=new Date().toLocaleString('es-CL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+        fcRenderHistorial();
+        showToast('✓ Cálculo actualizado');
+      }else{
+        showToast('✓ Guardado: '+j.guardados+' producto(s)');
+        fcAgregarAlHistorial(j.factura_id,items);
+      }
       fcReset();cerrarModal('fc-ov');
     }
     else showToast('Error: '+((j&&j.error)||'no se pudo guardar'));
@@ -3398,6 +3416,7 @@ function fcEditarDesdeHistorial(idx){
   const f=_fcHistorial[idx];
   if(!f)return;
   cerrarModal('mas-ov');abrirModal('fc-ov');
+  _fcEditandoIdx=idx;
   _fcItems=f.items.map((it,i)=>({id:'fce'+i,producto:it.producto,costo_unitario:it.costo_unitario,margen:it.margen,categoria_sugerida:'otro',cantidad:0,incluye_iva:true}));
   fcRenderResultados();
   showToast('Editando cálculo guardado — vuelve a "Guardar cálculos" para actualizarlo');
