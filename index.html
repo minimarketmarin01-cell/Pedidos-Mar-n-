@@ -60,7 +60,18 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .cart-fab:active{background:var(--wa-d)}
 /* Panel del carrito: SIEMPRE montado, se muestra/oculta solo con CSS (transform+opacity+pointer-events)
    — nunca con display:none, para conservar scroll/estado y no tener que re-renderizar al abrir. */
-#tab-carrito{position:fixed;inset:0;z-index:250;background:var(--paper);overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(78px + env(safe-area-inset-bottom));transform:translateY(100%);opacity:0;pointer-events:none;transition:transform .25s ease,opacity .25s ease}
+#tab-carrito{position:fixed;inset:0;z-index:250;background:var(--paper);overflow:hidden;padding-bottom:calc(78px + env(safe-area-inset-bottom));transform:translateY(100%);opacity:0;pointer-events:none;transition:transform .25s ease,opacity .25s ease}
+/* Misma cadena flex que el modo tablet (carrito-fijo): el header y el pie del carrito
+   quedan fijos, solo .order-body se expande para ocupar el espacio libre y se desplaza
+   internamente — así se ven más productos sin agrandar el panel completo (que ya es
+   pantalla completa vía position:fixed;inset:0). */
+#tab-carrito{display:flex;flex-direction:column}
+#tab-carrito>.wrap{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+#tab-carrito>.wrap>div{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+#cart-back{flex-shrink:0}
+.order{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+.order-head{flex-shrink:0}
+.order-foot{flex-shrink:0}
 /* ===== ≥1180px (detectado por JS, no @media): el panel "Copiar a WhatsApp" pasa de =====
    overlay oculto a columna fija en Grid. Reutiliza el MISMO #tab-carrito (nunca se
    duplica) — solo se le pisa el estado con CSS, condicionado a la clase .carrito-fijo.
@@ -551,10 +562,13 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .rcol{display:flex;flex-direction:column;gap:13px;position:sticky;top:16px}
 @media(max-width:1080px){.rcol{position:static}}
 .scalecard,.order{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.scale-head{background:linear-gradient(100deg,#2a2118,#3a2c1a);color:#fff;padding:12px 15px}
+.scale-head{background:linear-gradient(100deg,#2a2118,#3a2c1a);color:#fff;padding:12px 15px;cursor:pointer;-webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:space-between;gap:10px;user-select:none}
 .scale-head .t{font-family:'Archivo';font-weight:800;font-size:14px}
 .scale-head .s{color:#e0c79a;font-size:11.5px;margin-top:3px}
-.scale-body{padding:13px 15px}
+.scale-head .accordion-chev{flex-shrink:0;width:18px;height:18px;color:#e0c79a;transition:transform .2s ease}
+.scale-head.open .accordion-chev{transform:rotate(180deg)}
+.accordion-body{padding:13px 15px;overflow:hidden;max-height:2000px;transition:max-height .25s ease,padding .25s ease,opacity .2s ease;opacity:1}
+.accordion-body.collapsed{max-height:0;padding-top:0;padding-bottom:0;opacity:0}
 .prog-track{height:10px;background:var(--line2);border-radius:6px;position:relative;margin:18px 0 24px}
 .prog-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--wa));border-radius:6px}
 .prog-mark{position:absolute;top:-4px;width:2px;height:18px;background:#bbb}
@@ -573,15 +587,12 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .order-head .t{font-family:'Archivo';font-weight:800;font-size:15px;display:flex;align-items:center;gap:8px}
 .order-head .s{color:#aab0ba;font-size:12px;margin-top:3px}
 .wa-ico{width:20px;height:20px;background:var(--wa);border-radius:5px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:800;font-family:'Archivo'}
-.order-body{padding:12px 14px;max-height:36vh;overflow-y:auto}
+.order-body{padding:12px 14px;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .oline{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px dashed var(--line2);font-size:13px}
 .oline .on-wrap{flex:1;min-width:0}
 .oline .on{display:block;font-weight:700;white-space:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .oline .oline-sub{display:block;font-size:11px;color:var(--muted);font-family:'JetBrains Mono';margin-top:1px}
-.ostep{display:flex;align-items:center;gap:0;flex-shrink:0;border:1.5px solid var(--line);border-radius:10px;overflow:hidden}
-.ostep-btn{width:32px;height:32px;border:none;background:var(--gris-bg,#F3F1EA);font-size:17px;font-weight:700;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
-.ostep-btn:active{background:var(--line)}
-.ostep-val{min-width:34px;text-align:center;font-weight:700;font-size:14px;font-family:'JetBrains Mono'}
+.oline .qcell{flex-shrink:0}
 .odel{flex-shrink:0;width:32px;height:32px;border:none;background:#FCE9E7;color:var(--rojo);border-radius:10px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
 .odel:active{background:#F8D2CE}
 .oline:last-child{border-bottom:none}.oline .on{font-weight:500;line-height:1.25}
@@ -1034,8 +1045,8 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
         </div>
       </div>
       <div class="scalecard hidden" id="scalecard" style="margin-top:12px">
-        <div class="scale-head"><div class="t">⚡ Escala de volumen</div><div class="s" id="scale-sub"></div></div>
-        <div class="scale-body" id="scale-body"></div>
+        <div class="scale-head" id="scale-head"><div><div class="t">⚡ Escala de volumen</div><div class="s" id="scale-sub"></div></div><svg class="accordion-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+        <div class="scale-body accordion-body collapsed" id="scale-body"></div>
       </div>
     </div>
   </div>
@@ -1830,6 +1841,7 @@ function renderTable(){
   _tbState={items,f,idx:0};
   tableMore();
 }
+let _scaleOpen=false; // acordeón "Escala de volumen": oculto por defecto, el usuario decide abrirlo
 function renderScale(){
   const card=document.getElementById('scalecard');const scs=SCALE_OF_PROV[state.prov];
   if(state.search||state.allProv||!scs){card.classList.add('hidden');return;}card.classList.remove('hidden');
@@ -1850,7 +1862,21 @@ function renderScale(){
       html+=`<div style="padding:9px 0;border-bottom:1px dashed var(--line2)"><div style="font-weight:600;font-size:12.5px">${x.it.nombre}</div><div style="display:flex;justify-content:space-between;margin-top:3px"><span class="pk" style="font-family:'JetBrains Mono';font-weight:700">${x.packs} ${S.word}</span><span style="color:var(--wa-d);font-weight:700">-${tier.dto}% · ${peso(tier.c)}/u</span></div>`;
       html+=next?`<div style="font-size:11.5px;color:var(--gold);margin-top:3px">+${next.min-x.packs} ${S.word} → -${next.dto}% (ahorras ${peso(tier.c-next.c)}/u)</div>`:`<div style="font-size:11.5px;color:var(--verde);margin-top:3px">✓ Máximo descuento</div>`;html+=`</div>`;});html+='</div>';}}
   body.innerHTML=html;
+  body.classList.toggle('collapsed',!_scaleOpen);
+  document.getElementById('scale-head').classList.toggle('open',_scaleOpen);
 }
+// Acordeón genérico: alterna cualquier par head/body con las clases .accordion-body / .open,
+// reutilizable si en el futuro se agregan más tarjetas de escala por proveedor.
+function toggleAccordion(headEl,bodyEl,openState){
+  const open=typeof openState==='boolean'?openState:bodyEl.classList.contains('collapsed');
+  bodyEl.classList.toggle('collapsed',!open);
+  headEl.classList.toggle('open',open);
+  return open;
+}
+(function(){
+  const head=document.getElementById('scale-head');
+  if(head)head.onclick=()=>{_scaleOpen=toggleAccordion(head,document.getElementById('scale-body'));};
+})();
 function currentOrder(){const lines=[];const base=(state.search||state.allProv)?currentItems():itemsFor(state.prov);base.forEach(it=>{const a=analyze(it);const q=qOf(it,a);if(q>0)lines.push({it,nombre:it.nombre,q,packs:packsOf(it,q),cost:tierCostUn(it)*q,word:it.word});});return lines;}
 function renderOrder(){
   const lines=currentOrder();const body=document.getElementById('order-body');
@@ -1860,10 +1886,13 @@ function renderOrder(){
         <span class="on">${l.nombre}</span>
         <span class="oline-sub">${peso(l.cost)}${l.it.fmt>1?' · '+(l.q)+' u':''}</span>
       </div>
-      <div class="ostep">
-        <button class="ostep-btn" data-act="-" aria-label="Restar">−</button>
-        <span class="ostep-val">${l.packs}</span>
-        <button class="ostep-btn" data-act="+" aria-label="Sumar">+</button>
+      <div class="qcell">
+        <div class="qstep ${l.packs>0?'has':''}">
+          <button class="qbtn" data-d="-1" aria-label="Restar">−</button>
+          <input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${l.packs}" data-ref="${l.it.ref}" data-fmt="${l.it.fmt}" data-step="${inStep(l.it)}">
+          <button class="qbtn" data-d="1" aria-label="Sumar">+</button>
+        </div>
+        <span class="qword ${(l.it.fmt>1||multOf(l.it)>1)?'gold':''}">${labelFor(l.it,l.packs)}</span>
       </div>
       <button class="odel" data-act="del" aria-label="Eliminar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
     </div>`).join('');
@@ -1872,27 +1901,24 @@ function renderOrder(){
   const badge=document.getElementById('cart-badge');
   if(badge){badge.textContent=lines.length>99?'99+':lines.length;badge.classList.toggle('on',lines.length>0);}
 }
-// Un solo listener delegado para +/-/eliminar en el carrito (se registra una vez, nunca se duplica en cada render)
+// Listener delegado para eliminar del carrito (se registra una vez, nunca se duplica en cada render)
 (function(){
   const body=document.getElementById('order-body');
   if(!body)return;
   body.addEventListener('click',ev=>{
-    const btn=ev.target.closest('[data-act]');
+    const btn=ev.target.closest('[data-act="del"]');
     if(!btn)return;
     const row=btn.closest('.oline');
     const ref=row&&row.dataset.ref;
     if(!ref)return;
-    const it=DB.items.find(i=>i.ref===ref);
-    if(!it)return;
-    const act=btn.dataset.act;
-    if(act==='del'){state.edits[ref]=0;}
-    else{
-      const packsActuales=packsOf(it,qOf(it,analyze(it)));
-      const nuevo=Math.max(0,packsActuales+(act==='+'?1:-1));
-      state.edits[ref]=nuevo*it.fmt;
-    }
+    state.edits[ref]=0;
     renderOrder();
   });
+  // Mismo mecanismo que la tabla de "Armar pedido": +/− y edición directa del número,
+  // respetando la presentación (display/caja/unidades) de cada producto (stepQty/onQty
+  // ya están definidas arriba y llaman renderOrder()+renderScale() al terminar).
+  body.addEventListener('click',e=>{const b=e.target.closest('.qbtn');if(b)stepQty(b);});
+  body.addEventListener('input',e=>{if(e.target.classList&&e.target.classList.contains('qty-in'))onQty(e.target);});
 })();
 function renderOverview(){
   // Gráfico: venta semanal estimada por categoría (u7 × precio)
@@ -1928,7 +1954,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-16.8';
+const APP_VERSION='2026-07-16.9';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
