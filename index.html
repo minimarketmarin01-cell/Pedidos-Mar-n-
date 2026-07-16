@@ -472,11 +472,11 @@ input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .tbl-scroll{overflow-y:auto;overflow-x:auto;max-height:calc(100vh - 195px);max-height:calc(100dvh - 195px);-webkit-overflow-scrolling:touch;max-width:100%;transition:max-height .22s ease}
 .tbl-scroll.nav-hidden{max-height:calc(100vh - 125px);max-height:calc(100dvh - 125px)}
 table{border-collapse:collapse;width:100%;table-layout:fixed}
-thead th{background:var(--paper);text-align:center;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;padding:6px 4px;white-space:nowrap;cursor:pointer;user-select:none;position:sticky;top:0;z-index:6;border-bottom:1.5px solid var(--line)}
-thead th:first-child{text-align:left;padding-left:10px}
-thead th .ar{opacity:.4;font-size:9px;display:inline-block;margin-left:2px}
-thead th.sorted{color:var(--ink);background:#F0EDE4}
-thead th.sorted .ar{opacity:1}
+thead th{background:var(--card);text-align:center;font-size:9.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:7px 4px;white-space:nowrap;cursor:pointer;user-select:none;position:sticky;top:0;z-index:6;border-bottom:1px solid var(--line2)}
+thead th:first-child{text-align:left;padding-left:12px;font-size:10.5px;letter-spacing:.01em}
+thead th .ar{opacity:.35;font-size:9px;display:inline-block;margin-left:2px}
+thead th.sorted{color:var(--ink2);background:var(--paper)}
+thead th.sorted .ar{opacity:.8}
 thead th.l{text-align:left}
 tbody td{padding:5px 6px;border-bottom:1px solid var(--line2);text-align:right;white-space:nowrap;font-size:13px}
 tbody td.num,tbody td.tdc{overflow:visible}
@@ -486,39 +486,39 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
    tarjeta completa adentro. El encabezado de arriba quedó como una barra de
    chips de orden, independiente del ancho de las tarjetas. */
 #ptable{min-width:100%;table-layout:auto}
-.card-cell{padding:10px !important;white-space:normal !important;text-align:left !important}
-.card-row{display:flex;align-items:flex-start;gap:9px;min-width:0}
+.card-cell{padding:13px 10px !important;white-space:normal !important;text-align:left !important;border-bottom:1px solid var(--line2) !important}
+.card-row{display:flex;align-items:flex-start;gap:10px;min-width:0}
 .card-thumb-wrap{flex-shrink:0;width:44px;height:44px}
 .card-thumb{width:44px;height:44px;border-radius:10px;object-fit:cover;background:var(--gris-bg,#F3F1EA);display:block}
-.card-thumb-dot{width:14px;height:14px;border-radius:50%;margin:15px}
+/* Producto sin foto: ícono neutro y sutil, no un punto de color llamativo —
+   la alerta de estado (urgente/pedir/etc.) ya se lee en el chip COB, no hace
+   falta duplicarla aquí con un semáforo de color. */
+.card-thumb-empty{width:44px;height:44px;border-radius:10px;background:var(--gris-bg,#F3F1EA);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:17px;opacity:.55}
 .card-main{flex:1;min-width:0}
-.card-stats{display:flex;gap:10px;margin-top:4px;font-size:11.5px;font-weight:700;color:var(--ink);flex-wrap:wrap}
-.card-stats .cstat{display:flex;align-items:center;gap:2px}
-.card-stats .cstat-label{color:var(--muted);font-weight:600;margin-right:1px}
-.card-stats .cstat-stock{font-weight:800;color:var(--ink)}
+/* Micro-chips: fuente liviana, gris suave, sin fondos saturados — solo el
+   valor toma color (y únicamente para COB, que es la alerta de urgencia). */
+.card-stats{display:flex;gap:7px;margin-top:5px;font-size:11px;font-weight:600;color:var(--ink2);flex-wrap:wrap}
+.card-stats .cstat{display:flex;align-items:center;gap:3px;line-height:1}
+.card-stats .cstat-label{color:var(--muted);font-weight:600;font-size:9px;text-transform:uppercase;letter-spacing:.04em}
+.card-stats .cstat-stock{font-weight:700;color:var(--ink2)}
 .card-stepper{flex-shrink:0;display:flex;align-items:center}
 .tdc{text-align:center!important;padding-left:2px!important;padding-right:2px!important}
 .prod-name-wrap{display:flex;align-items:flex-start;gap:3px;min-width:0}
 .prod-name{font-weight:800;font-size:14px;line-height:1.2;letter-spacing:-.01em;white-space:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;cursor:pointer;flex:1;min-width:0}
-.prod-info-btn{flex-shrink:0;width:17px;height:17px;border:none;background:var(--gris-bg,#F3F1EA);border-radius:50%;font-size:10.5px;line-height:1;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent}
-.prod-info-btn:active{background:var(--line)}
-@media (min-width:700px){.prod-name{font-size:17px}.prod-info-btn{width:19px;height:19px;font-size:12px}}
-.name-popup{position:fixed;inset:0;background:rgba(21,25,31,.5);z-index:340;display:flex;align-items:center;justify-content:center;padding:24px}
-.name-popup-card{background:#fff;border-radius:14px;padding:18px 20px;max-width:420px;width:100%;box-shadow:0 12px 32px rgba(0,0,0,.25);display:flex;align-items:flex-start;gap:12px}
-.name-popup-text{flex:1;font-weight:800;font-size:16px;line-height:1.35;color:var(--ink)}
-.name-popup-close{flex-shrink:0;width:26px;height:26px;border:none;background:var(--gris-bg,#F3F1EA);border-radius:50%;font-size:13px;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer}
+@media (min-width:700px){.prod-name{font-size:17px}}
 .sm-info{cursor:pointer}
 .prod-ref{font-size:10px;color:var(--muted);font-family:'JetBrains Mono'}
 .prod-meta{font-size:9.5px;color:var(--muted);font-weight:600;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .prod-prov{font-size:9.5px;font-weight:700;color:var(--muted);font-family:'Archivo';text-transform:uppercase;letter-spacing:.04em;padding-right:6px;border-right:1px solid var(--line)}
-.prod-prices{display:flex;align-items:center;gap:4px;margin-top:1px;font-size:10.5px;font-family:'JetBrains Mono';font-weight:600;line-height:1.15;flex-wrap:wrap}
-.pp-v{color:var(--ink);font-weight:800;font-size:11.5px}
-.pp-c{color:var(--gold)}
-.pp-sep{color:var(--line);font-weight:400}
-.prod-prices .price-mg{font-weight:800}
-.prod-prices .price-mg.mg-hi{color:var(--verde)}
-.prod-prices .price-mg.mg-md{color:var(--gold)}
-.prod-prices .price-mg.mg-lo{color:var(--rojo)}
+/* Jerarquía de precio: venta en negrita y más grande (es el dato que más se
+   consulta), costo y margen como texto secundario gris oscuro — ya no amarillo.
+   El color de margen se reserva solo para los extremos (muy bueno / muy bajo),
+   como alerta real, no como decoración. */
+.prod-prices{display:flex;align-items:baseline;gap:5px;margin-top:2px;font-family:'JetBrains Mono';line-height:1.15;flex-wrap:wrap}
+.pp-v{color:var(--ink);font-weight:800;font-size:15px}
+.pp-c{color:var(--ink2);font-weight:600;font-size:11px}
+.pp-sep{color:var(--line);font-weight:400;font-size:11px}
+.prod-prices .price-mg{font-weight:700;font-size:11px;color:var(--ink2)}
 .price-item{display:inline-flex;align-items:baseline;gap:3px}
 .price-lbl{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-family:'Archivo';color:var(--muted)}
 .price-val{font-family:'JetBrains Mono';font-weight:600;font-size:12px;color:var(--text)}
@@ -527,8 +527,7 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .price-scale{font-size:9.5px;font-weight:700;font-family:'Archivo';color:var(--gold)}
 .fmt-tag{display:inline-block;background:var(--gold-bg);color:var(--gold);font-size:9px;font-weight:700;font-family:'Archivo';padding:1px 5px;border-radius:4px;margin-left:5px}
 .num{font-family:'JetBrains Mono';font-weight:500}
-.trend{font-size:9.5px;font-weight:700;font-family:'JetBrains Mono';margin-right:2px;display:inline-block}
-.trend.up{color:var(--verde)}.trend.down{color:var(--rojo)}.trend.flat{color:var(--gris)}
+.trend{font-size:9.5px;font-weight:700;font-family:'JetBrains Mono';margin-right:2px;display:inline-block;color:var(--muted)}
 .cov{font-family:'JetBrains Mono';font-weight:700}
 .badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:7px;font-size:11px;font-weight:700;font-family:'Archivo'}
 .badge .d{width:7px;height:7px;border-radius:50%}
@@ -680,12 +679,6 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
   </div>
 </div>
 <button class="cart-fab" id="cart-fab" aria-label="Ver carrito">🛍️<span class="cart-badge" id="cart-badge"></span></button>
-<div class="name-popup hidden" id="name-popup">
-  <div class="name-popup-card">
-    <span class="name-popup-text" id="name-popup-text"></span>
-    <button class="name-popup-close" id="name-popup-close" type="button" aria-label="Cerrar">✕</button>
-  </div>
-</div>
 <div id="tab-pedido">
 <div class="sticky-hdr" id="sticky-hdr">
   <div class="shc-inner">
@@ -1782,25 +1775,24 @@ const TABLE_PAGE=70;let _tbState=null,_tbIO=null;
 function rowHTML(it,a,f){const sug=qOf(it,a);
   const bundles=it.fmt>1?Math.round(sug/it.fmt):sug;
   const covTxt=a.cov==null?'—':a.cov===Infinity?'∞':(a.cov>=100?'99+':fmt1(a.cov)+'d');
-  const dotColor={urgente:'var(--rojo)',pedir:'var(--ambar)',ok:'var(--verde)',sobre:'var(--gris)',sinstock:'var(--azul)'}[a.status]||'var(--gris)';
   const tooltip='#'+it.ref+(it.scale?' · escala ⚡':'')+' · '+SL[a.status];
   const precioVal=it.precio!=null?peso(it.precio):'—';
   const costoVal=it.coste!=null?peso(it.coste):'—';
   const mg=(it.precio>0&&it.coste!=null)?Math.round((it.precio-it.coste)/it.precio*100):null;
-  const mgCls=mg==null?'':(mg>=35?'mg-hi':(mg>=20?'mg-md':'mg-lo'));
+  const mgCls=mg==null?'':(mg>=35?'mg-hi':(mg<20?'mg-lo':''));
   const mgVal=mg!=null?mg+'%':'—';
   const showProv=(state.search||state.allProv);
-  const priceLine=`<div class="prod-prices"><span class="pp-v" title="Venta">V ${precioVal}</span><span class="pp-sep">·</span><span class="pp-c" title="Costo">C ${costoVal}</span><span class="pp-sep">·</span><span class="price-mg ${mgCls}" title="Margen">${mgVal}</span></div>`;
+  const priceLine=`<div class="prod-prices"><span class="pp-v" title="Venta">${precioVal}</span><span class="pp-sep">·</span><span class="pp-c" title="Costo">C ${costoVal}</span><span class="pp-sep">·</span><span class="price-mg ${mgCls}" title="Margen">${mgVal}</span></div>`;
   const ventasPeriodo=state.basis===7?it.u7:state.basis===14?it.u14:state.basis===90?it.u90:it.u30;
   const thumb=it.imagen
-    ?`<img class="card-thumb" src="${it.imagen}" loading="lazy" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'row-dot card-thumb-dot',style:'background:${dotColor}'}))">`
-    :`<span class="row-dot card-thumb-dot" style="background:${dotColor}"></span>`;
+    ?`<img class="card-thumb" src="${it.imagen}" loading="lazy" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'card-thumb-empty',textContent:'📦'}))">`
+    :`<span class="card-thumb-empty">📦</span>`;
   const statStock=it.stock==null?'<span style="color:var(--azul)">s/c</span>':fmt.format(it.stock)+(a.vencido>0?` <span style="color:var(--rojo);font-weight:700">(-${fmt.format(a.vencido)})</span>`:'');
   return `<tr data-ref="${it.ref}" class="${a.status==='urgente'?'row-urgent':''}" title="${tooltip}"><td class="card-cell" colspan="5">`+
     `<div class="card-row">`+
       `<div class="card-thumb-wrap">${thumb}</div>`+
       `<div class="card-main">`+
-        `<div class="prod-name-wrap"><span class="prod-name">${it.nombre}</span><button class="prod-info-btn" type="button" aria-label="Ver nombre completo">ⓘ</button></div>`+
+        `<div class="prod-name-wrap"><span class="prod-name">${it.nombre}</span></div>`+
         `${showProv?`<div class="prod-meta">${it.prov}</div>`:''}`+
         priceLine+
         `<div class="card-stats">`+
@@ -1935,7 +1927,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-16.4';
+const APP_VERSION='2026-07-16.7';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -2610,25 +2602,10 @@ async function fpGuardarEdicion(sku){
 // Puntos de entrada a la ficha: tocar el nombre del producto en la tabla de Pedidos o en Reconteo.
 // Un solo listener delegado por lista (no se duplica en cada render).
 document.getElementById('ptbody').addEventListener('click',ev=>{
-  const info=ev.target.closest('.prod-info-btn');
-  if(info){
-    const tr=info.closest('tr[data-ref]');
-    const it=tr&&DB.items.find(x=>x.ref===tr.dataset.ref);
-    if(it)mostrarNombreCompleto(it.nombre);
-    return;
-  }
   const nom=ev.target.closest('.prod-name');
   if(!nom)return;
   const tr=nom.closest('tr[data-ref]');
   if(tr)fpAbrir(tr.dataset.ref);
-});
-function mostrarNombreCompleto(nombre){
-  document.getElementById('name-popup-text').textContent=nombre;
-  document.getElementById('name-popup').classList.remove('hidden');
-}
-document.getElementById('name-popup-close').onclick=()=>document.getElementById('name-popup').classList.add('hidden');
-document.getElementById('name-popup').addEventListener('click',ev=>{
-  if(ev.target.id==='name-popup')document.getElementById('name-popup').classList.add('hidden'); // toca fuera de la tarjeta = cierra
 });
 document.getElementById('rk-list').addEventListener('click',ev=>{
   const nom=ev.target.closest('.sm-info');
