@@ -60,18 +60,7 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .cart-fab:active{background:var(--wa-d)}
 /* Panel del carrito: SIEMPRE montado, se muestra/oculta solo con CSS (transform+opacity+pointer-events)
    — nunca con display:none, para conservar scroll/estado y no tener que re-renderizar al abrir. */
-#tab-carrito{position:fixed;inset:0;z-index:250;background:var(--paper);overflow:hidden;padding-bottom:calc(78px + env(safe-area-inset-bottom));transform:translateY(100%);opacity:0;pointer-events:none;transition:transform .25s ease,opacity .25s ease}
-/* Misma cadena flex que el modo tablet (carrito-fijo): el header y el pie del carrito
-   quedan fijos, solo .order-body se expande para ocupar el espacio libre y se desplaza
-   internamente — así se ven más productos sin agrandar el panel completo (que ya es
-   pantalla completa vía position:fixed;inset:0). */
-#tab-carrito{display:flex;flex-direction:column}
-#tab-carrito>.wrap{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
-#tab-carrito>.wrap>div{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
-#cart-back{flex-shrink:0}
-.order{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
-.order-head{flex-shrink:0}
-.order-foot{flex-shrink:0}
+#tab-carrito{position:fixed;inset:0;z-index:250;background:var(--paper);overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(78px + env(safe-area-inset-bottom));transform:translateY(100%);opacity:0;pointer-events:none;transition:transform .25s ease,opacity .25s ease}
 /* ===== ≥1180px (detectado por JS, no @media): el panel "Copiar a WhatsApp" pasa de =====
    overlay oculto a columna fija en Grid. Reutiliza el MISMO #tab-carrito (nunca se
    duplica) — solo se le pisa el estado con CSS, condicionado a la clase .carrito-fijo.
@@ -163,9 +152,8 @@ html.carrito-fijo #tab-pedido .wrap,html.carrito-fijo #tab-pedido .tablecard,htm
 .mm-field label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:5px}
 .mm-search{position:relative}
 .mm-search input,.prov-all{border:1.5px solid var(--line);border-radius:10px;font-size:15px;padding-top:11px;padding-bottom:11px;background:#fff;color:var(--text);font-family:'Inter'}
-.mm-search input{width:100%;padding-left:14px;padding-right:96px}
-.mm-search .mm-mic,.mm-search .mm-scan{position:absolute;top:50%;transform:translateY(-50%);width:24px;height:24px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2}
-.mm-x{position:absolute;top:50%;transform:translateY(-50%);width:32px;height:32px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2}
+.mm-search input{width:100%;padding-left:14px;padding-right:70px}
+.mm-search .mm-mic,.mm-search .mm-scan,.mm-x{position:absolute;top:50%;transform:translateY(-50%);width:24px;height:24px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2}
 .mm-search .mm-mic{right:34px}
 .mm-search .mm-scan{right:6px}
 .mm-x{right:62px}
@@ -344,13 +332,13 @@ input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .prov-combo{position:relative;flex:1;min-width:160px}
 .shc-row .prov-combo{position:sticky;left:0;z-index:3;background:var(--card);flex-shrink:0;width:172px}
 .prov-icon{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;pointer-events:none;z-index:2}
-.prov-all{width:100%;min-width:0;font-weight:600;padding-right:84px;padding-left:24px;font-size:12.5px}
-.prov-x{position:absolute;top:50%;right:4px;transform:translateY(-50%);width:24px;height:24px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
+.prov-all{width:100%;min-width:0;font-weight:600;padding-right:70px;padding-left:24px;font-size:12.5px}
+.prov-x{position:absolute;top:50%;right:4px;transform:translateY(-50%);width:19px;height:19px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:10.5px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
 .prov-x:active{background:var(--line);color:var(--ink)}
-.prov-mic{position:absolute;top:50%;right:56px;transform:translateY(-50%);width:19px;height:19px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:10.5px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
+.prov-mic{position:absolute;top:50%;right:48px;transform:translateY(-50%);width:19px;height:19px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:10.5px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
 .prov-mic:active{background:var(--line);color:var(--ink)}
 .prov-mic.listening{background:var(--rojo);color:#fff;animation:micpulse 1s infinite}
-.prov-scan{position:absolute;top:50%;right:30px;transform:translateY(-50%);width:19px;height:19px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:10.5px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
+.prov-scan{position:absolute;top:50%;right:26px;transform:translateY(-50%);width:19px;height:19px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:10.5px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
 .prov-scan:active{background:var(--line)}
 .prov-menu{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.16);max-height:min(320px,46vh);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;z-index:260}
 .prov-menu.hidden{display:none}
@@ -484,11 +472,11 @@ input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .tbl-scroll{overflow-y:auto;overflow-x:auto;max-height:calc(100vh - 195px);max-height:calc(100dvh - 195px);-webkit-overflow-scrolling:touch;max-width:100%;transition:max-height .22s ease}
 .tbl-scroll.nav-hidden{max-height:calc(100vh - 125px);max-height:calc(100dvh - 125px)}
 table{border-collapse:collapse;width:100%;table-layout:fixed}
-thead th{background:var(--card);text-align:center;font-size:9.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:7px 4px;white-space:nowrap;cursor:pointer;user-select:none;position:sticky;top:0;z-index:6;border-bottom:1px solid var(--line2)}
-thead th:first-child{text-align:left;padding-left:12px;font-size:10.5px;letter-spacing:.01em}
-thead th .ar{opacity:.35;font-size:9px;display:inline-block;margin-left:2px}
-thead th.sorted{color:var(--ink2);background:var(--paper)}
-thead th.sorted .ar{opacity:.8}
+thead th{background:var(--paper);text-align:center;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;padding:6px 4px;white-space:nowrap;cursor:pointer;user-select:none;position:sticky;top:0;z-index:6;border-bottom:1.5px solid var(--line)}
+thead th:first-child{text-align:left;padding-left:10px}
+thead th .ar{opacity:.4;font-size:9px;display:inline-block;margin-left:2px}
+thead th.sorted{color:var(--ink);background:#F0EDE4}
+thead th.sorted .ar{opacity:1}
 thead th.l{text-align:left}
 tbody td{padding:5px 6px;border-bottom:1px solid var(--line2);text-align:right;white-space:nowrap;font-size:13px}
 tbody td.num,tbody td.tdc{overflow:visible}
@@ -498,39 +486,39 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
    tarjeta completa adentro. El encabezado de arriba quedó como una barra de
    chips de orden, independiente del ancho de las tarjetas. */
 #ptable{min-width:100%;table-layout:auto}
-.card-cell{padding:13px 10px !important;white-space:normal !important;text-align:left !important;border-bottom:1px solid var(--line2) !important}
-.card-row{display:flex;align-items:flex-start;gap:10px;min-width:0}
+.card-cell{padding:10px !important;white-space:normal !important;text-align:left !important}
+.card-row{display:flex;align-items:flex-start;gap:9px;min-width:0}
 .card-thumb-wrap{flex-shrink:0;width:44px;height:44px}
 .card-thumb{width:44px;height:44px;border-radius:10px;object-fit:cover;background:var(--gris-bg,#F3F1EA);display:block}
-/* Producto sin foto: ícono neutro y sutil, no un punto de color llamativo —
-   la alerta de estado (urgente/pedir/etc.) ya se lee en el chip COB, no hace
-   falta duplicarla aquí con un semáforo de color. */
-.card-thumb-empty{width:44px;height:44px;border-radius:10px;background:var(--gris-bg,#F3F1EA);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:17px;opacity:.55}
+.card-thumb-dot{width:14px;height:14px;border-radius:50%;margin:15px}
 .card-main{flex:1;min-width:0}
-/* Micro-chips: fuente liviana, gris suave, sin fondos saturados — solo el
-   valor toma color (y únicamente para COB, que es la alerta de urgencia). */
-.card-stats{display:flex;gap:7px;margin-top:5px;font-size:11px;font-weight:600;color:var(--ink2);flex-wrap:wrap}
-.card-stats .cstat{display:flex;align-items:center;gap:3px;line-height:1}
-.card-stats .cstat-label{color:var(--muted);font-weight:600;font-size:9px;text-transform:uppercase;letter-spacing:.04em}
-.card-stats .cstat-stock{font-weight:700;color:var(--ink2)}
+.card-stats{display:flex;gap:10px;margin-top:4px;font-size:11.5px;font-weight:700;color:var(--ink);flex-wrap:wrap}
+.card-stats .cstat{display:flex;align-items:center;gap:2px}
+.card-stats .cstat-label{color:var(--muted);font-weight:600;margin-right:1px}
+.card-stats .cstat-stock{font-weight:800;color:var(--ink)}
 .card-stepper{flex-shrink:0;display:flex;align-items:center}
 .tdc{text-align:center!important;padding-left:2px!important;padding-right:2px!important}
 .prod-name-wrap{display:flex;align-items:flex-start;gap:3px;min-width:0}
 .prod-name{font-weight:800;font-size:14px;line-height:1.2;letter-spacing:-.01em;white-space:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;cursor:pointer;flex:1;min-width:0}
-@media (min-width:700px){.prod-name{font-size:17px}}
+.prod-info-btn{flex-shrink:0;width:17px;height:17px;border:none;background:var(--gris-bg,#F3F1EA);border-radius:50%;font-size:10.5px;line-height:1;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent}
+.prod-info-btn:active{background:var(--line)}
+@media (min-width:700px){.prod-name{font-size:17px}.prod-info-btn{width:19px;height:19px;font-size:12px}}
+.name-popup{position:fixed;inset:0;background:rgba(21,25,31,.5);z-index:340;display:flex;align-items:center;justify-content:center;padding:24px}
+.name-popup-card{background:#fff;border-radius:14px;padding:18px 20px;max-width:420px;width:100%;box-shadow:0 12px 32px rgba(0,0,0,.25);display:flex;align-items:flex-start;gap:12px}
+.name-popup-text{flex:1;font-weight:800;font-size:16px;line-height:1.35;color:var(--ink)}
+.name-popup-close{flex-shrink:0;width:26px;height:26px;border:none;background:var(--gris-bg,#F3F1EA);border-radius:50%;font-size:13px;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer}
 .sm-info{cursor:pointer}
 .prod-ref{font-size:10px;color:var(--muted);font-family:'JetBrains Mono'}
 .prod-meta{font-size:9.5px;color:var(--muted);font-weight:600;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .prod-prov{font-size:9.5px;font-weight:700;color:var(--muted);font-family:'Archivo';text-transform:uppercase;letter-spacing:.04em;padding-right:6px;border-right:1px solid var(--line)}
-/* Jerarquía de precio: venta en negrita y más grande (es el dato que más se
-   consulta), costo y margen como texto secundario gris oscuro — ya no amarillo.
-   El color de margen se reserva solo para los extremos (muy bueno / muy bajo),
-   como alerta real, no como decoración. */
-.prod-prices{display:flex;align-items:baseline;gap:5px;margin-top:2px;font-family:'JetBrains Mono';line-height:1.15;flex-wrap:wrap}
-.pp-v{color:var(--ink);font-weight:800;font-size:15px}
-.pp-c{color:var(--ink2);font-weight:600;font-size:11px}
-.pp-sep{color:var(--line);font-weight:400;font-size:11px}
-.prod-prices .price-mg{font-weight:700;font-size:11px;color:var(--ink2)}
+.prod-prices{display:flex;align-items:center;gap:4px;margin-top:1px;font-size:10.5px;font-family:'JetBrains Mono';font-weight:600;line-height:1.15;flex-wrap:wrap}
+.pp-v{color:var(--ink);font-weight:800;font-size:11.5px}
+.pp-c{color:var(--gold)}
+.pp-sep{color:var(--line);font-weight:400}
+.prod-prices .price-mg{font-weight:800}
+.prod-prices .price-mg.mg-hi{color:var(--verde)}
+.prod-prices .price-mg.mg-md{color:var(--gold)}
+.prod-prices .price-mg.mg-lo{color:var(--rojo)}
 .price-item{display:inline-flex;align-items:baseline;gap:3px}
 .price-lbl{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-family:'Archivo';color:var(--muted)}
 .price-val{font-family:'JetBrains Mono';font-weight:600;font-size:12px;color:var(--text)}
@@ -539,7 +527,8 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .price-scale{font-size:9.5px;font-weight:700;font-family:'Archivo';color:var(--gold)}
 .fmt-tag{display:inline-block;background:var(--gold-bg);color:var(--gold);font-size:9px;font-weight:700;font-family:'Archivo';padding:1px 5px;border-radius:4px;margin-left:5px}
 .num{font-family:'JetBrains Mono';font-weight:500}
-.trend{font-size:9.5px;font-weight:700;font-family:'JetBrains Mono';margin-right:2px;display:inline-block;color:var(--muted)}
+.trend{font-size:9.5px;font-weight:700;font-family:'JetBrains Mono';margin-right:2px;display:inline-block}
+.trend.up{color:var(--verde)}.trend.down{color:var(--rojo)}.trend.flat{color:var(--gris)}
 .cov{font-family:'JetBrains Mono';font-weight:700}
 .badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:7px;font-size:11px;font-weight:700;font-family:'Archivo'}
 .badge .d{width:7px;height:7px;border-radius:50%}
@@ -549,17 +538,6 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .b-sobre{background:var(--gris-bg);color:var(--gris)}.b-sobre .d{background:var(--gris)}
 .b-sinstock{background:var(--azul-bg);color:var(--azul)}.b-sinstock .d{background:var(--azul)}
 .qcell{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
-.cat-combo{position:relative;flex:1;min-width:0}
-.cat-combo-input{width:100%;padding:11px 34px 11px 10px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;background:#fff;color:var(--text);cursor:pointer}
-.cat-combo-input:focus{outline:none;border-color:var(--wa)}
-.cat-combo-chev{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--muted);pointer-events:none}
-.cat-combo-menu{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.16);max-height:260px;overflow-y:auto;-webkit-overflow-scrolling:touch;z-index:400}
-.cat-combo-menu.hidden{display:none}
-.cat-opt{padding:11px 13px;font-size:13.5px;cursor:pointer;border-bottom:1px solid var(--line2);-webkit-tap-highlight-color:transparent}
-.cat-opt:last-child{border-bottom:none}
-.cat-opt:hover,.cat-opt:active{background:var(--paper)}
-.cat-opt-new{color:var(--wa-d);font-weight:700}
-.cat-opt-empty{padding:16px 13px;color:var(--muted);text-align:center;font-size:12.5px}
 .qstep{display:inline-flex;align-items:center;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
 .qstep.has{border-color:var(--wa)}
 .qbtn{border:none;background:#F4F3EE;width:23px;height:32px;font-size:16px;font-weight:700;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;user-select:none;-webkit-user-select:none}
@@ -573,13 +551,10 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .rcol{display:flex;flex-direction:column;gap:13px;position:sticky;top:16px}
 @media(max-width:1080px){.rcol{position:static}}
 .scalecard,.order{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.scale-head{background:linear-gradient(100deg,#2a2118,#3a2c1a);color:#fff;padding:12px 15px;cursor:pointer;-webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:space-between;gap:10px;user-select:none}
+.scale-head{background:linear-gradient(100deg,#2a2118,#3a2c1a);color:#fff;padding:12px 15px}
 .scale-head .t{font-family:'Archivo';font-weight:800;font-size:14px}
 .scale-head .s{color:#e0c79a;font-size:11.5px;margin-top:3px}
-.scale-head .accordion-chev{flex-shrink:0;width:18px;height:18px;color:#e0c79a;transition:transform .2s ease}
-.scale-head.open .accordion-chev{transform:rotate(180deg)}
-.accordion-body{padding:13px 15px;overflow:hidden;max-height:2000px;transition:max-height .25s ease,padding .25s ease,opacity .2s ease;opacity:1}
-.accordion-body.collapsed{max-height:0;padding-top:0;padding-bottom:0;opacity:0}
+.scale-body{padding:13px 15px}
 .prog-track{height:10px;background:var(--line2);border-radius:6px;position:relative;margin:18px 0 24px}
 .prog-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--wa));border-radius:6px}
 .prog-mark{position:absolute;top:-4px;width:2px;height:18px;background:#bbb}
@@ -598,12 +573,15 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .order-head .t{font-family:'Archivo';font-weight:800;font-size:15px;display:flex;align-items:center;gap:8px}
 .order-head .s{color:#aab0ba;font-size:12px;margin-top:3px}
 .wa-ico{width:20px;height:20px;background:var(--wa);border-radius:5px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:800;font-family:'Archivo'}
-.order-body{padding:12px 14px;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.order-body{padding:12px 14px;max-height:36vh;overflow-y:auto}
 .oline{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px dashed var(--line2);font-size:13px}
 .oline .on-wrap{flex:1;min-width:0}
 .oline .on{display:block;font-weight:700;white-space:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .oline .oline-sub{display:block;font-size:11px;color:var(--muted);font-family:'JetBrains Mono';margin-top:1px}
-.oline .qcell{flex-shrink:0}
+.ostep{display:flex;align-items:center;gap:0;flex-shrink:0;border:1.5px solid var(--line);border-radius:10px;overflow:hidden}
+.ostep-btn{width:32px;height:32px;border:none;background:var(--gris-bg,#F3F1EA);font-size:17px;font-weight:700;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
+.ostep-btn:active{background:var(--line)}
+.ostep-val{min-width:34px;text-align:center;font-weight:700;font-size:14px;font-family:'JetBrains Mono'}
 .odel{flex-shrink:0;width:32px;height:32px;border:none;background:#FCE9E7;color:var(--rojo);border-radius:10px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
 .odel:active{background:#F8D2CE}
 .oline:last-child{border-bottom:none}.oline .on{font-weight:500;line-height:1.25}
@@ -689,19 +667,25 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
   <div class="brand"><span class="mk">Marín 376</span><span class="loc">Pedidos</span></div>
   <div class="toprt">
     <button class="loadbtn acc" id="btn-sync"><svg class="sync-ic" id="sync-ic-sync" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.7-3"/><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.7 3"/><polyline points="21 3 21 9 15 9"/><polyline points="3 21 3 15 9 15"/></svg> Sincronizar</button>
-    <button class="loadbtn" id="btn-prices"><span class="sync-ic" id="sync-ic-prices"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg></span> Catálogo</button>
-    <button class="loadbtn hidden" id="btn-merma"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg> Merma</button>
-    <button class="loadbtn hidden" id="btn-hist-merma"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="6" y="4" width="12" height="17" rx="1.5"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="15" y2="15"/></svg> Historial</button>
-    <button class="loadbtn hidden" id="btn-insumos"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><line x1="19" y1="4" x2="10" y2="13"/><path d="M10 13 4 21l3-1 2 2 1-3 3-3"/><path d="M10 13l2-6"/></svg> Insumos</button>
-    <button class="loadbtn hidden" id="btn-venc"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg> Vencimientos</button>
-    <button class="loadbtn hidden" id="btn-recibir"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M3 8l9-5 9 5-9 5-9-5Z"/><path d="M3 8v9l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="22"/></svg> Recibir mercadería</button>
-    <button class="loadbtn hidden" id="btn-llegadas" style="position:relative"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span id="ll-badge" style="display:none;position:absolute;top:-6px;right:-6px;background:var(--rojo);color:#fff;border-radius:10px;min-width:16px;height:16px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px"></span></button>
-    <button class="loadbtn hidden" id="btn-sincosto"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 3 22 20H2Z"/><line x1="12" y1="9" x2="12" y2="14"/><circle cx="12" cy="17.3" r="0.2" fill="currentColor" stroke-width="0"/></svg> Sin costo</button>
+    <button class="loadbtn" id="btn-prices"><span class="sync-ic" id="sync-ic-prices">♻️</span> Catálogo</button>
+    <button class="loadbtn hidden" id="btn-merma">🗑️ Merma</button>
+    <button class="loadbtn hidden" id="btn-hist-merma">📋 Historial</button>
+    <button class="loadbtn hidden" id="btn-insumos">🧹 Insumos</button>
+    <button class="loadbtn hidden" id="btn-venc">📅 Vencimientos</button>
+    <button class="loadbtn hidden" id="btn-recibir">📦 Recibir mercadería</button>
+    <button class="loadbtn hidden" id="btn-llegadas" style="position:relative">🔔<span id="ll-badge" style="display:none;position:absolute;top:-6px;right:-6px;background:var(--rojo);color:#fff;border-radius:10px;min-width:16px;height:16px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px"></span></button>
+    <button class="loadbtn hidden" id="btn-sincosto">⚠️ Sin costo</button>
     <span class="glob" id="glob-quiebre" style="color:#ffb4a8;font-size:12px;font-weight:600"></span>
     <span class="upd" id="updlabel"></span>
   </div>
 </div>
 <button class="cart-fab" id="cart-fab" aria-label="Ver carrito">🛍️<span class="cart-badge" id="cart-badge"></span></button>
+<div class="name-popup hidden" id="name-popup">
+  <div class="name-popup-card">
+    <span class="name-popup-text" id="name-popup-text"></span>
+    <button class="name-popup-close" id="name-popup-close" type="button" aria-label="Cerrar">✕</button>
+  </div>
+</div>
 <div id="tab-pedido">
 <div class="sticky-hdr" id="sticky-hdr">
   <div class="shc-inner">
@@ -709,9 +693,9 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
     <span>📦 Proveedores de hoy</span><span class="prov-acc-caret" id="prov-acc-caret">▾</span>
   </button>
   <div class="provday hidden" id="provday"></div>
-  <div style="position:relative" id="prov-anchor">
+  <div style="position:relative">
     <div class="shc-row shc-wrap">
-      <div class="prov-combo" id="prov-combo"><span class="prov-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13.5 13.5 20a1.5 1.5 0 0 1-2.1 0L4 12.6V4h8.6l7.4 7.4a1.5 1.5 0 0 1 0 2.1Z"/><circle cx="8.3" cy="8.3" r="1.3"/></svg></span><input class="prov-all" id="prov-all" placeholder="Proveedor o producto… escribe o toca" autocomplete="off" inputmode="text"><button class="prov-mic" id="prov-mic" type="button" tabindex="-1" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button><button class="prov-scan" id="prov-scan" type="button" tabindex="-1" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button><button class="prov-x" id="prov-x" type="button" tabindex="-1" aria-label="Borrar">✕</button></div>
+      <div class="prov-combo" id="prov-combo"><span class="prov-icon">🏷️</span><input class="prov-all" id="prov-all" placeholder="Proveedor o producto… escribe o toca" autocomplete="off" inputmode="text"><button class="prov-mic" id="prov-mic" type="button" tabindex="-1" aria-label="Buscar por voz">🎤</button><button class="prov-scan" id="prov-scan" type="button" tabindex="-1" aria-label="Escanear código">📷</button><button class="prov-x" id="prov-x" type="button" tabindex="-1" aria-label="Borrar">✕</button></div>
       <div class="seg sm" id="seg-basis"><button data-b="7" class="active">7d</button><button data-b="14">14d</button><button data-b="30">30d</button><button data-b="90">90d</button></div>
       <div class="shc-mini"><label>Entrega</label><input type="number" id="lead" value="3" min="0" max="30"></div>
       <div class="shc-mini"><label>Cobertura</label><input type="number" id="cover" value="10" min="1" max="60"></div>
@@ -743,8 +727,8 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
           <label>Producto</label>
           <div class="mm-search">
             <input id="mm-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off">
-            <button class="mm-mic" id="mm-mic" type="button" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
-            <button class="mm-scan" id="mm-scan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
+            <button class="mm-mic" id="mm-mic" type="button" aria-label="Buscar por voz">🎤</button>
+            <button class="mm-scan" id="mm-scan" type="button" aria-label="Escanear código">📷</button>
           </div>
           <div class="mm-picked" id="mm-picked">
             <div class="nom" id="mm-nom">—</div>
@@ -817,8 +801,8 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
           <div class="mm-search" style="margin:0 0 10px">
             <input id="vc-lsearch" placeholder="Buscar producto: nombre, código o SKU…" autocomplete="off" style="padding-right:104px">
             <button class="mm-x" id="vc-lx" type="button" aria-label="Limpiar" style="display:none">✕</button>
-            <button class="mm-mic" id="vc-lmic" type="button" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
-            <button class="mm-scan" id="vc-lscan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
+            <button class="mm-mic" id="vc-lmic" type="button" aria-label="Buscar por voz">🎤</button>
+            <button class="mm-scan" id="vc-lscan" type="button" aria-label="Escanear código">📷</button>
           </div>
           <div id="vc-list"><div class="vc-empty">Cargando…</div></div>
           </div>
@@ -839,8 +823,8 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
             <label>Producto</label>
             <div class="mm-search">
               <input id="vc-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off">
-              <button class="mm-mic" id="vc-mic" type="button" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
-              <button class="mm-scan" id="vc-scan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
+              <button class="mm-mic" id="vc-mic" type="button" aria-label="Buscar por voz">🎤</button>
+              <button class="mm-scan" id="vc-scan" type="button" aria-label="Escanear código">📷</button>
             </div>
             <div class="mm-picked" id="vc-picked">
               <div class="nom" id="vc-nom">—</div>
@@ -904,8 +888,8 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
         <div class="mm-search" style="margin:0 0 10px">
           <input id="hm-lsearch" placeholder="Buscar en el historial…" autocomplete="off" style="padding-right:104px">
           <button class="mm-x" id="hm-lx" type="button" aria-label="Limpiar" style="display:none">✕</button>
-          <button class="mm-mic" id="hm-lmic" type="button" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
-          <button class="mm-scan" id="hm-lscan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
+          <button class="mm-mic" id="hm-lmic" type="button" aria-label="Buscar por voz">🎤</button>
+          <button class="mm-scan" id="hm-lscan" type="button" aria-label="Escanear código">📷</button>
         </div>
         <div id="hm-list"></div>
         </div>
@@ -920,8 +904,8 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
           <label>Agregar producto</label>
           <div class="mm-search">
             <input id="in-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off">
-            <button class="mm-mic" id="in-mic" type="button" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
-            <button class="mm-scan" id="in-scan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
+            <button class="mm-mic" id="in-mic" type="button" aria-label="Buscar por voz">🎤</button>
+            <button class="mm-scan" id="in-scan" type="button" aria-label="Escanear código">📷</button>
           </div>
           <div id="in-results"></div>
         </div>
@@ -956,8 +940,8 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
           <label>Producto</label>
           <div class="mm-search">
             <input id="rc-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off">
-            <button class="mm-mic" id="rc-mic" type="button" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
-            <button class="mm-scan" id="rc-scan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
+            <button class="mm-mic" id="rc-mic" type="button" aria-label="Buscar por voz">🎤</button>
+            <button class="mm-scan" id="rc-scan" type="button" aria-label="Escanear código">📷</button>
           </div>
           <div class="mm-picked" id="rc-picked">
             <div class="nom" id="rc-nom">—</div>
@@ -1056,8 +1040,8 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
         </div>
       </div>
       <div class="scalecard hidden" id="scalecard" style="margin-top:12px">
-        <div class="scale-head" id="scale-head"><div><div class="t">⚡ Escala de volumen</div><div class="s" id="scale-sub"></div></div><svg class="accordion-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
-        <div class="scale-body accordion-body collapsed" id="scale-body"></div>
+        <div class="scale-head"><div class="t">⚡ Escala de volumen</div><div class="s" id="scale-sub"></div></div>
+        <div class="scale-body" id="scale-body"></div>
       </div>
     </div>
   </div>
@@ -1082,9 +1066,9 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 <div class="toast" id="toast"></div>
 
 <nav class="bottom-nav" id="bottom-nav">
-  <button class="bn-item active" id="bn-pedidos"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M3 4h2l2.2 11h9.6L19 8H6.4"/></svg></span>Pedidos</button>
-  <button class="bn-item" id="bn-recepcion"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M3 8l9-5 9 5-9 5-9-5Z"/><path d="M3 8v9l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="22"/></svg></span>Recepción</button>
-  <button class="bn-item" id="bn-vencimientos"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></span>Vencimientos</button>
+  <button class="bn-item active" id="bn-pedidos"><span class="ic">🛒</span>Pedidos</button>
+  <button class="bn-item" id="bn-recepcion"><span class="ic">📦</span>Recepción</button>
+  <button class="bn-item" id="bn-vencimientos"><span class="ic">📅</span>Vencimientos</button>
   <button class="bn-item" id="bn-mas"><span class="ic">⋯</span>Más<span class="bn-dot" id="bn-mas-dot"></span></button>
 </nav>
 
@@ -1094,15 +1078,15 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
     <div class="mm-topbar"><button class="loadbtn" id="mas-cerrar" style="width:100%">Cerrar</button></div>
     <div class="mm-body">
       <div class="mas-quick">
-        <button id="mas-q-merma"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><br>Merma</button>
-        <button id="mas-q-insumos"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><line x1="19" y1="4" x2="10" y2="13"/><path d="M10 13 4 21l3-1 2 2 1-3 3-3"/><path d="M10 13l2-6"/></svg><br>Insumos</button>
-        <button id="mas-q-llegadas"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><br>Avisos<span class="mas-badge" id="mas-badge"></span></button>
-        <button id="mas-q-sincosto"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 3 22 20H2Z"/><line x1="12" y1="9" x2="12" y2="14"/><circle cx="12" cy="17.3" r="0.2" fill="currentColor" stroke-width="0"/></svg><br>Sin costo</button>
-        <button id="mas-q-hist"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="6" y="4" width="12" height="17" rx="1.5"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="15" y2="15"/></svg><br>Historial</button>
-        <button id="mas-q-sinmov"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="10" y1="9" x2="10" y2="15"/><line x1="14" y1="9" x2="14" y2="15"/></svg><br>Sin movimiento</button>
-        <button id="mas-q-reconteo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="10" y1="4" x2="8" y2="20"/><line x1="16" y1="4" x2="14" y2="20"/></svg><br>Reconteo stock</button>
-        <button id="mas-q-crear"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><br>Crear producto</button>
-        <button id="mas-q-recargar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="20" x2="5" y2="11"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="19" y1="20" x2="19" y2="14"/></svg><br>Recargar historial</button>
+        <button id="mas-q-merma">🗑️<br>Merma</button>
+        <button id="mas-q-insumos">🧹<br>Insumos</button>
+        <button id="mas-q-llegadas">🔔<br>Avisos<span class="mas-badge" id="mas-badge"></span></button>
+        <button id="mas-q-sincosto">⚠️<br>Sin costo</button>
+        <button id="mas-q-hist">📋<br>Historial</button>
+        <button id="mas-q-sinmov">🧹<br>Sin movimiento</button>
+        <button id="mas-q-reconteo">🔢<br>Reconteo stock</button>
+        <button id="mas-q-crear">➕<br>Crear producto</button>
+        <button id="mas-q-recargar">📊<br>Recargar historial</button>
       </div>
       <div class="method" style="margin:0;padding:16px 18px">
         <h3>ℹ️ Cómo funciona tu app</h3>
@@ -1156,8 +1140,8 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
       <div class="mm-search" style="margin:0 0 10px">
         <input id="sm-search" placeholder="Buscar en la lista…" autocomplete="off" style="padding-right:104px">
         <button class="mm-x" id="sm-x" type="button" aria-label="Limpiar" style="display:none">✕</button>
-        <button class="mm-mic" id="sm-mic" type="button" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
-        <button class="mm-scan" id="sm-scan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
+        <button class="mm-mic" id="sm-mic" type="button" aria-label="Buscar por voz">🎤</button>
+        <button class="mm-scan" id="sm-scan" type="button" aria-label="Escanear código">📷</button>
       </div>
       <div class="sm-actions">
         <label class="sm-selall"><input type="checkbox" id="sm-selall"> Seleccionar todos</label>
@@ -1175,10 +1159,10 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
     <div class="mm-body">
       <div class="hm-summary"><span class="lbl" id="rk-lbl">—</span><span class="val" id="rk-val"></span></div>
       <div class="prov-combo" id="rk-combo" style="margin-bottom:10px">
-        <span class="prov-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13.5 13.5 20a1.5 1.5 0 0 1-2.1 0L4 12.6V4h8.6l7.4 7.4a1.5 1.5 0 0 1 0 2.1Z"/><circle cx="8.3" cy="8.3" r="1.3"/></svg></span>
+        <span class="prov-icon">🏷️</span>
         <input class="prov-all" id="rk-all" placeholder="Proveedor o producto… escribe o toca" autocomplete="off" inputmode="text">
-        <button class="prov-mic" id="rk-mic" type="button" tabindex="-1" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
-        <button class="prov-scan" id="rk-scan" type="button" tabindex="-1" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
+        <button class="prov-mic" id="rk-mic" type="button" tabindex="-1" aria-label="Buscar por voz">🎤</button>
+        <button class="prov-scan" id="rk-scan" type="button" tabindex="-1" aria-label="Escanear código">📷</button>
         <button class="prov-x" id="rk-x" type="button" tabindex="-1" aria-label="Borrar">✕</button>
         <div class="prov-menu hidden" id="rk-menu"></div>
       </div>
@@ -1229,12 +1213,7 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
       <div class="mm-field">
         <label>Categoría *</label>
         <div style="display:flex;gap:8px">
-          <div class="cat-combo" id="cat-combo">
-            <input id="cp-cat-input" class="cat-combo-input" placeholder="Elige una categoría…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
-            <svg class="cat-combo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-            <select id="cp-cat" style="display:none"><option value="">Cargando…</option></select>
-            <div class="cat-combo-menu hidden" id="cat-combo-menu" role="listbox"></div>
-          </div>
+          <select id="cp-cat" style="flex:1;min-width:0;padding:11px 10px;border:1.5px solid var(--line);border-radius:10px;font-size:14px"><option value="">Cargando…</option></select>
           <button class="loadbtn" id="cp-cat-nueva" type="button" style="white-space:nowrap">➕ Nueva</button>
         </div>
         <div id="cp-cat-nuevabox" class="hidden" style="gap:8px;margin-top:8px">
@@ -1258,7 +1237,7 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
         <label>Código de barras (opcional)</label>
         <div class="mm-search">
           <input id="cp-barcode" placeholder="Escanea o escribe" autocomplete="off" style="padding-right:44px">
-          <button class="mm-scan" id="cp-scan" type="button" aria-label="Escanear"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
+          <button class="mm-scan" id="cp-scan" type="button" aria-label="Escanear">📷</button>
         </div>
       </div>
       <div class="mm-field">
@@ -1600,56 +1579,6 @@ function buildChips(){
     document.addEventListener('pointerdown',function(ev){const combo=document.getElementById('prov-combo');const m=document.getElementById('prov-menu');if(m&&!m.classList.contains('hidden')&&combo&&!combo.contains(ev.target)&&!m.contains(ev.target)){m.classList.add('hidden');const s=document.getElementById('prov-all');if(s&&s.value.trim())setProvInputValue();}},true);
   }
 }
-// ---- Portal de #prov-menu para tablet horizontal (html.carrito-fijo) ----
-// En modo carrito fijo, .sticky-hdr crea su propio stacking context (position:sticky +
-// z-index) y queda atrapado por debajo de #tab-carrito (z-index:250) sin importar el
-// z-index interno de #prov-menu. Solución robusta y sin depender de :has(): mientras el
-// menú está abierto Y estamos en carrito-fijo, se saca #prov-menu de su lugar en el DOM
-// y se monta directo en <body> con position:fixed, calculado con getBoundingClientRect().
-// En celular/escritorio NUNCA se mueve — sigue exactamente igual que antes.
-let _provMenuHome=null; // {parent,next} — dónde vive #prov-menu normalmente, para devolverlo
-function _provMenuIsTablet(){return document.documentElement.classList.contains('carrito-fijo');}
-function _provMenuPosition(menu){
-  const anchor=document.getElementById('prov-anchor');
-  if(!anchor||!menu||menu.parentNode!==document.body)return;
-  const r=anchor.getBoundingClientRect();
-  menu.style.left=r.left+'px';
-  menu.style.top=(r.bottom+4)+'px';
-  menu.style.width=r.width+'px';
-  menu.style.right='auto';
-}
-function _provMenuMount(menu){
-  if(!menu||_provMenuHome)return; // ya montado
-  _provMenuHome={parent:menu.parentNode,next:menu.nextSibling};
-  document.body.appendChild(menu);
-  menu.style.position='fixed';
-  menu.style.zIndex='400';
-  _provMenuPosition(menu);
-}
-function _provMenuUnmount(menu){
-  if(!menu||!_provMenuHome)return;
-  menu.style.position='';menu.style.zIndex='';menu.style.left='';menu.style.top='';menu.style.width='';menu.style.right='';
-  const{parent,next}=_provMenuHome;
-  if(next&&next.parentNode===parent)parent.insertBefore(menu,next);else parent.appendChild(menu);
-  _provMenuHome=null;
-}
-if(!window._provMenuPortalBound){
-  window._provMenuPortalBound=true;
-  const _pm=document.getElementById('prov-menu');
-  if(_pm){
-    new MutationObserver(()=>{
-      const hidden=_pm.classList.contains('hidden');
-      if(hidden)_provMenuUnmount(_pm);
-      else if(_provMenuIsTablet())_provMenuMount(_pm);
-    }).observe(_pm,{attributes:true,attributeFilter:['class']});
-    window.addEventListener('resize',()=>{
-      if(_pm.classList.contains('hidden'))return;
-      if(_provMenuIsTablet())_provMenuMount(_pm);else _provMenuUnmount(_pm);
-      if(_provMenuHome)_provMenuPosition(_pm);
-    });
-    window.addEventListener('scroll',()=>{if(_provMenuHome)_provMenuPosition(_pm);},true);
-  }
-}
 function setProvInputValue(){const sel=document.getElementById('prov-all');if(!sel)return;if(document.activeElement===sel)return;/* el usuario está escribiendo ahí: no lo interrumpimos */if(state.search)return;const allMode=state.allProv&&!state.search;sel.value=allMode?'📋 Todos los proveedores':(DB.provs.some(p=>p.prov===state.prov)?state.prov:(DB.provs[0]?DB.provs[0].prov:''));}
 function pickProv(target){if(target==='__ALL__'){state.allProv=true;}else{state.allProv=false;state.prov=target;state.sort='rate';state.dir=-1;}state.search='';const sx=document.getElementById('prov-x');if(sx)sx.classList.remove('on');state.edits={};const menu=document.getElementById('prov-menu');if(menu)menu.classList.add('hidden');const sel=document.getElementById('prov-all');if(sel)sel.blur();setProvInputValue();render();persistUI();}
 function commitProv(val){const key=(val||'').trim().toLowerCase();if(!key)return false;if(key.indexOf('todos')===0||key.indexOf('📋')===0){pickProv('__ALL__');return true;}let hit=DB.provs.find(p=>p.prov.toLowerCase()===key);if(!hit&&key.length>=2)hit=DB.provs.find(p=>p.prov.toLowerCase().indexOf(key)>-1);if(hit){pickProv(hit.prov);return true;}return false;}
@@ -1773,8 +1702,8 @@ async function renderInicio(){
   });
   const provBox=document.getElementById('in-provhoy');
   provBox.innerHTML =
-    '<div class="in-prov-row pide"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="6" y="4" width="12" height="17" rx="1.5"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="15" y2="15"/></svg></span><div><b>Pides hoy:</b> '+(pide.length?pide.join(' · '):'<span class="in-empty" style="padding:0">sin pedidos programados</span>')+'</div></div>'+
-    '<div class="in-prov-row lleg"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="12" height="10" rx="1"/><path d="M14 10h4l3 3v4h-7z"/><circle cx="7" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg></span><div><b>Llega hoy:</b> '+(lleg.length?lleg.join(' · '):'<span class="in-empty" style="padding:0">sin entregas programadas</span>')+'</div></div>';
+    '<div class="in-prov-row pide"><span class="ic">📋</span><div><b>Pides hoy:</b> '+(pide.length?pide.join(' · '):'<span class="in-empty" style="padding:0">sin pedidos programados</span>')+'</div></div>'+
+    '<div class="in-prov-row lleg"><span class="ic">🚚</span><div><b>Llega hoy:</b> '+(lleg.length?lleg.join(' · '):'<span class="in-empty" style="padding:0">sin entregas programadas</span>')+'</div></div>';
 }
 
 
@@ -1803,24 +1732,25 @@ const TABLE_PAGE=70;let _tbState=null,_tbIO=null;
 function rowHTML(it,a,f){const sug=qOf(it,a);
   const bundles=it.fmt>1?Math.round(sug/it.fmt):sug;
   const covTxt=a.cov==null?'—':a.cov===Infinity?'∞':(a.cov>=100?'99+':fmt1(a.cov)+'d');
+  const dotColor={urgente:'var(--rojo)',pedir:'var(--ambar)',ok:'var(--verde)',sobre:'var(--gris)',sinstock:'var(--azul)'}[a.status]||'var(--gris)';
   const tooltip='#'+it.ref+(it.scale?' · escala ⚡':'')+' · '+SL[a.status];
   const precioVal=it.precio!=null?peso(it.precio):'—';
   const costoVal=it.coste!=null?peso(it.coste):'—';
   const mg=(it.precio>0&&it.coste!=null)?Math.round((it.precio-it.coste)/it.precio*100):null;
-  const mgCls=mg==null?'':(mg>=35?'mg-hi':(mg<20?'mg-lo':''));
+  const mgCls=mg==null?'':(mg>=35?'mg-hi':(mg>=20?'mg-md':'mg-lo'));
   const mgVal=mg!=null?mg+'%':'—';
   const showProv=(state.search||state.allProv);
-  const priceLine=`<div class="prod-prices"><span class="pp-v" title="Venta">${precioVal}</span><span class="pp-sep">·</span><span class="pp-c" title="Costo">C ${costoVal}</span><span class="pp-sep">·</span><span class="price-mg ${mgCls}" title="Margen">${mgVal}</span></div>`;
+  const priceLine=`<div class="prod-prices"><span class="pp-v" title="Venta">V ${precioVal}</span><span class="pp-sep">·</span><span class="pp-c" title="Costo">C ${costoVal}</span><span class="pp-sep">·</span><span class="price-mg ${mgCls}" title="Margen">${mgVal}</span></div>`;
   const ventasPeriodo=state.basis===7?it.u7:state.basis===14?it.u14:state.basis===90?it.u90:it.u30;
   const thumb=it.imagen
-    ?`<img class="card-thumb" src="${it.imagen}" loading="lazy" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'card-thumb-empty',textContent:'📦'}))">`
-    :`<span class="card-thumb-empty">📦</span>`;
+    ?`<img class="card-thumb" src="${it.imagen}" loading="lazy" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'row-dot card-thumb-dot',style:'background:${dotColor}'}))">`
+    :`<span class="row-dot card-thumb-dot" style="background:${dotColor}"></span>`;
   const statStock=it.stock==null?'<span style="color:var(--azul)">s/c</span>':fmt.format(it.stock)+(a.vencido>0?` <span style="color:var(--rojo);font-weight:700">(-${fmt.format(a.vencido)})</span>`:'');
   return `<tr data-ref="${it.ref}" class="${a.status==='urgente'?'row-urgent':''}" title="${tooltip}"><td class="card-cell" colspan="5">`+
     `<div class="card-row">`+
       `<div class="card-thumb-wrap">${thumb}</div>`+
       `<div class="card-main">`+
-        `<div class="prod-name-wrap"><span class="prod-name">${it.nombre}</span></div>`+
+        `<div class="prod-name-wrap"><span class="prod-name">${it.nombre}</span><button class="prod-info-btn" type="button" aria-label="Ver nombre completo">ⓘ</button></div>`+
         `${showProv?`<div class="prod-meta">${it.prov}</div>`:''}`+
         priceLine+
         `<div class="card-stats">`+
@@ -1857,7 +1787,6 @@ function renderTable(){
   _tbState={items,f,idx:0};
   tableMore();
 }
-let _scaleOpen=false; // acordeón "Escala de volumen": oculto por defecto, el usuario decide abrirlo
 function renderScale(){
   const card=document.getElementById('scalecard');const scs=SCALE_OF_PROV[state.prov];
   if(state.search||state.allProv||!scs){card.classList.add('hidden');return;}card.classList.remove('hidden');
@@ -1878,21 +1807,7 @@ function renderScale(){
       html+=`<div style="padding:9px 0;border-bottom:1px dashed var(--line2)"><div style="font-weight:600;font-size:12.5px">${x.it.nombre}</div><div style="display:flex;justify-content:space-between;margin-top:3px"><span class="pk" style="font-family:'JetBrains Mono';font-weight:700">${x.packs} ${S.word}</span><span style="color:var(--wa-d);font-weight:700">-${tier.dto}% · ${peso(tier.c)}/u</span></div>`;
       html+=next?`<div style="font-size:11.5px;color:var(--gold);margin-top:3px">+${next.min-x.packs} ${S.word} → -${next.dto}% (ahorras ${peso(tier.c-next.c)}/u)</div>`:`<div style="font-size:11.5px;color:var(--verde);margin-top:3px">✓ Máximo descuento</div>`;html+=`</div>`;});html+='</div>';}}
   body.innerHTML=html;
-  body.classList.toggle('collapsed',!_scaleOpen);
-  document.getElementById('scale-head').classList.toggle('open',_scaleOpen);
 }
-// Acordeón genérico: alterna cualquier par head/body con las clases .accordion-body / .open,
-// reutilizable si en el futuro se agregan más tarjetas de escala por proveedor.
-function toggleAccordion(headEl,bodyEl,openState){
-  const open=typeof openState==='boolean'?openState:bodyEl.classList.contains('collapsed');
-  bodyEl.classList.toggle('collapsed',!open);
-  headEl.classList.toggle('open',open);
-  return open;
-}
-(function(){
-  const head=document.getElementById('scale-head');
-  if(head)head.onclick=()=>{_scaleOpen=toggleAccordion(head,document.getElementById('scale-body'));};
-})();
 function currentOrder(){const lines=[];const base=(state.search||state.allProv)?currentItems():itemsFor(state.prov);base.forEach(it=>{const a=analyze(it);const q=qOf(it,a);if(q>0)lines.push({it,nombre:it.nombre,q,packs:packsOf(it,q),cost:tierCostUn(it)*q,word:it.word});});return lines;}
 function renderOrder(){
   const lines=currentOrder();const body=document.getElementById('order-body');
@@ -1902,39 +1817,39 @@ function renderOrder(){
         <span class="on">${l.nombre}</span>
         <span class="oline-sub">${peso(l.cost)}${l.it.fmt>1?' · '+(l.q)+' u':''}</span>
       </div>
-      <div class="qcell">
-        <div class="qstep ${l.packs>0?'has':''}">
-          <button class="qbtn" data-d="-1" aria-label="Restar">−</button>
-          <input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${l.packs}" data-ref="${l.it.ref}" data-fmt="${l.it.fmt}" data-step="${inStep(l.it)}">
-          <button class="qbtn" data-d="1" aria-label="Sumar">+</button>
-        </div>
-        <span class="qword ${(l.it.fmt>1||multOf(l.it)>1)?'gold':''}">${labelFor(l.it,l.packs)}</span>
+      <div class="ostep">
+        <button class="ostep-btn" data-act="-" aria-label="Restar">−</button>
+        <span class="ostep-val">${l.packs}</span>
+        <button class="ostep-btn" data-act="+" aria-label="Sumar">+</button>
       </div>
-      <button class="odel" data-act="del" aria-label="Eliminar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
+      <button class="odel" data-act="del" aria-label="Eliminar">🗑️</button>
     </div>`).join('');
   const uds=lines.reduce((s,l)=>s+l.q,0),cost=lines.reduce((s,l)=>s+l.cost,0);
   document.getElementById('tot-skus').textContent=lines.length;document.getElementById('tot-uds').textContent=fmt.format(uds);document.getElementById('tot-cost').textContent=peso(cost);
   const badge=document.getElementById('cart-badge');
   if(badge){badge.textContent=lines.length>99?'99+':lines.length;badge.classList.toggle('on',lines.length>0);}
 }
-// Listener delegado para eliminar del carrito (se registra una vez, nunca se duplica en cada render)
+// Un solo listener delegado para +/-/eliminar en el carrito (se registra una vez, nunca se duplica en cada render)
 (function(){
   const body=document.getElementById('order-body');
   if(!body)return;
   body.addEventListener('click',ev=>{
-    const btn=ev.target.closest('[data-act="del"]');
+    const btn=ev.target.closest('[data-act]');
     if(!btn)return;
     const row=btn.closest('.oline');
     const ref=row&&row.dataset.ref;
     if(!ref)return;
-    state.edits[ref]=0;
+    const it=DB.items.find(i=>i.ref===ref);
+    if(!it)return;
+    const act=btn.dataset.act;
+    if(act==='del'){state.edits[ref]=0;}
+    else{
+      const packsActuales=packsOf(it,qOf(it,analyze(it)));
+      const nuevo=Math.max(0,packsActuales+(act==='+'?1:-1));
+      state.edits[ref]=nuevo*it.fmt;
+    }
     renderOrder();
   });
-  // Mismo mecanismo que la tabla de "Armar pedido": +/− y edición directa del número,
-  // respetando la presentación (display/caja/unidades) de cada producto (stepQty/onQty
-  // ya están definidas arriba y llaman renderOrder()+renderScale() al terminar).
-  body.addEventListener('click',e=>{const b=e.target.closest('.qbtn');if(b)stepQty(b);});
-  body.addEventListener('input',e=>{if(e.target.classList&&e.target.classList.contains('qty-in'))onQty(e.target);});
 })();
 function renderOverview(){
   // Gráfico: venta semanal estimada por categoría (u7 × precio)
@@ -1970,7 +1885,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-16.10';
+const APP_VERSION='2026-07-16.3';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -2521,7 +2436,7 @@ function fpModoEdicion(f){
     <div class="mm-field" style="margin-top:10px"><label>Código de barras (opcional)</label>
       <div class="mm-search">
         <input id="fp-e-barcode" value="${(p.barcode||'').replace(/"/g,'&quot;')}" placeholder="Escanea o escribe" autocomplete="off" style="padding-right:44px">
-        <button class="mm-scan" id="fp-e-scan" type="button" aria-label="Escanear"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
+        <button class="mm-scan" id="fp-e-scan" type="button" aria-label="Escanear">📷</button>
       </div>
     </div>
     <div class="mm-field" style="margin-top:10px"><label>Descripción (opcional)</label>
@@ -2645,10 +2560,25 @@ async function fpGuardarEdicion(sku){
 // Puntos de entrada a la ficha: tocar el nombre del producto en la tabla de Pedidos o en Reconteo.
 // Un solo listener delegado por lista (no se duplica en cada render).
 document.getElementById('ptbody').addEventListener('click',ev=>{
+  const info=ev.target.closest('.prod-info-btn');
+  if(info){
+    const tr=info.closest('tr[data-ref]');
+    const it=tr&&DB.items.find(x=>x.ref===tr.dataset.ref);
+    if(it)mostrarNombreCompleto(it.nombre);
+    return;
+  }
   const nom=ev.target.closest('.prod-name');
   if(!nom)return;
   const tr=nom.closest('tr[data-ref]');
   if(tr)fpAbrir(tr.dataset.ref);
+});
+function mostrarNombreCompleto(nombre){
+  document.getElementById('name-popup-text').textContent=nombre;
+  document.getElementById('name-popup').classList.remove('hidden');
+}
+document.getElementById('name-popup-close').onclick=()=>document.getElementById('name-popup').classList.add('hidden');
+document.getElementById('name-popup').addEventListener('click',ev=>{
+  if(ev.target.id==='name-popup')document.getElementById('name-popup').classList.add('hidden'); // toca fuera de la tarjeta = cierra
 });
 document.getElementById('rk-list').addEventListener('click',ev=>{
   const nom=ev.target.closest('.sm-info');
@@ -2907,8 +2837,6 @@ function cpLlenarSelect(preselectId){
   s.innerHTML='<option value="">Elige una categoría…</option>'+_cpCats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
   if(prev)s.value=prev;
   cpValidar();
-  const input=document.getElementById('cp-cat-input');
-  if(input){const chosen=_cpCats.find(c=>String(c.id)===String(s.value));input.value=chosen?chosen.name:'';}
 }
 function cpValidar(){
   const nombre=(document.getElementById('cp-nombre').value||'').trim();
@@ -2936,96 +2864,6 @@ document.getElementById('cp-cat-crear').onclick=async()=>{
   }catch(e){showToast('Error de conexión');}
   finally{btn.disabled=false;}
 };
-// ---- Combobox de categoría con búsqueda (Crear producto) ----
-// El <select> #cp-cat original queda oculto en el DOM como única fuente de verdad:
-// cpValidar(), cpLlenarSelect() y el flujo de "crear categoría nueva" siguen intactos.
-// Este bloque solo lee _cpCats, escribe sel.value y dispara 'change'. El desplegable se
-// monta en <body> (portal) mientras está abierto — igual que el buscador de proveedor —
-// para no quedar recortado por .mm-card{overflow:hidden} ni por el scroll de .mm-body.
-let _catComboHome=null;
-function catComboItems(){return _cpCats.slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),'es'));}
-function catComboPosition(){
-  const anchor=document.getElementById('cat-combo'),menu=document.getElementById('cat-combo-menu');
-  if(!anchor||!menu||menu.classList.contains('hidden'))return;
-  const r=anchor.getBoundingClientRect();
-  menu.style.left=r.left+'px';menu.style.top=(r.bottom+4)+'px';menu.style.width=r.width+'px';
-}
-function catComboMount(){
-  const menu=document.getElementById('cat-combo-menu');
-  if(!menu||_catComboHome)return;
-  _catComboHome={parent:menu.parentNode,next:menu.nextSibling};
-  document.body.appendChild(menu);
-  menu.style.position='fixed';
-  catComboPosition();
-}
-function catComboUnmount(){
-  const menu=document.getElementById('cat-combo-menu');
-  if(!menu||!_catComboHome)return;
-  menu.style.position='';menu.style.left='';menu.style.top='';menu.style.width='';
-  const{parent,next}=_catComboHome;
-  if(next&&next.parentNode===parent)parent.insertBefore(menu,next);else parent.appendChild(menu);
-  _catComboHome=null;
-}
-function catComboRender(query){
-  const menu=document.getElementById('cat-combo-menu');
-  if(!menu)return;
-  const q=normTxt(query||'');
-  const items=catComboItems().filter(c=>!q||normTxt(c.name).indexOf(q)>-1);
-  let html=items.length
-    ?items.map(c=>`<div class="cat-opt" role="option" data-id="${c.id}" data-name="${String(c.name).replace(/"/g,'&quot;')}">${c.name}</div>`).join('')
-    :'<div class="cat-opt-empty">No se encontraron categorías</div>';
-  html+=`<div class="cat-opt cat-opt-new" data-new="1">➕ Nueva categoría${query?` "${query.trim()}"`:''}</div>`;
-  menu.innerHTML=html;
-}
-function catComboOpen(){
-  const menu=document.getElementById('cat-combo-menu'),input=document.getElementById('cp-cat-input');
-  if(!menu||!input)return;
-  catComboRender(input.value);
-  menu.classList.remove('hidden');
-  input.setAttribute('aria-expanded','true');
-  catComboMount();
-}
-function catComboClose(){
-  const menu=document.getElementById('cat-combo-menu'),input=document.getElementById('cp-cat-input');
-  if(!menu)return;
-  menu.classList.add('hidden');
-  if(input)input.setAttribute('aria-expanded','false');
-  catComboUnmount();
-}
-function catComboChoose(id,name){
-  const sel=document.getElementById('cp-cat');
-  sel.value=id;
-  sel.dispatchEvent(new Event('change'));
-  document.getElementById('cp-cat-input').value=name;
-  catComboClose();
-}
-(function(){
-  const input=document.getElementById('cp-cat-input'),menu=document.getElementById('cat-combo-menu');
-  if(!input||!menu)return;
-  input.addEventListener('focus',catComboOpen);
-  input.addEventListener('click',()=>{if(menu.classList.contains('hidden'))catComboOpen();});
-  input.addEventListener('input',()=>{catComboRender(input.value);if(menu.classList.contains('hidden')){menu.classList.remove('hidden');catComboMount();}else catComboPosition();});
-  menu.addEventListener('click',ev=>{
-    const opt=ev.target.closest('.cat-opt');
-    if(!opt||opt.classList.contains('cat-opt-empty'))return;
-    if(opt.dataset.new){
-      catComboClose();
-      document.getElementById('cp-cat-nuevabox').classList.remove('hidden');
-      const nombreInp=document.getElementById('cp-cat-nuevanom');
-      nombreInp.value=input.value.trim();
-      nombreInp.focus();
-      return;
-    }
-    catComboChoose(opt.dataset.id,opt.dataset.name);
-  });
-  document.addEventListener('pointerdown',ev=>{
-    if(menu.classList.contains('hidden'))return;
-    if(input.contains(ev.target)||menu.contains(ev.target))return;
-    catComboClose();
-  });
-  window.addEventListener('resize',()=>{if(_catComboHome)catComboPosition();});
-  window.addEventListener('scroll',()=>{if(_catComboHome)catComboPosition();},true);
-})();
 document.getElementById('cp-scan').onclick=()=>{
   const reopen=()=>{document.getElementById('cp-ov').classList.remove('hidden');_sincronizarNav();};
   document.getElementById('cp-ov').classList.add('hidden');
