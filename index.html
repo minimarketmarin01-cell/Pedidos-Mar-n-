@@ -578,6 +578,11 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .fc-hist-item-head b{font-size:12.5px}
 .fc-hist-item-head .accordion-chev{width:14px;height:14px;color:var(--muted);transition:transform .2s ease;flex-shrink:0}
 .fc-hist-item-head.open .accordion-chev{transform:rotate(180deg)}
+.fc-hist-actions{display:flex;align-items:center;gap:2px;flex-shrink:0}
+.fc-hist-act{width:27px;height:27px;border:none;background:transparent;color:var(--muted);border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;padding:0}
+.fc-hist-act:active{background:var(--line)}
+.fc-hist-act-danger{color:var(--rojo)}
+.fc-hist-act-danger:active{background:#FCE9E7}
 .fc-hist-item-meta{display:block;font-size:10px;color:var(--muted);margin-top:1px}
 .fc-hist-item-body{padding:0 11px}
 .fc-hist-item-body:not(.collapsed){padding:8px 11px}
@@ -633,7 +638,7 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .oline .oq{font-family:'JetBrains Mono';font-weight:700;white-space:nowrap;text-align:right}
 .oline .oq small{display:block;font-size:9.5px;color:var(--gold);font-weight:700;font-family:'Archivo'}
 .order-empty{color:var(--muted);font-size:13px;text-align:center;padding:22px 8px;line-height:1.5}
-.order-foot{padding:14px;border-top:1px solid var(--line);background:#FAF9F5}
+.order-foot{padding:10px 12px;border-top:1px solid var(--line);background:#FAF9F5}
 .tot-line{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;color:var(--muted)}.tot-line b{color:var(--text);font-family:'JetBrains Mono'}
 .tot-big{display:flex;justify-content:space-between;align-items:baseline;margin:8px 0 12px}
 .tot-big .l{font-family:'Archivo';font-weight:700;font-size:14px}.tot-big .v{font-family:'Archivo';font-weight:800;font-size:22px}
@@ -641,6 +646,12 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .btn-wa{background:var(--wa);color:#fff}.btn-wa:active{background:var(--wa-d)}
 .btn-ghost{background:none;color:var(--muted);font-size:12px;padding:8px;width:auto;font-weight:600}
 .order-actions{display:flex;gap:8px;align-items:stretch}
+.order-row-main{display:flex;align-items:center;gap:6px}
+.tot-compact{display:flex;flex-direction:column;margin-right:auto;line-height:1.1;min-width:0}
+.tot-compact .l{font-size:8.5px;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.03em}
+.tot-compact .v{font-size:16px;font-weight:800;color:var(--ink);font-family:'JetBrains Mono'}
+.btn-wa-compact{width:auto;flex:0 0 auto;padding:10px 14px;font-size:12.5px;white-space:nowrap}
+.btn-wa-compact .wa-ico{width:18px;height:18px;background:rgba(255,255,255,.25);font-size:11px}
 .oact-btn{flex-shrink:0;width:46px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink2);display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .oact-btn:active{background:var(--paper)}
 .oact-btn.oact-danger{color:var(--rojo);border-color:#F3D4D0}
@@ -1073,11 +1084,11 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
         <div class="order-head"><div class="t"><span class="wa-ico">W</span>Carrito del pedido</div><div class="s" id="order-sub">Proveedor —</div></div>
         <div class="order-body" id="order-body"></div>
         <div class="order-foot">
-          <div class="tot-big"><span class="l">Costo estimado</span><span class="v mono" id="tot-cost">$0</span></div>
-          <div class="order-actions">
-            <button class="btn btn-wa" id="btn-copy" style="flex:1;min-width:0"><span class="wa-ico" style="background:rgba(255,255,255,.25)">W</span>Copiar pedido para WhatsApp</button>
-            <button class="oact-btn" id="btn-suggest" aria-label="Volver a sugerido" title="Volver a sugerido"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg></button>
-            <button class="oact-btn oact-danger" id="btn-clear" aria-label="Vaciar carrito" title="Vaciar carrito"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg></button>
+          <div class="order-row-main">
+            <div class="tot-compact"><span class="l">Total</span><span class="v mono" id="tot-cost">$0</span></div>
+            <button class="oact-btn" id="btn-suggest" aria-label="Volver a sugerido" title="Volver a sugerido"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg></button>
+            <button class="oact-btn oact-danger" id="btn-clear" aria-label="Vaciar carrito" title="Vaciar carrito"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg></button>
+            <button class="btn btn-wa btn-wa-compact" id="btn-copy" title="Copiar pedido para WhatsApp"><span class="wa-ico">W</span>Copiar</button>
           </div>
         </div>
       </div>
@@ -2072,7 +2083,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-16.12';
+const APP_VERSION='2026-07-16.13';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -3235,7 +3246,7 @@ function fcRenderResultados(){
   const wrap=document.getElementById('fc-resultados');wrap.classList.remove('hidden');
   const list=document.getElementById('fc-list');
   list.innerHTML=_fcItems.map(it=>{
-    const margen=FC_MARGEN_POR_CATEGORIA[it.categoria_sugerida]||FC_MARGEN_POR_CATEGORIA.otro;
+    const margen=(it.margen!=null?it.margen:(FC_MARGEN_POR_CATEGORIA[it.categoria_sugerida]||FC_MARGEN_POR_CATEGORIA.otro));
     const venta=fcVenta(it.costo_unitario,margen),psico=fcPsico(venta);
     return `<div class="fc-row" data-id="${it.id}">
       <input class="fc-row-name" value="${String(it.producto).replace(/"/g,'&quot;')}" data-f="producto">
@@ -3293,16 +3304,50 @@ function fcAgregarAlHistorial(facturaId,items){
 }
 function fcRenderHistorial(){
   document.getElementById('fc-hist-sub').textContent=_fcHistorial.length+(_fcHistorial.length===1?' guardada en esta sesión':' guardadas en esta sesión');
-  document.getElementById('fc-hist-body').innerHTML=_fcHistorial.map(f=>`<div class="fc-hist-item">
-      <div class="fc-hist-item-head"><div><b>${f.items.length} producto(s)</b><span class="fc-hist-item-meta">${f.fecha} · ${f.facturaId}</span></div><svg class="accordion-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+  document.getElementById('fc-hist-body').innerHTML=_fcHistorial.map((f,i)=>{
+    const costoTotal=f.items.reduce((s,it)=>s+(it.costo_unitario||0),0);
+    const margenProm=f.items.length?Math.round(f.items.reduce((s,it)=>s+(it.margen||0),0)/f.items.length):0;
+    return `<div class="fc-hist-item" data-idx="${i}">
+      <div class="fc-hist-item-head">
+        <div><b>${f.items.length} producto(s)</b><span class="fc-hist-item-meta">${f.fecha} · Costo total ${peso(costoTotal)} · Margen prom. ${margenProm}%</span></div>
+        <div class="fc-hist-actions">
+          <button class="fc-hist-act" data-act="editar" aria-label="Editar" title="Editar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+          <button class="fc-hist-act fc-hist-act-danger" data-act="eliminar" aria-label="Eliminar" title="Eliminar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg></button>
+          <svg class="accordion-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
       <div class="fc-hist-item-body accordion-body collapsed">${f.items.map(it=>`<div class="fc-hist-line"><span>${it.producto}</span><span>${peso(it.precio_psicologico||it.precio_venta)}</span></div>`).join('')}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
+}
+function fcEditarDesdeHistorial(idx){
+  const f=_fcHistorial[idx];
+  if(!f)return;
+  cerrarModal('mas-ov');abrirModal('fc-ov');
+  _fcItems=f.items.map((it,i)=>({id:'fce'+i,producto:it.producto,costo_unitario:it.costo_unitario,margen:it.margen,categoria_sugerida:'otro',cantidad:0,incluye_iva:true}));
+  fcRenderResultados();
+  showToast('Editando cálculo guardado — vuelve a "Guardar cálculos" para actualizarlo');
+}
+function fcEliminarDelHistorial(idx){
+  if(!confirm('¿Eliminar este cálculo del historial?'))return;
+  _fcHistorial.splice(idx,1);
+  fcRenderHistorial();
+  if(!_fcHistorial.length)document.getElementById('fc-hist-card').classList.add('hidden');
 }
 document.getElementById('fc-hist-head').onclick=()=>{toggleAccordion(document.getElementById('fc-hist-head'),document.getElementById('fc-hist-body'));};
 document.getElementById('fc-hist-body').addEventListener('click',ev=>{
+  const item=ev.target.closest('.fc-hist-item');
+  if(!item)return;
+  const idx=+item.dataset.idx;
+  const actBtn=ev.target.closest('[data-act]');
+  if(actBtn){
+    if(actBtn.dataset.act==='editar')fcEditarDesdeHistorial(idx);
+    else if(actBtn.dataset.act==='eliminar')fcEliminarDelHistorial(idx);
+    return;
+  }
   const head=ev.target.closest('.fc-hist-item-head');
   if(!head)return;
-  toggleAccordion(head,head.closest('.fc-hist-item').querySelector('.fc-hist-item-body'));
+  toggleAccordion(head,item.querySelector('.fc-hist-item-body'));
 });
 document.getElementById('fc-otra').onclick=fcReset;
 document.getElementById('fc-cerrar').onclick=()=>{cerrarModal('fc-ov');fcReset();};
@@ -4817,6 +4862,21 @@ restore();retagAll();
 const _ui=restoreUI();
 render();renderProvDay();
 if(_ui)restoreScroll(_ui);
+// FIX bug de descuadre del carrito en tablet: _actualizarLayout() ya se había llamado más
+// arriba, pero en ese momento .sticky-hdr (buscador/filtros/leyenda) todavía estaba vacío
+// — se llena recién con render(), un poco más abajo. Eso dejaba --top-h/--hdr-h/--nav-h
+// calculados con el header "sin contenido real", así que el carrito fijo (tablet) arrancaba
+// con la posición equivocada. Antes esto se corregía por accidente cuando algún evento
+// (ej: el teclado del celular al enfocar el buscador) disparaba un 'resize'. Ahora se
+// remide de forma explícita, dos veces: apenas el navegador termine de pintar el frame con
+// los datos ya puestos (doble requestAnimationFrame, no basta con "después del script" —
+// el layout puede seguir sin aplicarse), y otra vez cuando terminen de cargar las fuentes
+// web (los webfonts pueden cambiar el alto del texto después de la primera medición).
+requestAnimationFrame(()=>requestAnimationFrame(()=>{
+  _actualizarLayout();
+  window.dispatchEvent(new Event('resize'));
+}));
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(_actualizarLayout);
 // guarda la posición de scroll mientras navegas, y al salir/cambiar de app
 let _scrollT=null;
 window.addEventListener('scroll',()=>{clearTimeout(_scrollT);_scrollT=setTimeout(persistUI,200);},{passive:true});
