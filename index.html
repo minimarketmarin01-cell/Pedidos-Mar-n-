@@ -693,7 +693,7 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
     <span>📦 Proveedores de hoy</span><span class="prov-acc-caret" id="prov-acc-caret">▾</span>
   </button>
   <div class="provday hidden" id="provday"></div>
-  <div style="position:relative">
+  <div style="position:relative" id="prov-anchor">
     <div class="shc-row shc-wrap">
       <div class="prov-combo" id="prov-combo"><span class="prov-icon">🏷️</span><input class="prov-all" id="prov-all" placeholder="Proveedor o producto… escribe o toca" autocomplete="off" inputmode="text"><button class="prov-mic" id="prov-mic" type="button" tabindex="-1" aria-label="Buscar por voz">🎤</button><button class="prov-scan" id="prov-scan" type="button" tabindex="-1" aria-label="Escanear código">📷</button><button class="prov-x" id="prov-x" type="button" tabindex="-1" aria-label="Borrar">✕</button></div>
       <div class="seg sm" id="seg-basis"><button data-b="7" class="active">7d</button><button data-b="14">14d</button><button data-b="30">30d</button><button data-b="90">90d</button></div>
@@ -1579,6 +1579,56 @@ function buildChips(){
     document.addEventListener('pointerdown',function(ev){const combo=document.getElementById('prov-combo');const m=document.getElementById('prov-menu');if(m&&!m.classList.contains('hidden')&&combo&&!combo.contains(ev.target)&&!m.contains(ev.target)){m.classList.add('hidden');const s=document.getElementById('prov-all');if(s&&s.value.trim())setProvInputValue();}},true);
   }
 }
+// ---- Portal de #prov-menu para tablet horizontal (html.carrito-fijo) ----
+// En modo carrito fijo, .sticky-hdr crea su propio stacking context (position:sticky +
+// z-index) y queda atrapado por debajo de #tab-carrito (z-index:250) sin importar el
+// z-index interno de #prov-menu. Solución robusta y sin depender de :has(): mientras el
+// menú está abierto Y estamos en carrito-fijo, se saca #prov-menu de su lugar en el DOM
+// y se monta directo en <body> con position:fixed, calculado con getBoundingClientRect().
+// En celular/escritorio NUNCA se mueve — sigue exactamente igual que antes.
+let _provMenuHome=null; // {parent,next} — dónde vive #prov-menu normalmente, para devolverlo
+function _provMenuIsTablet(){return document.documentElement.classList.contains('carrito-fijo');}
+function _provMenuPosition(menu){
+  const anchor=document.getElementById('prov-anchor');
+  if(!anchor||!menu||menu.parentNode!==document.body)return;
+  const r=anchor.getBoundingClientRect();
+  menu.style.left=r.left+'px';
+  menu.style.top=(r.bottom+4)+'px';
+  menu.style.width=r.width+'px';
+  menu.style.right='auto';
+}
+function _provMenuMount(menu){
+  if(!menu||_provMenuHome)return; // ya montado
+  _provMenuHome={parent:menu.parentNode,next:menu.nextSibling};
+  document.body.appendChild(menu);
+  menu.style.position='fixed';
+  menu.style.zIndex='400';
+  _provMenuPosition(menu);
+}
+function _provMenuUnmount(menu){
+  if(!menu||!_provMenuHome)return;
+  menu.style.position='';menu.style.zIndex='';menu.style.left='';menu.style.top='';menu.style.width='';menu.style.right='';
+  const{parent,next}=_provMenuHome;
+  if(next&&next.parentNode===parent)parent.insertBefore(menu,next);else parent.appendChild(menu);
+  _provMenuHome=null;
+}
+if(!window._provMenuPortalBound){
+  window._provMenuPortalBound=true;
+  const _pm=document.getElementById('prov-menu');
+  if(_pm){
+    new MutationObserver(()=>{
+      const hidden=_pm.classList.contains('hidden');
+      if(hidden)_provMenuUnmount(_pm);
+      else if(_provMenuIsTablet())_provMenuMount(_pm);
+    }).observe(_pm,{attributes:true,attributeFilter:['class']});
+    window.addEventListener('resize',()=>{
+      if(_pm.classList.contains('hidden'))return;
+      if(_provMenuIsTablet())_provMenuMount(_pm);else _provMenuUnmount(_pm);
+      if(_provMenuHome)_provMenuPosition(_pm);
+    });
+    window.addEventListener('scroll',()=>{if(_provMenuHome)_provMenuPosition(_pm);},true);
+  }
+}
 function setProvInputValue(){const sel=document.getElementById('prov-all');if(!sel)return;if(document.activeElement===sel)return;/* el usuario está escribiendo ahí: no lo interrumpimos */if(state.search)return;const allMode=state.allProv&&!state.search;sel.value=allMode?'📋 Todos los proveedores':(DB.provs.some(p=>p.prov===state.prov)?state.prov:(DB.provs[0]?DB.provs[0].prov:''));}
 function pickProv(target){if(target==='__ALL__'){state.allProv=true;}else{state.allProv=false;state.prov=target;state.sort='rate';state.dir=-1;}state.search='';const sx=document.getElementById('prov-x');if(sx)sx.classList.remove('on');state.edits={};const menu=document.getElementById('prov-menu');if(menu)menu.classList.add('hidden');const sel=document.getElementById('prov-all');if(sel)sel.blur();setProvInputValue();render();persistUI();}
 function commitProv(val){const key=(val||'').trim().toLowerCase();if(!key)return false;if(key.indexOf('todos')===0||key.indexOf('📋')===0){pickProv('__ALL__');return true;}let hit=DB.provs.find(p=>p.prov.toLowerCase()===key);if(!hit&&key.length>=2)hit=DB.provs.find(p=>p.prov.toLowerCase().indexOf(key)>-1);if(hit){pickProv(hit.prov);return true;}return false;}
@@ -1885,7 +1935,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-16.3';
+const APP_VERSION='2026-07-16.4';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
