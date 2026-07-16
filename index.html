@@ -25,6 +25,25 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(
 .mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
 h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .top{background:var(--ink);color:#fff;width:100%;padding:9px 16px;padding-top:max(9px,env(safe-area-inset-top));padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+/* ===== ≥1024px: el panel "Copiar a WhatsApp" pasa de overlay oculto a columna fija ==========
+   Reutiliza el MISMO #tab-carrito (nunca se duplica) — solo se le pisa el estado con CSS.
+   --top-h la calcula JS una sola vez (mide el alto real del header, en vez de adivinar un
+   número fijo que podría no calzar según el contenido). */
+@media(min-width:1024px){
+  :root{--cart-w:clamp(340px,38vw,400px)}
+  .cart-fab{display:none} /* el panel ya está siempre visible, no hace falta el botón */
+  #tab-carrito{
+    top:var(--top-h,64px);
+    bottom:calc(78px + env(safe-area-inset-bottom));
+    width:var(--cart-w);
+    left:auto;right:0;
+    transform:none!important;opacity:1!important;pointer-events:auto!important; /* siempre visible, sin importar el toggle */
+    border-left:1px solid var(--line);
+    box-shadow:-6px 0 18px rgba(0,0,0,.06);
+    padding-bottom:16px;
+  }
+  #tab-pedido{margin-right:var(--cart-w)} /* la tabla se achica exactamente lo que mide el panel — sin scroll horizontal ni huecos */
+}
 .brand{display:flex;align-items:baseline;gap:9px;min-width:0}
 .brand .mk{font-family:'Archivo';font-weight:800;font-size:17px;letter-spacing:-.02em}
 .brand .loc{color:#9aa1ac;font-size:11px;font-weight:500}
@@ -1817,7 +1836,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-15.10';
+const APP_VERSION='2026-07-15.11';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -4211,6 +4230,17 @@ function restoreScroll(u){
 
 // ===================== INICIO =====================
 function retagAll(){if(DB&&DB.items)DB.items.forEach(it=>{const t=tag(it.nombre,it.prov);it.fmt=t.fmt;it.min=t.min;it.scale=t.scale;it.role=t.role;it.word=t.word;});}
+// Mide el alto real de .top (en vez de adivinar un número fijo) — lo usa el panel del
+// carrito en pantallas ≥1024px para encajar justo debajo del header, sin importar cuánto
+// mida su contenido. Solo lectura, no toca nada existente.
+function _actualizarAlturaTop(){
+  const el=document.querySelector('.top');
+  if(el)document.documentElement.style.setProperty('--top-h',el.offsetHeight+'px');
+}
+_actualizarAlturaTop();
+window.addEventListener('resize',_actualizarAlturaTop);
+window.addEventListener('orientationchange',()=>setTimeout(_actualizarAlturaTop,150));
+
 restore();retagAll();
 const _ui=restoreUI();
 render();renderProvDay();
