@@ -61,12 +61,13 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
    número fijo que podría no calzar según el contenido).
    IMPORTANTE: este bloque debe ir DESPUÉS de la regla base de #tab-carrito en el archivo —
    con la misma especificidad, en CSS gana quien aparece último, sin importar el @media. */
+@media(min-width:768px){#cart-back{display:none}}
 @media(min-width:1024px){
   :root{--cart-w:clamp(340px,38vw,400px)}
   .cart-fab{display:none} /* el panel ya está siempre visible, no hace falta el botón */
   #tab-carrito{
     top:var(--top-h,64px);
-    bottom:calc(78px + env(safe-area-inset-bottom));
+    bottom:var(--nav-h,78px);
     width:var(--cart-w);
     left:auto;right:0;
     transform:none!important;opacity:1!important;pointer-events:auto!important; /* siempre visible, sin importar el toggle */
@@ -1838,7 +1839,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-15.12';
+const APP_VERSION='2026-07-15.13';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -2746,8 +2747,12 @@ document.getElementById('sm-del').onclick=smEliminar;
 
 // ===================== CREAR PRODUCTO =====================
 let _cpCats=[], _cpImpuestos=[], _cpVenta='u', _cpCargado=false;
-document.getElementById('mas-q-crear').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');cpAbrir();};
-document.getElementById('cp-cerrar').onclick=()=>cerrarModal('cp-ov');
+let _cpDesdeRecepcion=false, _rcPendiente=null; // recuerdan volver a Recepción con los datos ya ingresados
+document.getElementById('mas-q-crear').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');_cpDesdeRecepcion=false;_rcPendiente=null;cpAbrir();};
+document.getElementById('cp-cerrar').onclick=()=>{
+  cerrarModal('cp-ov');
+  if(_cpDesdeRecepcion){_cpDesdeRecepcion=false;abrirModal('rc-ov');rcRestaurarPendiente();}
+};
 function cpAbrir(){cpReset();abrirModal('cp-ov');cpCargarCatalogo();}
 function cpReset(){
   ['cp-nombre','cp-precio','cp-costo','cp-barcode','cp-stock','cp-fecha-dd','cp-fecha-mm','cp-fecha-aaaa','cp-cat-nuevanom'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
@@ -2863,6 +2868,11 @@ document.getElementById('cp-guardar').onclick=async()=>{
       else m+=' ✓ verificado en Loyverse';
       showToast(m);
       cerrarModal('cp-ov');
+      if(_cpDesdeRecepcion){
+        _cpDesdeRecepcion=false;
+        abrirModal('rc-ov');
+        rcRestaurarPendiente(j.producto.ref);
+      }
       try{render();}catch(_){}
     }else{
       showToast('Error del servidor: '+((j&&j.error)?j.error:'no se pudo crear el producto'));
@@ -3943,10 +3953,30 @@ function closeRecibir(){cerrarModal('rc-ov');}
 
 document.getElementById('btn-recibir').onclick=openRecibir;
 document.getElementById('rc-cancelar').onclick=closeRecibir;
+// Restaura costo/cantidad/fecha que el usuario ya había escrito en Recepción antes de irse
+// a crear el producto — se usa tanto si cancela como si guarda con éxito.
+function rcRestaurarPendiente(refNuevo){
+  if(refNuevo)rcPick(refNuevo); // ya deja costo/precio con los del producto recién creado
+  if(!_rcPendiente)return;
+  if(_rcPendiente.cantidad)document.getElementById('rc-cantidad').value=_rcPendiente.cantidad;
+  if(_rcPendiente.costo)document.getElementById('rc-costo').value=_rcPendiente.costo;
+  if(_rcPendiente.fecha)document.getElementById('rc-fecha').value=_rcPendiente.fecha;
+  rcValidar();
+  _rcPendiente=null;
+}
 document.getElementById('rc-search').oninput=e=>{
-  const list=mmFindItems(e.target.value);
-  document.getElementById('rc-results').innerHTML=list.map(it=>`<div class="mm-motivo" style="display:block;margin-bottom:6px;cursor:pointer" data-ref="${it.ref}">${it.nombre} <span style="color:var(--muted);font-weight:400">· ${it.prov}</span></div>`).join('');
-  document.querySelectorAll('#rc-results [data-ref]').forEach(el=>el.onclick=()=>rcPick(el.dataset.ref));
+  const q=e.target.value;
+  const list=mmFindItems(q);
+  if(list.length){
+    document.getElementById('rc-results').innerHTML=list.map(it=>`<div class="mm-motivo" style="display:block;margin-bottom:6px;cursor:pointer" data-ref="${it.ref}">${it.nombre} <span style="color:var(--muted);font-weight:400">· ${it.prov}</span></div>`).join('');
+    document.querySelectorAll('#rc-results [data-ref]').forEach(el=>el.onclick=()=>rcPick(el.dataset.ref));
+  }else if(q.trim().length>=3){
+    document.getElementById('rc-results').innerHTML='<div class="mm-motivo" style="display:block;color:var(--muted)">Sin coincidencias. <span id="rc-crear-nuevo" style="color:var(--azul);font-weight:700;cursor:pointer;text-decoration:underline">Crear producto nuevo</span></div>';
+    const link=document.getElementById('rc-crear-nuevo');
+    if(link)link.onclick=()=>rcProductoNoEncontrado(q.trim());
+  }else{
+    document.getElementById('rc-results').innerHTML='';
+  }
 };
 document.getElementById('rc-scan').onclick=()=>{
   const reopen=()=>{document.getElementById('rc-ov').classList.remove('hidden');};
@@ -3955,9 +3985,37 @@ document.getElementById('rc-scan').onclick=()=>{
     reopen();
     const list=mmFindItems(code);
     if(list.length===1)rcPick(list[0].ref);
+    else if(list.length===0)rcProductoNoEncontrado(code);
     else{document.getElementById('rc-search').value=code;document.getElementById('rc-search').dispatchEvent(new Event('input',{bubbles:true}));}
   },reopen);
 };
+// El código escaneado no coincide con ningún producto: ofrece crearlo sin perder lo ya
+// ingresado en Recepción (costo y cantidad quedan guardados y se restauran al volver).
+function rcProductoNoEncontrado(code){
+  if(!confirm('Producto no encontrado\n\nEste artículo no existe en el inventario.\n¿Deseas crearlo ahora?'))return;
+  _rcPendiente={
+    barcode:code,
+    costo:document.getElementById('rc-costo').value||'',
+    cantidad:document.getElementById('rc-cantidad').value||'',
+    fecha:document.getElementById('rc-fecha').value||''
+  };
+  _cpDesdeRecepcion=true;
+  cerrarModal('rc-ov');
+  cpAbrir();
+  document.getElementById('cp-barcode').value=code;
+  if(_rcPendiente.costo)document.getElementById('cp-costo').value=_rcPendiente.costo;
+  if(_rcPendiente.cantidad){document.getElementById('cp-stock').value=_rcPendiente.cantidad;document.getElementById('cp-track').checked=true;cpToggleStock();}
+  if(_rcPendiente.fecha)document.getElementById('cp-fecha').value=_rcPendiente.fecha;
+  // Mantiene el proveedor: intenta preseleccionar la categoría igual al filtro activo en Pedidos
+  const provActual=(!state.allProv&&state.prov)?state.prov:null;
+  if(provActual){
+    cpCargarCatalogo().then(()=>{
+      const match=_cpCats.find(c=>c.name===provActual);
+      if(match)cpLlenarSelect(match.id);
+    });
+  }
+  cpValidar();
+}
 document.getElementById('rc-mic').onclick=()=>voiceSearch(document.getElementById('rc-mic'),text=>{
   document.getElementById('rc-search').value=text;
   document.getElementById('rc-search').dispatchEvent(new Event('input',{bubbles:true}));
@@ -4232,12 +4290,14 @@ function restoreScroll(u){
 
 // ===================== INICIO =====================
 function retagAll(){if(DB&&DB.items)DB.items.forEach(it=>{const t=tag(it.nombre,it.prov);it.fmt=t.fmt;it.min=t.min;it.scale=t.scale;it.role=t.role;it.word=t.word;});}
-// Mide el alto real de .top (en vez de adivinar un número fijo) — lo usa el panel del
-// carrito en pantallas ≥1024px para encajar justo debajo del header, sin importar cuánto
-// mida su contenido. Solo lectura, no toca nada existente.
+// Mide el alto real de .top y de la barra inferior (en vez de adivinar números fijos) —
+// los usa el panel del carrito en pantallas ≥1024px para calzar exacto con el área visible
+// de la tabla, sin sobrepasarla ni dejar hueco. Solo lectura, no toca nada existente.
 function _actualizarAlturaTop(){
   const el=document.querySelector('.top');
   if(el)document.documentElement.style.setProperty('--top-h',el.offsetHeight+'px');
+  const nav=document.querySelector('.bottom-nav');
+  if(nav)document.documentElement.style.setProperty('--nav-h',nav.offsetHeight+'px');
 }
 _actualizarAlturaTop();
 window.addEventListener('resize',_actualizarAlturaTop);
