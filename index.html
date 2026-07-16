@@ -24,7 +24,7 @@ html{-webkit-text-size-adjust:100%;width:100%;overflow-x:hidden}
 body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--text);font-size:14px;line-height:1.4;-webkit-tap-highlight-color:transparent;width:100%;max-width:100%;padding-bottom:calc(78px + env(safe-area-inset-bottom))}
 .mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
 h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
-.top{background:var(--ink);color:#fff;width:100%;padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top));padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.top{background:var(--ink);color:#fff;width:100%;padding:9px 16px;padding-top:max(9px,env(safe-area-inset-top));padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .brand{display:flex;align-items:baseline;gap:9px;min-width:0}
 .brand .mk{font-family:'Archivo';font-weight:800;font-size:17px;letter-spacing:-.02em}
 .brand .loc{color:#9aa1ac;font-size:11px;font-weight:500}
@@ -50,8 +50,12 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .legend.sm{gap:8px;margin-top:5px;font-size:10px}
 .legend.sm .ldot{width:6px;height:6px}
 .row-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;flex:none}
-.cart-fab{position:fixed;right:max(14px,env(safe-area-inset-right));bottom:calc(78px + env(safe-area-inset-bottom));z-index:140;width:52px;height:52px;border-radius:50%;background:var(--wa);color:#fff;border:none;font-size:22px;box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.cart-fab{position:fixed;right:max(14px,env(safe-area-inset-right));bottom:calc(78px + env(safe-area-inset-bottom));z-index:270;width:52px;height:52px;border-radius:50%;background:var(--wa);color:#fff;border:none;font-size:22px;box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer;display:flex;align-items:center;justify-content:center}
 .cart-fab:active{background:var(--wa-d)}
+/* Panel del carrito: SIEMPRE montado, se muestra/oculta solo con CSS (transform+opacity+pointer-events)
+   — nunca con display:none, para conservar scroll/estado y no tener que re-renderizar al abrir. */
+#tab-carrito{position:fixed;inset:0;z-index:250;background:var(--paper);overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(78px + env(safe-area-inset-bottom));transform:translateY(100%);opacity:0;pointer-events:none;transition:transform .25s ease,opacity .25s ease}
+#tab-carrito.cart-open{transform:translateY(0);opacity:1;pointer-events:auto}
 .cart-badge{position:absolute;top:-3px;right:-3px;background:var(--rojo);color:#fff;border-radius:10px;min-width:18px;height:18px;font-size:10.5px;font-weight:800;display:none;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--card)}
 .cart-badge.on{display:flex}
 .tab.active{color:#fff;border-bottom-color:var(--wa)}
@@ -404,8 +408,8 @@ input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .legend span{display:inline-flex;align-items:center;gap:5px}.ldot{width:9px;height:9px;border-radius:50%}
 .tablecard{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0;max-width:100%}
 @media(min-width:680px){#tab-pedido .tablecard{max-width:1520px;margin:0 auto}}
-.tbl-scroll{overflow-y:auto;overflow-x:auto;max-height:calc(100vh - 210px);max-height:calc(100dvh - 210px);-webkit-overflow-scrolling:touch;max-width:100%;transition:max-height .22s ease}
-.tbl-scroll.nav-hidden{max-height:calc(100vh - 140px);max-height:calc(100dvh - 140px)}
+.tbl-scroll{overflow-y:auto;overflow-x:auto;max-height:calc(100vh - 195px);max-height:calc(100dvh - 195px);-webkit-overflow-scrolling:touch;max-width:100%;transition:max-height .22s ease}
+.tbl-scroll.nav-hidden{max-height:calc(100vh - 125px);max-height:calc(100dvh - 125px)}
 table{border-collapse:collapse;width:100%;table-layout:fixed}
 thead th{background:#FAF9F5;text-align:right;font-size:10.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;padding:7px 6px;border-bottom:1.5px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none;position:sticky;top:0;z-index:6;box-shadow:0 1px 0 var(--line)}
 thead th.l{text-align:left}thead th .ar{opacity:.4;font-size:9px}thead th.sorted .ar{opacity:1;color:var(--ink)}
@@ -890,6 +894,7 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
             <div class="cat" id="rc-stock" style="font-weight:700;color:var(--ink);margin-top:3px">Stock actual: —</div>
           </div>
           <div id="rc-results"></div>
+          <button id="rc-activar-inv" class="hidden" type="button" style="width:100%;margin:8px 0 0;padding:9px 10px;border-radius:10px;border:1.5px solid var(--azul);background:var(--azul-bg);color:var(--azul);font-weight:700;font-size:13px;cursor:pointer">🔓 Activar inventario</button>
         </div>
 
         <div class="mm-field">
@@ -962,7 +967,7 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 </div>
 </div>
 
-<div id="tab-carrito" class="hidden">
+<div id="tab-carrito">
   <div class="wrap" style="grid-template-columns:1fr;max-width:560px">
     <div>
       <button class="loadbtn" id="cart-back" style="margin-bottom:12px">← Volver a Pedidos</button>
@@ -1812,7 +1817,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-15.4';
+const APP_VERSION='2026-07-15.10';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -1999,12 +2004,22 @@ document.querySelectorAll('#ptable th[data-s]').forEach(th=>th.onclick=()=>{cons
 // ===================== NAVEGACIÓN: Pedidos (única pantalla) + Carrito aparte =====================
 function showScreen(name){
   document.getElementById('tab-pedido').classList.toggle('hidden',name!=='pedido');
-  document.getElementById('tab-carrito').classList.toggle('hidden',name!=='carrito');
   document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('active'));
   if(name==='pedido')document.getElementById('bn-pedidos').classList.add('active');
-  if(name==='carrito')renderOrder();
   playTabAnim(name);
   persistUI();
+}
+// El carrito YA NO es una "pantalla" (showScreen) — es un panel superpuesto, siempre montado,
+// que se muestra/oculta con una clase CSS. El contenido ya se mantiene al día solo con que
+// cambies cantidades en la tabla (onQty ya llama a renderOrder) — abrir el panel NO vuelve a
+// renderizar nada, solo lo hace visible.
+let _carritoAbierto=false;
+function toggleCarrito(forzar){
+  const panel=document.getElementById('tab-carrito');
+  const abrir=forzar!=null?forzar:!_carritoAbierto;
+  if(abrir===_carritoAbierto)return;
+  _carritoAbierto=abrir;
+  panel.classList.toggle('cart-open',abrir);
 }
 function playTabAnim(name){
   const el=document.getElementById('tab-'+name);
@@ -2068,9 +2083,8 @@ window.addEventListener('popstate',function(){
     else cerrarModal(ov.id);
     _sincronizarNav();_reponerTrampa();return;
   }
-  const carrito=document.getElementById('tab-carrito');
-  if(carrito&&!carrito.classList.contains('hidden')){   // 2) estás en el carrito → vuelve a Pedidos
-    showScreen('pedido');_reponerTrampa();return;
+  if(_carritoAbierto){   // 2) está el carrito abierto → ciérralo
+    toggleCarrito(false);_reponerTrampa();return;
   }
   if(_salirArmado){return;}                     // 3b) segundo "Atrás" seguido → deja salir de la app
   _salirArmado=true;                            // 3a) primer "Atrás" en Pedidos → confirma
@@ -2120,8 +2134,8 @@ document.getElementById('prov-acc-toggle').onclick=()=>{
   pd.classList.toggle('hidden',!abrir);
   t.setAttribute('aria-expanded',abrir?'true':'false');
 };
-document.getElementById('cart-fab').onclick=()=>showScreen('carrito');
-document.getElementById('cart-back').onclick=()=>showScreen('pedido');
+document.getElementById('cart-fab').onclick=()=>toggleCarrito();
+document.getElementById('cart-back').onclick=()=>toggleCarrito(false);
 
 // Accesos rápidos del panel Más: reusan los botones reales que ya funcionan (sin duplicar lógica)
 document.getElementById('mas-q-merma').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');document.getElementById('btn-merma').click();};
@@ -3844,8 +3858,42 @@ function rcPick(ref){
   document.getElementById('rc-search').value=it.nombre;
   document.getElementById('rc-results').innerHTML='';
   rcShowPicked(it);
+  rcActualizarBotonInventario(it);
   rcValidar();
 }
+// Muestra el botón "Activar inventario" listo para usarse en el producto recién elegido
+// (se reinicia cada vez que se elige un producto distinto — nunca queda "gastado" de uno anterior).
+function rcActualizarBotonInventario(it){
+  const btn=document.getElementById('rc-activar-inv');
+  if(it.track){btn.classList.add('hidden');return;}
+  btn.classList.remove('hidden');
+  btn.disabled=false;
+  btn.textContent='🔓 Activar inventario';
+  btn.style.opacity=1;
+}
+document.getElementById('rc-activar-inv').onclick=async()=>{
+  const it=rcState.item;
+  if(!it)return;
+  const btn=document.getElementById('rc-activar-inv');
+  btn.disabled=true;btn.textContent='Verificando…';
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'habilitar_track_stock',payload:{sku:it.ref}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      it.track=true;persist();
+      if(j.yaEstaba){btn.textContent='✅ Inventario ya activado';}
+      else{btn.textContent='✅ Inventario activado';showToast('🔓 Seguimiento activado · '+it.nombre);}
+      btn.style.opacity=.7;
+      // se queda deshabilitado para este producto — vuelve a habilitarse solo al elegir otro (rcPick)
+    }else{
+      showToast('❌ '+(j&&j.error?j.error:'No se pudo activar en Loyverse'));
+      btn.disabled=false;btn.textContent='🔓 Activar inventario';
+    }
+  }catch(e){
+    showToast('❌ Error de conexión al activar');
+    btn.disabled=false;btn.textContent='🔓 Activar inventario';
+  }
+};
 function rcValidar(){
   const cant=Number(document.getElementById('rc-cantidad').value)||0;
   // La fecha de vencimiento es OPCIONAL (productos de limpieza, utensilios, etc.):
@@ -3857,6 +3905,7 @@ function rcReset(){
   document.getElementById('rc-search').value='';
   document.getElementById('rc-results').innerHTML='';
   document.getElementById('rc-picked').classList.remove('on');
+  document.getElementById('rc-activar-inv').classList.add('hidden');
   const cIn=document.getElementById('rc-cantidad');cIn.value='';cIn.disabled=true;cIn.placeholder='0';
   document.getElementById('rc-unidad').textContent='u';
   document.getElementById('rc-fecha').value='';
@@ -4117,12 +4166,9 @@ function persistUI(){
   _uiSaveT=setTimeout(()=>{
     try{
       const sc=tableScrollEl();
-      const cartEl=document.getElementById('tab-carrito');
-      const tab=(cartEl&&!cartEl.classList.contains('hidden'))?'carrito':'pedido';
       localStorage.setItem('marin_ui',JSON.stringify({
         prov:state.prov,allProv:state.allProv,search:state.search,
         basis:state.basis,unit:state.unit,sort:state.sort,dir:state.dir,
-        tab:tab,
         winY:window.scrollY||0,
         tblY:sc?sc.scrollTop:0
       }));
@@ -4145,7 +4191,7 @@ function restoreUI(){
   document.querySelectorAll('#seg-unit button').forEach(b=>b.classList.toggle('active',b.dataset.u===state.unit));
   const si=document.getElementById('prov-all');
   if(si){si.value=state.search||(state.allProv?'':state.prov)||'';const px=document.getElementById('prov-x');if(px)px.classList.toggle('on',!!state.search);}
-  if(u.tab==='carrito'){showScreen('carrito');}
+  // El carrito ya no se restaura entre sesiones — siempre inicia oculto (panel superpuesto, no pestaña).
   return u;
 }
 function restoreScroll(u){
