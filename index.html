@@ -579,8 +579,10 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .fc-link-body{margin-top:8px;border:1px solid var(--line2);border-radius:9px;padding:9px;background:#fff}
 .fc-link-sug-title{font-size:9.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px}
 .fc-link-sug{display:flex;flex-direction:column;gap:6px;margin-bottom:9px}
-.fc-link-sug-item{min-height:44px;display:flex;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;background:var(--paper);-webkit-tap-highlight-color:transparent}
+.fc-link-sug-item{min-height:44px;display:flex;flex-direction:column;justify-content:center;gap:2px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;cursor:pointer;background:var(--paper);-webkit-tap-highlight-color:transparent}
 .fc-link-sug-item:active{background:var(--line)}
+.fc-link-sug-name{font-size:12.5px;font-weight:600;color:var(--ink)}
+.fc-link-sug-meta{font-size:10px;font-weight:500;color:var(--muted)}
 .fc-link-search{width:100%;min-height:44px;border:1.5px solid var(--line);border-radius:8px;padding:0 10px;font-size:13px;box-sizing:border-box}
 .fc-link-search:focus{outline:none;border-color:var(--wa)}
 .fc-link-menu{margin-top:8px;max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
@@ -614,7 +616,10 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .fc-hist-item-body:not(.collapsed){padding:8px 11px}
 .fc-hist-line{padding:6px 0;border-bottom:1px dashed var(--line2)}
 .fc-hist-line:last-child{border-bottom:none}
-.fc-hist-line-name{font-size:11.5px;font-weight:700;margin-bottom:3px}
+.fc-hist-line-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
+.fc-hist-line-name{font-size:11.5px;font-weight:700;margin-bottom:3px;flex:1;min-width:0}
+.fc-hist-link-btn{flex-shrink:0;width:26px;height:26px;border:none;background:var(--paper);color:var(--muted);border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;padding:0}
+.fc-hist-link-btn:active{background:var(--line);color:var(--ink2)}
 .fc-hist-line-nums{display:flex;gap:11px;font-size:10.5px;color:var(--muted);font-family:'JetBrains Mono'}
 .fc-hist-line-nums b{color:var(--ink2);font-weight:700}
 .fc-hist-margin-wrap{display:inline-flex;align-items:center;gap:3px}
@@ -2118,7 +2123,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-16.18';
+const APP_VERSION='2026-07-16.19';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -3366,40 +3371,60 @@ function fcBuscarProductosTexto(q){
   if(!nq||!DB||!DB.items)return [];
   return DB.items.filter(it=>normTxt(it.nombre).indexOf(nq)>-1).slice(0,8);
 }
+// Cada sugerencia muestra su costo/precio ACTUALES del catálogo (fallback "$0" si faltan)
+// para que el usuario compare antes de sobreescribirlos.
 function fcLinkChip(it){
-  return `<div class="fc-link-sug-item" data-ref="${it.ref}">${it.nombre}</div>`;
+  const costoTxt=it.coste!=null?peso(it.coste):'$0';
+  const precioTxt=it.precio!=null?peso(it.precio):'$0';
+  return `<div class="fc-link-sug-item" data-ref="${it.ref}"><span class="fc-link-sug-name">${it.nombre}</span><span class="fc-link-sug-meta">Costo: ${costoTxt} | Precio: ${precioTxt}</span></div>`;
 }
-async function fcAsociarProducto(row,producto){
-  const g=f=>row.querySelector(`[data-f="${f}"]`).value;
-  const costo=+g('costo')||0,precio=+g('psico')||+g('venta')||0;
-  const btn=row.querySelector('.fc-link-btn');
-  btn.disabled=true;
+// Abre/cierra el panel de sugerencias+búsqueda dentro de bodyEl. Devuelve true si quedó abierto.
+function fcAbrirPanelLink(body,nombreProducto){
+  if(!body.classList.contains('hidden')){body.classList.add('hidden');return false;}
+  const sugeridos=fcBuscarCoincidencias(nombreProducto,3);
+  body.innerHTML=(sugeridos.length?`<div class="fc-link-sug-title">Sugeridos</div><div class="fc-link-sug">${sugeridos.map(fcLinkChip).join('')}</div>`:'')+
+    `<input class="fc-link-search" placeholder="Buscar otro producto…" autocomplete="off"><div class="fc-link-menu hidden"></div>`;
+  body.classList.remove('hidden');
+  return true;
+}
+function fcActualizarMenuBusqueda(inputEl){
+  const menu=inputEl.parentElement.querySelector('.fc-link-menu');
+  const q=inputEl.value;
+  if(!q.trim()){menu.classList.add('hidden');menu.innerHTML='';return;}
+  const resultados=fcBuscarProductosTexto(q);
+  menu.innerHTML=resultados.length?resultados.map(fcLinkChip).join(''):'<div class="fc-link-sug-title">Sin resultados</div>';
+  menu.classList.remove('hidden');
+}
+// Único punto que llama a editar_precio — usado tanto desde la factura en revisión como
+// desde el historial, para no duplicar la llamada de red ni su manejo de errores.
+async function fcEjecutarAsociacion(costo,precio,producto,btnEl,alExito){
+  btnEl.disabled=true;
   try{
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_precio',payload:{sku:producto.ref,costo,precio}})});
     const j=await res.json();
-    if(j&&j.ok){
-      row.querySelector('.fc-link-body').classList.add('hidden');
-      btn.classList.add('hidden');
-      let ok=row.querySelector('.fc-link-ok');
-      if(!ok){ok=document.createElement('div');ok.className='fc-link-ok';row.querySelector('.fc-link').appendChild(ok);}
-      ok.innerHTML=`✓ <span>Vinculado a "${producto.nombre}" — costo/precio actualizados</span><button type="button" class="fc-link-quitar">Cambiar</button>`;
-      ok.classList.remove('hidden');
-      showToast('✓ Precio actualizado en '+producto.nombre);
-    }else showToast('Error: '+((j&&j.error)||'no se pudo asociar'));
+    if(j&&j.ok){showToast('✓ Precio actualizado en '+producto.nombre);alExito&&alExito();}
+    else showToast('Error: '+((j&&j.error)||'no se pudo asociar'));
   }catch(e){showToast('Error de conexión');}
-  finally{btn.disabled=false;}
+  finally{btnEl.disabled=false;}
+}
+function fcAsociarProducto(row,producto){
+  const g=f=>row.querySelector(`[data-f="${f}"]`).value;
+  const costo=+g('costo')||0,precio=+g('psico')||+g('venta')||0;
+  const btn=row.querySelector('.fc-link-btn');
+  fcEjecutarAsociacion(costo,precio,producto,btn,()=>{
+    row.querySelector('.fc-link-body').classList.add('hidden');
+    btn.classList.add('hidden');
+    let ok=row.querySelector('.fc-link-ok');
+    if(!ok){ok=document.createElement('div');ok.className='fc-link-ok';row.querySelector('.fc-link').appendChild(ok);}
+    ok.innerHTML=`✓ <span>Vinculado a "${producto.nombre}" — costo/precio actualizados</span><button type="button" class="fc-link-quitar">Cambiar</button>`;
+    ok.classList.remove('hidden');
+  });
 }
 document.getElementById('fc-list').addEventListener('click',ev=>{
   const linkBtn=ev.target.closest('.fc-link-btn');
   if(linkBtn){
     const row=linkBtn.closest('.fc-row');
-    const body=row.querySelector('.fc-link-body');
-    if(!body.classList.contains('hidden')){body.classList.add('hidden');return;}
-    const nombre=row.querySelector('[data-f="producto"]').value;
-    const sugeridos=fcBuscarCoincidencias(nombre,3);
-    body.innerHTML=(sugeridos.length?`<div class="fc-link-sug-title">Sugeridos</div><div class="fc-link-sug">${sugeridos.map(fcLinkChip).join('')}</div>`:'')+
-      `<input class="fc-link-search" placeholder="Buscar otro producto…" autocomplete="off"><div class="fc-link-menu hidden"></div>`;
-    body.classList.remove('hidden');
+    fcAbrirPanelLink(row.querySelector('.fc-link-body'),row.querySelector('[data-f="producto"]').value);
     return;
   }
   const sugItem=ev.target.closest('.fc-link-sug-item');
@@ -3419,13 +3444,7 @@ document.getElementById('fc-list').addEventListener('click',ev=>{
 });
 document.getElementById('fc-list').addEventListener('input',ev=>{
   if(!ev.target.classList.contains('fc-link-search'))return;
-  const row=ev.target.closest('.fc-row');
-  const menu=row.querySelector('.fc-link-menu');
-  const q=ev.target.value;
-  if(!q.trim()){menu.classList.add('hidden');menu.innerHTML='';return;}
-  const resultados=fcBuscarProductosTexto(q);
-  menu.innerHTML=resultados.length?resultados.map(fcLinkChip).join(''):'<div class="fc-link-sug-title">Sin resultados</div>';
-  menu.classList.remove('hidden');
+  fcActualizarMenuBusqueda(ev.target);
 });
 document.getElementById('fc-list').addEventListener('input',ev=>{
   const inp=ev.target;const field=inp.dataset.f;
@@ -3498,8 +3517,12 @@ function fcRenderHistorial(){
         </div>
       </div>
       <div class="fc-hist-item-body accordion-body collapsed">${f.items.map((it,j)=>`<div class="fc-hist-line" data-idx="${i}" data-item="${j}">
-          <div class="fc-hist-line-name">${it.producto}</div>
+          <div class="fc-hist-line-top">
+            <div class="fc-hist-line-name">${it.producto}</div>
+            <button class="fc-hist-link-btn" type="button" title="Asociar a producto existente" aria-label="Asociar a producto existente"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.5 4.5"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L12.5 19.5"/></svg></button>
+          </div>
           <div class="fc-hist-line-nums"><span>Costo <b>${peso(it.costo_unitario)}</b></span><span>Venta <b class="fc-hist-venta-val">${peso(it.precio_venta)}</b></span><span class="fc-hist-margin-wrap">Margen <input class="fc-hist-margin-in" inputmode="numeric" value="${Math.round(it.margen)||0}">%</span></div>
+          <div class="fc-link-body hidden"></div>
         </div>`).join('')}</div>
     </div>`;
   }).join('');
@@ -3557,6 +3580,24 @@ document.getElementById('fc-hist-body').addEventListener('click',ev=>{
   const item=ev.target.closest('.fc-hist-item');
   if(!item)return;
   const idx=+item.dataset.idx;
+  const linkBtn=ev.target.closest('.fc-hist-link-btn');
+  if(linkBtn){
+    const linea=linkBtn.closest('.fc-hist-line');
+    const it=_fcHistorial[idx].items[+linea.dataset.item];
+    fcAbrirPanelLink(linea.querySelector('.fc-link-body'),it.producto);
+    return;
+  }
+  const sugItem=ev.target.closest('.fc-link-sug-item');
+  if(sugItem){
+    const linea=sugItem.closest('.fc-hist-line');
+    const it=_fcHistorial[idx].items[+linea.dataset.item];
+    const producto=DB.items.find(x=>x.ref===sugItem.dataset.ref);
+    const btn=linea.querySelector('.fc-hist-link-btn');
+    if(producto)fcEjecutarAsociacion(it.costo_unitario,it.precio_venta,producto,btn,()=>{
+      linea.querySelector('.fc-link-body').classList.add('hidden');
+    });
+    return;
+  }
   const actBtn=ev.target.closest('[data-act]');
   if(actBtn){
     if(actBtn.dataset.act==='editar')fcEditarDesdeHistorial(idx);
@@ -3566,6 +3607,10 @@ document.getElementById('fc-hist-body').addEventListener('click',ev=>{
   const head=ev.target.closest('.fc-hist-item-head');
   if(!head)return;
   toggleAccordion(head,item.querySelector('.fc-hist-item-body'));
+});
+document.getElementById('fc-hist-body').addEventListener('input',ev=>{
+  if(!ev.target.classList.contains('fc-link-search'))return;
+  fcActualizarMenuBusqueda(ev.target);
 });
 document.getElementById('fc-otra').onclick=fcReset;
 document.getElementById('fc-cerrar').onclick=()=>{cerrarModal('fc-ov');fcReset();};
