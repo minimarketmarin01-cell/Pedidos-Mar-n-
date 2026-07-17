@@ -629,12 +629,21 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .fc-hist-line-nums{display:flex;gap:11px;font-size:10.5px;color:var(--muted);font-family:'JetBrains Mono'}
 .fc-hist-line-nums b{color:var(--ink2);font-weight:700}
 .fc-hist-margin-wrap{display:inline-flex;align-items:center;gap:3px}
-.fc-hist-controls-row{display:flex;align-items:center;gap:6px;margin-top:7px}
-.fc-hist-margin-select,.fc-hist-round-select{flex:1;min-width:0;min-height:36px;border:1.5px solid var(--line);border-radius:7px;padding:0 6px;font-size:11.5px;font-weight:700;color:var(--ink2);background:#fff;box-sizing:border-box}
-.fc-hist-margin-select:focus,.fc-hist-round-select:focus{outline:none;border-color:var(--wa)}
+.fc-hist-controls-row{display:flex;align-items:center;gap:6px;margin-top:7px;flex-wrap:wrap}
+.fc-hist-margin-combo{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:3px;border:1.5px solid var(--line);border-radius:7px;padding:0 4px 0 8px;background:#fff}
+.fc-hist-margin-combo:focus-within{border-color:var(--wa)}
+.fc-hist-margin-manual{width:38px;min-height:34px;border:none;background:transparent;font-family:'JetBrains Mono';font-weight:700;font-size:12.5px;color:var(--ink2);padding:0;-webkit-tap-highlight-color:transparent}
+.fc-hist-margin-manual:focus{outline:none}
+.fc-hist-pct{font-size:10px;color:var(--muted);font-weight:700;flex-shrink:0}
+.fc-hist-margin-select{flex-shrink:0;width:58px;min-height:34px;border:none;border-left:1px solid var(--line2);background:transparent;font-size:10px;font-weight:700;color:var(--muted);box-sizing:border-box;padding:0 2px}
+.fc-hist-margin-select:focus{outline:none}
+.fc-hist-round-select{flex:0 0 64px;width:64px;min-height:36px;border:1.5px solid var(--line);border-radius:7px;padding:0 4px;font-size:11.5px;font-weight:700;color:var(--ink2);background:#fff;box-sizing:border-box}
+.fc-hist-round-select:focus{outline:none;border-color:var(--wa)}
 .fc-hist-apply-btn{flex-shrink:0;min-height:36px;padding:0 14px;border:none;border-radius:7px;background:var(--wa);color:#fff;font-size:11.5px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .fc-hist-apply-btn:active{background:var(--wa-d)}
-.fc-hist-margin-real{flex-shrink:0;font-size:10px;color:var(--muted);font-weight:600;white-space:nowrap}
+.fc-hist-preview{margin-top:6px;font-size:10.5px;color:var(--muted);font-weight:600}
+.fc-hist-preview b{color:var(--ink);font-family:'JetBrains Mono'}
+.fc-hist-margin-real{flex-shrink:0;font-size:10px;color:var(--muted);font-weight:600;white-space:nowrap;display:block;margin-top:2px}
 .fc-hist-margin-real b{color:var(--wa-d)}
 .fc-hist-sync{margin-top:4px;font-size:9.5px;font-weight:600;color:var(--muted)}
 .fc-hist-sync.ok{color:var(--wa-d)}
@@ -2146,7 +2155,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-16.25';
+const APP_VERSION='2026-07-16.26';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -3612,11 +3621,16 @@ function fcRenderHistorial(){
           </div>
           <div class="fc-hist-line-nums"><span>Costo <b>${peso(it.costo_unitario)}</b></span><span>Venta <b class="fc-hist-venta-val">${peso(it.precio_psicologico!=null?it.precio_psicologico:it.precio_venta)}</b></span></div>
           <div class="fc-hist-controls-row">
-            <select class="fc-hist-margin-select">
-              <option value="30" ${fcMargenPreset(it.margen)===30?'selected':''}>30%</option>
-              <option value="40" ${fcMargenPreset(it.margen)===40?'selected':''}>40%</option>
-              <option value="50" ${fcMargenPreset(it.margen)===50?'selected':''}>50%</option>
-            </select>
+            <div class="fc-hist-margin-combo">
+              <input type="number" step="any" inputmode="decimal" class="fc-hist-margin-manual" value="${it.margen||0}">
+              <span class="fc-hist-pct">%</span>
+              <select class="fc-hist-margin-select" aria-label="Atajos de margen">
+                <option value="">Atajos</option>
+                <option value="30" ${fcMargenPreset(it.margen)===30?'selected':''}>30%</option>
+                <option value="40" ${fcMargenPreset(it.margen)===40?'selected':''}>40%</option>
+                <option value="50" ${fcMargenPreset(it.margen)===50?'selected':''}>50%</option>
+              </select>
+            </div>
             <select class="fc-hist-round-select">
               <option value="none" ${fcNormalizarModoBoton(it.roundMode)==='none'?'selected':''}>S/R</option>
               <option value="50" ${fcNormalizarModoBoton(it.roundMode)==='50'?'selected':''}>50</option>
@@ -3625,6 +3639,7 @@ function fcRenderHistorial(){
             </select>
             <button type="button" class="fc-hist-apply-btn">Aplicar</button>
           </div>
+          <div class="fc-hist-preview">Preview venta: <b class="fc-hist-preview-val">${peso(it.precio_psicologico!=null?it.precio_psicologico:it.precio_venta)}</b></div>
           <div class="fc-hist-margin-real">Margen real: <b>${fcCalcularPrecioFinalBoton(it.costo_unitario,it.margen||0,fcNormalizarModoBoton(it.roundMode)).margenReal.toFixed(1)}%</b></div>
           <div class="fc-hist-sync ${it.sincronizado?'ok':''}">${it.sincronizado?('✓ Sincronizado con Loyverse: '+it.sincronizadoNombre):'○ Sin sincronizar con Loyverse'}</div>
           <div class="fc-link-body hidden"></div>
@@ -3648,7 +3663,7 @@ function fcEliminarDelHistorial(idx){
   fcRenderHistorial();
   if(!_fcHistorial.length)document.getElementById('fc-hist-card').classList.add('hidden');
 }
-document.getElementById('fc-hist-head').onclick=()=>{toggleAccordion(document.getElementById('fc-hist-head'),document.getElementById('fc-hist-body'));};
+document.getElementById('fc-hist-head').onclick=()=>{toggleAccordion(document.getElementById('fc-hist-head'),document.getElementById('fc-hist-body'));fcGuardarVistaActiva();};
 // ---- Edición inline del margen y redondeo por línea (independiente por artículo) ----
 // Recalcula Venta y el margen real en vivo; al confirmar (blur/change) persiste el cambio
 // reutilizando guardar_calculo_precio con el mismo factura_id (reemplaza sus filas, el
@@ -3691,7 +3706,7 @@ function fcRecalcularLineaHistorial(idx,j,reglaOverride){
   if(!it)return null;
   const linea=document.querySelector(`.fc-hist-line[data-idx="${idx}"][data-item="${j}"]`);
   if(!linea)return null;
-  const margen=Math.max(0,Math.min(95,+linea.querySelector('.fc-hist-margin-select').value||0));
+  const margen=Math.max(0,Math.min(95,+linea.querySelector('.fc-hist-margin-manual').value||0));
   const regla=reglaOverride||linea.querySelector('.fc-hist-round-select').value;
   const{precioFinal,margenReal}=fcCalcularPrecioFinalBoton(it.costo_unitario,margen,regla);
   it.margen=margen;it.roundMode=regla;it.precio_venta=precioFinal;it.precio_psicologico=precioFinal;
@@ -3706,6 +3721,24 @@ function fcRecalcularLineaHistorial(idx,j,reglaOverride){
   }
   return it;
 }
+// Preview reactivo: recalcula y muestra el resultado en vivo mientras se escribe/selecciona,
+// pero NO toca _fcHistorial, no persiste y no sincroniza con Loyverse — eso solo pasa al
+// tocar "Aplicar" (fcRecalcularLineaHistorial). Solo guarda un borrador temporal para poder
+// restaurar el preview si se recarga la página a mitad de la edición.
+function fcActualizarPreviewLinea(idx,j){
+  const f=_fcHistorial[idx];const it=f&&f.items[j];
+  if(!it)return;
+  const linea=document.querySelector(`.fc-hist-line[data-idx="${idx}"][data-item="${j}"]`);
+  if(!linea)return;
+  const margen=Math.max(0,Math.min(95,+linea.querySelector('.fc-hist-margin-manual').value||0));
+  const regla=linea.querySelector('.fc-hist-round-select').value;
+  const{precioFinal,margenReal}=fcCalcularPrecioFinalBoton(it.costo_unitario,margen,regla);
+  const prevEl=linea.querySelector('.fc-hist-preview-val');
+  if(prevEl)prevEl.textContent=peso(precioFinal);
+  const margEl=linea.querySelector('.fc-hist-margin-real b');
+  if(margEl)margEl.textContent=margenReal.toFixed(1)+'%';
+  fcGuardarBorrador(idx,j,margen,regla);
+}
 // ---- Borrador de edición activa (localStorage: draft_active_edit) ----
 // Guarda qué producto se está editando mientras se escribe, para poder restaurarlo si la
 // página se recarga a mitad de la edición (F5) — el resto de los cambios ya confirmados
@@ -3719,6 +3752,27 @@ function fcGuardarBorrador(idx,j,margen,regla){
 function fcLimpiarBorrador(){try{localStorage.removeItem(FC_DRAFT_LS_KEY);}catch(e){}}
 function fcCargarBorrador(){
   try{const raw=localStorage.getItem(FC_DRAFT_LS_KEY);return raw?JSON.parse(raw):null;}catch(e){return null;}
+}
+// ---- Vista/módulo activo (localStorage: fc_modulo_activo) ----
+// Recuerda si el modal "Escanear factura" estaba abierto y qué acordeones desplegados, para
+// que al recargar (F5) la app no vuelva por defecto a "Pedidos" sino que quede donde estaba.
+const FC_VISTA_LS_KEY='fc_modulo_activo';
+function fcGuardarVistaActiva(){
+  try{
+    const ov=document.getElementById('fc-ov');
+    const modalAbierto=ov&&!ov.classList.contains('hidden');
+    const histBody=document.getElementById('fc-hist-body');
+    const historialAbierto=!!histBody&&!histBody.classList.contains('collapsed');
+    let itemAbiertoIdx=null;
+    document.querySelectorAll('.fc-hist-item').forEach(item=>{
+      const body=item.querySelector('.fc-hist-item-body');
+      if(body&&!body.classList.contains('collapsed'))itemAbiertoIdx=+item.dataset.idx;
+    });
+    localStorage.setItem(FC_VISTA_LS_KEY,JSON.stringify({modalAbierto,historialAbierto,itemAbiertoIdx}));
+  }catch(e){}
+}
+function fcCargarVistaActiva(){
+  try{const raw=localStorage.getItem(FC_VISTA_LS_KEY);return raw?JSON.parse(raw):null;}catch(e){return null;}
 }
 async function fcConfirmarCambioLinea(idx,j,btnParaBloquear){
   const f=_fcHistorial[idx];
@@ -3741,6 +3795,19 @@ document.getElementById('fc-hist-body').addEventListener('click',ev=>{
   if(!aplicar)return;
   const linea=aplicar.closest('.fc-hist-line');
   fcConfirmarCambioLinea(+linea.dataset.idx,+linea.dataset.item,aplicar);
+});
+document.getElementById('fc-hist-body').addEventListener('input',ev=>{
+  if(!ev.target.classList.contains('fc-hist-margin-manual'))return;
+  const linea=ev.target.closest('.fc-hist-line');
+  fcActualizarPreviewLinea(+linea.dataset.idx,+linea.dataset.item);
+});
+document.getElementById('fc-hist-body').addEventListener('change',ev=>{
+  const esAtajo=ev.target.classList.contains('fc-hist-margin-select');
+  const esRedondeo=ev.target.classList.contains('fc-hist-round-select');
+  if(!esAtajo&&!esRedondeo)return;
+  const linea=ev.target.closest('.fc-hist-line');
+  if(esAtajo&&ev.target.value)linea.querySelector('.fc-hist-margin-manual').value=ev.target.value;
+  fcActualizarPreviewLinea(+linea.dataset.idx,+linea.dataset.item);
 });
 document.getElementById('fc-hist-body').addEventListener('click',ev=>{
   const item=ev.target.closest('.fc-hist-item');
@@ -3776,14 +3843,15 @@ document.getElementById('fc-hist-body').addEventListener('click',ev=>{
   const head=ev.target.closest('.fc-hist-item-head');
   if(!head)return;
   toggleAccordion(head,item.querySelector('.fc-hist-item-body'));
+  fcGuardarVistaActiva();
 });
 document.getElementById('fc-hist-body').addEventListener('input',ev=>{
   if(!ev.target.classList.contains('fc-link-search'))return;
   fcActualizarMenuBusqueda(ev.target);
 });
 document.getElementById('fc-otra').onclick=fcReset;
-document.getElementById('fc-cerrar').onclick=()=>{cerrarModal('fc-ov');fcReset();};
-document.getElementById('mas-q-factura').onclick=()=>{cerrarModal('mas-ov');abrirModal('fc-ov');fcReset();};
+document.getElementById('fc-cerrar').onclick=()=>{cerrarModal('fc-ov');fcReset();try{localStorage.removeItem(FC_VISTA_LS_KEY);}catch(e){}};
+document.getElementById('mas-q-factura').onclick=()=>{cerrarModal('mas-ov');abrirModal('fc-ov');fcReset();fcGuardarVistaActiva();};
 document.getElementById('cp-scan').onclick=()=>{
   const reopen=()=>{document.getElementById('cp-ov').classList.remove('hidden');_sincronizarNav();};
   document.getElementById('cp-ov').classList.add('hidden');
@@ -5311,25 +5379,36 @@ requestAnimationFrame(()=>requestAnimationFrame(()=>{
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(_actualizarLayout);
 _actualizarVisibilidadFab();
 if(_fcHistorial.length){document.getElementById('fc-hist-card').classList.remove('hidden');fcRenderHistorial();}
-// Restaura un borrador de edición que haya quedado a mitad de camino (F5 mientras se
-// escribía un margen, antes de que el blur lo confirmara).
-(function fcRestaurarBorrador(){
+// Restaura la vista/módulo activo (modal de factura abierto, acordeones desplegados) y
+// cualquier preview sin aplicar — para que F5 no te devuelva a "Pedidos" por defecto.
+// IMPORTANTE: solo repone el PREVIEW (fcActualizarPreviewLinea) — nunca llama a la función
+// de aplicar de verdad, así se respeta "los cambios solo se asignan al tocar Aplicar"
+// también después de recargar la página.
+(function fcRestaurarVista(){
+  const vista=fcCargarVistaActiva();
   const draft=fcCargarBorrador();
-  if(!draft)return;
-  const idx=_fcHistorial.findIndex(f=>f.facturaId===draft.facturaId);
-  const it=idx>-1&&_fcHistorial[idx].items[draft.item];
-  if(!it)return; // la factura ya no existe (se borró) — nada que restaurar
-  it.margen=draft.margen;it.roundMode=draft.regla;
-  document.getElementById('fc-hist-card').classList.remove('hidden');
-  fcRenderHistorial();
-  abrirModal('fc-ov');
-  toggleAccordion(document.getElementById('fc-hist-head'),document.getElementById('fc-hist-body'),true);
-  const itemEl=document.querySelector(`.fc-hist-item[data-idx="${idx}"]`);
-  if(itemEl)toggleAccordion(itemEl.querySelector('.fc-hist-item-head'),itemEl.querySelector('.fc-hist-item-body'),true);
-  fcRecalcularLineaHistorial(idx,draft.item);
+  if(!vista&&!draft)return;
+  if((vista&&vista.modalAbierto)||draft){
+    abrirModal('fc-ov');
+    toggleAccordion(document.getElementById('fc-hist-head'),document.getElementById('fc-hist-body'),true);
+  }
+  const idxAbierto=draft?_fcHistorial.findIndex(f=>f.facturaId===draft.facturaId):(vista?vista.itemAbiertoIdx:null);
+  if(idxAbierto!=null&&idxAbierto>-1){
+    const itemEl=document.querySelector(`.fc-hist-item[data-idx="${idxAbierto}"]`);
+    if(itemEl)toggleAccordion(itemEl.querySelector('.fc-hist-item-head'),itemEl.querySelector('.fc-hist-item-body'),true);
+  }
+  if(draft&&idxAbierto>-1&&_fcHistorial[idxAbierto].items[draft.item]){
+    const linea=document.querySelector(`.fc-hist-line[data-idx="${idxAbierto}"][data-item="${draft.item}"]`);
+    if(linea){
+      linea.querySelector('.fc-hist-margin-manual').value=draft.margen;
+      linea.querySelector('.fc-hist-round-select').value=draft.regla;
+      fcActualizarPreviewLinea(idxAbierto,draft.item); // preview únicamente, no aplica
+    }
+  }
   requestAnimationFrame(()=>{
-    const linea=document.querySelector(`.fc-hist-line[data-idx="${idx}"][data-item="${draft.item}"]`);
-    if(linea)linea.scrollIntoView({behavior:'smooth',block:'center'});
+    const sel=draft?`.fc-hist-line[data-idx="${idxAbierto}"][data-item="${draft.item}"]`:(idxAbierto!=null?`.fc-hist-item[data-idx="${idxAbierto}"]`:null);
+    const el=sel&&document.querySelector(sel);
+    if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
   });
 })();
 // guarda la posición de scroll mientras navegas, y al salir/cambiar de app
