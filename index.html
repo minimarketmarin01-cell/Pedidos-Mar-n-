@@ -578,6 +578,15 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .fc-tab-btn{flex:1;min-height:38px;border:none;border-radius:8px;background:transparent;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .fc-tab-btn.active{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .fc-peso-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+/* Buscador de producto por peso — mismas medidas/sombra/z-index que .cat-combo-menu (que a
+   su vez ya replica el comportamiento probado de .prov-menu: portal, scroll táctil, cierre
+   al tocar afuera). Reutiliza esas clases directo para el desplegable, sin duplicar CSS. */
+.fp-prod-combo{position:relative;flex:1;min-width:0}
+.fp-prod-input{width:100%;padding:11px 38px 11px 10px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;background:#fff;box-sizing:border-box}
+.fp-prod-input:focus{outline:none;border-color:var(--wa)}
+/* Botón ✖ genérico — mismas medidas que .prov-x, reutilizable en cualquier buscador */
+.search-x{position:absolute;top:50%;right:6px;transform:translateY(-50%);width:24px;height:24px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0;-webkit-tap-highlight-color:transparent}
+.search-x.hidden{display:none}
 .fp-actual{margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--paper);font-size:11px;color:var(--ink2)}
 .fp-actual.hidden{display:none}
 .fp-actual b{color:var(--ink)}
@@ -596,7 +605,8 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .fc-link-sug-item:active{background:var(--line)}
 .fc-link-sug-name{font-size:12.5px;font-weight:600;color:var(--ink)}
 .fc-link-sug-meta{font-size:10px;font-weight:500;color:var(--muted)}
-.fc-link-search{width:100%;min-height:44px;border:1.5px solid var(--line);border-radius:8px;padding:0 10px;font-size:13px;box-sizing:border-box}
+.fc-link-search-wrap{position:relative}
+.fc-link-search{width:100%;min-height:44px;border:1.5px solid var(--line);border-radius:8px;padding:0 34px 0 10px;font-size:13px;box-sizing:border-box}
 .fc-link-search:focus{outline:none;border-color:var(--wa)}
 .fc-link-menu{margin-top:8px;max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
 .fc-link-menu.hidden{display:none}
@@ -1334,7 +1344,8 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
         <label>Categoría *</label>
         <div style="display:flex;gap:8px">
           <div class="cat-combo" id="cat-combo">
-            <input id="cp-cat-input" class="cat-combo-input" placeholder="Elige una categoría…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+            <input id="cp-cat-input" class="cat-combo-input" placeholder="Elige una categoría…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox" style="padding-right:60px">
+            <button type="button" class="search-x hidden" id="cp-cat-x" aria-label="Borrar" style="right:30px">✕</button>
             <svg class="cat-combo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
             <select id="cp-cat" style="display:none"><option value="">Cargando…</option></select>
             <div class="cat-combo-menu hidden" id="cat-combo-menu" role="listbox"></div>
@@ -1452,7 +1463,14 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
       <div id="fc-tab-peso" class="hidden">
         <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px">Para productos que se venden al peso (frutas, verduras, cecinas, etc.) — elige el producto y en cuántos kilos rinde el lote que compraste.</div>
         <div class="fc-peso-grid">
-          <div class="fc-field"><label>Producto (vendido por peso)</label><select id="fp-nombre"><option value="">Elige un producto…</option></select></div>
+          <div class="fc-field">
+            <label>Producto (vendido por peso)</label>
+            <div class="fp-prod-combo" id="fp-prod-combo">
+              <input type="text" id="fp-nombre" class="fp-prod-input" placeholder="Buscar producto por peso…" autocomplete="off">
+              <button type="button" class="search-x hidden" id="fp-nombre-x" aria-label="Borrar">✕</button>
+              <div class="cat-combo-menu hidden" id="fp-nombre-menu"></div>
+            </div>
+          </div>
           <div class="fc-field"><label>Costo del lote</label><input type="number" inputmode="numeric" id="fp-costo" placeholder="Ej: 45000"></div>
           <div class="fc-field"><label>Kilos totales</label><input type="number" step="any" inputmode="decimal" id="fp-kilos" placeholder="Ej: 20"></div>
           <div class="fc-field"><label>Margen %</label><input type="number" step="any" inputmode="decimal" id="fp-margen" placeholder="Ej: 50"></div>
@@ -2201,7 +2219,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-17.2';
+const APP_VERSION='2026-07-17.3';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -3495,12 +3513,12 @@ function fcAbrirPanelLink(body,nombreProducto){
   if(!body.classList.contains('hidden')){body.classList.add('hidden');return false;}
   const sugeridos=fcBuscarCoincidencias(nombreProducto,3);
   body.innerHTML=(sugeridos.length?`<div class="fc-link-sug-title">Sugeridos</div><div class="fc-link-sug">${sugeridos.map(fcLinkChip).join('')}</div>`:'')+
-    `<input class="fc-link-search" placeholder="Buscar otro producto…" autocomplete="off"><div class="fc-link-menu hidden"></div>`;
+    `<div class="fc-link-search-wrap"><input class="fc-link-search" placeholder="Buscar otro producto…" autocomplete="off"><button type="button" class="search-x hidden" aria-label="Borrar">✕</button></div><div class="fc-link-menu hidden"></div>`;
   body.classList.remove('hidden');
   return true;
 }
 function fcActualizarMenuBusqueda(inputEl){
-  const menu=inputEl.parentElement.querySelector('.fc-link-menu');
+  const menu=inputEl.closest('.fc-link-body').querySelector('.fc-link-menu');
   const q=inputEl.value;
   if(!q.trim()){menu.classList.add('hidden');menu.innerHTML='';return;}
   const resultados=fcBuscarProductosTexto(q);
@@ -3954,15 +3972,13 @@ document.querySelectorAll('.fc-tab-btn').forEach(btn=>{
     document.querySelectorAll('.fc-tab-btn').forEach(b=>b.classList.toggle('active',b===btn));
     document.getElementById('fc-tab-foto').classList.toggle('hidden',btn.dataset.fctab!=='foto');
     document.getElementById('fc-tab-peso').classList.toggle('hidden',btn.dataset.fctab!=='peso');
-    if(btn.dataset.fctab==='peso')fpPoblarSelectorProductos();
   });
 });
 // ---- Calculadora por peso/kilo (frutas, verduras, cecinas, etc.) ----
 // Mismo motor de cálculo que el resto del módulo (fcVenta vía fcCalcularPrecioFinalBoton) —
 // solo cambia el primer paso: costo del lote ÷ kilos = costo real por kilo.
 document.getElementById('fp-calcular').onclick=()=>{
-  const selEl=document.getElementById('fp-nombre');
-  const nombre=(selEl.selectedIndex>0?selEl.options[selEl.selectedIndex].text:'Producto al peso').trim();
+  const nombre=(document.getElementById('fp-nombre').value||'Producto al peso').trim();
   const costoLote=+document.getElementById('fp-costo').value||0;
   const kilos=+document.getElementById('fp-kilos').value||0;
   const margen=Math.max(0,Math.min(95,+document.getElementById('fp-margen').value||0));
@@ -3988,20 +4004,113 @@ document.getElementById('fp-guardar').onclick=()=>{
   historyService.guardarRemoto(facturaId,[item]); // en segundo plano, no bloquea la UI
   showToast('✓ Guardado en historial');
   r.classList.add('hidden');
+  document.getElementById('fp-nombre').dataset.ref='';
+  document.getElementById('fp-producto-info').classList.add('hidden');
   ['fp-nombre','fp-costo','fp-kilos','fp-margen'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fp-nombre-x').classList.add('hidden');
 };
-// ---- Selector de producto por peso: se puebla con lo que ya viene de Loyverse ----
-// Reusa DB.items (ya cargado) y it.peso (el mismo campo que usan Recepción/Merma/
-// Vencimientos) — no crea ninguna fuente de datos nueva.
-function fpPoblarSelectorProductos(){
-  const sel=document.getElementById('fp-nombre');
-  const actual=sel.value;
-  const productos=(window.DB&&DB.items?DB.items:[]).filter(it=>it.peso).slice().sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
-  sel.innerHTML='<option value="">Elige un producto…</option>'+productos.map(it=>`<option value="${it.ref}">${it.nombre}</option>`).join('');
-  if(actual&&productos.some(it=>it.ref===actual))sel.value=actual;
+// ---- Buscador de producto por peso, con desplegable idéntico al de proveedores ----
+// Mismo patrón ya probado en este proyecto (prov-menu / cat-combo-menu): portal en <body>
+// mientras está abierto (el modal tiene overflow:hidden y recortaría un dropdown normal),
+// z-index alto, scroll táctil, cierre al elegir o al tocar afuera. Reusa DB.items + it.peso
+// (mismo campo que ya usan Recepción/Merma/Vencimientos) — no crea datos nuevos.
+(function(){
+  const input=document.getElementById('fp-nombre'),menu=document.getElementById('fp-nombre-menu');
+  let home=null;
+  function candidatos(q){
+    const nq=normTxt(q||'').trim();
+    const base=(window.DB&&DB.items?DB.items:[]).filter(it=>it.peso).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+    return (nq?base.filter(it=>normTxt(it.nombre).indexOf(nq)>-1):base).slice(0,30);
+  }
+  function render(){
+    const lista=candidatos(input.value);
+    menu.innerHTML=lista.length?lista.map(it=>`<div class="cat-opt" data-ref="${it.ref}">${it.nombre}</div>`).join(''):'<div class="cat-opt-empty">No se encontraron productos por peso</div>';
+  }
+  function posicionar(){
+    if(menu.classList.contains('hidden'))return;
+    const r=input.getBoundingClientRect();
+    menu.style.left=r.left+'px';menu.style.top=(r.bottom+4)+'px';menu.style.width=r.width+'px';
+  }
+  function montar(){
+    if(home)return;
+    home={parent:menu.parentNode,next:menu.nextSibling};
+    document.body.appendChild(menu);
+    menu.style.position='fixed';
+    posicionar();
+  }
+  function desmontar(){
+    if(!home)return;
+    menu.style.position='';menu.style.left='';menu.style.top='';menu.style.width='';
+    const{parent,next}=home;
+    if(next&&next.parentNode===parent)parent.insertBefore(menu,next);else parent.appendChild(menu);
+    home=null;
+  }
+  function abrir(){render();menu.classList.remove('hidden');montar();}
+  function cerrar(){menu.classList.add('hidden');desmontar();}
+  input.addEventListener('focus',abrir);
+  input.addEventListener('click',()=>{if(menu.classList.contains('hidden'))abrir();});
+  input.addEventListener('input',()=>{
+    input.dataset.ref=''; // si escribe de nuevo, se invalida la selección anterior hasta elegir otra
+    document.getElementById('fp-producto-info').classList.add('hidden');
+    document.getElementById('fp-nombre-x').classList.toggle('hidden',!input.value);
+    render();
+    if(menu.classList.contains('hidden')){menu.classList.remove('hidden');montar();}else posicionar();
+  });
+  menu.addEventListener('click',ev=>{
+    const opt=ev.target.closest('.cat-opt');
+    if(!opt)return;
+    const it=DB.items.find(x=>x.ref===opt.dataset.ref);
+    if(!it)return;
+    input.value=it.nombre;input.dataset.ref=it.ref;
+    document.getElementById('fp-nombre-x').classList.remove('hidden');
+    cerrar();
+    fpActualizarInfoProducto();
+  });
+  document.addEventListener('pointerdown',ev=>{
+    if(menu.classList.contains('hidden'))return;
+    if(input.contains(ev.target)||menu.contains(ev.target))return;
+    cerrar();
+  });
+  window.addEventListener('resize',()=>{if(home)posicionar();});
+  window.addEventListener('scroll',()=>{if(home)posicionar();},true);
+})();
+// ---- Botón ✖ genérico, reutilizado en los 3 buscadores que no lo tenían ----
+document.getElementById('fp-nombre-x').addEventListener('click',()=>{
+  const input=document.getElementById('fp-nombre');
+  input.value='';input.dataset.ref='';
+  input.focus();
+  document.getElementById('fp-nombre-x').classList.add('hidden');
+  document.getElementById('fp-producto-info').classList.add('hidden');
+});
+document.getElementById('cp-cat-input').addEventListener('input',ev=>{
+  document.getElementById('cp-cat-x').classList.toggle('hidden',!ev.target.value);
+});
+document.getElementById('cp-cat-x').addEventListener('click',()=>{
+  const input=document.getElementById('cp-cat-input');
+  input.value='';input.dispatchEvent(new Event('input'));input.focus();
+  document.getElementById('cp-cat-x').classList.add('hidden');
+});
+// fc-link-search se crea dinámicamente (factura en revisión e historial) — se delega en los
+// contenedores que YA tienen listeners propios ('fc-list' y 'fc-hist-body'), sin agregar
+// listeners nuevos al documento.
+function fcWireLinkSearchX(container){
+  container.addEventListener('input',ev=>{
+    if(!ev.target.classList.contains('fc-link-search'))return;
+    const x=ev.target.nextElementSibling;
+    if(x&&x.classList.contains('search-x'))x.classList.toggle('hidden',!ev.target.value);
+  });
+  container.addEventListener('click',ev=>{
+    const x=ev.target.closest('.search-x');
+    if(!x||!x.closest('.fc-link-search-wrap'))return;
+    const input=x.previousElementSibling;
+    if(input){input.value='';input.dispatchEvent(new Event('input'));input.focus();}
+    x.classList.add('hidden');
+  });
 }
+fcWireLinkSearchX(document.getElementById('fc-list'));
+fcWireLinkSearchX(document.getElementById('fc-hist-body'));
 function fpActualizarInfoProducto(){
-  const ref=document.getElementById('fp-nombre').value;
+  const ref=document.getElementById('fp-nombre').dataset.ref;
   const info=document.getElementById('fp-producto-info');
   if(!ref){info.classList.add('hidden');info.innerHTML='';return;}
   const it=DB.items.find(x=>x.ref===ref);
@@ -4010,13 +4119,12 @@ function fpActualizarInfoProducto(){
   info.innerHTML='Costo actual: <b>'+(it.coste!=null?peso(it.coste):'—')+'</b> · Precio actual: <b>'+(it.precio!=null?peso(it.precio):'—')+'</b> · Margen actual: <b>'+margenActual+'</b>';
   info.classList.remove('hidden');
 }
-document.getElementById('fp-nombre').addEventListener('change',fpActualizarInfoProducto);
 // ---- Aplicar costo y precio calculados al producto seleccionado en Loyverse ----
 // Reutiliza la acción "editar_precio" ya existente (misma que usa "Asociar a producto" en
 // la pestaña de factura) — no se agrega ningún endpoint ni lógica de red nueva.
 document.getElementById('fp-aplicar').addEventListener('click',async()=>{
-  const ref=document.getElementById('fp-nombre').value;
-  if(!ref){showToast('Elige un producto primero');return;}
+  const ref=document.getElementById('fp-nombre').dataset.ref;
+  if(!ref){showToast('Elige un producto de la lista primero');return;}
   const r=document.getElementById('fp-resultado');
   if(r.classList.contains('hidden')){showToast('Primero calcula el precio con "Calcular"');return;}
   const costo=+r.dataset.costokg||0,precioFinal=+r.dataset.final||0;
