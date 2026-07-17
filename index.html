@@ -503,6 +503,13 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .card-row{display:flex;flex-wrap:nowrap;align-items:flex-start;gap:10px;min-width:0;width:100%;box-sizing:border-box}
 /* ---- Vista de fila (pantallas grandes, ej. monitor táctil BlissOS) ---- */
 html.vista-filas .card-cell{padding:7px 16px!important}
+/* La tabla debe terminar donde empieza el carrito fijo. #ptable usa table-layout:auto, que
+   ensancha la tabla hasta el max-content de su contenido (los nombres largos de producto),
+   ignorando el ancho que le reserva la grilla de dos columnas — por eso las últimas columnas
+   (COB/PEDIR) quedaban ocultas debajo del carrito. Con table-layout:fixed la tabla toma
+   exactamente el ancho de su contenedor y la grilla minmax() de cada fila se compacta sola
+   para caber. Scoped a vista-filas: la vista de tarjeta (celular/tablet) no se toca. */
+html.vista-filas #ptable{table-layout:fixed;width:100%;min-width:0;max-width:100%}
 html.vista-filas .fila-row{display:grid;grid-template-columns:34px minmax(110px,2.3fr) minmax(58px,0.85fr) minmax(48px,0.65fr) minmax(56px,0.8fr) minmax(84px,1fr);align-items:center;column-gap:8px;width:100%;box-sizing:border-box;min-width:0}
 html.vista-filas .fila-thumb{width:34px;height:34px;overflow:hidden;border-radius:8px;box-sizing:border-box}
 html.vista-filas .fila-thumb .card-thumb,html.vista-filas .fila-thumb .card-thumb-empty{width:34px;height:34px;object-fit:cover;display:block}
@@ -2264,7 +2271,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-17.19';
+const APP_VERSION='2026-07-17.20';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
