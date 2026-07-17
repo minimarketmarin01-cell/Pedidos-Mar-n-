@@ -572,6 +572,12 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .fc-field.fc-out input{background:var(--paper);color:var(--ink2);border-color:var(--line2)}
 .fc-field.fc-psico input{font-weight:800;color:var(--ink);font-size:14px}
 .fc-row-meta{font-size:10.5px;color:var(--muted);margin-top:6px}
+.fc-row-margin-real{font-size:11px;color:var(--ink2);margin-top:7px;font-weight:600}
+.fc-row-margin-real b{color:var(--wa-d)}
+.fc-round-wrap{margin-bottom:12px;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper)}
+.fc-round-wrap label{display:block;font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px}
+.fc-round-wrap select{width:100%;min-height:44px;border:1.5px solid var(--line);border-radius:8px;padding:0 10px;font-size:13px;background:#fff;box-sizing:border-box}
+.fc-round-wrap select:focus{outline:none;border-color:var(--wa)}
 .fc-link{margin-top:9px}
 .fc-link-btn{width:100%;min-height:44px;border:1.5px dashed var(--line);border-radius:9px;background:var(--paper);color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .fc-link-btn:active{background:var(--line)}
@@ -1402,6 +1408,16 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
       </div>
       <div id="fc-resultados" class="hidden">
         <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">Revisa y corrige cada fila antes de guardar — nada se guarda automáticamente.</div>
+        <div class="fc-round-wrap">
+          <label for="fc-round-mode">Redondeo del precio de venta</label>
+          <select id="fc-round-mode">
+            <option value="none">Sin redondeo (precio exacto)</option>
+            <option value="auto" selected>Automático — el que más se acerque al margen objetivo</option>
+            <option value="250">Forzar terminación en $250</option>
+            <option value="290">Forzar terminación en $290</option>
+            <option value="300">Forzar terminación en $300</option>
+          </select>
+        </div>
         <div id="fc-list"></div>
         <button class="mm-save" id="fc-guardar" style="margin-top:6px">Guardar cálculos</button>
         <button class="loadbtn" id="fc-otra" style="width:100%;margin-top:8px">Escanear otra factura</button>
@@ -2125,7 +2141,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-16.21';
+const APP_VERSION='2026-07-16.22';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -3245,15 +3261,46 @@ document.getElementById('cp-barcode').addEventListener('blur',()=>{cpAutocomplet
 // (ej: 1437→1490, 2468→2490, 3525→3590). Margen sugerido según categoría — el usuario
 // SIEMPRE puede corregir cada campo antes de guardar; nada se confía 100% a la IA.
 const FC_MARGEN_POR_CATEGORIA={bebidas:30,snacks:37,confites:42,abarrotes:37,premium:50,otro:30};
-function fcPsico(precio){
-  precio=Math.max(0,Math.round(precio||0));
+// FIX: fcPsico original fallaba para valores intermedios (ej. 298 → daba 290, un valor
+// MENOR al original, en vez de redondear hacia arriba a 390). Reemplazada por una fórmula
+// genérica correcta: redondea siempre HACIA ARRIBA a la terminación pedida (0=centena
+// exacta "$300", 50="$250", 90="$290"), verificada contra los 3 ejemplos originales y
+// contra el caso que antes fallaba.
+function fcRedondearAEnding(precio,ending){
+  precio=Math.max(0,precio||0);
   if(!precio)return 0;
-  return Math.ceil((precio+1)/100)*100-10;
+  const base=Math.floor(precio/100)*100;
+  let candidato=base+ending;
+  if(candidato<precio-1e-9)candidato+=100;
+  return candidato;
 }
+function fcPsico(precio){ return fcRedondearAEnding(Math.round(precio||0),90); } // se mantiene por compatibilidad, ahora con la fórmula corregida
 function fcVenta(costo,margenPct){
   costo=Number(costo)||0;const m=Math.min(95,Math.max(0,Number(margenPct)||0))/100;
   if(costo<=0||m<=0)return 0;
   return costo/(1-m);
+}
+// ---- Redondeo seleccionable del precio de venta (nunca toca el costo) ----
+let _fcRoundMode='auto';
+function fcCalcularPrecioFinal(costo,margenObjetivo){
+  const ventaExacta=fcVenta(costo,margenObjetivo);
+  let precioFinal;
+  if(_fcRoundMode==='none')precioFinal=Math.round(ventaExacta);
+  else if(_fcRoundMode==='250')precioFinal=fcRedondearAEnding(ventaExacta,50);
+  else if(_fcRoundMode==='290')precioFinal=fcRedondearAEnding(ventaExacta,90);
+  else if(_fcRoundMode==='300')precioFinal=fcRedondearAEnding(ventaExacta,0);
+  else{ // 'auto': entre los 3 candidatos, el que deje el margen real más cerca del objetivo
+    const candidatos=[fcRedondearAEnding(ventaExacta,50),fcRedondearAEnding(ventaExacta,90),fcRedondearAEnding(ventaExacta,0)];
+    let mejor=candidatos[0],mejorDiff=Infinity;
+    candidatos.forEach(c=>{
+      const margenC=c>0?((c-costo)/c*100):0;
+      const diff=Math.abs(margenC-margenObjetivo);
+      if(diff<mejorDiff){mejorDiff=diff;mejor=c;}
+    });
+    precioFinal=mejor;
+  }
+  const margenReal=precioFinal>0?((precioFinal-costo)/precioFinal*100):0;
+  return {ventaExacta,precioFinal,margenReal};
 }
 let _fcImagenB64=null,_fcMediaType='image/jpeg',_fcItems=[],_fcEditandoIdx=null;
 function fcReset(){
@@ -3333,7 +3380,8 @@ function fcRenderResultados(){
     const costoBruto=esEdicion?it.costo_unitario:fcCostoConIva(it.costo_unitario,it.incluye_iva);
     const esChocman=!esEdicion&&fcEsChocman(it.producto);
     const costoFinal=esChocman?(costoBruto/FC_DIVISOR_CHOCMAN):costoBruto;
-    const venta=fcVenta(costoFinal,margen),psico=fcPsico(venta);
+    const venta=fcVenta(costoFinal,margen);
+    const {precioFinal,margenReal}=fcCalcularPrecioFinal(costoFinal,margen);
     const meta=esEdicion?['Editando cálculo guardado — vuelve a guardar para actualizarlo']:[
       it.incluye_iva?'costo ya incluía IVA':'+19% IVA aplicado',
       esChocman?(peso(costoBruto)+' ÷ 32 u (caja Chocman) = '+peso(costoFinal)+'/u'):null,
@@ -3343,10 +3391,11 @@ function fcRenderResultados(){
       <input class="fc-row-name" value="${String(it.producto).replace(/"/g,'&quot;')}" data-f="producto">
       <div class="fc-grid">
         <div class="fc-field"><label>Costo unitario</label><input inputmode="numeric" value="${Math.round(costoFinal)}" data-f="costo"></div>
-        <div class="fc-field"><label>Margen %</label><input inputmode="numeric" value="${margen}" data-f="margen"></div>
-        <div class="fc-field fc-out"><label>Precio venta</label><input inputmode="numeric" value="${Math.round(venta)}" data-f="venta"></div>
-        <div class="fc-field fc-out fc-psico"><label>Precio psicológico</label><input inputmode="numeric" value="${psico}" data-f="psico"></div>
+        <div class="fc-field"><label>Margen % objetivo</label><input inputmode="numeric" value="${margen}" data-f="margen"></div>
+        <div class="fc-field fc-out"><label>Precio venta exacto</label><input inputmode="numeric" value="${Math.round(venta)}" data-f="venta"></div>
+        <div class="fc-field fc-out fc-psico"><label>Precio final</label><input inputmode="numeric" value="${precioFinal}" data-f="psico"></div>
       </div>
+      <div class="fc-row-margin-real">Margen real con este precio: <b>${margenReal.toFixed(1)}%</b></div>
       <div class="fc-row-meta">${meta.join(' · ')}</div>
       <div class="fc-link">
         <button class="fc-link-btn" type="button">🔗 Asociar a producto existente</button>
@@ -3451,22 +3500,34 @@ document.getElementById('fc-list').addEventListener('input',ev=>{
   if(!ev.target.classList.contains('fc-link-search'))return;
   fcActualizarMenuBusqueda(ev.target);
 });
+function fcRecalcularFila(row){
+  const costo=+row.querySelector('[data-f="costo"]').value||0;
+  const margen=+row.querySelector('[data-f="margen"]').value||0;
+  const {ventaExacta,precioFinal,margenReal}=fcCalcularPrecioFinal(costo,margen);
+  row.querySelector('[data-f="venta"]').value=Math.round(ventaExacta);
+  row.querySelector('[data-f="psico"]').value=precioFinal;
+  const margEl=row.querySelector('.fc-row-margin-real b');
+  if(margEl)margEl.textContent=margenReal.toFixed(1)+'%';
+}
 document.getElementById('fc-list').addEventListener('input',ev=>{
   const inp=ev.target;const field=inp.dataset.f;
   if(!field||(field!=='costo'&&field!=='margen'))return;
   const row=inp.closest('.fc-row');if(!row)return;
-  const costo=+row.querySelector('[data-f="costo"]').value||0;
-  const margen=+row.querySelector('[data-f="margen"]').value||0;
-  const venta=fcVenta(costo,margen);
-  row.querySelector('[data-f="venta"]').value=Math.round(venta);
-  row.querySelector('[data-f="psico"]').value=fcPsico(venta);
+  fcRecalcularFila(row);
+});
+document.getElementById('fc-round-mode').addEventListener('change',ev=>{
+  _fcRoundMode=ev.target.value;
+  // "recalcular inmediatamente todos los precios de la factura"
+  document.querySelectorAll('#fc-list .fc-row').forEach(fcRecalcularFila);
 });
 document.getElementById('fc-guardar').onclick=async()=>{
   const rows=document.querySelectorAll('#fc-list .fc-row');
   if(!rows.length){showToast('No hay productos para guardar');return;}
   const items=Array.from(rows).map(row=>{
     const g=f=>row.querySelector(`[data-f="${f}"]`).value;
-    const item={producto:g('producto').trim(),costo_unitario:+g('costo')||0,margen:+g('margen')||0,precio_venta:+g('venta')||0,precio_psicologico:+g('psico')||0,categoria:row.querySelector('.fc-row-meta').textContent};
+    const costo=+g('costo')||0,precioFinal=+g('psico')||0;
+    const margenFinal=precioFinal>0?((precioFinal-costo)/precioFinal*100):0; // margen real mostrado, no el objetivo
+    const item={producto:g('producto').trim(),costo_unitario:costo,margen:+margenFinal.toFixed(1),precio_venta:+g('venta')||0,precio_psicologico:precioFinal,categoria:row.querySelector('.fc-row-meta').textContent};
     if(row.dataset.sincronizadoRef){item.sincronizado=true;item.sincronizadoRef=row.dataset.sincronizadoRef;item.sincronizadoNombre=row.dataset.sincronizadoNombre;}
     return item;
   }).filter(it=>it.producto);
