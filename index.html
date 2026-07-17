@@ -629,18 +629,11 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .fc-hist-line-nums{display:flex;gap:11px;font-size:10.5px;color:var(--muted);font-family:'JetBrains Mono'}
 .fc-hist-line-nums b{color:var(--ink2);font-weight:700}
 .fc-hist-margin-wrap{display:inline-flex;align-items:center;gap:3px}
-.fc-hist-margin-in{width:52px;height:36px;text-align:center;border:1.5px solid var(--line);border-radius:7px;font-family:'JetBrains Mono';font-weight:700;font-size:12.5px;color:var(--ink2);padding:0;background:#fff;-webkit-tap-highlight-color:transparent}
-.fc-hist-margin-in:focus{outline:none;border-color:var(--wa);background:#F1FBF5}
-.fc-hist-margin-row{display:flex;align-items:center;gap:6px;margin-top:6px}
-.fc-hist-pct{font-size:11px;color:var(--muted);font-weight:700}
-.fc-qm-group{display:flex;gap:5px;margin-left:auto}
-.fc-qm-btn{min-width:40px;min-height:32px;border:1.5px solid var(--line);border-radius:7px;background:#fff;color:var(--ink2);font-size:11px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.fc-qm-btn:active{background:var(--paper)}
-.fc-qm-btn.active{background:var(--wa);border-color:var(--wa);color:#fff}
-.fc-rb-group{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:7px}
-.fc-rb-btn{min-height:36px;border:1.5px solid var(--line);border-radius:8px;background:#fff;color:var(--ink2);font-size:10.5px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;padding:2px 4px}
-.fc-rb-btn:active{background:var(--paper)}
-.fc-rb-btn.active{background:var(--ink);border-color:var(--ink);color:#fff}
+.fc-hist-controls-row{display:flex;align-items:center;gap:6px;margin-top:7px}
+.fc-hist-margin-select,.fc-hist-round-select{flex:1;min-width:0;min-height:36px;border:1.5px solid var(--line);border-radius:7px;padding:0 6px;font-size:11.5px;font-weight:700;color:var(--ink2);background:#fff;box-sizing:border-box}
+.fc-hist-margin-select:focus,.fc-hist-round-select:focus{outline:none;border-color:var(--wa)}
+.fc-hist-apply-btn{flex-shrink:0;min-height:36px;padding:0 14px;border:none;border-radius:7px;background:var(--wa);color:#fff;font-size:11.5px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.fc-hist-apply-btn:active{background:var(--wa-d)}
 .fc-hist-margin-real{flex-shrink:0;font-size:10px;color:var(--muted);font-weight:600;white-space:nowrap}
 .fc-hist-margin-real b{color:var(--wa-d)}
 .fc-hist-sync{margin-top:4px;font-size:9.5px;font-weight:600;color:var(--muted)}
@@ -2153,7 +2146,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-16.24';
+const APP_VERSION='2026-07-16.25';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -3618,20 +3611,19 @@ function fcRenderHistorial(){
             <button class="fc-hist-link-btn" type="button" title="Asociar a producto existente" aria-label="Asociar a producto existente"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.5 4.5"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L12.5 19.5"/></svg></button>
           </div>
           <div class="fc-hist-line-nums"><span>Costo <b>${peso(it.costo_unitario)}</b></span><span>Venta <b class="fc-hist-venta-val">${peso(it.precio_psicologico!=null?it.precio_psicologico:it.precio_venta)}</b></span></div>
-          <div class="fc-hist-margin-row">
-            <input type="number" step="any" inputmode="decimal" class="fc-hist-margin-in" value="${it.margen||0}">
-            <span class="fc-hist-pct">%</span>
-            <div class="fc-qm-group">
-              <button type="button" class="fc-qm-btn ${Number(it.margen)===30?'active':''}" data-margen="30">30%</button>
-              <button type="button" class="fc-qm-btn ${Number(it.margen)===40?'active':''}" data-margen="40">40%</button>
-              <button type="button" class="fc-qm-btn ${Number(it.margen)===50?'active':''}" data-margen="50">50%</button>
-            </div>
-          </div>
-          <div class="fc-rb-group">
-            <button type="button" class="fc-rb-btn ${fcNormalizarModoBoton(it.roundMode)==='none'?'active':''}" data-round="none">Sin Redondeo</button>
-            <button type="button" class="fc-rb-btn ${fcNormalizarModoBoton(it.roundMode)==='50'?'active':''}" data-round="50">Termina en 50</button>
-            <button type="button" class="fc-rb-btn ${fcNormalizarModoBoton(it.roundMode)==='90'?'active':''}" data-round="90">Termina en 90</button>
-            <button type="button" class="fc-rb-btn ${fcNormalizarModoBoton(it.roundMode)==='100'?'active':''}" data-round="100">Múltiplo 100</button>
+          <div class="fc-hist-controls-row">
+            <select class="fc-hist-margin-select">
+              <option value="30" ${fcMargenPreset(it.margen)===30?'selected':''}>30%</option>
+              <option value="40" ${fcMargenPreset(it.margen)===40?'selected':''}>40%</option>
+              <option value="50" ${fcMargenPreset(it.margen)===50?'selected':''}>50%</option>
+            </select>
+            <select class="fc-hist-round-select">
+              <option value="none" ${fcNormalizarModoBoton(it.roundMode)==='none'?'selected':''}>S/R</option>
+              <option value="50" ${fcNormalizarModoBoton(it.roundMode)==='50'?'selected':''}>50</option>
+              <option value="90" ${fcNormalizarModoBoton(it.roundMode)==='90'?'selected':''}>90</option>
+              <option value="100" ${fcNormalizarModoBoton(it.roundMode)==='100'?'selected':''}>100</option>
+            </select>
+            <button type="button" class="fc-hist-apply-btn">Aplicar</button>
           </div>
           <div class="fc-hist-margin-real">Margen real: <b>${fcCalcularPrecioFinalBoton(it.costo_unitario,it.margen||0,fcNormalizarModoBoton(it.roundMode)).margenReal.toFixed(1)}%</b></div>
           <div class="fc-hist-sync ${it.sincronizado?'ok':''}">${it.sincronizado?('✓ Sincronizado con Loyverse: '+it.sincronizadoNombre):'○ Sin sincronizar con Loyverse'}</div>
@@ -3686,13 +3678,21 @@ function fcNormalizarModoBoton(modo){
   const mapa={none:'none','50':'50','90':'90','100':'100','250':'50','290':'90','300':'100'};
   return mapa[modo]||'none';
 }
+// El selector de margen solo ofrece 30/40/50 — para precargar la opción más cercana al
+// margen real guardado (que puede ser un valor libre de una versión anterior, ej. 33%).
+function fcMargenPreset(margen){
+  const opciones=[30,40,50];
+  let mejor=opciones[0],dMin=Infinity;
+  opciones.forEach(o=>{const d=Math.abs(o-(margen||0));if(d<dMin){dMin=d;mejor=o;}});
+  return mejor;
+}
 function fcRecalcularLineaHistorial(idx,j,reglaOverride){
   const f=_fcHistorial[idx];const it=f&&f.items[j];
   if(!it)return null;
   const linea=document.querySelector(`.fc-hist-line[data-idx="${idx}"][data-item="${j}"]`);
   if(!linea)return null;
-  const margen=Math.max(0,Math.min(95,+linea.querySelector('.fc-hist-margin-in').value||0));
-  const regla=reglaOverride||fcNormalizarModoBoton(it.roundMode);
+  const margen=Math.max(0,Math.min(95,+linea.querySelector('.fc-hist-margin-select').value||0));
+  const regla=reglaOverride||linea.querySelector('.fc-hist-round-select').value;
   const{precioFinal,margenReal}=fcCalcularPrecioFinalBoton(it.costo_unitario,margen,regla);
   it.margen=margen;it.roundMode=regla;it.precio_venta=precioFinal;it.precio_psicologico=precioFinal;
   linea.querySelector('.fc-hist-venta-val').textContent=peso(precioFinal);
@@ -3736,38 +3736,11 @@ async function fcConfirmarCambioLinea(idx,j,btnParaBloquear){
     fcEjecutarAsociacion(it.costo_unitario,it.precio_psicologico,{ref:it.sincronizadoRef,nombre:it.sincronizadoNombre},btnParaBloquear||document.body);
   }
 }
-document.getElementById('fc-hist-body').addEventListener('input',ev=>{
-  if(!ev.target.classList.contains('fc-hist-margin-in'))return;
-  const linea=ev.target.closest('.fc-hist-line');
-  const idx=+linea.dataset.idx,j=+linea.dataset.item;
-  fcRecalcularLineaHistorial(idx,j);
-  const it=_fcHistorial[idx]&&_fcHistorial[idx].items[j];
-  if(it)fcGuardarBorrador(idx,j,it.margen,it.roundMode);
-});
-document.getElementById('fc-hist-body').addEventListener('change',ev=>{
-  if(!ev.target.classList.contains('fc-hist-margin-in'))return;
-  const linea=ev.target.closest('.fc-hist-line');
-  fcConfirmarCambioLinea(+linea.dataset.idx,+linea.dataset.item,ev.target);
-});
 document.getElementById('fc-hist-body').addEventListener('click',ev=>{
-  const qm=ev.target.closest('.fc-qm-btn');
-  if(qm){
-    const linea=qm.closest('.fc-hist-line');
-    const idx=+linea.dataset.idx,j=+linea.dataset.item;
-    linea.querySelector('.fc-hist-margin-in').value=qm.dataset.margen;
-    linea.querySelectorAll('.fc-qm-btn').forEach(b=>b.classList.toggle('active',b===qm));
-    fcConfirmarCambioLinea(idx,j,qm);
-    return;
-  }
-  const rb=ev.target.closest('.fc-rb-btn');
-  if(rb){
-    const linea=rb.closest('.fc-hist-line');
-    const idx=+linea.dataset.idx,j=+linea.dataset.item;
-    linea.querySelectorAll('.fc-rb-btn').forEach(b=>b.classList.toggle('active',b===rb));
-    fcRecalcularLineaHistorial(idx,j,rb.dataset.round);
-    fcConfirmarCambioLinea(idx,j,rb);
-    return;
-  }
+  const aplicar=ev.target.closest('.fc-hist-apply-btn');
+  if(!aplicar)return;
+  const linea=aplicar.closest('.fc-hist-line');
+  fcConfirmarCambioLinea(+linea.dataset.idx,+linea.dataset.item,aplicar);
 });
 document.getElementById('fc-hist-body').addEventListener('click',ev=>{
   const item=ev.target.closest('.fc-hist-item');
