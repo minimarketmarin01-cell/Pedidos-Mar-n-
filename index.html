@@ -2222,7 +2222,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-17.9';
+const APP_VERSION='2026-07-17.10';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -2441,7 +2441,7 @@ function abrirModal(id){
   document.querySelectorAll('.mm-ov, .scan-ov').forEach(o=>{
     if(o.id!==id){o.classList.add('hidden');o.style.removeProperty('display');}
   });
-  if(id!=='fc-ov'){try{localStorage.removeItem('fc_modulo_activo');}catch(e){}} // la calculadora se cerró como efecto secundario de abrir este otro modal
+  if(id!=='fc-ov'){try{localStorage.removeItem('fc_modulo_activo');localStorage.removeItem('draft_active_edit');}catch(e){}} // la calculadora se cerró como efecto secundario de abrir este otro modal
   const el=document.getElementById(id);
   if(!el)return;
   el.classList.remove('hidden');
@@ -2459,7 +2459,7 @@ function cerrarModal(id){
 function cerrarOverlays(){
   document.querySelectorAll('.mm-ov, .scan-ov').forEach(o=>{o.classList.add('hidden');o.style.removeProperty('display');});
   if(typeof toggleCarrito==='function')toggleCarrito(false); // en celular cierra el panel; en tablet/escritorio no tiene efecto (CSS lo mantiene visible)
-  try{localStorage.removeItem('fc_modulo_activo');}catch(e){} // si la Calculadora de precios estaba abierta, ya no lo está — que no se vuelva a abrir sola al recargar
+  try{localStorage.removeItem('fc_modulo_activo');localStorage.removeItem('draft_active_edit');}catch(e){} // si la Calculadora de precios estaba abierta, ya no lo está — que no se vuelva a abrir sola al recargar
   _sincronizarNav();
   _actualizarVisibilidadFab();
 }
@@ -5715,12 +5715,15 @@ historyService.init();
 (function fcRestaurarVista(){
   const vista=fcCargarVistaActiva();
   const draft=fcCargarBorrador();
-  if(!vista&&!draft)return;
-  if((vista&&vista.modalAbierto)||draft){
-    abrirModal('fc-ov');
-    toggleAccordion(document.getElementById('fc-hist-head'),document.getElementById('fc-hist-body'),true);
+  if(!vista||!vista.modalAbierto){
+    // Sin vista activa real: un borrador huérfano NO debe forzar la apertura de la
+    // calculadora por su cuenta — solo se limpia, para no quedar pegado para siempre.
+    if(draft)fcLimpiarBorrador();
+    return;
   }
-  const idxAbierto=draft?_fcHistorial.findIndex(f=>f.facturaId===draft.facturaId):(vista?vista.itemAbiertoIdx:null);
+  abrirModal('fc-ov');
+  toggleAccordion(document.getElementById('fc-hist-head'),document.getElementById('fc-hist-body'),true);
+  const idxAbierto=draft?_fcHistorial.findIndex(f=>f.facturaId===draft.facturaId):vista.itemAbiertoIdx;
   if(idxAbierto!=null&&idxAbierto>-1){
     const itemEl=document.querySelector(`.fc-hist-item[data-idx="${idxAbierto}"]`);
     if(itemEl)toggleAccordion(itemEl.querySelector('.fc-hist-item-head'),itemEl.querySelector('.fc-hist-item-body'),true);
