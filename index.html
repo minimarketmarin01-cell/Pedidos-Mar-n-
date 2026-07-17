@@ -1234,6 +1234,7 @@ html.vista-filas thead th{font-size:11px}
         <button id="mas-q-reconteo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="10" y1="4" x2="8" y2="20"/><line x1="16" y1="4" x2="14" y2="20"/></svg><br>Reconteo stock</button>
         <button id="mas-q-crear"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><br>Crear producto</button>
         <button id="mas-q-recargar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="20" x2="5" y2="11"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="19" y1="20" x2="19" y2="14"/></svg><br>Recargar historial</button>
+        <button id="mas-q-vistafilas"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg><br><span id="mas-vistafilas-txt">Vista de fila: OFF</span></button>
         <button id="mas-q-factura"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="10" y2="12"/><line x1="13" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="10" y2="16"/><line x1="13" y1="16" x2="16" y2="16"/></svg><br>Calculadora de precios</button>
       </div>
       <div class="method" style="margin:0;padding:16px 18px">
@@ -2255,7 +2256,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-17.14';
+const APP_VERSION='2026-07-17.15';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -2616,6 +2617,19 @@ document.getElementById('mas-q-llegadas').onclick=()=>{document.getElementById('
 document.getElementById('mas-q-sincosto').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');document.getElementById('btn-sincosto').click();};
 document.getElementById('mas-q-hist').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');document.getElementById('btn-hist-merma').click();};
 document.getElementById('mas-q-recargar').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');recargarHistorial();};
+function _actualizarTextoVistaFilas(){
+  const on=_vistaFilasManualActiva();
+  const el=document.getElementById('mas-vistafilas-txt');
+  if(el)el.textContent='Vista de fila: '+(on?'ON':'OFF');
+}
+document.getElementById('mas-q-vistafilas').onclick=()=>{
+  const activarAhora=!_vistaFilasManualActiva();
+  try{localStorage.setItem(VISTA_FILAS_LS_KEY,activarAhora?'1':'0');}catch(e){}
+  _actualizarTextoVistaFilas();
+  _aplicarVistaFilas(); // aplica al instante, sin recargar la página
+  showToast(activarAhora?'✓ Vista de fila activada en este dispositivo':'Vista de tarjeta restaurada');
+};
+_actualizarTextoVistaFilas();
 
 // ===================== SIN MOVIMIENTO (limpieza de catálogo) =====================
 let _smTodos=[], _smSel={}, _smCatsLlenas=false;
@@ -5728,8 +5742,10 @@ function _aplicarLayoutCarrito(){
 // alto que el de tablet (1180) a propósito, para no activarse en una tablet en horizontal.
 const VISTA_FILAS_BREAKPOINT=1400;
 let _vistaFilasActual=false;
+const VISTA_FILAS_LS_KEY='vista_filas_manual';
+function _vistaFilasManualActiva(){try{return localStorage.getItem(VISTA_FILAS_LS_KEY)==='1';}catch(e){return false;}}
 function _aplicarVistaFilas(){
-  const activar=window.innerWidth>=VISTA_FILAS_BREAKPOINT;
+  const activar=window.innerWidth>=VISTA_FILAS_BREAKPOINT||_vistaFilasManualActiva();
   if(activar===_vistaFilasActual)return; // sin cambio real: no repinta la tabla de nuevo
   _vistaFilasActual=activar;
   document.documentElement.classList.toggle('vista-filas',activar);
