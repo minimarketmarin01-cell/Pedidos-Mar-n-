@@ -2222,7 +2222,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-17.10';
+const APP_VERSION='2026-07-17.11';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -2407,12 +2407,21 @@ document.getElementById('cover').oninput=e=>{state.cover=Math.max(1,+e.target.va
 document.querySelectorAll('#ptable th[data-s]').forEach(th=>th.onclick=()=>{const s=th.dataset.s;if(state.sort===s)state.dir*=-1;else{state.sort=s;state.dir=1;}renderTable();persistUI();});
 
 // ===================== NAVEGACIÓN: Pedidos (única pantalla) + Carrito aparte =====================
+// ---- Persistencia general de "última pantalla activa" (F5-safe) ----
+// Una sola clave para TODA la app — cubre cualquier módulo (Recepción, Vencimientos, Más,
+// Calculadora de precios, Crear producto, etc.), no solo uno. Se engancha en las 4 funciones
+// centrales por las que YA pasa toda la navegación (abrirModal/cerrarModal/cerrarOverlays/
+// showScreen), así que no hace falta tocar cada botón por separado ni duplicar lógica.
+const LAST_SCREEN_LS_KEY='marin376_ultima_pantalla';
+function guardarUltimaPantalla(id){try{localStorage.setItem(LAST_SCREEN_LS_KEY,id||'pedido');}catch(e){}}
+function cargarUltimaPantalla(){try{return localStorage.getItem(LAST_SCREEN_LS_KEY)||'pedido';}catch(e){return 'pedido';}}
 function showScreen(name){
   document.getElementById('tab-pedido').classList.toggle('hidden',name!=='pedido');
   document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('active'));
   if(name==='pedido')document.getElementById('bn-pedidos').classList.add('active');
   playTabAnim(name);
   persistUI();
+  guardarUltimaPantalla('pedido');
   _actualizarVisibilidadFab();
 }
 // El carrito YA NO es una "pantalla" (showScreen) — es un panel superpuesto, siempre montado,
@@ -2441,7 +2450,8 @@ function abrirModal(id){
   document.querySelectorAll('.mm-ov, .scan-ov').forEach(o=>{
     if(o.id!==id){o.classList.add('hidden');o.style.removeProperty('display');}
   });
-  if(id!=='fc-ov'){try{localStorage.removeItem('fc_modulo_activo');localStorage.removeItem('draft_active_edit');}catch(e){}} // la calculadora se cerró como efecto secundario de abrir este otro modal
+  if(id!=='fc-ov'){try{localStorage.removeItem('draft_active_edit');}catch(e){}} // la calculadora se cerró como efecto secundario de abrir este otro modal
+  guardarUltimaPantalla(id);
   const el=document.getElementById(id);
   if(!el)return;
   el.classList.remove('hidden');
@@ -2453,13 +2463,15 @@ function abrirModal(id){
 function cerrarModal(id){
   const el=document.getElementById(id);
   if(el){el.classList.add('hidden');el.style.removeProperty('display');}
+  guardarUltimaPantalla('pedido');
   _sincronizarNav();
   _actualizarVisibilidadFab();
 }
 function cerrarOverlays(){
   document.querySelectorAll('.mm-ov, .scan-ov').forEach(o=>{o.classList.add('hidden');o.style.removeProperty('display');});
   if(typeof toggleCarrito==='function')toggleCarrito(false); // en celular cierra el panel; en tablet/escritorio no tiene efecto (CSS lo mantiene visible)
-  try{localStorage.removeItem('fc_modulo_activo');localStorage.removeItem('draft_active_edit');}catch(e){} // si la Calculadora de precios estaba abierta, ya no lo está — que no se vuelva a abrir sola al recargar
+  try{localStorage.removeItem('draft_active_edit');}catch(e){} // borrador de edición sin confirmar: no debe sobrevivir a una navegación real
+  guardarUltimaPantalla('pedido');
   _sincronizarNav();
   _actualizarVisibilidadFab();
 }
@@ -5712,18 +5724,28 @@ historyService.init();
 // IMPORTANTE: solo repone el PREVIEW (fcActualizarPreviewLinea) — nunca llama a la función
 // de aplicar de verdad, así se respeta "los cambios solo se asignan al tocar Aplicar"
 // también después de recargar la página.
-(function fcRestaurarVista(){
-  const vista=fcCargarVistaActiva();
+// Algunos módulos necesitan algo más que mostrarse — cargan su propio contenido al abrir.
+// Se reutilizan las funciones que ya existen para cada uno (nada nuevo, cero duplicado);
+// lo que no está en este mapa simplemente usa abrirModal(id) tal cual (ya cubre Más, etc.).
+const REABRIR_MODULO={
+  'rc-ov':()=>{try{rcReset();}catch(e){}abrirModal('rc-ov');},
+  'vc-ov':()=>{abrirModal('vc-ov');try{vcShowList();}catch(e){}try{vcLoad();}catch(e){}},
+  'cp-ov':()=>{try{cpReset();}catch(e){}abrirModal('cp-ov');try{cpCargarCatalogo();}catch(e){}}
+};
+(function restaurarUltimaPantallaAlCargar(){
+  const id=cargarUltimaPantalla();
   const draft=fcCargarBorrador();
-  if(!vista||!vista.modalAbierto){
-    // Sin vista activa real: un borrador huérfano NO debe forzar la apertura de la
-    // calculadora por su cuenta — solo se limpia, para no quedar pegado para siempre.
+  if(id==='pedido'||!document.getElementById(id)){
+    // Pantalla por defecto (o un id que ya no existe): nada que reabrir. Un borrador
+    // huérfano tampoco debe forzar nada por su cuenta — solo se descarta.
     if(draft)fcLimpiarBorrador();
     return;
   }
-  abrirModal('fc-ov');
+  if(REABRIR_MODULO[id])REABRIR_MODULO[id](); else abrirModal(id); // genérico para el resto
+  if(id!=='fc-ov')return; // el detalle fino de más abajo es específico de la Calculadora de precios
   toggleAccordion(document.getElementById('fc-hist-head'),document.getElementById('fc-hist-body'),true);
-  const idxAbierto=draft?_fcHistorial.findIndex(f=>f.facturaId===draft.facturaId):vista.itemAbiertoIdx;
+  const vista=fcCargarVistaActiva();
+  const idxAbierto=draft?_fcHistorial.findIndex(f=>f.facturaId===draft.facturaId):(vista?vista.itemAbiertoIdx:null);
   if(idxAbierto!=null&&idxAbierto>-1){
     const itemEl=document.querySelector(`.fc-hist-item[data-idx="${idxAbierto}"]`);
     if(itemEl)toggleAccordion(itemEl.querySelector('.fc-hist-item-head'),itemEl.querySelector('.fc-hist-item-body'),true);
