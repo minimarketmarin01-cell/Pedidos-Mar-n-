@@ -578,25 +578,9 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .fc-tab-btn{flex:1;min-height:38px;border:none;border-radius:8px;background:transparent;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .fc-tab-btn.active{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .fc-peso-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-/* ---- Componente nuevo y aislado: buscar/asignar producto por peso en Loyverse ---- */
-.fpw-box{margin-top:14px;padding-top:14px;border-top:1px solid var(--line2)}
-.fpw-title{font-size:11.5px;font-weight:700;color:var(--ink2);margin-bottom:8px}
-.fpw-search-wrap{position:relative}
-#fpw-buscar{width:100%;min-height:44px;border:1.5px solid var(--line);border-radius:9px;padding:0 12px;font-size:13.5px;box-sizing:border-box;background:#fff}
-#fpw-buscar:focus{outline:none;border-color:var(--wa)}
-.fpw-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--line);border-radius:9px;box-shadow:0 10px 28px rgba(0,0,0,.16);max-height:200px;overflow-y:auto;-webkit-overflow-scrolling:touch;z-index:1000}
-.fpw-dropdown.hidden{display:none}
-.fpw-opt{min-height:44px;display:flex;flex-direction:column;justify-content:center;gap:2px;padding:7px 12px;cursor:pointer;border-bottom:1px solid var(--line2);-webkit-tap-highlight-color:transparent}
-.fpw-opt:last-child{border-bottom:none}
-.fpw-opt:active{background:var(--paper)}
-.fpw-opt-name{font-size:13px;font-weight:600;color:var(--ink)}
-.fpw-opt-meta{font-size:10.5px;color:var(--muted)}
-.fpw-empty{padding:14px 12px;color:var(--muted);font-size:12px;text-align:center}
-.fpw-selected{margin-top:10px;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;background:var(--paper)}
-.fpw-selected.hidden{display:none}
-.fpw-selected-name{font-size:13px;font-weight:700;margin-bottom:3px}
-.fpw-selected-meta{font-size:11px;color:var(--muted);margin-bottom:9px}
-#fpw-asignar.ok{background:var(--wa-d)}
+.fp-actual{margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--paper);font-size:11px;color:var(--ink2)}
+.fp-actual.hidden{display:none}
+.fp-actual b{color:var(--ink)}
 .fc-round-wrap{margin-bottom:12px;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper)}
 .fc-round-wrap label{display:block;font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px}
 .fc-round-wrap select{width:100%;min-height:44px;border:1.5px solid var(--line);border-radius:8px;padding:0 10px;font-size:13px;background:#fff;box-sizing:border-box}
@@ -1466,13 +1450,14 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
       </div>
       </div>
       <div id="fc-tab-peso" class="hidden">
-        <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px">Para productos que se venden al peso (frutas, verduras, cecinas, etc.) — ingresa lo que te costó el lote completo y en cuántos kilos rinde.</div>
+        <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px">Para productos que se venden al peso (frutas, verduras, cecinas, etc.) — elige el producto y en cuántos kilos rinde el lote que compraste.</div>
         <div class="fc-peso-grid">
-          <div class="fc-field"><label>Producto</label><input type="text" id="fp-nombre" placeholder="Ej: Manzanas"></div>
+          <div class="fc-field"><label>Producto (vendido por peso)</label><select id="fp-nombre"><option value="">Elige un producto…</option></select></div>
           <div class="fc-field"><label>Costo del lote</label><input type="number" inputmode="numeric" id="fp-costo" placeholder="Ej: 45000"></div>
           <div class="fc-field"><label>Kilos totales</label><input type="number" step="any" inputmode="decimal" id="fp-kilos" placeholder="Ej: 20"></div>
           <div class="fc-field"><label>Margen %</label><input type="number" step="any" inputmode="decimal" id="fp-margen" placeholder="Ej: 50"></div>
         </div>
+        <div class="fp-actual hidden" id="fp-producto-info"></div>
         <div class="fc-hist-controls-row" style="margin-top:10px">
           <select class="fc-hist-round-select" id="fp-redondeo">
             <option value="none">S/R</option>
@@ -1494,18 +1479,7 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
             <div class="fc-row-margin-real">Margen real: <b id="fp-r-margenreal"></b></div>
           </div>
           <button class="mm-save" id="fp-guardar" style="margin-top:10px">Guardar en historial</button>
-          <div class="fpw-box">
-            <div class="fpw-title">🔗 Asignar a producto por peso en Loyverse</div>
-            <div class="fpw-search-wrap">
-              <input type="text" id="fpw-buscar" placeholder="Buscar producto vendido por kg…" autocomplete="off">
-              <div class="fpw-dropdown hidden" id="fpw-dropdown"></div>
-            </div>
-            <div class="fpw-selected hidden" id="fpw-selected">
-              <div class="fpw-selected-name" id="fpw-sel-nombre"></div>
-              <div class="fpw-selected-meta" id="fpw-sel-meta"></div>
-              <button type="button" class="mm-save" id="fpw-asignar">Asignar</button>
-            </div>
-          </div>
+          <button class="mm-save" id="fp-aplicar" style="margin-top:8px;background:var(--ink)">Aplicar costo y precio</button>
         </div>
       </div>
       <div class="scalecard hidden" id="fc-hist-card" style="margin-top:14px">
@@ -2227,7 +2201,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-17.1';
+const APP_VERSION='2026-07-17.2';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -3980,13 +3954,15 @@ document.querySelectorAll('.fc-tab-btn').forEach(btn=>{
     document.querySelectorAll('.fc-tab-btn').forEach(b=>b.classList.toggle('active',b===btn));
     document.getElementById('fc-tab-foto').classList.toggle('hidden',btn.dataset.fctab!=='foto');
     document.getElementById('fc-tab-peso').classList.toggle('hidden',btn.dataset.fctab!=='peso');
+    if(btn.dataset.fctab==='peso')fpPoblarSelectorProductos();
   });
 });
 // ---- Calculadora por peso/kilo (frutas, verduras, cecinas, etc.) ----
 // Mismo motor de cálculo que el resto del módulo (fcVenta vía fcCalcularPrecioFinalBoton) —
 // solo cambia el primer paso: costo del lote ÷ kilos = costo real por kilo.
 document.getElementById('fp-calcular').onclick=()=>{
-  const nombre=(document.getElementById('fp-nombre').value||'Producto al peso').trim();
+  const selEl=document.getElementById('fp-nombre');
+  const nombre=(selEl.selectedIndex>0?selEl.options[selEl.selectedIndex].text:'Producto al peso').trim();
   const costoLote=+document.getElementById('fp-costo').value||0;
   const kilos=+document.getElementById('fp-kilos').value||0;
   const margen=Math.max(0,Math.min(95,+document.getElementById('fp-margen').value||0));
@@ -4014,107 +3990,58 @@ document.getElementById('fp-guardar').onclick=()=>{
   r.classList.add('hidden');
   ['fp-nombre','fp-costo','fp-kilos','fp-margen'].forEach(id=>document.getElementById(id).value='');
 };
-// ============================================================================
-// MÓDULO NUEVO Y AISLADO: buscar/asignar producto por peso en Loyverse.
-// No llama, modifica ni depende de ninguna función fc*/fp* existente — solo lee
-// utilidades genéricas ya usadas en toda la app (peso(), showToast(), normTxt(),
-// SYNC_URL, DB.items, la acción "editar_precio" ya existente en el Worker) y
-// escribe/lee exclusivamente sus propios elementos (prefijo fpw-/#fpw-).
-// ============================================================================
-(function(){
-  let seleccion=null;
-  let dropdownHome=null; // portal: dónde vive #fpw-dropdown normalmente — necesario porque
-  // el modal "Calculadora de precios" tiene overflow:hidden y recortaría un dropdown común.
-  function posicionar(){
-    const anchor=document.getElementById('fpw-buscar'),dd=document.getElementById('fpw-dropdown');
-    if(!anchor||!dd||dd.classList.contains('hidden'))return;
-    const r=anchor.getBoundingClientRect();
-    dd.style.left=r.left+'px';dd.style.top=(r.bottom+4)+'px';dd.style.width=r.width+'px';
-  }
-  function montar(){
-    const dd=document.getElementById('fpw-dropdown');
-    if(!dd||dropdownHome)return;
-    dropdownHome={parent:dd.parentNode,next:dd.nextSibling};
-    document.body.appendChild(dd);
-    dd.style.position='fixed';
-    posicionar();
-  }
-  function desmontar(){
-    const dd=document.getElementById('fpw-dropdown');
-    if(!dd||!dropdownHome)return;
-    dd.style.position='';dd.style.left='';dd.style.top='';dd.style.width='';
-    const{parent,next}=dropdownHome;
-    if(next&&next.parentNode===parent)parent.insertBefore(dd,next);else parent.appendChild(dd);
-    dropdownHome=null;
-  }
-  function buscar(texto){
-    const nq=normTxt(texto||'').trim();
-    const candidatos=(window.DB&&DB.items?DB.items:[]).filter(it=>it.peso); // solo productos vendidos por peso
-    return (nq?candidatos.filter(it=>normTxt(it.nombre).indexOf(nq)>-1):candidatos).slice(0,20);
-  }
-  function renderDropdown(lista){
-    const dd=document.getElementById('fpw-dropdown');
-    dd.innerHTML=lista.length
-      ?lista.map(it=>`<div class="fpw-opt" data-ref="${it.ref}"><span class="fpw-opt-name">${it.nombre}</span><span class="fpw-opt-meta">Costo: ${it.coste!=null?peso(it.coste):'$0'}/kg · Precio: ${it.precio!=null?peso(it.precio):'$0'}/kg</span></div>`).join('')
-      :'<div class="fpw-empty">No se encontraron productos vendidos por peso</div>';
-  }
-  function abrirDropdown(){
-    renderDropdown(buscar(document.getElementById('fpw-buscar').value));
-    document.getElementById('fpw-dropdown').classList.remove('hidden');
-    montar();
-  }
-  document.getElementById('fpw-buscar').addEventListener('focus',abrirDropdown);
-  document.getElementById('fpw-buscar').addEventListener('click',()=>{if(document.getElementById('fpw-dropdown').classList.contains('hidden'))abrirDropdown();});
-  document.getElementById('fpw-buscar').addEventListener('input',ev=>{
-    renderDropdown(buscar(ev.target.value));
-    const dd=document.getElementById('fpw-dropdown');
-    if(dd.classList.contains('hidden')){dd.classList.remove('hidden');montar();}else posicionar();
-  });
-  document.getElementById('fpw-dropdown').addEventListener('click',ev=>{
-    const opt=ev.target.closest('.fpw-opt');
-    if(!opt)return;
-    const producto=DB.items.find(x=>x.ref===opt.dataset.ref);
-    if(!producto)return;
-    seleccion=producto;
-    document.getElementById('fpw-buscar').value=producto.nombre;
-    document.getElementById('fpw-dropdown').classList.add('hidden');
-    desmontar();
-    document.getElementById('fpw-sel-nombre').textContent=producto.nombre;
-    document.getElementById('fpw-sel-meta').textContent='Costo actual: '+(producto.coste!=null?peso(producto.coste):'$0')+'/kg · Precio actual: '+(producto.precio!=null?peso(producto.precio):'$0')+'/kg';
-    const btn=document.getElementById('fpw-asignar');
-    btn.textContent='Asignar';btn.classList.remove('ok');btn.disabled=false;
-    document.getElementById('fpw-selected').classList.remove('hidden');
-  });
-  document.addEventListener('pointerdown',ev=>{
-    const dd=document.getElementById('fpw-dropdown'),input=document.getElementById('fpw-buscar');
-    if(!dd||dd.classList.contains('hidden'))return;
-    if(input.contains(ev.target)||dd.contains(ev.target))return;
-    dd.classList.add('hidden');desmontar();
-  });
-  window.addEventListener('resize',()=>{if(dropdownHome)posicionar();});
-  document.getElementById('fpw-asignar').addEventListener('click',async()=>{
-    if(!seleccion)return;
-    const r=document.getElementById('fp-resultado');
-    if(r.classList.contains('hidden')){showToast('Primero calcula un precio por kilo');return;}
-    const costo=+r.dataset.costokg||0,precioFinal=+r.dataset.final||0;
-    const btn=document.getElementById('fpw-asignar');
-    btn.disabled=true;btn.textContent='Sincronizando…';
-    try{
-      const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_precio',payload:{sku:seleccion.ref,costo,precio:precioFinal}})});
-      const j=await res.json();
-      if(j&&j.ok){
-        btn.textContent='✓ Sincronizado';btn.classList.add('ok');
-        showToast('✓ Precio por kg actualizado en '+seleccion.nombre);
-      }else{
-        btn.textContent='Asignar';btn.disabled=false;
-        showToast('Error: '+((j&&j.error)||'no se pudo asignar'));
-      }
-    }catch(e){
-      btn.textContent='Asignar';btn.disabled=false;
-      showToast('Error de conexión');
+// ---- Selector de producto por peso: se puebla con lo que ya viene de Loyverse ----
+// Reusa DB.items (ya cargado) y it.peso (el mismo campo que usan Recepción/Merma/
+// Vencimientos) — no crea ninguna fuente de datos nueva.
+function fpPoblarSelectorProductos(){
+  const sel=document.getElementById('fp-nombre');
+  const actual=sel.value;
+  const productos=(window.DB&&DB.items?DB.items:[]).filter(it=>it.peso).slice().sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+  sel.innerHTML='<option value="">Elige un producto…</option>'+productos.map(it=>`<option value="${it.ref}">${it.nombre}</option>`).join('');
+  if(actual&&productos.some(it=>it.ref===actual))sel.value=actual;
+}
+function fpActualizarInfoProducto(){
+  const ref=document.getElementById('fp-nombre').value;
+  const info=document.getElementById('fp-producto-info');
+  if(!ref){info.classList.add('hidden');info.innerHTML='';return;}
+  const it=DB.items.find(x=>x.ref===ref);
+  if(!it){info.classList.add('hidden');return;}
+  const margenActual=(it.precio&&it.coste!=null&&it.precio>0)?(((it.precio-it.coste)/it.precio)*100).toFixed(1)+'%':'—';
+  info.innerHTML='Costo actual: <b>'+(it.coste!=null?peso(it.coste):'—')+'</b> · Precio actual: <b>'+(it.precio!=null?peso(it.precio):'—')+'</b> · Margen actual: <b>'+margenActual+'</b>';
+  info.classList.remove('hidden');
+}
+document.getElementById('fp-nombre').addEventListener('change',fpActualizarInfoProducto);
+// ---- Aplicar costo y precio calculados al producto seleccionado en Loyverse ----
+// Reutiliza la acción "editar_precio" ya existente (misma que usa "Asociar a producto" en
+// la pestaña de factura) — no se agrega ningún endpoint ni lógica de red nueva.
+document.getElementById('fp-aplicar').addEventListener('click',async()=>{
+  const ref=document.getElementById('fp-nombre').value;
+  if(!ref){showToast('Elige un producto primero');return;}
+  const r=document.getElementById('fp-resultado');
+  if(r.classList.contains('hidden')){showToast('Primero calcula el precio con "Calcular"');return;}
+  const costo=+r.dataset.costokg||0,precioFinal=+r.dataset.final||0;
+  const btn=document.getElementById('fp-aplicar');
+  const textoOriginal=btn.textContent;
+  btn.disabled=true;btn.textContent='Aplicando…';
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_precio',payload:{sku:ref,costo,precio:precioFinal}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      const it=DB.items.find(x=>x.ref===ref);
+      if(it){it.coste=costo;it.precio=precioFinal;} // refresca en memoria, sin recargar la app
+      fpActualizarInfoProducto();
+      showToast('✓ Costo y precio actualizados en Loyverse');
+      btn.textContent='✓ Aplicado';
+      setTimeout(()=>{btn.textContent=textoOriginal;btn.disabled=false;},1500);
+    }else{
+      showToast('Error: '+((j&&j.error)||'no se pudo aplicar'));
+      btn.textContent=textoOriginal;btn.disabled=false;
     }
-  });
-})();
+  }catch(e){
+    showToast('Error de conexión');
+    btn.textContent=textoOriginal;btn.disabled=false;
+  }
+});
 document.getElementById('mas-q-factura').onclick=()=>{cerrarModal('mas-ov');abrirModal('fc-ov');fcReset();fcGuardarVistaActiva();};
 document.getElementById('cp-scan').onclick=()=>{
   const reopen=()=>{document.getElementById('cp-ov').classList.remove('hidden');_sincronizarNav();};
