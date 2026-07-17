@@ -2222,7 +2222,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-17.7';
+const APP_VERSION='2026-07-17.8';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -4019,6 +4019,7 @@ document.getElementById('fp-guardar').onclick=()=>{
 // (mismo campo que ya usan Recepción/Merma/Vencimientos) — no crea datos nuevos.
 (function(){
   const input=document.getElementById('fp-nombre'),menu=document.getElementById('fp-nombre-menu');
+  if(!input||!menu)return; // blindaje: si faltan estos elementos, no debe cortar el resto del script
   let home=null;
   function candidatos(q){
     const nq=normTxt(q||'').trim();
