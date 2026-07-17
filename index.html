@@ -590,6 +590,9 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .fp-actual{margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--paper);font-size:11px;color:var(--ink2)}
 .fp-actual.hidden{display:none}
 .fp-actual b{color:var(--ink)}
+.fp-actual-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fp-actual-margen{margin-top:6px;font-size:11px;font-weight:600;color:var(--ink2)}
+.fp-actual-margen b{color:var(--wa-d)}
 .fc-round-wrap{margin-bottom:12px;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper)}
 .fc-round-wrap label{display:block;font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px}
 .fc-round-wrap select{width:100%;min-height:44px;border:1.5px solid var(--line);border-radius:8px;padding:0 10px;font-size:13px;background:#fff;box-sizing:border-box}
@@ -2219,7 +2222,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-17.3';
+const APP_VERSION='2026-07-17.4';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -4019,7 +4022,12 @@ document.getElementById('fp-guardar').onclick=()=>{
   let home=null;
   function candidatos(q){
     const nq=normTxt(q||'').trim();
-    const base=(window.DB&&DB.items?DB.items:[]).filter(it=>it.peso).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+    const vistos=new Set();
+    const base=(window.DB&&DB.items?DB.items:[]).filter(it=>{
+      if(!it.peso||vistos.has(it.ref))return false; // sin duplicados, aunque el catálogo repita un ref
+      vistos.add(it.ref);
+      return true;
+    }).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
     return (nq?base.filter(it=>normTxt(it.nombre).indexOf(nq)>-1):base).slice(0,30);
   }
   function render(){
@@ -4049,12 +4057,14 @@ document.getElementById('fp-guardar').onclick=()=>{
   function cerrar(){menu.classList.add('hidden');desmontar();}
   input.addEventListener('focus',abrir);
   input.addEventListener('click',()=>{if(menu.classList.contains('hidden'))abrir();});
+  let debounceT=null;
   input.addEventListener('input',()=>{
     input.dataset.ref=''; // si escribe de nuevo, se invalida la selección anterior hasta elegir otra
     document.getElementById('fp-producto-info').classList.add('hidden');
     document.getElementById('fp-nombre-x').classList.toggle('hidden',!input.value);
-    render();
     if(menu.classList.contains('hidden')){menu.classList.remove('hidden');montar();}else posicionar();
+    clearTimeout(debounceT);
+    debounceT=setTimeout(render,60); // catálogos grandes: evita recalcular en cada tecla instantáneamente
   });
   menu.addEventListener('click',ev=>{
     const opt=ev.target.closest('.cat-opt');
@@ -4109,16 +4119,32 @@ function fcWireLinkSearchX(container){
 }
 fcWireLinkSearchX(document.getElementById('fc-list'));
 fcWireLinkSearchX(document.getElementById('fc-hist-body'));
+function fpMargenSobreVenta(costo,precioVenta){
+  costo=+costo||0;precioVenta=+precioVenta||0;
+  if(precioVenta<=0)return null;
+  return ((precioVenta-costo)/precioVenta)*100;
+}
 function fpActualizarInfoProducto(){
   const ref=document.getElementById('fp-nombre').dataset.ref;
   const info=document.getElementById('fp-producto-info');
   if(!ref){info.classList.add('hidden');info.innerHTML='';return;}
   const it=DB.items.find(x=>x.ref===ref);
   if(!it){info.classList.add('hidden');return;}
-  const margenActual=(it.precio&&it.coste!=null&&it.precio>0)?(((it.precio-it.coste)/it.precio)*100).toFixed(1)+'%':'—';
-  info.innerHTML='Costo actual: <b>'+(it.coste!=null?peso(it.coste):'—')+'</b> · Precio actual: <b>'+(it.precio!=null?peso(it.precio):'—')+'</b> · Margen actual: <b>'+margenActual+'</b>';
+  const m=fpMargenSobreVenta(it.coste,it.precio);
+  info.innerHTML=`<div class="fp-actual-row">
+      <div class="fc-field"><label>Costo actual</label><input type="number" inputmode="numeric" id="fp-info-costo" value="${it.coste!=null?Math.round(it.coste):0}"></div>
+      <div class="fc-field"><label>Precio actual</label><input type="number" inputmode="numeric" id="fp-info-precio" value="${it.precio!=null?Math.round(it.precio):0}"></div>
+    </div>
+    <div class="fp-actual-margen">Margen sobre venta: <b id="fp-info-margen">${m!=null?m.toFixed(1)+'%':'—'}</b></div>`;
   info.classList.remove('hidden');
 }
+document.getElementById('fp-producto-info').addEventListener('input',ev=>{
+  if(ev.target.id!=='fp-info-costo'&&ev.target.id!=='fp-info-precio')return;
+  const costo=document.getElementById('fp-info-costo').value;
+  const precio=document.getElementById('fp-info-precio').value;
+  const m=fpMargenSobreVenta(costo,precio);
+  document.getElementById('fp-info-margen').textContent=m!=null?m.toFixed(1)+'%':'—';
+});
 // ---- Aplicar costo y precio calculados al producto seleccionado en Loyverse ----
 // Reutiliza la acción "editar_precio" ya existente (misma que usa "Asociar a producto" en
 // la pestaña de factura) — no se agrega ningún endpoint ni lógica de red nueva.
