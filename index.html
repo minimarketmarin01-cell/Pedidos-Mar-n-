@@ -503,9 +503,9 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .card-row{display:flex;flex-wrap:nowrap;align-items:flex-start;gap:10px;min-width:0;width:100%;box-sizing:border-box}
 /* ---- Vista de fila (pantallas grandes, ej. monitor táctil BlissOS) ---- */
 html.vista-filas .card-cell{padding:7px 16px!important}
-html.vista-filas .fila-row{display:grid;grid-template-columns:38px minmax(0,2.4fr) 92px 78px 88px 118px;align-items:center;column-gap:12px;width:100%;box-sizing:border-box}
-html.vista-filas .fila-thumb{width:38px;height:38px;overflow:hidden;border-radius:8px;box-sizing:border-box}
-html.vista-filas .fila-thumb .card-thumb,html.vista-filas .fila-thumb .card-thumb-empty{width:38px;height:38px;object-fit:cover;display:block}
+html.vista-filas .fila-row{display:grid;grid-template-columns:34px minmax(110px,2.3fr) minmax(58px,0.85fr) minmax(48px,0.65fr) minmax(56px,0.8fr) minmax(84px,1fr);align-items:center;column-gap:8px;width:100%;box-sizing:border-box;min-width:0}
+html.vista-filas .fila-thumb{width:34px;height:34px;overflow:hidden;border-radius:8px;box-sizing:border-box}
+html.vista-filas .fila-thumb .card-thumb,html.vista-filas .fila-thumb .card-thumb-empty{width:34px;height:34px;object-fit:cover;display:block}
 html.vista-filas .fila-nombre-col{min-width:0;overflow:hidden;display:flex;flex-direction:column;gap:2px}
 html.vista-filas .fila-nombre{font-weight:800;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);display:block}
 html.vista-filas .fila-prov{font-size:9px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -514,9 +514,9 @@ html.vista-filas .fila-datos .mg-hi{color:var(--verde)}
 html.vista-filas .fila-datos .mg-lo{color:var(--rojo)}
 html.vista-filas .fila-col{min-width:0;display:flex;flex-direction:column;align-items:flex-end;gap:1px;font-family:'JetBrains Mono';font-weight:700;font-size:12.5px;color:var(--ink);white-space:nowrap;overflow:hidden}
 html.vista-filas .fila-lbl{font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.03em;font-family:'Archivo'}
-html.vista-filas .fila-pedir{min-width:0;display:flex;justify-content:flex-end}
+html.vista-filas .fila-pedir{display:flex;justify-content:flex-end}
 /* Encabezado alineado a la misma grilla que las filas de arriba */
-html.vista-filas thead tr{display:grid;grid-template-columns:38px minmax(0,2.4fr) 92px 78px 88px 118px;column-gap:12px;align-items:center}
+html.vista-filas thead tr{display:grid;grid-template-columns:34px minmax(110px,2.3fr) minmax(58px,0.85fr) minmax(48px,0.65fr) minmax(56px,0.8fr) minmax(84px,1fr);column-gap:8px;align-items:center;min-width:0}
 html.vista-filas thead th:first-child{grid-column:span 2;text-align:left}
 html.vista-filas thead th{text-align:right;white-space:nowrap}
 html.vista-filas thead th{font-size:11px}
@@ -2262,7 +2262,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-17.17';
+const APP_VERSION='2026-07-17.18';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
