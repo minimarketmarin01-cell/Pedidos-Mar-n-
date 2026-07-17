@@ -515,11 +515,13 @@ html.vista-filas .fila-datos .mg-lo{color:var(--rojo)}
 html.vista-filas .fila-col{min-width:0;display:flex;flex-direction:column;align-items:flex-end;gap:1px;font-family:'JetBrains Mono';font-weight:700;font-size:12.5px;color:var(--ink);white-space:nowrap;overflow:hidden}
 html.vista-filas .fila-lbl{font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.03em;font-family:'Archivo'}
 html.vista-filas .fila-pedir{display:flex;justify-content:flex-end}
-/* Encabezado alineado a la misma grilla que las filas de arriba */
-html.vista-filas thead tr{display:grid;grid-template-columns:34px minmax(110px,2.3fr) minmax(58px,0.85fr) minmax(48px,0.65fr) minmax(56px,0.8fr) minmax(84px,1fr);column-gap:8px;align-items:center;min-width:0}
-html.vista-filas thead th:first-child{grid-column:span 2;text-align:left}
-html.vista-filas thead th{text-align:right;white-space:nowrap}
-html.vista-filas thead th{font-size:11px}
+/* Encabezado: NO se fuerza display:grid acá — #ptable usa table-layout:auto, que calcula
+   el ancho de columnas mirando las celdas del thead. Si la fila del thead deja de ser
+   display:table-row, ese cálculo se corrompe y termina recortando las últimas columnas del
+   tbody (Stock/COB/Pedir) en algunos motores de renderizado. Solo ajustes cosméticos que no
+   tocan "display". */
+html.vista-filas thead th{text-align:right;white-space:nowrap;font-size:11px}
+html.vista-filas thead th:first-child{text-align:left}
 .card-thumb-wrap{flex:0 0 44px;width:44px;height:44px;box-sizing:border-box}
 .card-thumb{width:44px;height:44px;border-radius:10px;object-fit:cover;background:var(--gris-bg,#F3F1EA);display:block}
 /* Producto sin foto: ícono neutro y sutil, no un punto de color llamativo —
@@ -2262,7 +2264,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-17.18';
+const APP_VERSION='2026-07-17.19';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
