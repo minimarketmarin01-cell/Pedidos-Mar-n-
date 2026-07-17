@@ -574,6 +574,10 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .fc-row-meta{font-size:10.5px;color:var(--muted);margin-top:6px}
 .fc-row-margin-real{font-size:11px;color:var(--ink2);margin-top:7px;font-weight:600}
 .fc-row-margin-real b{color:var(--wa-d)}
+.fc-tabs{display:flex;gap:6px;margin-bottom:12px;background:var(--paper);border-radius:10px;padding:4px}
+.fc-tab-btn{flex:1;min-height:38px;border:none;border-radius:8px;background:transparent;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.fc-tab-btn.active{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.fc-peso-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .fc-round-wrap{margin-bottom:12px;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper)}
 .fc-round-wrap label{display:block;font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px}
 .fc-round-wrap select{width:100%;min-height:44px;border:1.5px solid var(--line);border-radius:8px;padding:0 10px;font-size:13px;background:#fff;box-sizing:border-box}
@@ -1199,7 +1203,7 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
         <button id="mas-q-reconteo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="10" y1="4" x2="8" y2="20"/><line x1="16" y1="4" x2="14" y2="20"/></svg><br>Reconteo stock</button>
         <button id="mas-q-crear"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><br>Crear producto</button>
         <button id="mas-q-recargar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="20" x2="5" y2="11"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="19" y1="20" x2="19" y2="14"/></svg><br>Recargar historial</button>
-        <button id="mas-q-factura"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg><br>Escanear factura</button>
+        <button id="mas-q-factura"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="10" y2="12"/><line x1="13" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="10" y2="16"/><line x1="13" y1="16" x2="16" y2="16"/></svg><br>Calculadora de precios</button>
       </div>
       <div class="method" style="margin:0;padding:16px 18px">
         <h3>ℹ️ Cómo funciona tu app</h3>
@@ -1395,8 +1399,13 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 
 <div class="mm-ov hidden" id="fc-ov">
   <div class="mm-card">
-    <div class="mm-head"><h3>📷 Escanear factura</h3></div>
+    <div class="mm-head"><h3>🧮 Calculadora de precios</h3></div>
     <div class="mm-body">
+      <div class="fc-tabs">
+        <button type="button" class="fc-tab-btn active" data-fctab="foto">📷 Foto de factura</button>
+        <button type="button" class="fc-tab-btn" data-fctab="peso">⚖️ Por peso / kilo</button>
+      </div>
+      <div id="fc-tab-foto">
       <div id="fc-paso-foto">
         <div style="display:flex;gap:8px">
           <label class="loadbtn" id="fc-foto-label" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;white-space:nowrap;font-size:12.5px">
@@ -1435,6 +1444,38 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
         <div id="fc-list"></div>
         <button class="mm-save" id="fc-guardar" style="margin-top:6px">Guardar cálculos</button>
         <button class="loadbtn" id="fc-otra" style="width:100%;margin-top:8px">Escanear otra factura</button>
+      </div>
+      </div>
+      <div id="fc-tab-peso" class="hidden">
+        <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px">Para productos que se venden al peso (frutas, verduras, cecinas, etc.) — ingresa lo que te costó el lote completo y en cuántos kilos rinde.</div>
+        <div class="fc-peso-grid">
+          <div class="fc-field"><label>Producto</label><input type="text" id="fp-nombre" placeholder="Ej: Manzanas"></div>
+          <div class="fc-field"><label>Costo del lote</label><input type="number" inputmode="numeric" id="fp-costo" placeholder="Ej: 45000"></div>
+          <div class="fc-field"><label>Kilos totales</label><input type="number" step="any" inputmode="decimal" id="fp-kilos" placeholder="Ej: 20"></div>
+          <div class="fc-field"><label>Margen %</label><input type="number" step="any" inputmode="decimal" id="fp-margen" placeholder="Ej: 50"></div>
+        </div>
+        <div class="fc-hist-controls-row" style="margin-top:10px">
+          <select class="fc-hist-round-select" id="fp-redondeo">
+            <option value="none">S/R</option>
+            <option value="50">50</option>
+            <option value="90">90</option>
+            <option value="100" selected>100</option>
+          </select>
+          <button type="button" class="mm-save" id="fp-calcular" style="flex:1;margin:0">Calcular</button>
+        </div>
+        <div id="fp-resultado" class="hidden">
+          <div class="fc-row" style="margin-top:12px">
+            <div class="fc-row-name" id="fp-r-nombre" style="border:none;font-weight:800;font-size:14px;padding:0 0 8px"></div>
+            <div class="fc-grid">
+              <div class="fc-field fc-out"><label>Costo por kg</label><input type="text" id="fp-r-costokg" readonly></div>
+              <div class="fc-field"><label>Margen aplicado</label><input type="text" id="fp-r-margen" readonly></div>
+              <div class="fc-field fc-out"><label>Venta por kg (exacto)</label><input type="text" id="fp-r-ventaexacta" readonly></div>
+              <div class="fc-field fc-out fc-psico"><label>Precio final por kg</label><input type="text" id="fp-r-final" readonly></div>
+            </div>
+            <div class="fc-row-margin-real">Margen real: <b id="fp-r-margenreal"></b></div>
+          </div>
+          <button class="mm-save" id="fp-guardar" style="margin-top:10px">Guardar en historial</button>
+        </div>
       </div>
       <div class="scalecard hidden" id="fc-hist-card" style="margin-top:14px">
         <div class="scale-head" id="fc-hist-head"><div><div class="t">🗂️ Historial de facturas calculadas</div><div class="s" id="fc-hist-sub">0 guardadas en esta sesión</div></div><svg class="accordion-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
@@ -2155,7 +2196,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-16.26';
+const APP_VERSION='2026-07-16.28';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -3558,7 +3599,7 @@ document.getElementById('fc-guardar').onclick=async()=>{
         // Edición: se actualiza el registro EN SU MISMO LUGAR, nunca se agrega uno nuevo.
         _fcHistorial[editandoIdx].items=items;
         _fcHistorial[editandoIdx].fecha=new Date().toLocaleString('es-CL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-        fcGuardarHistorialLS();
+        historyService.guardarLocal();
         fcRenderHistorial();
         showToast('✓ Cálculo actualizado');
       }else{
@@ -3591,11 +3632,59 @@ function fcCargarHistorialLS(){
 function fcGuardarHistorialLS(){
   try{localStorage.setItem(FC_HIST_LS_KEY,JSON.stringify(_fcHistorial));}catch(e){/* cuota llena: no se rompe nada, solo no persiste esta vez */}
 }
-let _fcHistorial=fcCargarHistorialLS();
+// ---- historyService: capa única de persistencia del historial (offline-first) ----
+// Todo lo que antes leía/escribía localStorage directo pasa por acá. localStorage sigue
+// siendo la caché instantánea (la UI nunca espera a la red — reusa fcCargarHistorialLS/
+// fcGuardarHistorialLS de arriba, no las duplica), y en paralelo se sincroniza con D1 a
+// través del Worker para que el mismo historial se vea en cualquier dispositivo con la app.
+// Si la red falla o no hay conexión, se falla en silencio y se sigue con lo local — nunca
+// se pierde ni se rompe nada por estar offline.
+const historyService={
+  cargarLocal(){return fcCargarHistorialLS();},
+  guardarLocal(){fcGuardarHistorialLS();},
+  async guardarRemoto(facturaId,items){
+    try{
+      const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'guardar_calculo_precio',payload:{items,factura_id:facturaId}})});
+      return await res.json();
+    }catch(e){return null;} // offline: el guardado local ya quedó hecho, se reintentará solo en el próximo sync
+  },
+  async eliminarRemoto(facturaId){
+    try{
+      const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'eliminar_calculo_factura',payload:{factura_id:facturaId}})});
+      return await res.json();
+    }catch(e){return null;}
+  },
+  async listarRemoto(){
+    try{
+      const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'listar_calculos_factura'})});
+      const j=await res.json();
+      return (j&&j.ok&&Array.isArray(j.historial))?j.historial:null;
+    }catch(e){return null;} // sin red: se sigue con la caché local tal cual, sin avisos de error molestos
+  },
+  // Combina lo que ya llegó del servidor con cualquier factura que solo exista en este
+  // dispositivo todavía (guardada offline y no alcanzó a sincronizarse) — no se pierde nada.
+  fusionar(remoto,local){
+    const idsRemoto=new Set(remoto.map(f=>f.facturaId));
+    const soloLocal=local.filter(f=>!idsRemoto.has(f.facturaId));
+    return soloLocal.concat(remoto);
+  },
+  async init(){
+    _fcHistorial=this.cargarLocal(); // instantáneo: la UI no espera a la red
+    if(_fcHistorial.length){document.getElementById('fc-hist-card').classList.remove('hidden');fcRenderHistorial();}
+    const remoto=await this.listarRemoto();
+    if(remoto){
+      _fcHistorial=this.fusionar(remoto,_fcHistorial);
+      this.guardarLocal();
+      document.getElementById('fc-hist-card').classList.toggle('hidden',!_fcHistorial.length);
+      fcRenderHistorial();
+    }
+  }
+};
+let _fcHistorial=historyService.cargarLocal();
 function fcAgregarAlHistorial(facturaId,items){
   const fecha=new Date().toLocaleString('es-CL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
   _fcHistorial.unshift({facturaId,fecha,items});
-  fcGuardarHistorialLS();
+  historyService.guardarLocal();
   document.getElementById('fc-hist-card').classList.remove('hidden');
   fcRenderHistorial();
   toggleAccordion(document.getElementById('fc-hist-head'),document.getElementById('fc-hist-body'),true);
@@ -3658,10 +3747,12 @@ function fcEditarDesdeHistorial(idx){
 }
 function fcEliminarDelHistorial(idx){
   if(!confirm('¿Eliminar este cálculo del historial?'))return;
+  const f=_fcHistorial[idx];
   _fcHistorial.splice(idx,1);
-  fcGuardarHistorialLS();
+  historyService.guardarLocal();
   fcRenderHistorial();
   if(!_fcHistorial.length)document.getElementById('fc-hist-card').classList.add('hidden');
+  if(f)historyService.eliminarRemoto(f.facturaId); // en segundo plano, no bloquea la UI
 }
 document.getElementById('fc-hist-head').onclick=()=>{toggleAccordion(document.getElementById('fc-hist-head'),document.getElementById('fc-hist-body'));fcGuardarVistaActiva();};
 // ---- Edición inline del margen y redondeo por línea (independiente por artículo) ----
@@ -3779,7 +3870,7 @@ async function fcConfirmarCambioLinea(idx,j,btnParaBloquear){
   const it=fcRecalcularLineaHistorial(idx,j);
   if(!f||!it)return;
   fcLimpiarBorrador();
-  fcGuardarHistorialLS();
+  historyService.guardarLocal();
   try{
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'guardar_calculo_precio',payload:{items:f.items,factura_id:f.facturaId}})});
     const j2=await res.json();
@@ -3829,7 +3920,8 @@ document.getElementById('fc-hist-body').addEventListener('click',ev=>{
     if(producto)fcEjecutarAsociacion(it.costo_unitario,it.precio_psicologico!=null?it.precio_psicologico:it.precio_venta,producto,btn,()=>{
       linea.querySelector('.fc-link-body').classList.add('hidden');
       it.sincronizado=true;it.sincronizadoRef=producto.ref;it.sincronizadoNombre=producto.nombre;
-      fcGuardarHistorialLS();
+      historyService.guardarLocal();
+      historyService.guardarRemoto(_fcHistorial[idx].facturaId,_fcHistorial[idx].items);
       fcRenderHistorial();
     });
     return;
@@ -3851,6 +3943,46 @@ document.getElementById('fc-hist-body').addEventListener('input',ev=>{
 });
 document.getElementById('fc-otra').onclick=fcReset;
 document.getElementById('fc-cerrar').onclick=()=>{cerrarModal('fc-ov');fcReset();try{localStorage.removeItem(FC_VISTA_LS_KEY);}catch(e){}};
+// ---- Pestañas: Foto de factura / Por peso-kilo ----
+document.querySelectorAll('.fc-tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.fc-tab-btn').forEach(b=>b.classList.toggle('active',b===btn));
+    document.getElementById('fc-tab-foto').classList.toggle('hidden',btn.dataset.fctab!=='foto');
+    document.getElementById('fc-tab-peso').classList.toggle('hidden',btn.dataset.fctab!=='peso');
+  });
+});
+// ---- Calculadora por peso/kilo (frutas, verduras, cecinas, etc.) ----
+// Mismo motor de cálculo que el resto del módulo (fcVenta vía fcCalcularPrecioFinalBoton) —
+// solo cambia el primer paso: costo del lote ÷ kilos = costo real por kilo.
+document.getElementById('fp-calcular').onclick=()=>{
+  const nombre=(document.getElementById('fp-nombre').value||'Producto al peso').trim();
+  const costoLote=+document.getElementById('fp-costo').value||0;
+  const kilos=+document.getElementById('fp-kilos').value||0;
+  const margen=Math.max(0,Math.min(95,+document.getElementById('fp-margen').value||0));
+  const regla=document.getElementById('fp-redondeo').value;
+  if(costoLote<=0||kilos<=0){showToast('Ingresa el costo del lote y los kilos totales');return;}
+  const costoPorKg=costoLote/kilos;
+  const{precioFinal,margenReal,precioExacto}=fcCalcularPrecioFinalBoton(costoPorKg,margen,regla);
+  document.getElementById('fp-r-nombre').textContent=nombre+' — $/kg';
+  document.getElementById('fp-r-costokg').value=peso(costoPorKg);
+  document.getElementById('fp-r-margen').value=margen+'%';
+  document.getElementById('fp-r-ventaexacta').value=peso(precioExacto);
+  document.getElementById('fp-r-final').value=peso(precioFinal);
+  document.getElementById('fp-r-margenreal').textContent=margenReal.toFixed(1)+'%';
+  const r=document.getElementById('fp-resultado');
+  r.classList.remove('hidden');
+  r.dataset.costokg=costoPorKg;r.dataset.margen=margen;r.dataset.final=precioFinal;r.dataset.nombre=nombre;
+};
+document.getElementById('fp-guardar').onclick=()=>{
+  const r=document.getElementById('fp-resultado');
+  const item={producto:r.dataset.nombre+' (por kg)',costo_unitario:+r.dataset.costokg,margen:+r.dataset.margen,precio_venta:+r.dataset.final,precio_psicologico:+r.dataset.final,categoria:'venta por peso'};
+  const facturaId='FP-'+Date.now();
+  fcAgregarAlHistorial(facturaId,[item]); // instantáneo y local — mismo patrón offline-first del resto
+  historyService.guardarRemoto(facturaId,[item]); // en segundo plano, no bloquea la UI
+  showToast('✓ Guardado en historial');
+  r.classList.add('hidden');
+  ['fp-nombre','fp-costo','fp-kilos','fp-margen'].forEach(id=>document.getElementById(id).value='');
+};
 document.getElementById('mas-q-factura').onclick=()=>{cerrarModal('mas-ov');abrirModal('fc-ov');fcReset();fcGuardarVistaActiva();};
 document.getElementById('cp-scan').onclick=()=>{
   const reopen=()=>{document.getElementById('cp-ov').classList.remove('hidden');_sincronizarNav();};
@@ -5378,7 +5510,7 @@ requestAnimationFrame(()=>requestAnimationFrame(()=>{
 }));
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(_actualizarLayout);
 _actualizarVisibilidadFab();
-if(_fcHistorial.length){document.getElementById('fc-hist-card').classList.remove('hidden');fcRenderHistorial();}
+historyService.init();
 // Restaura la vista/módulo activo (modal de factura abierto, acordeones desplegados) y
 // cualquier preview sin aplicar — para que F5 no te devuelva a "Pedidos" por defecto.
 // IMPORTANTE: solo repone el PREVIEW (fcActualizarPreviewLinea) — nunca llama a la función
