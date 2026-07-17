@@ -631,6 +631,11 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .fc-hist-margin-wrap{display:inline-flex;align-items:center;gap:3px}
 .fc-hist-margin-in{width:38px;height:36px;text-align:center;border:1.5px solid var(--line);border-radius:7px;font-family:'JetBrains Mono';font-weight:700;font-size:11.5px;color:var(--ink2);padding:0;background:#fff;-webkit-tap-highlight-color:transparent}
 .fc-hist-margin-in:focus{outline:none;border-color:var(--wa);background:#F1FBF5}
+.fc-hist-round-row{display:flex;align-items:center;gap:8px;margin-top:6px}
+.fc-hist-round-mode{flex:1;min-width:0;min-height:36px;border:1.5px solid var(--line);border-radius:7px;padding:0 6px;font-size:10.5px;background:#fff;box-sizing:border-box}
+.fc-hist-round-mode:focus{outline:none;border-color:var(--wa)}
+.fc-hist-margin-real{flex-shrink:0;font-size:10px;color:var(--muted);font-weight:600;white-space:nowrap}
+.fc-hist-margin-real b{color:var(--wa-d)}
 .fc-hist-sync{margin-top:4px;font-size:9.5px;font-weight:600;color:var(--muted)}
 .fc-hist-sync.ok{color:var(--wa-d)}
 .qstep{display:inline-flex;align-items:center;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
@@ -2141,7 +2146,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-16.22';
+const APP_VERSION='2026-07-16.23';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -3282,13 +3287,14 @@ function fcVenta(costo,margenPct){
 }
 // ---- Redondeo seleccionable del precio de venta (nunca toca el costo) ----
 let _fcRoundMode='auto';
-function fcCalcularPrecioFinal(costo,margenObjetivo){
+function fcCalcularPrecioFinal(costo,margenObjetivo,modo){
+  modo=modo||_fcRoundMode;
   const ventaExacta=fcVenta(costo,margenObjetivo);
   let precioFinal;
-  if(_fcRoundMode==='none')precioFinal=Math.round(ventaExacta);
-  else if(_fcRoundMode==='250')precioFinal=fcRedondearAEnding(ventaExacta,50);
-  else if(_fcRoundMode==='290')precioFinal=fcRedondearAEnding(ventaExacta,90);
-  else if(_fcRoundMode==='300')precioFinal=fcRedondearAEnding(ventaExacta,0);
+  if(modo==='none')precioFinal=Math.round(ventaExacta);
+  else if(modo==='250')precioFinal=fcRedondearAEnding(ventaExacta,50);
+  else if(modo==='290')precioFinal=fcRedondearAEnding(ventaExacta,90);
+  else if(modo==='300')precioFinal=fcRedondearAEnding(ventaExacta,0);
   else{ // 'auto': entre los 3 candidatos, el que deje el margen real más cerca del objetivo
     const candidatos=[fcRedondearAEnding(ventaExacta,50),fcRedondearAEnding(ventaExacta,90),fcRedondearAEnding(ventaExacta,0)];
     let mejor=candidatos[0],mejorDiff=Infinity;
@@ -3604,7 +3610,17 @@ function fcRenderHistorial(){
             <div class="fc-hist-line-name">${it.producto}</div>
             <button class="fc-hist-link-btn" type="button" title="Asociar a producto existente" aria-label="Asociar a producto existente"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.5 4.5"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L12.5 19.5"/></svg></button>
           </div>
-          <div class="fc-hist-line-nums"><span>Costo <b>${peso(it.costo_unitario)}</b></span><span>Venta <b class="fc-hist-venta-val">${peso(it.precio_venta)}</b></span><span class="fc-hist-margin-wrap">Margen <input class="fc-hist-margin-in" inputmode="numeric" value="${Math.round(it.margen)||0}">%</span></div>
+          <div class="fc-hist-line-nums"><span>Costo <b>${peso(it.costo_unitario)}</b></span><span>Venta <b class="fc-hist-venta-val">${peso(it.precio_psicologico!=null?it.precio_psicologico:it.precio_venta)}</b></span><span class="fc-hist-margin-wrap">Margen <input class="fc-hist-margin-in" inputmode="numeric" value="${Math.round(it.margen)||0}">%</span></div>
+          <div class="fc-hist-round-row">
+            <select class="fc-hist-round-mode">
+              <option value="none" ${(it.roundMode||'auto')==='none'?'selected':''}>Sin redondeo (exacto)</option>
+              <option value="auto" ${(it.roundMode||'auto')==='auto'?'selected':''}>Automático (según margen)</option>
+              <option value="250" ${(it.roundMode||'auto')==='250'?'selected':''}>Terminación $250</option>
+              <option value="290" ${(it.roundMode||'auto')==='290'?'selected':''}>Terminación $290</option>
+              <option value="300" ${(it.roundMode||'auto')==='300'?'selected':''}>Terminación $300</option>
+            </select>
+            <span class="fc-hist-margin-real">real: <b>${(()=>{const c=fcCalcularPrecioFinal(it.costo_unitario,it.margen||0,it.roundMode||'auto');return c.margenReal.toFixed(1);})()}%</b></span>
+          </div>
           <div class="fc-hist-sync ${it.sincronizado?'ok':''}">${it.sincronizado?('✓ Sincronizado con Loyverse: '+it.sincronizadoNombre):'○ Sin sincronizar con Loyverse'}</div>
           <div class="fc-link-body hidden"></div>
         </div>`).join('')}</div>
@@ -3628,39 +3644,56 @@ function fcEliminarDelHistorial(idx){
   if(!_fcHistorial.length)document.getElementById('fc-hist-card').classList.add('hidden');
 }
 document.getElementById('fc-hist-head').onclick=()=>{toggleAccordion(document.getElementById('fc-hist-head'),document.getElementById('fc-hist-body'));};
-// ---- Edición inline del margen por línea (feature 1) ----
-// Recalcula Venta en vivo mientras se escribe; al salir del campo (blur) persiste el
-// cambio reutilizando guardar_calculo_precio con el mismo factura_id (reemplaza sus filas,
-// el mismo mecanismo ya usado por "Editar" — no se toca esa lógica, solo se reusa).
-document.getElementById('fc-hist-body').addEventListener('input',ev=>{
-  if(!ev.target.classList.contains('fc-hist-margin-in'))return;
-  const linea=ev.target.closest('.fc-hist-line');
-  const idx=+linea.dataset.idx,j=+linea.dataset.item;
+// ---- Edición inline del margen y redondeo por línea (independiente por artículo) ----
+// Recalcula Venta y el margen real en vivo; al confirmar (blur/change) persiste el cambio
+// reutilizando guardar_calculo_precio con el mismo factura_id (reemplaza sus filas, el
+// mismo mecanismo ya usado por "Editar" — no se toca esa lógica, solo se reusa). Si el
+// artículo ya estaba asociado a un producto real de Loyverse, también reenvía el precio
+// nuevo con editar_precio (misma acción ya existente, reusada).
+function fcRecalcularLineaHistorial(idx,j){
   const f=_fcHistorial[idx];const it=f&&f.items[j];
-  if(!it)return;
-  const margen=Math.min(95,Math.max(0,+ev.target.value||0));
-  const venta=fcVenta(it.costo_unitario,margen);
-  it.margen=margen;it.precio_venta=venta;it.precio_psicologico=fcPsico(venta);
-  linea.querySelector('.fc-hist-venta-val').textContent=peso(venta);
+  if(!it)return null;
+  const linea=document.querySelector(`.fc-hist-line[data-idx="${idx}"][data-item="${j}"]`);
+  if(!linea)return null;
+  const margen=Math.min(95,Math.max(0,+linea.querySelector('.fc-hist-margin-in').value||0));
+  const modo=linea.querySelector('.fc-hist-round-mode').value;
+  const{precioFinal,margenReal}=fcCalcularPrecioFinal(it.costo_unitario,margen,modo);
+  it.margen=margen;it.roundMode=modo;it.precio_venta=precioFinal;it.precio_psicologico=precioFinal;
+  linea.querySelector('.fc-hist-venta-val').textContent=peso(precioFinal);
+  const margEl=linea.querySelector('.fc-hist-margin-real b');
+  if(margEl)margEl.textContent=margenReal.toFixed(1)+'%';
   const promEl=document.querySelector(`.fc-hist-item[data-idx="${idx}"] .fc-hist-item-meta`);
   if(promEl){
     const costoTotal=f.items.reduce((s,x)=>s+(x.costo_unitario||0),0);
     const margenProm=f.items.length?Math.round(f.items.reduce((s,x)=>s+(x.margen||0),0)/f.items.length):0;
     promEl.textContent=f.fecha+' · Costo total '+peso(costoTotal)+' · Margen prom. '+margenProm+'%';
   }
+  return it;
+}
+document.getElementById('fc-hist-body').addEventListener('input',ev=>{
+  if(!ev.target.classList.contains('fc-hist-margin-in'))return;
+  const linea=ev.target.closest('.fc-hist-line');
+  fcRecalcularLineaHistorial(+linea.dataset.idx,+linea.dataset.item);
 });
 document.getElementById('fc-hist-body').addEventListener('change',async ev=>{
-  if(!ev.target.classList.contains('fc-hist-margin-in'))return;
-  const idx=+ev.target.closest('.fc-hist-line').dataset.idx;
+  const esMargen=ev.target.classList.contains('fc-hist-margin-in');
+  const esRedondeo=ev.target.classList.contains('fc-hist-round-mode');
+  if(!esMargen&&!esRedondeo)return;
+  const linea=ev.target.closest('.fc-hist-line');
+  const idx=+linea.dataset.idx,j=+linea.dataset.item;
   const f=_fcHistorial[idx];
-  if(!f)return;
+  const it=fcRecalcularLineaHistorial(idx,j); // "al cambiar el redondeo: recalcular inmediatamente"
+  if(!f||!it)return;
   fcGuardarHistorialLS();
   try{
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'guardar_calculo_precio',payload:{items:f.items,factura_id:f.facturaId}})});
     const j2=await res.json();
-    if(j2&&j2.ok)showToast('✓ Margen actualizado');
+    if(j2&&j2.ok)showToast('✓ Cálculo actualizado');
     else showToast('Error: '+((j2&&j2.error)||'no se pudo guardar el cambio'));
-  }catch(e){showToast('Error de conexión al guardar el margen');}
+  }catch(e){showToast('Error de conexión al guardar el cambio');}
+  if(it.sincronizado&&it.sincronizadoRef){
+    fcEjecutarAsociacion(it.costo_unitario,it.precio_psicologico,{ref:it.sincronizadoRef,nombre:it.sincronizadoNombre},ev.target);
+  }
 });
 document.getElementById('fc-hist-body').addEventListener('click',ev=>{
   const item=ev.target.closest('.fc-hist-item');
@@ -3679,7 +3712,7 @@ document.getElementById('fc-hist-body').addEventListener('click',ev=>{
     const it=_fcHistorial[idx].items[+linea.dataset.item];
     const producto=DB.items.find(x=>x.ref===sugItem.dataset.ref);
     const btn=linea.querySelector('.fc-hist-link-btn');
-    if(producto)fcEjecutarAsociacion(it.costo_unitario,it.precio_venta,producto,btn,()=>{
+    if(producto)fcEjecutarAsociacion(it.costo_unitario,it.precio_psicologico!=null?it.precio_psicologico:it.precio_venta,producto,btn,()=>{
       linea.querySelector('.fc-link-body').classList.add('hidden');
       it.sincronizado=true;it.sincronizadoRef=producto.ref;it.sincronizadoNombre=producto.nombre;
       fcGuardarHistorialLS();
