@@ -625,6 +625,8 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .fc-hist-margin-wrap{display:inline-flex;align-items:center;gap:3px}
 .fc-hist-margin-in{width:38px;height:36px;text-align:center;border:1.5px solid var(--line);border-radius:7px;font-family:'JetBrains Mono';font-weight:700;font-size:11.5px;color:var(--ink2);padding:0;background:#fff;-webkit-tap-highlight-color:transparent}
 .fc-hist-margin-in:focus{outline:none;border-color:var(--wa);background:#F1FBF5}
+.fc-hist-sync{margin-top:4px;font-size:9.5px;font-weight:600;color:var(--muted)}
+.fc-hist-sync.ok{color:var(--wa-d)}
 .qstep{display:inline-flex;align-items:center;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
 .qstep.has{border-color:var(--wa)}
 .qbtn{border:none;background:#F4F3EE;width:23px;height:32px;font-size:16px;font-weight:700;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;user-select:none;-webkit-user-select:none}
@@ -2123,7 +2125,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-16.19';
+const APP_VERSION='2026-07-16.21';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -3418,6 +3420,8 @@ function fcAsociarProducto(row,producto){
     if(!ok){ok=document.createElement('div');ok.className='fc-link-ok';row.querySelector('.fc-link').appendChild(ok);}
     ok.innerHTML=`✓ <span>Vinculado a "${producto.nombre}" — costo/precio actualizados</span><button type="button" class="fc-link-quitar">Cambiar</button>`;
     ok.classList.remove('hidden');
+    row.dataset.sincronizadoRef=producto.ref;
+    row.dataset.sincronizadoNombre=producto.nombre;
   });
 }
 document.getElementById('fc-list').addEventListener('click',ev=>{
@@ -3439,6 +3443,7 @@ document.getElementById('fc-list').addEventListener('click',ev=>{
     const row=quitar.closest('.fc-row');
     row.querySelector('.fc-link-ok').classList.add('hidden');
     row.querySelector('.fc-link-btn').classList.remove('hidden');
+    delete row.dataset.sincronizadoRef;delete row.dataset.sincronizadoNombre;
     return;
   }
 });
@@ -3461,7 +3466,9 @@ document.getElementById('fc-guardar').onclick=async()=>{
   if(!rows.length){showToast('No hay productos para guardar');return;}
   const items=Array.from(rows).map(row=>{
     const g=f=>row.querySelector(`[data-f="${f}"]`).value;
-    return {producto:g('producto').trim(),costo_unitario:+g('costo')||0,margen:+g('margen')||0,precio_venta:+g('venta')||0,precio_psicologico:+g('psico')||0,categoria:row.querySelector('.fc-row-meta').textContent};
+    const item={producto:g('producto').trim(),costo_unitario:+g('costo')||0,margen:+g('margen')||0,precio_venta:+g('venta')||0,precio_psicologico:+g('psico')||0,categoria:row.querySelector('.fc-row-meta').textContent};
+    if(row.dataset.sincronizadoRef){item.sincronizado=true;item.sincronizadoRef=row.dataset.sincronizadoRef;item.sincronizadoNombre=row.dataset.sincronizadoNombre;}
+    return item;
   }).filter(it=>it.producto);
   const editandoIdx=_fcEditandoIdx;
   const facturaIdExistente=(editandoIdx!=null&&_fcHistorial[editandoIdx])?_fcHistorial[editandoIdx].facturaId:null;
@@ -3475,6 +3482,7 @@ document.getElementById('fc-guardar').onclick=async()=>{
         // Edición: se actualiza el registro EN SU MISMO LUGAR, nunca se agrega uno nuevo.
         _fcHistorial[editandoIdx].items=items;
         _fcHistorial[editandoIdx].fecha=new Date().toLocaleString('es-CL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+        fcGuardarHistorialLS();
         fcRenderHistorial();
         showToast('✓ Cálculo actualizado');
       }else{
@@ -3490,14 +3498,28 @@ document.getElementById('fc-guardar').onclick=async()=>{
   }catch(e){showToast('Error de conexión');}
   finally{btn.disabled=false;}
 };
-// ---- Historial de facturas calculadas (sesión actual) ----
-// Confirma visualmente que el guardado se registró. Vive solo en memoria del navegador
-// mientras la pestaña sigue abierta — no reemplaza la tabla D1 (esa es la fuente real),
-// es solo una bitácora rápida para tranquilidad del usuario en la misma sesión.
-let _fcHistorial=[];
+// ---- Historial de facturas calculadas (persistente en este dispositivo) ----
+// Antes vivía solo en memoria (se perdía al cerrar/recargar la app). Ahora se guarda en
+// localStorage del navegador hasta que el usuario lo borre a mano (🗑 en cada tarjeta) —
+// la fuente de verdad real sigue siendo la tabla facturas_calculos en D1, esto es solo la
+// bitácora visual local, ahora persistente entre sesiones.
+const FC_HIST_LS_KEY='marin376_fc_historial';
+function fcCargarHistorialLS(){
+  try{
+    const raw=localStorage.getItem(FC_HIST_LS_KEY);
+    if(!raw)return [];
+    const datos=JSON.parse(raw);
+    return Array.isArray(datos)?datos:[];
+  }catch(e){return [];} // localStorage bloqueado, corrupto o modo privado: se sigue usando en memoria igual
+}
+function fcGuardarHistorialLS(){
+  try{localStorage.setItem(FC_HIST_LS_KEY,JSON.stringify(_fcHistorial));}catch(e){/* cuota llena: no se rompe nada, solo no persiste esta vez */}
+}
+let _fcHistorial=fcCargarHistorialLS();
 function fcAgregarAlHistorial(facturaId,items){
   const fecha=new Date().toLocaleString('es-CL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
   _fcHistorial.unshift({facturaId,fecha,items});
+  fcGuardarHistorialLS();
   document.getElementById('fc-hist-card').classList.remove('hidden');
   fcRenderHistorial();
   toggleAccordion(document.getElementById('fc-hist-head'),document.getElementById('fc-hist-body'),true);
@@ -3522,6 +3544,7 @@ function fcRenderHistorial(){
             <button class="fc-hist-link-btn" type="button" title="Asociar a producto existente" aria-label="Asociar a producto existente"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.5 4.5"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L12.5 19.5"/></svg></button>
           </div>
           <div class="fc-hist-line-nums"><span>Costo <b>${peso(it.costo_unitario)}</b></span><span>Venta <b class="fc-hist-venta-val">${peso(it.precio_venta)}</b></span><span class="fc-hist-margin-wrap">Margen <input class="fc-hist-margin-in" inputmode="numeric" value="${Math.round(it.margen)||0}">%</span></div>
+          <div class="fc-hist-sync ${it.sincronizado?'ok':''}">${it.sincronizado?('✓ Sincronizado con Loyverse: '+it.sincronizadoNombre):'○ Sin sincronizar con Loyverse'}</div>
           <div class="fc-link-body hidden"></div>
         </div>`).join('')}</div>
     </div>`;
@@ -3539,6 +3562,7 @@ function fcEditarDesdeHistorial(idx){
 function fcEliminarDelHistorial(idx){
   if(!confirm('¿Eliminar este cálculo del historial?'))return;
   _fcHistorial.splice(idx,1);
+  fcGuardarHistorialLS();
   fcRenderHistorial();
   if(!_fcHistorial.length)document.getElementById('fc-hist-card').classList.add('hidden');
 }
@@ -3569,6 +3593,7 @@ document.getElementById('fc-hist-body').addEventListener('change',async ev=>{
   const idx=+ev.target.closest('.fc-hist-line').dataset.idx;
   const f=_fcHistorial[idx];
   if(!f)return;
+  fcGuardarHistorialLS();
   try{
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'guardar_calculo_precio',payload:{items:f.items,factura_id:f.facturaId}})});
     const j2=await res.json();
@@ -3595,6 +3620,9 @@ document.getElementById('fc-hist-body').addEventListener('click',ev=>{
     const btn=linea.querySelector('.fc-hist-link-btn');
     if(producto)fcEjecutarAsociacion(it.costo_unitario,it.precio_venta,producto,btn,()=>{
       linea.querySelector('.fc-link-body').classList.add('hidden');
+      it.sincronizado=true;it.sincronizadoRef=producto.ref;it.sincronizadoNombre=producto.nombre;
+      fcGuardarHistorialLS();
+      fcRenderHistorial();
     });
     return;
   }
@@ -5141,6 +5169,7 @@ requestAnimationFrame(()=>requestAnimationFrame(()=>{
 }));
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(_actualizarLayout);
 _actualizarVisibilidadFab();
+if(_fcHistorial.length){document.getElementById('fc-hist-card').classList.remove('hidden');fcRenderHistorial();}
 // guarda la posición de scroll mientras navegas, y al salir/cambiar de app
 let _scrollT=null;
 window.addEventListener('scroll',()=>{clearTimeout(_scrollT);_scrollT=setTimeout(persistUI,200);},{passive:true});
