@@ -629,11 +629,18 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .fc-hist-line-nums{display:flex;gap:11px;font-size:10.5px;color:var(--muted);font-family:'JetBrains Mono'}
 .fc-hist-line-nums b{color:var(--ink2);font-weight:700}
 .fc-hist-margin-wrap{display:inline-flex;align-items:center;gap:3px}
-.fc-hist-margin-in{width:38px;height:36px;text-align:center;border:1.5px solid var(--line);border-radius:7px;font-family:'JetBrains Mono';font-weight:700;font-size:11.5px;color:var(--ink2);padding:0;background:#fff;-webkit-tap-highlight-color:transparent}
+.fc-hist-margin-in{width:52px;height:36px;text-align:center;border:1.5px solid var(--line);border-radius:7px;font-family:'JetBrains Mono';font-weight:700;font-size:12.5px;color:var(--ink2);padding:0;background:#fff;-webkit-tap-highlight-color:transparent}
 .fc-hist-margin-in:focus{outline:none;border-color:var(--wa);background:#F1FBF5}
-.fc-hist-round-row{display:flex;align-items:center;gap:8px;margin-top:6px}
-.fc-hist-round-mode{flex:1;min-width:0;min-height:36px;border:1.5px solid var(--line);border-radius:7px;padding:0 6px;font-size:10.5px;background:#fff;box-sizing:border-box}
-.fc-hist-round-mode:focus{outline:none;border-color:var(--wa)}
+.fc-hist-margin-row{display:flex;align-items:center;gap:6px;margin-top:6px}
+.fc-hist-pct{font-size:11px;color:var(--muted);font-weight:700}
+.fc-qm-group{display:flex;gap:5px;margin-left:auto}
+.fc-qm-btn{min-width:40px;min-height:32px;border:1.5px solid var(--line);border-radius:7px;background:#fff;color:var(--ink2);font-size:11px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.fc-qm-btn:active{background:var(--paper)}
+.fc-qm-btn.active{background:var(--wa);border-color:var(--wa);color:#fff}
+.fc-rb-group{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:7px}
+.fc-rb-btn{min-height:36px;border:1.5px solid var(--line);border-radius:8px;background:#fff;color:var(--ink2);font-size:10.5px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;padding:2px 4px}
+.fc-rb-btn:active{background:var(--paper)}
+.fc-rb-btn.active{background:var(--ink);border-color:var(--ink);color:#fff}
 .fc-hist-margin-real{flex-shrink:0;font-size:10px;color:var(--muted);font-weight:600;white-space:nowrap}
 .fc-hist-margin-real b{color:var(--wa-d)}
 .fc-hist-sync{margin-top:4px;font-size:9.5px;font-weight:600;color:var(--muted)}
@@ -2146,7 +2153,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-16.23';
+const APP_VERSION='2026-07-16.24';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -3610,17 +3617,23 @@ function fcRenderHistorial(){
             <div class="fc-hist-line-name">${it.producto}</div>
             <button class="fc-hist-link-btn" type="button" title="Asociar a producto existente" aria-label="Asociar a producto existente"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.5 4.5"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L12.5 19.5"/></svg></button>
           </div>
-          <div class="fc-hist-line-nums"><span>Costo <b>${peso(it.costo_unitario)}</b></span><span>Venta <b class="fc-hist-venta-val">${peso(it.precio_psicologico!=null?it.precio_psicologico:it.precio_venta)}</b></span><span class="fc-hist-margin-wrap">Margen <input class="fc-hist-margin-in" inputmode="numeric" value="${Math.round(it.margen)||0}">%</span></div>
-          <div class="fc-hist-round-row">
-            <select class="fc-hist-round-mode">
-              <option value="none" ${(it.roundMode||'auto')==='none'?'selected':''}>Sin redondeo (exacto)</option>
-              <option value="auto" ${(it.roundMode||'auto')==='auto'?'selected':''}>Automático (según margen)</option>
-              <option value="250" ${(it.roundMode||'auto')==='250'?'selected':''}>Terminación $250</option>
-              <option value="290" ${(it.roundMode||'auto')==='290'?'selected':''}>Terminación $290</option>
-              <option value="300" ${(it.roundMode||'auto')==='300'?'selected':''}>Terminación $300</option>
-            </select>
-            <span class="fc-hist-margin-real">real: <b>${(()=>{const c=fcCalcularPrecioFinal(it.costo_unitario,it.margen||0,it.roundMode||'auto');return c.margenReal.toFixed(1);})()}%</b></span>
+          <div class="fc-hist-line-nums"><span>Costo <b>${peso(it.costo_unitario)}</b></span><span>Venta <b class="fc-hist-venta-val">${peso(it.precio_psicologico!=null?it.precio_psicologico:it.precio_venta)}</b></span></div>
+          <div class="fc-hist-margin-row">
+            <input type="number" step="any" inputmode="decimal" class="fc-hist-margin-in" value="${it.margen||0}">
+            <span class="fc-hist-pct">%</span>
+            <div class="fc-qm-group">
+              <button type="button" class="fc-qm-btn ${Number(it.margen)===30?'active':''}" data-margen="30">30%</button>
+              <button type="button" class="fc-qm-btn ${Number(it.margen)===40?'active':''}" data-margen="40">40%</button>
+              <button type="button" class="fc-qm-btn ${Number(it.margen)===50?'active':''}" data-margen="50">50%</button>
+            </div>
           </div>
+          <div class="fc-rb-group">
+            <button type="button" class="fc-rb-btn ${fcNormalizarModoBoton(it.roundMode)==='none'?'active':''}" data-round="none">Sin Redondeo</button>
+            <button type="button" class="fc-rb-btn ${fcNormalizarModoBoton(it.roundMode)==='50'?'active':''}" data-round="50">Termina en 50</button>
+            <button type="button" class="fc-rb-btn ${fcNormalizarModoBoton(it.roundMode)==='90'?'active':''}" data-round="90">Termina en 90</button>
+            <button type="button" class="fc-rb-btn ${fcNormalizarModoBoton(it.roundMode)==='100'?'active':''}" data-round="100">Múltiplo 100</button>
+          </div>
+          <div class="fc-hist-margin-real">Margen real: <b>${fcCalcularPrecioFinalBoton(it.costo_unitario,it.margen||0,fcNormalizarModoBoton(it.roundMode)).margenReal.toFixed(1)}%</b></div>
           <div class="fc-hist-sync ${it.sincronizado?'ok':''}">${it.sincronizado?('✓ Sincronizado con Loyverse: '+it.sincronizadoNombre):'○ Sin sincronizar con Loyverse'}</div>
           <div class="fc-link-body hidden"></div>
         </div>`).join('')}</div>
@@ -3650,15 +3663,38 @@ document.getElementById('fc-hist-head').onclick=()=>{toggleAccordion(document.ge
 // mismo mecanismo ya usado por "Editar" — no se toca esa lógica, solo se reusa). Si el
 // artículo ya estaba asociado a un producto real de Loyverse, también reenvía el precio
 // nuevo con editar_precio (misma acción ya existente, reusada).
-function fcRecalcularLineaHistorial(idx,j){
+// ---- Redondeo por botones en el historial (independiente de fcCalcularPrecioFinal, que
+// sigue intacta para la pantalla de edición con su selector de 5 opciones) ----
+// Fórmulas exactas pedidas: 50→Math.ceil((precio-50)/100)*100+50, 90→misma idea con 90,
+// 100→Math.ceil(precio/100)*100 (múltiplo de cien). "Sin Redondeo" usa el precio exacto.
+function fcCalcularPrecioFinalBoton(costo,margenObjetivo,regla){
+  costo=Number(costo)||0;
+  const precioExacto=fcVenta(costo,margenObjetivo); // reutiliza fcVenta, ya existente, sin tocarla
+  let precioFinal=Math.round(precioExacto);
+  if(precioExacto>0){
+    if(regla==='50')precioFinal=Math.ceil((precioExacto-50)/100)*100+50;
+    else if(regla==='90')precioFinal=Math.ceil((precioExacto-90)/100)*100+90;
+    else if(regla==='100')precioFinal=Math.ceil(precioExacto/100)*100;
+  }
+  precioFinal=Math.max(0,precioFinal);
+  const margenReal=precioFinal>0?((precioFinal-costo)/precioFinal*100):0;
+  return{precioExacto,precioFinal,margenReal};
+}
+// Los registros guardados antes de este cambio traían 'auto'/'250'/'290'/'300' (el selector
+// viejo) — se mapean a la regla de botón equivalente más cercana, sin perder el historial.
+function fcNormalizarModoBoton(modo){
+  const mapa={none:'none','50':'50','90':'90','100':'100','250':'50','290':'90','300':'100'};
+  return mapa[modo]||'none';
+}
+function fcRecalcularLineaHistorial(idx,j,reglaOverride){
   const f=_fcHistorial[idx];const it=f&&f.items[j];
   if(!it)return null;
   const linea=document.querySelector(`.fc-hist-line[data-idx="${idx}"][data-item="${j}"]`);
   if(!linea)return null;
-  const margen=Math.min(95,Math.max(0,+linea.querySelector('.fc-hist-margin-in').value||0));
-  const modo=linea.querySelector('.fc-hist-round-mode').value;
-  const{precioFinal,margenReal}=fcCalcularPrecioFinal(it.costo_unitario,margen,modo);
-  it.margen=margen;it.roundMode=modo;it.precio_venta=precioFinal;it.precio_psicologico=precioFinal;
+  const margen=Math.max(0,Math.min(95,+linea.querySelector('.fc-hist-margin-in').value||0));
+  const regla=reglaOverride||fcNormalizarModoBoton(it.roundMode);
+  const{precioFinal,margenReal}=fcCalcularPrecioFinalBoton(it.costo_unitario,margen,regla);
+  it.margen=margen;it.roundMode=regla;it.precio_venta=precioFinal;it.precio_psicologico=precioFinal;
   linea.querySelector('.fc-hist-venta-val').textContent=peso(precioFinal);
   const margEl=linea.querySelector('.fc-hist-margin-real b');
   if(margEl)margEl.textContent=margenReal.toFixed(1)+'%';
@@ -3670,20 +3706,25 @@ function fcRecalcularLineaHistorial(idx,j){
   }
   return it;
 }
-document.getElementById('fc-hist-body').addEventListener('input',ev=>{
-  if(!ev.target.classList.contains('fc-hist-margin-in'))return;
-  const linea=ev.target.closest('.fc-hist-line');
-  fcRecalcularLineaHistorial(+linea.dataset.idx,+linea.dataset.item);
-});
-document.getElementById('fc-hist-body').addEventListener('change',async ev=>{
-  const esMargen=ev.target.classList.contains('fc-hist-margin-in');
-  const esRedondeo=ev.target.classList.contains('fc-hist-round-mode');
-  if(!esMargen&&!esRedondeo)return;
-  const linea=ev.target.closest('.fc-hist-line');
-  const idx=+linea.dataset.idx,j=+linea.dataset.item;
+// ---- Borrador de edición activa (localStorage: draft_active_edit) ----
+// Guarda qué producto se está editando mientras se escribe, para poder restaurarlo si la
+// página se recarga a mitad de la edición (F5) — el resto de los cambios ya confirmados
+// (blur / botón) se guardan igual que siempre en el historial normal, esto es solo una red
+// de seguridad para lo que todavía no se había confirmado.
+const FC_DRAFT_LS_KEY='draft_active_edit';
+function fcGuardarBorrador(idx,j,margen,regla){
+  const f=_fcHistorial[idx];if(!f)return;
+  try{localStorage.setItem(FC_DRAFT_LS_KEY,JSON.stringify({facturaId:f.facturaId,item:j,margen,regla}));}catch(e){}
+}
+function fcLimpiarBorrador(){try{localStorage.removeItem(FC_DRAFT_LS_KEY);}catch(e){}}
+function fcCargarBorrador(){
+  try{const raw=localStorage.getItem(FC_DRAFT_LS_KEY);return raw?JSON.parse(raw):null;}catch(e){return null;}
+}
+async function fcConfirmarCambioLinea(idx,j,btnParaBloquear){
   const f=_fcHistorial[idx];
-  const it=fcRecalcularLineaHistorial(idx,j); // "al cambiar el redondeo: recalcular inmediatamente"
+  const it=fcRecalcularLineaHistorial(idx,j);
   if(!f||!it)return;
+  fcLimpiarBorrador();
   fcGuardarHistorialLS();
   try{
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'guardar_calculo_precio',payload:{items:f.items,factura_id:f.facturaId}})});
@@ -3692,7 +3733,40 @@ document.getElementById('fc-hist-body').addEventListener('change',async ev=>{
     else showToast('Error: '+((j2&&j2.error)||'no se pudo guardar el cambio'));
   }catch(e){showToast('Error de conexión al guardar el cambio');}
   if(it.sincronizado&&it.sincronizadoRef){
-    fcEjecutarAsociacion(it.costo_unitario,it.precio_psicologico,{ref:it.sincronizadoRef,nombre:it.sincronizadoNombre},ev.target);
+    fcEjecutarAsociacion(it.costo_unitario,it.precio_psicologico,{ref:it.sincronizadoRef,nombre:it.sincronizadoNombre},btnParaBloquear||document.body);
+  }
+}
+document.getElementById('fc-hist-body').addEventListener('input',ev=>{
+  if(!ev.target.classList.contains('fc-hist-margin-in'))return;
+  const linea=ev.target.closest('.fc-hist-line');
+  const idx=+linea.dataset.idx,j=+linea.dataset.item;
+  fcRecalcularLineaHistorial(idx,j);
+  const it=_fcHistorial[idx]&&_fcHistorial[idx].items[j];
+  if(it)fcGuardarBorrador(idx,j,it.margen,it.roundMode);
+});
+document.getElementById('fc-hist-body').addEventListener('change',ev=>{
+  if(!ev.target.classList.contains('fc-hist-margin-in'))return;
+  const linea=ev.target.closest('.fc-hist-line');
+  fcConfirmarCambioLinea(+linea.dataset.idx,+linea.dataset.item,ev.target);
+});
+document.getElementById('fc-hist-body').addEventListener('click',ev=>{
+  const qm=ev.target.closest('.fc-qm-btn');
+  if(qm){
+    const linea=qm.closest('.fc-hist-line');
+    const idx=+linea.dataset.idx,j=+linea.dataset.item;
+    linea.querySelector('.fc-hist-margin-in').value=qm.dataset.margen;
+    linea.querySelectorAll('.fc-qm-btn').forEach(b=>b.classList.toggle('active',b===qm));
+    fcConfirmarCambioLinea(idx,j,qm);
+    return;
+  }
+  const rb=ev.target.closest('.fc-rb-btn');
+  if(rb){
+    const linea=rb.closest('.fc-hist-line');
+    const idx=+linea.dataset.idx,j=+linea.dataset.item;
+    linea.querySelectorAll('.fc-rb-btn').forEach(b=>b.classList.toggle('active',b===rb));
+    fcRecalcularLineaHistorial(idx,j,rb.dataset.round);
+    fcConfirmarCambioLinea(idx,j,rb);
+    return;
   }
 });
 document.getElementById('fc-hist-body').addEventListener('click',ev=>{
@@ -5264,6 +5338,27 @@ requestAnimationFrame(()=>requestAnimationFrame(()=>{
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(_actualizarLayout);
 _actualizarVisibilidadFab();
 if(_fcHistorial.length){document.getElementById('fc-hist-card').classList.remove('hidden');fcRenderHistorial();}
+// Restaura un borrador de edición que haya quedado a mitad de camino (F5 mientras se
+// escribía un margen, antes de que el blur lo confirmara).
+(function fcRestaurarBorrador(){
+  const draft=fcCargarBorrador();
+  if(!draft)return;
+  const idx=_fcHistorial.findIndex(f=>f.facturaId===draft.facturaId);
+  const it=idx>-1&&_fcHistorial[idx].items[draft.item];
+  if(!it)return; // la factura ya no existe (se borró) — nada que restaurar
+  it.margen=draft.margen;it.roundMode=draft.regla;
+  document.getElementById('fc-hist-card').classList.remove('hidden');
+  fcRenderHistorial();
+  abrirModal('fc-ov');
+  toggleAccordion(document.getElementById('fc-hist-head'),document.getElementById('fc-hist-body'),true);
+  const itemEl=document.querySelector(`.fc-hist-item[data-idx="${idx}"]`);
+  if(itemEl)toggleAccordion(itemEl.querySelector('.fc-hist-item-head'),itemEl.querySelector('.fc-hist-item-body'),true);
+  fcRecalcularLineaHistorial(idx,draft.item);
+  requestAnimationFrame(()=>{
+    const linea=document.querySelector(`.fc-hist-line[data-idx="${idx}"][data-item="${draft.item}"]`);
+    if(linea)linea.scrollIntoView({behavior:'smooth',block:'center'});
+  });
+})();
 // guarda la posición de scroll mientras navegas, y al salir/cambiar de app
 let _scrollT=null;
 window.addEventListener('scroll',()=>{clearTimeout(_scrollT);_scrollT=setTimeout(persistUI,200);},{passive:true});
