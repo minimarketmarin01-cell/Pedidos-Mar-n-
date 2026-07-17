@@ -503,17 +503,22 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .card-row{display:flex;flex-wrap:nowrap;align-items:flex-start;gap:10px;min-width:0;width:100%;box-sizing:border-box}
 /* ---- Vista de fila (pantallas grandes, ej. monitor táctil BlissOS) ---- */
 html.vista-filas .card-cell{padding:7px 16px!important}
-html.vista-filas .fila-row{display:flex;align-items:center;gap:14px;min-width:0}
-html.vista-filas .fila-thumb{flex-shrink:0;width:34px;height:34px}
-html.vista-filas .fila-thumb .card-thumb,html.vista-filas .fila-thumb .card-thumb-empty{width:34px;height:34px}
-html.vista-filas .fila-nombre-col{flex:1 1 280px;min-width:0;display:flex;flex-direction:column;gap:1px}
-html.vista-filas .fila-nombre{font-weight:800;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
-html.vista-filas .fila-prov{font-size:9.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.02em}
-html.vista-filas .fila-col{flex:0 0 82px;display:flex;flex-direction:column;align-items:flex-end;gap:1px;font-family:'JetBrains Mono';font-weight:700;font-size:12.5px;color:var(--ink);white-space:nowrap}
+html.vista-filas .fila-row{display:grid;grid-template-columns:38px minmax(0,2.4fr) 92px 78px 88px 118px;align-items:center;column-gap:12px;width:100%;box-sizing:border-box}
+html.vista-filas .fila-thumb{width:38px;height:38px;overflow:hidden;border-radius:8px;box-sizing:border-box}
+html.vista-filas .fila-thumb .card-thumb,html.vista-filas .fila-thumb .card-thumb-empty{width:38px;height:38px;object-fit:cover;display:block}
+html.vista-filas .fila-nombre-col{min-width:0;overflow:hidden;display:flex;flex-direction:column;gap:2px}
+html.vista-filas .fila-nombre{font-weight:800;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);display:block}
+html.vista-filas .fila-prov{font-size:9px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.vista-filas .fila-datos{display:flex;gap:10px;font-family:'JetBrains Mono';font-weight:700;font-size:11.5px;color:var(--ink2);white-space:nowrap;overflow:hidden}
+html.vista-filas .fila-datos .mg-hi{color:var(--verde)}
+html.vista-filas .fila-datos .mg-lo{color:var(--rojo)}
+html.vista-filas .fila-col{min-width:0;display:flex;flex-direction:column;align-items:flex-end;gap:1px;font-family:'JetBrains Mono';font-weight:700;font-size:12.5px;color:var(--ink);white-space:nowrap;overflow:hidden}
 html.vista-filas .fila-lbl{font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.03em;font-family:'Archivo'}
-html.vista-filas .fila-col.mg-hi{color:var(--verde)}
-html.vista-filas .fila-col.mg-lo{color:var(--rojo)}
-html.vista-filas .fila-pedir{flex-shrink:0;margin-left:6px}
+html.vista-filas .fila-pedir{min-width:0;display:flex;justify-content:flex-end}
+/* Encabezado alineado a la misma grilla que las filas de arriba */
+html.vista-filas thead tr{display:grid;grid-template-columns:38px minmax(0,2.4fr) 92px 78px 88px 118px;column-gap:12px;align-items:center}
+html.vista-filas thead th:first-child{grid-column:span 2;text-align:left}
+html.vista-filas thead th{text-align:right;white-space:nowrap}
 html.vista-filas thead th{font-size:11px}
 .card-thumb-wrap{flex:0 0 44px;width:44px;height:44px;box-sizing:border-box}
 .card-thumb{width:44px;height:44px;border-radius:10px;object-fit:cover;background:var(--gris-bg,#F3F1EA);display:block}
@@ -2055,13 +2060,14 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
     return `<tr data-ref="${it.ref}" class="${a.status==='urgente'?'row-urgent':''}" title="${tooltip}"><td class="card-cell" colspan="5">`+
       `<div class="fila-row">`+
         `<div class="fila-thumb">${thumb}</div>`+
-        `<div class="fila-col fila-nombre-col"><span class="fila-nombre">${it.nombre}</span>${showProv?`<span class="fila-prov">${it.prov}</span>`:''}</div>`+
-        `<div class="fila-col fila-num"><span class="fila-lbl">Venta</span>${precioVal}</div>`+
-        `<div class="fila-col fila-num"><span class="fila-lbl">Costo</span>${costoVal}</div>`+
-        `<div class="fila-col fila-num ${mgCls}"><span class="fila-lbl">Margen</span>${mgVal}</div>`+
-        `<div class="fila-col fila-num"><span class="fila-lbl">Rotación</span><span class="trend ${a.trend.k}">${a.trend.t}</span> ${fmt1(ventasPeriodo)}</div>`+
-        `<div class="fila-col fila-num"><span class="fila-lbl">Stock</span>${statStock}</div>`+
-        `<div class="fila-col fila-num" style="color:${covColor(a)}"><span class="fila-lbl">COB</span>${covTxt}</div>`+
+        `<div class="fila-nombre-col">`+
+          `<span class="fila-nombre">${it.nombre}</span>`+
+          `${showProv?`<span class="fila-prov">${it.prov}</span>`:''}`+
+          `<div class="fila-datos"><span>V ${precioVal}</span><span>C ${costoVal}</span><span class="${mgCls}">M ${mgVal}</span></div>`+
+        `</div>`+
+        `<div class="fila-col"><span class="fila-lbl">Rotación</span><span><span class="trend ${a.trend.k}">${a.trend.t}</span> ${fmt1(ventasPeriodo)}</span></div>`+
+        `<div class="fila-col"><span class="fila-lbl">Stock</span><span>${statStock}</span></div>`+
+        `<div class="fila-col" style="color:${covColor(a)}"><span class="fila-lbl">COB</span><span>${covTxt}</span></div>`+
         `<div class="fila-pedir">${stepper}</div>`+
       `</div>`+
     `</td></tr>`;
@@ -2256,7 +2262,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-17.15';
+const APP_VERSION='2026-07-17.16';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
