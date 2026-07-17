@@ -510,9 +510,9 @@ html.vista-filas .card-cell{padding:7px 16px!important}
    exactamente el ancho de su contenedor y la grilla minmax() de cada fila se compacta sola
    para caber. Scoped a vista-filas: la vista de tarjeta (celular/tablet) no se toca. */
 html.vista-filas #ptable{table-layout:fixed;width:100%;min-width:0;max-width:100%}
-html.vista-filas .fila-row{display:grid;grid-template-columns:34px minmax(110px,2.3fr) minmax(58px,0.85fr) minmax(48px,0.65fr) minmax(56px,0.8fr) minmax(84px,1fr);align-items:center;column-gap:8px;width:100%;box-sizing:border-box;min-width:0}
-html.vista-filas .fila-thumb{width:34px;height:34px;overflow:hidden;border-radius:8px;box-sizing:border-box}
-html.vista-filas .fila-thumb .card-thumb,html.vista-filas .fila-thumb .card-thumb-empty{width:34px;height:34px;object-fit:cover;display:block}
+html.vista-filas .fila-row{display:grid;grid-template-columns:28px minmax(0,1fr) 52px 44px 50px 88px;align-items:center;column-gap:6px;width:100%;box-sizing:border-box;min-width:0;overflow:hidden}
+html.vista-filas .fila-thumb{width:28px;height:28px;overflow:hidden;border-radius:8px;box-sizing:border-box}
+html.vista-filas .fila-thumb .card-thumb,html.vista-filas .fila-thumb .card-thumb-empty{width:28px;height:28px;object-fit:cover;display:block}
 html.vista-filas .fila-nombre-col{min-width:0;overflow:hidden;display:flex;flex-direction:column;gap:2px}
 html.vista-filas .fila-nombre{font-weight:800;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);display:block}
 html.vista-filas .fila-prov{font-size:9px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -2074,8 +2074,8 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
           `${showProv?`<span class="fila-prov">${it.prov}</span>`:''}`+
           `<div class="fila-datos"><span>V ${precioVal}</span><span>C ${costoVal}</span><span class="${mgCls}">M ${mgVal}</span></div>`+
         `</div>`+
-        `<div class="fila-col"><span class="fila-lbl">Rotación</span><span><span class="trend ${a.trend.k}">${a.trend.t}</span> ${fmt1(ventasPeriodo)}</span></div>`+
-        `<div class="fila-col"><span class="fila-lbl">Stock</span><span>${statStock}</span></div>`+
+        `<div class="fila-col"><span class="fila-lbl">ROT</span><span><span class="trend ${a.trend.k}">${a.trend.t}</span> ${fmt1(ventasPeriodo)}</span></div>`+
+        `<div class="fila-col"><span class="fila-lbl">STK</span><span>${statStock}</span></div>`+
         `<div class="fila-col" style="color:${covColor(a)}"><span class="fila-lbl">COB</span><span>${covTxt}</span></div>`+
         `<div class="fila-pedir">${stepper}</div>`+
       `</div>`+
@@ -2271,7 +2271,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-17.20';
+const APP_VERSION='2026-07-17.21';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
