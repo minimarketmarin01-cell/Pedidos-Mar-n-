@@ -2098,7 +2098,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-16.16';
+const APP_VERSION='2026-07-16.17';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -3359,7 +3359,10 @@ document.getElementById('fc-guardar').onclick=async()=>{
         showToast('✓ Guardado: '+j.guardados+' producto(s)');
         fcAgregarAlHistorial(j.factura_id,items);
       }
-      fcReset();cerrarModal('fc-ov');
+      // Ya no se cierra el modal al guardar: solo se reinicia a la pantalla de "Tomar
+      // foto / Subir de Galería", lista para escanear el siguiente documento sin que el
+      // usuario tenga que volver a abrir "Escanear factura" desde el menú Más.
+      fcReset();
     }
     else showToast('Error: '+((j&&j.error)||'no se pudo guardar'));
   }catch(e){showToast('Error de conexión');}
