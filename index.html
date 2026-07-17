@@ -56,11 +56,23 @@ h1,h2,h3{font-family:'Archivo',system-ui,sans-serif}
 .legend.sm{gap:8px;margin-top:5px;font-size:10px}
 .legend.sm .ldot{width:6px;height:6px}
 .row-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;flex:none}
-.cart-fab{position:fixed;right:max(14px,env(safe-area-inset-right));bottom:calc(78px + env(safe-area-inset-bottom));z-index:270;width:52px;height:52px;border-radius:50%;background:var(--wa);color:#fff;border:none;font-size:22px;box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer;display:flex;align-items:center;justify-content:center}
-.cart-fab:active{background:var(--wa-d)}
+.cart-fab{position:fixed;right:max(14px,env(safe-area-inset-right));bottom:calc(78px + env(safe-area-inset-bottom));z-index:270;width:54px;height:54px;border-radius:50%;background:var(--wa);color:#fff;border:2px solid rgba(255,255,255,.35);font-size:22px;box-shadow:0 8px 20px rgba(0,0,0,.28),0 2px 6px rgba(0,0,0,.15);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.cart-fab:active{background:var(--wa-d);transform:scale(.96)}
+.cart-fab.fab-oculto{display:none}
 /* Panel del carrito: SIEMPRE montado, se muestra/oculta solo con CSS (transform+opacity+pointer-events)
    — nunca con display:none, para conservar scroll/estado y no tener que re-renderizar al abrir. */
-#tab-carrito{position:fixed;inset:0;z-index:250;background:var(--paper);overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(78px + env(safe-area-inset-bottom));transform:translateY(100%);opacity:0;pointer-events:none;transition:transform .25s ease,opacity .25s ease}
+#tab-carrito{position:fixed;inset:0;z-index:250;background:var(--paper);overflow:hidden;padding-bottom:calc(78px + env(safe-area-inset-bottom));transform:translateY(100%);opacity:0;pointer-events:none;transition:transform .25s ease,opacity .25s ease}
+/* Misma cadena flex que el modo tablet (carrito-fijo): el header y el pie del carrito
+   quedan fijos, solo .order-body se expande para ocupar el espacio libre y se desplaza
+   internamente — así se ven más productos sin agrandar el panel completo (que ya es
+   pantalla completa vía position:fixed;inset:0). */
+#tab-carrito{display:flex;flex-direction:column}
+#tab-carrito>.wrap{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+#tab-carrito>.wrap>div{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+#cart-back{flex-shrink:0}
+.order{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+.order-head{flex-shrink:0}
+.order-foot{flex-shrink:0}
 /* ===== ≥1180px (detectado por JS, no @media): el panel "Copiar a WhatsApp" pasa de =====
    overlay oculto a columna fija en Grid. Reutiliza el MISMO #tab-carrito (nunca se
    duplica) — solo se le pisa el estado con CSS, condicionado a la clase .carrito-fijo.
@@ -152,8 +164,9 @@ html.carrito-fijo #tab-pedido .wrap,html.carrito-fijo #tab-pedido .tablecard,htm
 .mm-field label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:5px}
 .mm-search{position:relative}
 .mm-search input,.prov-all{border:1.5px solid var(--line);border-radius:10px;font-size:15px;padding-top:11px;padding-bottom:11px;background:#fff;color:var(--text);font-family:'Inter'}
-.mm-search input{width:100%;padding-left:14px;padding-right:70px}
-.mm-search .mm-mic,.mm-search .mm-scan,.mm-x{position:absolute;top:50%;transform:translateY(-50%);width:24px;height:24px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2}
+.mm-search input{width:100%;padding-left:14px;padding-right:96px}
+.mm-search .mm-mic,.mm-search .mm-scan{position:absolute;top:50%;transform:translateY(-50%);width:24px;height:24px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2}
+.mm-x{position:absolute;top:50%;transform:translateY(-50%);width:32px;height:32px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2}
 .mm-search .mm-mic{right:34px}
 .mm-search .mm-scan{right:6px}
 .mm-x{right:62px}
@@ -332,13 +345,13 @@ input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .prov-combo{position:relative;flex:1;min-width:160px}
 .shc-row .prov-combo{position:sticky;left:0;z-index:3;background:var(--card);flex-shrink:0;width:172px}
 .prov-icon{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;pointer-events:none;z-index:2}
-.prov-all{width:100%;min-width:0;font-weight:600;padding-right:70px;padding-left:24px;font-size:12.5px}
-.prov-x{position:absolute;top:50%;right:4px;transform:translateY(-50%);width:19px;height:19px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:10.5px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
+.prov-all{width:100%;min-width:0;font-weight:600;padding-right:84px;padding-left:24px;font-size:12.5px}
+.prov-x{position:absolute;top:50%;right:4px;transform:translateY(-50%);width:24px;height:24px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
 .prov-x:active{background:var(--line);color:var(--ink)}
-.prov-mic{position:absolute;top:50%;right:48px;transform:translateY(-50%);width:19px;height:19px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:10.5px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
+.prov-mic{position:absolute;top:50%;right:56px;transform:translateY(-50%);width:19px;height:19px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:10.5px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
 .prov-mic:active{background:var(--line);color:var(--ink)}
 .prov-mic.listening{background:var(--rojo);color:#fff;animation:micpulse 1s infinite}
-.prov-scan{position:absolute;top:50%;right:26px;transform:translateY(-50%);width:19px;height:19px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:10.5px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
+.prov-scan{position:absolute;top:50%;right:30px;transform:translateY(-50%);width:19px;height:19px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:10.5px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
 .prov-scan:active{background:var(--line)}
 .prov-menu{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.16);max-height:min(320px,46vh);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;z-index:260}
 .prov-menu.hidden{display:none}
@@ -472,11 +485,11 @@ input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .tbl-scroll{overflow-y:auto;overflow-x:auto;max-height:calc(100vh - 195px);max-height:calc(100dvh - 195px);-webkit-overflow-scrolling:touch;max-width:100%;transition:max-height .22s ease}
 .tbl-scroll.nav-hidden{max-height:calc(100vh - 125px);max-height:calc(100dvh - 125px)}
 table{border-collapse:collapse;width:100%;table-layout:fixed}
-thead th{background:var(--paper);text-align:center;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;padding:6px 4px;white-space:nowrap;cursor:pointer;user-select:none;position:sticky;top:0;z-index:6;border-bottom:1.5px solid var(--line)}
-thead th:first-child{text-align:left;padding-left:10px}
-thead th .ar{opacity:.4;font-size:9px;display:inline-block;margin-left:2px}
-thead th.sorted{color:var(--ink);background:#F0EDE4}
-thead th.sorted .ar{opacity:1}
+thead th{background:var(--card);text-align:center;font-size:9.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:7px 4px;white-space:nowrap;cursor:pointer;user-select:none;position:sticky;top:0;z-index:6;border-bottom:1px solid var(--line2)}
+thead th:first-child{text-align:left;padding-left:12px;font-size:10.5px;letter-spacing:.01em}
+thead th .ar{opacity:.35;font-size:9px;display:inline-block;margin-left:2px}
+thead th.sorted{color:var(--ink2);background:var(--paper)}
+thead th.sorted .ar{opacity:.8}
 thead th.l{text-align:left}
 tbody td{padding:5px 6px;border-bottom:1px solid var(--line2);text-align:right;white-space:nowrap;font-size:13px}
 tbody td.num,tbody td.tdc{overflow:visible}
@@ -486,39 +499,39 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
    tarjeta completa adentro. El encabezado de arriba quedó como una barra de
    chips de orden, independiente del ancho de las tarjetas. */
 #ptable{min-width:100%;table-layout:auto}
-.card-cell{padding:10px !important;white-space:normal !important;text-align:left !important}
-.card-row{display:flex;align-items:flex-start;gap:9px;min-width:0}
+.card-cell{padding:13px 10px !important;white-space:normal !important;text-align:left !important;border-bottom:1px solid var(--line2) !important}
+.card-row{display:flex;align-items:flex-start;gap:10px;min-width:0}
 .card-thumb-wrap{flex-shrink:0;width:44px;height:44px}
 .card-thumb{width:44px;height:44px;border-radius:10px;object-fit:cover;background:var(--gris-bg,#F3F1EA);display:block}
-.card-thumb-dot{width:14px;height:14px;border-radius:50%;margin:15px}
+/* Producto sin foto: ícono neutro y sutil, no un punto de color llamativo —
+   la alerta de estado (urgente/pedir/etc.) ya se lee en el chip COB, no hace
+   falta duplicarla aquí con un semáforo de color. */
+.card-thumb-empty{width:44px;height:44px;border-radius:10px;background:var(--gris-bg,#F3F1EA);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:17px;opacity:.55}
 .card-main{flex:1;min-width:0}
-.card-stats{display:flex;gap:10px;margin-top:4px;font-size:11.5px;font-weight:700;color:var(--ink);flex-wrap:wrap}
-.card-stats .cstat{display:flex;align-items:center;gap:2px}
-.card-stats .cstat-label{color:var(--muted);font-weight:600;margin-right:1px}
-.card-stats .cstat-stock{font-weight:800;color:var(--ink)}
+/* Micro-chips: fuente liviana, gris suave, sin fondos saturados — solo el
+   valor toma color (y únicamente para COB, que es la alerta de urgencia). */
+.card-stats{display:flex;gap:7px;margin-top:5px;font-size:11px;font-weight:600;color:var(--ink2);flex-wrap:wrap}
+.card-stats .cstat{display:flex;align-items:center;gap:3px;line-height:1}
+.card-stats .cstat-label{color:var(--muted);font-weight:600;font-size:9px;text-transform:uppercase;letter-spacing:.04em}
+.card-stats .cstat-stock{font-weight:700;color:var(--ink2)}
 .card-stepper{flex-shrink:0;display:flex;align-items:center}
 .tdc{text-align:center!important;padding-left:2px!important;padding-right:2px!important}
 .prod-name-wrap{display:flex;align-items:flex-start;gap:3px;min-width:0}
 .prod-name{font-weight:800;font-size:14px;line-height:1.2;letter-spacing:-.01em;white-space:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;cursor:pointer;flex:1;min-width:0}
-.prod-info-btn{flex-shrink:0;width:17px;height:17px;border:none;background:var(--gris-bg,#F3F1EA);border-radius:50%;font-size:10.5px;line-height:1;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent}
-.prod-info-btn:active{background:var(--line)}
-@media (min-width:700px){.prod-name{font-size:17px}.prod-info-btn{width:19px;height:19px;font-size:12px}}
-.name-popup{position:fixed;inset:0;background:rgba(21,25,31,.5);z-index:340;display:flex;align-items:center;justify-content:center;padding:24px}
-.name-popup-card{background:#fff;border-radius:14px;padding:18px 20px;max-width:420px;width:100%;box-shadow:0 12px 32px rgba(0,0,0,.25);display:flex;align-items:flex-start;gap:12px}
-.name-popup-text{flex:1;font-weight:800;font-size:16px;line-height:1.35;color:var(--ink)}
-.name-popup-close{flex-shrink:0;width:26px;height:26px;border:none;background:var(--gris-bg,#F3F1EA);border-radius:50%;font-size:13px;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer}
+@media (min-width:700px){.prod-name{font-size:17px}}
 .sm-info{cursor:pointer}
 .prod-ref{font-size:10px;color:var(--muted);font-family:'JetBrains Mono'}
 .prod-meta{font-size:9.5px;color:var(--muted);font-weight:600;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .prod-prov{font-size:9.5px;font-weight:700;color:var(--muted);font-family:'Archivo';text-transform:uppercase;letter-spacing:.04em;padding-right:6px;border-right:1px solid var(--line)}
-.prod-prices{display:flex;align-items:center;gap:4px;margin-top:1px;font-size:10.5px;font-family:'JetBrains Mono';font-weight:600;line-height:1.15;flex-wrap:wrap}
-.pp-v{color:var(--ink);font-weight:800;font-size:11.5px}
-.pp-c{color:var(--gold)}
-.pp-sep{color:var(--line);font-weight:400}
-.prod-prices .price-mg{font-weight:800}
-.prod-prices .price-mg.mg-hi{color:var(--verde)}
-.prod-prices .price-mg.mg-md{color:var(--gold)}
-.prod-prices .price-mg.mg-lo{color:var(--rojo)}
+/* Jerarquía de precio: venta en negrita y más grande (es el dato que más se
+   consulta), costo y margen como texto secundario gris oscuro — ya no amarillo.
+   El color de margen se reserva solo para los extremos (muy bueno / muy bajo),
+   como alerta real, no como decoración. */
+.prod-prices{display:flex;align-items:baseline;gap:5px;margin-top:2px;font-family:'JetBrains Mono';line-height:1.15;flex-wrap:wrap}
+.pp-v{color:var(--ink);font-weight:800;font-size:15px}
+.pp-c{color:var(--ink2);font-weight:600;font-size:11px}
+.pp-sep{color:var(--line);font-weight:400;font-size:11px}
+.prod-prices .price-mg{font-weight:700;font-size:11px;color:var(--ink2)}
 .price-item{display:inline-flex;align-items:baseline;gap:3px}
 .price-lbl{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-family:'Archivo';color:var(--muted)}
 .price-val{font-family:'JetBrains Mono';font-weight:600;font-size:12px;color:var(--text)}
@@ -527,8 +540,7 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .price-scale{font-size:9.5px;font-weight:700;font-family:'Archivo';color:var(--gold)}
 .fmt-tag{display:inline-block;background:var(--gold-bg);color:var(--gold);font-size:9px;font-weight:700;font-family:'Archivo';padding:1px 5px;border-radius:4px;margin-left:5px}
 .num{font-family:'JetBrains Mono';font-weight:500}
-.trend{font-size:9.5px;font-weight:700;font-family:'JetBrains Mono';margin-right:2px;display:inline-block}
-.trend.up{color:var(--verde)}.trend.down{color:var(--rojo)}.trend.flat{color:var(--gris)}
+.trend{font-size:9.5px;font-weight:700;font-family:'JetBrains Mono';margin-right:2px;display:inline-block;color:var(--muted)}
 .cov{font-family:'JetBrains Mono';font-weight:700}
 .badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:7px;font-size:11px;font-weight:700;font-family:'Archivo'}
 .badge .d{width:7px;height:7px;border-radius:50%}
@@ -538,6 +550,56 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .b-sobre{background:var(--gris-bg);color:var(--gris)}.b-sobre .d{background:var(--gris)}
 .b-sinstock{background:var(--azul-bg);color:var(--azul)}.b-sinstock .d{background:var(--azul)}
 .qcell{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.cat-combo{position:relative;flex:1;min-width:0}
+.cat-combo-input{width:100%;padding:11px 34px 11px 10px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;background:#fff;color:var(--text);cursor:pointer}
+.cat-combo-input:focus{outline:none;border-color:var(--wa)}
+.cat-combo-chev{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--muted);pointer-events:none}
+.cat-combo-menu{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.16);max-height:260px;overflow-y:auto;-webkit-overflow-scrolling:touch;z-index:400}
+.cat-combo-menu.hidden{display:none}
+.cat-opt{padding:11px 13px;font-size:13.5px;cursor:pointer;border-bottom:1px solid var(--line2);-webkit-tap-highlight-color:transparent}
+.cat-opt:last-child{border-bottom:none}
+.cat-opt:hover,.cat-opt:active{background:var(--paper)}
+.cat-opt-new{color:var(--wa-d);font-weight:700}
+.cat-opt-empty{padding:16px 13px;color:var(--muted);text-align:center;font-size:12.5px}
+.fc-row{border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:9px;background:#fff;overflow:hidden}
+.fc-row-name{width:100%;min-width:0;box-sizing:border-box;border:none;border-bottom:1px solid var(--line2);font-weight:700;font-size:13.5px;padding:2px 0 6px;margin-bottom:8px;background:transparent}
+.fc-row-name:focus{outline:none;border-bottom-color:var(--wa)}
+.fc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;min-width:0}
+.fc-field{display:flex;flex-direction:column;gap:2px;min-width:0}
+.fc-field label{font-size:9.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+.fc-field input{width:100%;min-width:0;box-sizing:border-box;border:1.5px solid var(--line);border-radius:8px;padding:9px 8px;font-size:13px;font-family:'JetBrains Mono';font-weight:700;background:#fff}
+.fc-field input:focus{outline:none;border-color:var(--wa)}
+.fc-field.fc-out input{background:var(--paper);color:var(--ink2);border-color:var(--line2)}
+.fc-field.fc-psico input{font-weight:800;color:var(--ink);font-size:14px}
+.fc-row-meta{font-size:10.5px;color:var(--muted);margin-top:6px}
+#fc-ov .mm-body{overflow-x:hidden}
+.fc-hist-item{border:1px solid var(--line2);border-radius:10px;margin-bottom:8px;overflow:hidden}
+.fc-hist-item:last-child{margin-bottom:0}
+.fc-hist-item-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 11px;cursor:pointer;-webkit-tap-highlight-color:transparent;background:var(--paper)}
+.fc-hist-item-head b{font-size:12.5px}
+.fc-hist-item-head .accordion-chev{width:14px;height:14px;color:var(--muted);transition:transform .2s ease;flex-shrink:0}
+.fc-hist-item-head.open .accordion-chev{transform:rotate(180deg)}
+.fc-hist-actions{display:flex;align-items:center;gap:2px;flex-shrink:0}
+.fc-hist-act{width:27px;height:27px;border:none;background:transparent;color:var(--muted);border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;padding:0}
+.fc-hist-act:active{background:var(--line)}
+.fc-hist-act-danger{color:var(--rojo)}
+.fc-hist-act-danger:active{background:#FCE9E7}
+.fc-scan-box{padding:22px 8px 6px;text-align:center}.fc-scan-frame{position:relative;width:100%;max-width:220px;height:118px;margin:0 auto 14px;border-radius:12px;overflow:hidden;background:linear-gradient(135deg,var(--paper),#EFEBDF);border:1.5px solid var(--line)}
+.fc-scan-frame::before{content:'';position:absolute;inset:0;opacity:.35;background:
+  linear-gradient(var(--line2) 1px,transparent 1px) 0 0/100% 25%,
+  linear-gradient(90deg,var(--line2) 1px,transparent 1px) 0 0/25% 100%}
+.fc-scan-beam{position:absolute;left:0;right:0;top:-34%;height:34%;background:linear-gradient(180deg,rgba(31,168,85,0) 0%,rgba(31,168,85,.4) 45%,rgba(31,168,85,.9) 50%,rgba(31,168,85,.4) 55%,rgba(31,168,85,0) 100%);animation:fcScanMove 1.8s ease-in-out infinite}
+@keyframes fcScanMove{0%{top:-34%}50%{top:100%}100%{top:-34%}}
+.fc-scan-txt{color:var(--muted);font-size:13px;font-weight:600}
+@media(prefers-reduced-motion:reduce){.fc-scan-beam{animation:none;top:33%}}
+.fc-hist-item-meta{display:block;font-size:10px;color:var(--muted);margin-top:1px}
+.fc-hist-item-body{padding:0 11px}
+.fc-hist-item-body:not(.collapsed){padding:8px 11px}
+.fc-hist-line{padding:6px 0;border-bottom:1px dashed var(--line2)}
+.fc-hist-line:last-child{border-bottom:none}
+.fc-hist-line-name{font-size:11.5px;font-weight:700;margin-bottom:3px}
+.fc-hist-line-nums{display:flex;gap:11px;font-size:10.5px;color:var(--muted);font-family:'JetBrains Mono'}
+.fc-hist-line-nums b{color:var(--ink2);font-weight:700}
 .qstep{display:inline-flex;align-items:center;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
 .qstep.has{border-color:var(--wa)}
 .qbtn{border:none;background:#F4F3EE;width:23px;height:32px;font-size:16px;font-weight:700;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;user-select:none;-webkit-user-select:none}
@@ -551,10 +613,13 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .rcol{display:flex;flex-direction:column;gap:13px;position:sticky;top:16px}
 @media(max-width:1080px){.rcol{position:static}}
 .scalecard,.order{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.scale-head{background:linear-gradient(100deg,#2a2118,#3a2c1a);color:#fff;padding:12px 15px}
+.scale-head{background:linear-gradient(100deg,#2a2118,#3a2c1a);color:#fff;padding:12px 15px;cursor:pointer;-webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:space-between;gap:10px;user-select:none}
 .scale-head .t{font-family:'Archivo';font-weight:800;font-size:14px}
 .scale-head .s{color:#e0c79a;font-size:11.5px;margin-top:3px}
-.scale-body{padding:13px 15px}
+.scale-head .accordion-chev{flex-shrink:0;width:18px;height:18px;color:#e0c79a;transition:transform .2s ease}
+.scale-head.open .accordion-chev{transform:rotate(180deg)}
+.accordion-body{padding:13px 15px;overflow:hidden;max-height:2000px;transition:max-height .25s ease,padding .25s ease,opacity .2s ease;opacity:1}
+.accordion-body.collapsed{max-height:0;padding-top:0;padding-bottom:0;opacity:0}
 .prog-track{height:10px;background:var(--line2);border-radius:6px;position:relative;margin:18px 0 24px}
 .prog-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--wa));border-radius:6px}
 .prog-mark{position:absolute;top:-4px;width:2px;height:18px;background:#bbb}
@@ -573,28 +638,36 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .order-head .t{font-family:'Archivo';font-weight:800;font-size:15px;display:flex;align-items:center;gap:8px}
 .order-head .s{color:#aab0ba;font-size:12px;margin-top:3px}
 .wa-ico{width:20px;height:20px;background:var(--wa);border-radius:5px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:800;font-family:'Archivo'}
-.order-body{padding:12px 14px;max-height:36vh;overflow-y:auto}
+.order-body{padding:12px 14px;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .oline{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px dashed var(--line2);font-size:13px}
 .oline .on-wrap{flex:1;min-width:0}
 .oline .on{display:block;font-weight:700;white-space:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .oline .oline-sub{display:block;font-size:11px;color:var(--muted);font-family:'JetBrains Mono';margin-top:1px}
-.ostep{display:flex;align-items:center;gap:0;flex-shrink:0;border:1.5px solid var(--line);border-radius:10px;overflow:hidden}
-.ostep-btn{width:32px;height:32px;border:none;background:var(--gris-bg,#F3F1EA);font-size:17px;font-weight:700;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
-.ostep-btn:active{background:var(--line)}
-.ostep-val{min-width:34px;text-align:center;font-weight:700;font-size:14px;font-family:'JetBrains Mono'}
+.oline .qcell{flex-shrink:0}
 .odel{flex-shrink:0;width:32px;height:32px;border:none;background:#FCE9E7;color:var(--rojo);border-radius:10px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
 .odel:active{background:#F8D2CE}
 .oline:last-child{border-bottom:none}.oline .on{font-weight:500;line-height:1.25}
 .oline .oq{font-family:'JetBrains Mono';font-weight:700;white-space:nowrap;text-align:right}
 .oline .oq small{display:block;font-size:9.5px;color:var(--gold);font-weight:700;font-family:'Archivo'}
 .order-empty{color:var(--muted);font-size:13px;text-align:center;padding:22px 8px;line-height:1.5}
-.order-foot{padding:14px;border-top:1px solid var(--line);background:#FAF9F5}
+.order-foot{padding:10px 12px;border-top:1px solid var(--line);background:#FAF9F5}
 .tot-line{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;color:var(--muted)}.tot-line b{color:var(--text);font-family:'JetBrains Mono'}
 .tot-big{display:flex;justify-content:space-between;align-items:baseline;margin:8px 0 12px}
 .tot-big .l{font-family:'Archivo';font-weight:700;font-size:14px}.tot-big .v{font-family:'Archivo';font-weight:800;font-size:22px}
 .btn{width:100%;border:none;border-radius:9px;padding:13px;font-family:'Archivo';font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
 .btn-wa{background:var(--wa);color:#fff}.btn-wa:active{background:var(--wa-d)}
 .btn-ghost{background:none;color:var(--muted);font-size:12px;padding:8px;width:auto;font-weight:600}
+.order-actions{display:flex;gap:8px;align-items:stretch}
+.order-row-main{display:flex;align-items:center;gap:6px}
+.tot-compact{display:flex;flex-direction:column;margin-right:auto;line-height:1.1;min-width:0}
+.tot-compact .l{font-size:8.5px;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.03em}
+.tot-compact .v{font-size:16px;font-weight:800;color:var(--ink);font-family:'JetBrains Mono'}
+.btn-wa-compact{width:auto;flex:0 0 auto;padding:10px 14px;font-size:12.5px;white-space:nowrap}
+.btn-wa-compact .wa-ico{width:18px;height:18px;background:rgba(255,255,255,.25);font-size:11px}
+.oact-btn{flex-shrink:0;width:46px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink2);display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.oact-btn:active{background:var(--paper)}
+.oact-btn.oact-danger{color:var(--rojo);border-color:#F3D4D0}
+.oact-btn.oact-danger:active{background:#FCE9E7}
 .copied{background:var(--verde)!important}
 .ov-prov{font-family:'Archivo';font-weight:700;font-size:13px;cursor:pointer;color:var(--ink)}
 .method{background:var(--ink);color:#d7dbe1;border-radius:12px;padding:18px 20px;margin:4px 16px 24px;max-width:1490px;margin-left:auto;margin-right:auto}
@@ -667,25 +740,19 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
   <div class="brand"><span class="mk">Marín 376</span><span class="loc">Pedidos</span></div>
   <div class="toprt">
     <button class="loadbtn acc" id="btn-sync"><svg class="sync-ic" id="sync-ic-sync" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.7-3"/><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.7 3"/><polyline points="21 3 21 9 15 9"/><polyline points="3 21 3 15 9 15"/></svg> Sincronizar</button>
-    <button class="loadbtn" id="btn-prices"><span class="sync-ic" id="sync-ic-prices">♻️</span> Catálogo</button>
-    <button class="loadbtn hidden" id="btn-merma">🗑️ Merma</button>
-    <button class="loadbtn hidden" id="btn-hist-merma">📋 Historial</button>
-    <button class="loadbtn hidden" id="btn-insumos">🧹 Insumos</button>
-    <button class="loadbtn hidden" id="btn-venc">📅 Vencimientos</button>
-    <button class="loadbtn hidden" id="btn-recibir">📦 Recibir mercadería</button>
-    <button class="loadbtn hidden" id="btn-llegadas" style="position:relative">🔔<span id="ll-badge" style="display:none;position:absolute;top:-6px;right:-6px;background:var(--rojo);color:#fff;border-radius:10px;min-width:16px;height:16px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px"></span></button>
-    <button class="loadbtn hidden" id="btn-sincosto">⚠️ Sin costo</button>
+    <button class="loadbtn" id="btn-prices"><span class="sync-ic" id="sync-ic-prices"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg></span> Catálogo</button>
+    <button class="loadbtn hidden" id="btn-merma"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg> Merma</button>
+    <button class="loadbtn hidden" id="btn-hist-merma"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="6" y="4" width="12" height="17" rx="1.5"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="15" y2="15"/></svg> Historial</button>
+    <button class="loadbtn hidden" id="btn-insumos"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><line x1="19" y1="4" x2="10" y2="13"/><path d="M10 13 4 21l3-1 2 2 1-3 3-3"/><path d="M10 13l2-6"/></svg> Insumos</button>
+    <button class="loadbtn hidden" id="btn-venc"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg> Vencimientos</button>
+    <button class="loadbtn hidden" id="btn-recibir"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M3 8l9-5 9 5-9 5-9-5Z"/><path d="M3 8v9l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="22"/></svg> Recibir mercadería</button>
+    <button class="loadbtn hidden" id="btn-llegadas" style="position:relative"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span id="ll-badge" style="display:none;position:absolute;top:-6px;right:-6px;background:var(--rojo);color:#fff;border-radius:10px;min-width:16px;height:16px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px"></span></button>
+    <button class="loadbtn hidden" id="btn-sincosto"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 3 22 20H2Z"/><line x1="12" y1="9" x2="12" y2="14"/><circle cx="12" cy="17.3" r="0.2" fill="currentColor" stroke-width="0"/></svg> Sin costo</button>
     <span class="glob" id="glob-quiebre" style="color:#ffb4a8;font-size:12px;font-weight:600"></span>
     <span class="upd" id="updlabel"></span>
   </div>
 </div>
-<button class="cart-fab" id="cart-fab" aria-label="Ver carrito">🛍️<span class="cart-badge" id="cart-badge"></span></button>
-<div class="name-popup hidden" id="name-popup">
-  <div class="name-popup-card">
-    <span class="name-popup-text" id="name-popup-text"></span>
-    <button class="name-popup-close" id="name-popup-close" type="button" aria-label="Cerrar">✕</button>
-  </div>
-</div>
+<button class="cart-fab" id="cart-fab" aria-label="Ver carrito"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M3 4h2l2.2 11h9.6L19 8H6.4"/></svg><span class="cart-badge" id="cart-badge"></span></button>
 <div id="tab-pedido">
 <div class="sticky-hdr" id="sticky-hdr">
   <div class="shc-inner">
@@ -693,9 +760,9 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
     <span>📦 Proveedores de hoy</span><span class="prov-acc-caret" id="prov-acc-caret">▾</span>
   </button>
   <div class="provday hidden" id="provday"></div>
-  <div style="position:relative">
+  <div style="position:relative" id="prov-anchor">
     <div class="shc-row shc-wrap">
-      <div class="prov-combo" id="prov-combo"><span class="prov-icon">🏷️</span><input class="prov-all" id="prov-all" placeholder="Proveedor o producto… escribe o toca" autocomplete="off" inputmode="text"><button class="prov-mic" id="prov-mic" type="button" tabindex="-1" aria-label="Buscar por voz">🎤</button><button class="prov-scan" id="prov-scan" type="button" tabindex="-1" aria-label="Escanear código">📷</button><button class="prov-x" id="prov-x" type="button" tabindex="-1" aria-label="Borrar">✕</button></div>
+      <div class="prov-combo" id="prov-combo"><span class="prov-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13.5 13.5 20a1.5 1.5 0 0 1-2.1 0L4 12.6V4h8.6l7.4 7.4a1.5 1.5 0 0 1 0 2.1Z"/><circle cx="8.3" cy="8.3" r="1.3"/></svg></span><input class="prov-all" id="prov-all" placeholder="Proveedor o producto… escribe o toca" autocomplete="off" inputmode="text"><button class="prov-mic" id="prov-mic" type="button" tabindex="-1" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button><button class="prov-scan" id="prov-scan" type="button" tabindex="-1" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button><button class="prov-x" id="prov-x" type="button" tabindex="-1" aria-label="Borrar">✕</button></div>
       <div class="seg sm" id="seg-basis"><button data-b="7" class="active">7d</button><button data-b="14">14d</button><button data-b="30">30d</button><button data-b="90">90d</button></div>
       <div class="shc-mini"><label>Entrega</label><input type="number" id="lead" value="3" min="0" max="30"></div>
       <div class="shc-mini"><label>Cobertura</label><input type="number" id="cover" value="10" min="1" max="60"></div>
@@ -727,8 +794,8 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
           <label>Producto</label>
           <div class="mm-search">
             <input id="mm-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off">
-            <button class="mm-mic" id="mm-mic" type="button" aria-label="Buscar por voz">🎤</button>
-            <button class="mm-scan" id="mm-scan" type="button" aria-label="Escanear código">📷</button>
+            <button class="mm-mic" id="mm-mic" type="button" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
+            <button class="mm-scan" id="mm-scan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
           </div>
           <div class="mm-picked" id="mm-picked">
             <div class="nom" id="mm-nom">—</div>
@@ -801,8 +868,8 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
           <div class="mm-search" style="margin:0 0 10px">
             <input id="vc-lsearch" placeholder="Buscar producto: nombre, código o SKU…" autocomplete="off" style="padding-right:104px">
             <button class="mm-x" id="vc-lx" type="button" aria-label="Limpiar" style="display:none">✕</button>
-            <button class="mm-mic" id="vc-lmic" type="button" aria-label="Buscar por voz">🎤</button>
-            <button class="mm-scan" id="vc-lscan" type="button" aria-label="Escanear código">📷</button>
+            <button class="mm-mic" id="vc-lmic" type="button" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
+            <button class="mm-scan" id="vc-lscan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
           </div>
           <div id="vc-list"><div class="vc-empty">Cargando…</div></div>
           </div>
@@ -823,8 +890,8 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
             <label>Producto</label>
             <div class="mm-search">
               <input id="vc-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off">
-              <button class="mm-mic" id="vc-mic" type="button" aria-label="Buscar por voz">🎤</button>
-              <button class="mm-scan" id="vc-scan" type="button" aria-label="Escanear código">📷</button>
+              <button class="mm-mic" id="vc-mic" type="button" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
+              <button class="mm-scan" id="vc-scan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
             </div>
             <div class="mm-picked" id="vc-picked">
               <div class="nom" id="vc-nom">—</div>
@@ -888,8 +955,8 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
         <div class="mm-search" style="margin:0 0 10px">
           <input id="hm-lsearch" placeholder="Buscar en el historial…" autocomplete="off" style="padding-right:104px">
           <button class="mm-x" id="hm-lx" type="button" aria-label="Limpiar" style="display:none">✕</button>
-          <button class="mm-mic" id="hm-lmic" type="button" aria-label="Buscar por voz">🎤</button>
-          <button class="mm-scan" id="hm-lscan" type="button" aria-label="Escanear código">📷</button>
+          <button class="mm-mic" id="hm-lmic" type="button" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
+          <button class="mm-scan" id="hm-lscan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
         </div>
         <div id="hm-list"></div>
         </div>
@@ -904,8 +971,8 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
           <label>Agregar producto</label>
           <div class="mm-search">
             <input id="in-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off">
-            <button class="mm-mic" id="in-mic" type="button" aria-label="Buscar por voz">🎤</button>
-            <button class="mm-scan" id="in-scan" type="button" aria-label="Escanear código">📷</button>
+            <button class="mm-mic" id="in-mic" type="button" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
+            <button class="mm-scan" id="in-scan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
           </div>
           <div id="in-results"></div>
         </div>
@@ -940,8 +1007,8 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
           <label>Producto</label>
           <div class="mm-search">
             <input id="rc-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off">
-            <button class="mm-mic" id="rc-mic" type="button" aria-label="Buscar por voz">🎤</button>
-            <button class="mm-scan" id="rc-scan" type="button" aria-label="Escanear código">📷</button>
+            <button class="mm-mic" id="rc-mic" type="button" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
+            <button class="mm-scan" id="rc-scan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
           </div>
           <div class="mm-picked" id="rc-picked">
             <div class="nom" id="rc-nom">—</div>
@@ -1029,19 +1096,17 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
         <div class="order-head"><div class="t"><span class="wa-ico">W</span>Carrito del pedido</div><div class="s" id="order-sub">Proveedor —</div></div>
         <div class="order-body" id="order-body"></div>
         <div class="order-foot">
-          <div class="tot-line">Líneas a pedir <b id="tot-skus">0</b></div>
-          <div class="tot-line">Unidades totales <b id="tot-uds">0</b></div>
-          <div class="tot-big"><span class="l">Costo estimado</span><span class="v mono" id="tot-cost">$0</span></div>
-          <button class="btn btn-wa" id="btn-copy"><span class="wa-ico" style="background:rgba(255,255,255,.25)">W</span>Copiar pedido para WhatsApp</button>
-          <div style="display:flex;gap:8px;justify-content:center;margin-top:2px">
-            <button class="btn btn-ghost" id="btn-suggest">↺ Volver a sugerido</button>
-            <button class="btn btn-ghost" id="btn-clear">✕ Vaciar (0)</button>
+          <div class="order-row-main">
+            <div class="tot-compact"><span class="l">Total</span><span class="v mono" id="tot-cost">$0</span></div>
+            <button class="oact-btn" id="btn-suggest" aria-label="Volver a sugerido" title="Volver a sugerido"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg></button>
+            <button class="oact-btn oact-danger" id="btn-clear" aria-label="Vaciar carrito" title="Vaciar carrito"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg></button>
+            <button class="btn btn-wa btn-wa-compact" id="btn-copy" title="Copiar pedido para WhatsApp"><span class="wa-ico">W</span>Copiar</button>
           </div>
         </div>
       </div>
       <div class="scalecard hidden" id="scalecard" style="margin-top:12px">
-        <div class="scale-head"><div class="t">⚡ Escala de volumen</div><div class="s" id="scale-sub"></div></div>
-        <div class="scale-body" id="scale-body"></div>
+        <div class="scale-head" id="scale-head"><div><div class="t">⚡ Escala de volumen</div><div class="s" id="scale-sub"></div></div><svg class="accordion-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+        <div class="scale-body accordion-body collapsed" id="scale-body"></div>
       </div>
     </div>
   </div>
@@ -1066,9 +1131,9 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 <div class="toast" id="toast"></div>
 
 <nav class="bottom-nav" id="bottom-nav">
-  <button class="bn-item active" id="bn-pedidos"><span class="ic">🛒</span>Pedidos</button>
-  <button class="bn-item" id="bn-recepcion"><span class="ic">📦</span>Recepción</button>
-  <button class="bn-item" id="bn-vencimientos"><span class="ic">📅</span>Vencimientos</button>
+  <button class="bn-item active" id="bn-pedidos"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M3 4h2l2.2 11h9.6L19 8H6.4"/></svg></span>Pedidos</button>
+  <button class="bn-item" id="bn-recepcion"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M3 8l9-5 9 5-9 5-9-5Z"/><path d="M3 8v9l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="22"/></svg></span>Recepción</button>
+  <button class="bn-item" id="bn-vencimientos"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></span>Vencimientos</button>
   <button class="bn-item" id="bn-mas"><span class="ic">⋯</span>Más<span class="bn-dot" id="bn-mas-dot"></span></button>
 </nav>
 
@@ -1078,15 +1143,16 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
     <div class="mm-topbar"><button class="loadbtn" id="mas-cerrar" style="width:100%">Cerrar</button></div>
     <div class="mm-body">
       <div class="mas-quick">
-        <button id="mas-q-merma">🗑️<br>Merma</button>
-        <button id="mas-q-insumos">🧹<br>Insumos</button>
-        <button id="mas-q-llegadas">🔔<br>Avisos<span class="mas-badge" id="mas-badge"></span></button>
-        <button id="mas-q-sincosto">⚠️<br>Sin costo</button>
-        <button id="mas-q-hist">📋<br>Historial</button>
-        <button id="mas-q-sinmov">🧹<br>Sin movimiento</button>
-        <button id="mas-q-reconteo">🔢<br>Reconteo stock</button>
-        <button id="mas-q-crear">➕<br>Crear producto</button>
-        <button id="mas-q-recargar">📊<br>Recargar historial</button>
+        <button id="mas-q-merma"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><br>Merma</button>
+        <button id="mas-q-insumos"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><line x1="19" y1="4" x2="10" y2="13"/><path d="M10 13 4 21l3-1 2 2 1-3 3-3"/><path d="M10 13l2-6"/></svg><br>Insumos</button>
+        <button id="mas-q-llegadas"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><br>Avisos<span class="mas-badge" id="mas-badge"></span></button>
+        <button id="mas-q-sincosto"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 3 22 20H2Z"/><line x1="12" y1="9" x2="12" y2="14"/><circle cx="12" cy="17.3" r="0.2" fill="currentColor" stroke-width="0"/></svg><br>Sin costo</button>
+        <button id="mas-q-hist"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="6" y="4" width="12" height="17" rx="1.5"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="15" y2="15"/></svg><br>Historial</button>
+        <button id="mas-q-sinmov"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="10" y1="9" x2="10" y2="15"/><line x1="14" y1="9" x2="14" y2="15"/></svg><br>Sin movimiento</button>
+        <button id="mas-q-reconteo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="10" y1="4" x2="8" y2="20"/><line x1="16" y1="4" x2="14" y2="20"/></svg><br>Reconteo stock</button>
+        <button id="mas-q-crear"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><br>Crear producto</button>
+        <button id="mas-q-recargar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="20" x2="5" y2="11"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="19" y1="20" x2="19" y2="14"/></svg><br>Recargar historial</button>
+        <button id="mas-q-factura"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg><br>Escanear factura</button>
       </div>
       <div class="method" style="margin:0;padding:16px 18px">
         <h3>ℹ️ Cómo funciona tu app</h3>
@@ -1140,8 +1206,8 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
       <div class="mm-search" style="margin:0 0 10px">
         <input id="sm-search" placeholder="Buscar en la lista…" autocomplete="off" style="padding-right:104px">
         <button class="mm-x" id="sm-x" type="button" aria-label="Limpiar" style="display:none">✕</button>
-        <button class="mm-mic" id="sm-mic" type="button" aria-label="Buscar por voz">🎤</button>
-        <button class="mm-scan" id="sm-scan" type="button" aria-label="Escanear código">📷</button>
+        <button class="mm-mic" id="sm-mic" type="button" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
+        <button class="mm-scan" id="sm-scan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
       </div>
       <div class="sm-actions">
         <label class="sm-selall"><input type="checkbox" id="sm-selall"> Seleccionar todos</label>
@@ -1159,10 +1225,10 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
     <div class="mm-body">
       <div class="hm-summary"><span class="lbl" id="rk-lbl">—</span><span class="val" id="rk-val"></span></div>
       <div class="prov-combo" id="rk-combo" style="margin-bottom:10px">
-        <span class="prov-icon">🏷️</span>
+        <span class="prov-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13.5 13.5 20a1.5 1.5 0 0 1-2.1 0L4 12.6V4h8.6l7.4 7.4a1.5 1.5 0 0 1 0 2.1Z"/><circle cx="8.3" cy="8.3" r="1.3"/></svg></span>
         <input class="prov-all" id="rk-all" placeholder="Proveedor o producto… escribe o toca" autocomplete="off" inputmode="text">
-        <button class="prov-mic" id="rk-mic" type="button" tabindex="-1" aria-label="Buscar por voz">🎤</button>
-        <button class="prov-scan" id="rk-scan" type="button" tabindex="-1" aria-label="Escanear código">📷</button>
+        <button class="prov-mic" id="rk-mic" type="button" tabindex="-1" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
+        <button class="prov-scan" id="rk-scan" type="button" tabindex="-1" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
         <button class="prov-x" id="rk-x" type="button" tabindex="-1" aria-label="Borrar">✕</button>
         <div class="prov-menu hidden" id="rk-menu"></div>
       </div>
@@ -1213,7 +1279,12 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
       <div class="mm-field">
         <label>Categoría *</label>
         <div style="display:flex;gap:8px">
-          <select id="cp-cat" style="flex:1;min-width:0;padding:11px 10px;border:1.5px solid var(--line);border-radius:10px;font-size:14px"><option value="">Cargando…</option></select>
+          <div class="cat-combo" id="cat-combo">
+            <input id="cp-cat-input" class="cat-combo-input" placeholder="Elige una categoría…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+            <svg class="cat-combo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            <select id="cp-cat" style="display:none"><option value="">Cargando…</option></select>
+            <div class="cat-combo-menu hidden" id="cat-combo-menu" role="listbox"></div>
+          </div>
           <button class="loadbtn" id="cp-cat-nueva" type="button" style="white-space:nowrap">➕ Nueva</button>
         </div>
         <div id="cp-cat-nuevabox" class="hidden" style="gap:8px;margin-top:8px">
@@ -1237,7 +1308,7 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
         <label>Código de barras (opcional)</label>
         <div class="mm-search">
           <input id="cp-barcode" placeholder="Escanea o escribe" autocomplete="off" style="padding-right:44px">
-          <button class="mm-scan" id="cp-scan" type="button" aria-label="Escanear">📷</button>
+          <button class="mm-scan" id="cp-scan" type="button" aria-label="Escanear"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
         </div>
       </div>
       <div class="mm-field">
@@ -1271,6 +1342,48 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
       <div style="font-size:11.5px;color:var(--muted);margin:2px 0 10px">El código interno (SKU) se genera <b>automáticamente</b> y es único — no se edita a mano. La imagen se podrá agregar en una próxima versión.</div>
       <button class="mm-save" id="cp-guardar" disabled>Crear producto</button>
       <button class="loadbtn" id="cp-cerrar" style="width:100%;margin-top:8px">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="mm-ov hidden" id="fc-ov">
+  <div class="mm-card">
+    <div class="mm-head"><h3>📷 Escanear factura</h3></div>
+    <div class="mm-body">
+      <div id="fc-paso-foto">
+        <div style="display:flex;gap:8px">
+          <label class="loadbtn" id="fc-foto-label" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;white-space:nowrap;font-size:12.5px">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg>
+            Tomar foto
+            <input type="file" accept="image/*" capture="environment" id="fc-input" style="display:none">
+          </label>
+          <label class="loadbtn" id="fc-galeria-label" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;white-space:nowrap;font-size:12.5px">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            Subir de Galería
+            <input type="file" accept="image/*" id="fc-input-galeria" style="display:none">
+          </label>
+        </div>
+        <div id="fc-preview-wrap" class="hidden" style="margin-top:12px">
+          <img id="fc-preview" style="width:100%;border-radius:10px;border:1px solid var(--line);display:block">
+          <button class="mm-save" id="fc-procesar" style="width:100%;margin-top:10px">Procesar factura</button>
+        </div>
+        <div id="fc-loading" class="hidden fc-scan-box">
+          <div class="fc-scan-frame"><div class="fc-scan-beam"></div></div>
+          <div class="fc-scan-txt">Analizando factura con Claude…</div>
+        </div>
+        <div id="fc-error" class="hidden" style="margin-top:10px;padding:10px 12px;border-radius:10px;background:#FCE9E7;color:var(--rojo);font-size:12.5px"></div>
+      </div>
+      <div id="fc-resultados" class="hidden">
+        <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">Revisa y corrige cada fila antes de guardar — nada se guarda automáticamente.</div>
+        <div id="fc-list"></div>
+        <button class="mm-save" id="fc-guardar" style="margin-top:6px">Guardar cálculos</button>
+        <button class="loadbtn" id="fc-otra" style="width:100%;margin-top:8px">Escanear otra factura</button>
+      </div>
+      <div class="scalecard hidden" id="fc-hist-card" style="margin-top:14px">
+        <div class="scale-head" id="fc-hist-head"><div><div class="t">🗂️ Historial de facturas calculadas</div><div class="s" id="fc-hist-sub">0 guardadas en esta sesión</div></div><svg class="accordion-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+        <div class="scale-body accordion-body collapsed" id="fc-hist-body"></div>
+      </div>
+      <button class="loadbtn" id="fc-cerrar" style="width:100%;margin-top:8px">Cerrar</button>
     </div>
   </div>
 </div>
@@ -1579,6 +1692,56 @@ function buildChips(){
     document.addEventListener('pointerdown',function(ev){const combo=document.getElementById('prov-combo');const m=document.getElementById('prov-menu');if(m&&!m.classList.contains('hidden')&&combo&&!combo.contains(ev.target)&&!m.contains(ev.target)){m.classList.add('hidden');const s=document.getElementById('prov-all');if(s&&s.value.trim())setProvInputValue();}},true);
   }
 }
+// ---- Portal de #prov-menu para tablet horizontal (html.carrito-fijo) ----
+// En modo carrito fijo, .sticky-hdr crea su propio stacking context (position:sticky +
+// z-index) y queda atrapado por debajo de #tab-carrito (z-index:250) sin importar el
+// z-index interno de #prov-menu. Solución robusta y sin depender de :has(): mientras el
+// menú está abierto Y estamos en carrito-fijo, se saca #prov-menu de su lugar en el DOM
+// y se monta directo en <body> con position:fixed, calculado con getBoundingClientRect().
+// En celular/escritorio NUNCA se mueve — sigue exactamente igual que antes.
+let _provMenuHome=null; // {parent,next} — dónde vive #prov-menu normalmente, para devolverlo
+function _provMenuIsTablet(){return document.documentElement.classList.contains('carrito-fijo');}
+function _provMenuPosition(menu){
+  const anchor=document.getElementById('prov-anchor');
+  if(!anchor||!menu||menu.parentNode!==document.body)return;
+  const r=anchor.getBoundingClientRect();
+  menu.style.left=r.left+'px';
+  menu.style.top=(r.bottom+4)+'px';
+  menu.style.width=r.width+'px';
+  menu.style.right='auto';
+}
+function _provMenuMount(menu){
+  if(!menu||_provMenuHome)return; // ya montado
+  _provMenuHome={parent:menu.parentNode,next:menu.nextSibling};
+  document.body.appendChild(menu);
+  menu.style.position='fixed';
+  menu.style.zIndex='400';
+  _provMenuPosition(menu);
+}
+function _provMenuUnmount(menu){
+  if(!menu||!_provMenuHome)return;
+  menu.style.position='';menu.style.zIndex='';menu.style.left='';menu.style.top='';menu.style.width='';menu.style.right='';
+  const{parent,next}=_provMenuHome;
+  if(next&&next.parentNode===parent)parent.insertBefore(menu,next);else parent.appendChild(menu);
+  _provMenuHome=null;
+}
+if(!window._provMenuPortalBound){
+  window._provMenuPortalBound=true;
+  const _pm=document.getElementById('prov-menu');
+  if(_pm){
+    new MutationObserver(()=>{
+      const hidden=_pm.classList.contains('hidden');
+      if(hidden)_provMenuUnmount(_pm);
+      else if(_provMenuIsTablet())_provMenuMount(_pm);
+    }).observe(_pm,{attributes:true,attributeFilter:['class']});
+    window.addEventListener('resize',()=>{
+      if(_pm.classList.contains('hidden'))return;
+      if(_provMenuIsTablet())_provMenuMount(_pm);else _provMenuUnmount(_pm);
+      if(_provMenuHome)_provMenuPosition(_pm);
+    });
+    window.addEventListener('scroll',()=>{if(_provMenuHome)_provMenuPosition(_pm);},true);
+  }
+}
 function setProvInputValue(){const sel=document.getElementById('prov-all');if(!sel)return;if(document.activeElement===sel)return;/* el usuario está escribiendo ahí: no lo interrumpimos */if(state.search)return;const allMode=state.allProv&&!state.search;sel.value=allMode?'📋 Todos los proveedores':(DB.provs.some(p=>p.prov===state.prov)?state.prov:(DB.provs[0]?DB.provs[0].prov:''));}
 function pickProv(target){if(target==='__ALL__'){state.allProv=true;}else{state.allProv=false;state.prov=target;state.sort='rate';state.dir=-1;}state.search='';const sx=document.getElementById('prov-x');if(sx)sx.classList.remove('on');state.edits={};const menu=document.getElementById('prov-menu');if(menu)menu.classList.add('hidden');const sel=document.getElementById('prov-all');if(sel)sel.blur();setProvInputValue();render();persistUI();}
 function commitProv(val){const key=(val||'').trim().toLowerCase();if(!key)return false;if(key.indexOf('todos')===0||key.indexOf('📋')===0){pickProv('__ALL__');return true;}let hit=DB.provs.find(p=>p.prov.toLowerCase()===key);if(!hit&&key.length>=2)hit=DB.provs.find(p=>p.prov.toLowerCase().indexOf(key)>-1);if(hit){pickProv(hit.prov);return true;}return false;}
@@ -1702,8 +1865,8 @@ async function renderInicio(){
   });
   const provBox=document.getElementById('in-provhoy');
   provBox.innerHTML =
-    '<div class="in-prov-row pide"><span class="ic">📋</span><div><b>Pides hoy:</b> '+(pide.length?pide.join(' · '):'<span class="in-empty" style="padding:0">sin pedidos programados</span>')+'</div></div>'+
-    '<div class="in-prov-row lleg"><span class="ic">🚚</span><div><b>Llega hoy:</b> '+(lleg.length?lleg.join(' · '):'<span class="in-empty" style="padding:0">sin entregas programadas</span>')+'</div></div>';
+    '<div class="in-prov-row pide"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="6" y="4" width="12" height="17" rx="1.5"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="15" y2="15"/></svg></span><div><b>Pides hoy:</b> '+(pide.length?pide.join(' · '):'<span class="in-empty" style="padding:0">sin pedidos programados</span>')+'</div></div>'+
+    '<div class="in-prov-row lleg"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="12" height="10" rx="1"/><path d="M14 10h4l3 3v4h-7z"/><circle cx="7" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg></span><div><b>Llega hoy:</b> '+(lleg.length?lleg.join(' · '):'<span class="in-empty" style="padding:0">sin entregas programadas</span>')+'</div></div>';
 }
 
 
@@ -1732,25 +1895,24 @@ const TABLE_PAGE=70;let _tbState=null,_tbIO=null;
 function rowHTML(it,a,f){const sug=qOf(it,a);
   const bundles=it.fmt>1?Math.round(sug/it.fmt):sug;
   const covTxt=a.cov==null?'—':a.cov===Infinity?'∞':(a.cov>=100?'99+':fmt1(a.cov)+'d');
-  const dotColor={urgente:'var(--rojo)',pedir:'var(--ambar)',ok:'var(--verde)',sobre:'var(--gris)',sinstock:'var(--azul)'}[a.status]||'var(--gris)';
   const tooltip='#'+it.ref+(it.scale?' · escala ⚡':'')+' · '+SL[a.status];
   const precioVal=it.precio!=null?peso(it.precio):'—';
   const costoVal=it.coste!=null?peso(it.coste):'—';
   const mg=(it.precio>0&&it.coste!=null)?Math.round((it.precio-it.coste)/it.precio*100):null;
-  const mgCls=mg==null?'':(mg>=35?'mg-hi':(mg>=20?'mg-md':'mg-lo'));
+  const mgCls=mg==null?'':(mg>=35?'mg-hi':(mg<20?'mg-lo':''));
   const mgVal=mg!=null?mg+'%':'—';
   const showProv=(state.search||state.allProv);
-  const priceLine=`<div class="prod-prices"><span class="pp-v" title="Venta">V ${precioVal}</span><span class="pp-sep">·</span><span class="pp-c" title="Costo">C ${costoVal}</span><span class="pp-sep">·</span><span class="price-mg ${mgCls}" title="Margen">${mgVal}</span></div>`;
+  const priceLine=`<div class="prod-prices"><span class="pp-v" title="Venta">${precioVal}</span><span class="pp-sep">·</span><span class="pp-c" title="Costo">C ${costoVal}</span><span class="pp-sep">·</span><span class="price-mg ${mgCls}" title="Margen">${mgVal}</span></div>`;
   const ventasPeriodo=state.basis===7?it.u7:state.basis===14?it.u14:state.basis===90?it.u90:it.u30;
   const thumb=it.imagen
-    ?`<img class="card-thumb" src="${it.imagen}" loading="lazy" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'row-dot card-thumb-dot',style:'background:${dotColor}'}))">`
-    :`<span class="row-dot card-thumb-dot" style="background:${dotColor}"></span>`;
+    ?`<img class="card-thumb" src="${it.imagen}" loading="lazy" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'card-thumb-empty',textContent:'📦'}))">`
+    :`<span class="card-thumb-empty">📦</span>`;
   const statStock=it.stock==null?'<span style="color:var(--azul)">s/c</span>':fmt.format(it.stock)+(a.vencido>0?` <span style="color:var(--rojo);font-weight:700">(-${fmt.format(a.vencido)})</span>`:'');
   return `<tr data-ref="${it.ref}" class="${a.status==='urgente'?'row-urgent':''}" title="${tooltip}"><td class="card-cell" colspan="5">`+
     `<div class="card-row">`+
       `<div class="card-thumb-wrap">${thumb}</div>`+
       `<div class="card-main">`+
-        `<div class="prod-name-wrap"><span class="prod-name">${it.nombre}</span><button class="prod-info-btn" type="button" aria-label="Ver nombre completo">ⓘ</button></div>`+
+        `<div class="prod-name-wrap"><span class="prod-name">${it.nombre}</span></div>`+
         `${showProv?`<div class="prod-meta">${it.prov}</div>`:''}`+
         priceLine+
         `<div class="card-stats">`+
@@ -1787,6 +1949,7 @@ function renderTable(){
   _tbState={items,f,idx:0};
   tableMore();
 }
+let _scaleOpen=false; // acordeón "Escala de volumen": oculto por defecto, el usuario decide abrirlo
 function renderScale(){
   const card=document.getElementById('scalecard');const scs=SCALE_OF_PROV[state.prov];
   if(state.search||state.allProv||!scs){card.classList.add('hidden');return;}card.classList.remove('hidden');
@@ -1807,49 +1970,99 @@ function renderScale(){
       html+=`<div style="padding:9px 0;border-bottom:1px dashed var(--line2)"><div style="font-weight:600;font-size:12.5px">${x.it.nombre}</div><div style="display:flex;justify-content:space-between;margin-top:3px"><span class="pk" style="font-family:'JetBrains Mono';font-weight:700">${x.packs} ${S.word}</span><span style="color:var(--wa-d);font-weight:700">-${tier.dto}% · ${peso(tier.c)}/u</span></div>`;
       html+=next?`<div style="font-size:11.5px;color:var(--gold);margin-top:3px">+${next.min-x.packs} ${S.word} → -${next.dto}% (ahorras ${peso(tier.c-next.c)}/u)</div>`:`<div style="font-size:11.5px;color:var(--verde);margin-top:3px">✓ Máximo descuento</div>`;html+=`</div>`;});html+='</div>';}}
   body.innerHTML=html;
+  body.classList.toggle('collapsed',!_scaleOpen);
+  document.getElementById('scale-head').classList.toggle('open',_scaleOpen);
 }
+// Acordeón genérico: alterna cualquier par head/body con las clases .accordion-body / .open,
+// reutilizable si en el futuro se agregan más tarjetas de escala por proveedor.
+function toggleAccordion(headEl,bodyEl,openState){
+  const open=typeof openState==='boolean'?openState:bodyEl.classList.contains('collapsed');
+  bodyEl.classList.toggle('collapsed',!open);
+  headEl.classList.toggle('open',open);
+  return open;
+}
+(function(){
+  const head=document.getElementById('scale-head');
+  if(head)head.onclick=()=>{_scaleOpen=toggleAccordion(head,document.getElementById('scale-body'));};
+})();
 function currentOrder(){const lines=[];const base=(state.search||state.allProv)?currentItems():itemsFor(state.prov);base.forEach(it=>{const a=analyze(it);const q=qOf(it,a);if(q>0)lines.push({it,nombre:it.nombre,q,packs:packsOf(it,q),cost:tierCostUn(it)*q,word:it.word});});return lines;}
+// Actualiza SOLO la fila afectada del carrito (sin reconstruir #order-body) para que la
+// posición, el scroll y el foco del teclado nunca salten al tocar +/- o escribir la
+// cantidad. Si la cantidad llega a 0, se quita solo esa fila. El resto de las filas ni se
+// toca, así que jamás cambian de lugar por esto. renderOrder() (reconstrucción completa)
+// se sigue usando solo cuando corresponde: abrir el carrito, cambiar de proveedor, "Volver
+// a sugerido", "Vaciar", o editar la cantidad desde la tabla de "Armar pedido" (ahí sí
+// puede aparecer una fila nueva que antes no existía).
+function cartUpdateTotals(){
+  const lines=currentOrder();
+  const cost=lines.reduce((s,l)=>s+l.cost,0);
+  document.getElementById('tot-cost').textContent=peso(cost);
+  const badge=document.getElementById('cart-badge');
+  if(badge){badge.textContent=lines.length>99?'99+':lines.length;badge.classList.toggle('on',lines.length>0);}
+}
+function cartApplyQty(ref,newPacks){
+  const it=DB.items.find(i=>i.ref===ref);
+  if(!it)return;
+  newPacks=Math.max(0,newPacks||0);
+  state.edits[ref]=newPacks*it.fmt;
+  const row=document.querySelector(`#order-body .oline[data-ref="${CSS&&CSS.escape?CSS.escape(ref):ref}"]`);
+  if(newPacks<=0){
+    if(row)row.remove();
+    if(!document.querySelector('#order-body .oline'))document.getElementById('order-body').innerHTML='<div class="order-empty">Sin productos sugeridos con los parámetros actuales.</div>';
+  }else if(row){
+    const q=newPacks*it.fmt,cost=tierCostUn(it)*q;
+    const sub=row.querySelector('.oline-sub');if(sub)sub.textContent=peso(cost)+(it.fmt>1?' · '+q+' u':'');
+    const qty=row.querySelector('.qty-in');if(qty&&+qty.value!==newPacks)qty.value=newPacks;
+    const qstep=row.querySelector('.qstep');if(qstep)qstep.classList.toggle('has',newPacks>0);
+    const qw=row.querySelector('.qword');if(qw)qw.textContent=labelFor(it,newPacks);
+  }
+  cartUpdateTotals();
+  renderScale();
+}
 function renderOrder(){
   const lines=currentOrder();const body=document.getElementById('order-body');
   if(!lines.length)body.innerHTML='<div class="order-empty">Sin productos sugeridos con los parámetros actuales.</div>';
-  else body.innerHTML=lines.sort((a,b)=>b.q-a.q).map(l=>`<div class="oline" data-ref="${l.it.ref}">
+  else body.innerHTML=lines.map(l=>`<div class="oline" data-ref="${l.it.ref}">
       <div class="on-wrap">
         <span class="on">${l.nombre}</span>
         <span class="oline-sub">${peso(l.cost)}${l.it.fmt>1?' · '+(l.q)+' u':''}</span>
       </div>
-      <div class="ostep">
-        <button class="ostep-btn" data-act="-" aria-label="Restar">−</button>
-        <span class="ostep-val">${l.packs}</span>
-        <button class="ostep-btn" data-act="+" aria-label="Sumar">+</button>
+      <div class="qcell">
+        <div class="qstep ${l.packs>0?'has':''}">
+          <button class="qbtn" data-d="-1" aria-label="Restar">−</button>
+          <input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${l.packs}" data-ref="${l.it.ref}" data-fmt="${l.it.fmt}" data-step="${inStep(l.it)}">
+          <button class="qbtn" data-d="1" aria-label="Sumar">+</button>
+        </div>
+        <span class="qword ${(l.it.fmt>1||multOf(l.it)>1)?'gold':''}">${labelFor(l.it,l.packs)}</span>
       </div>
-      <button class="odel" data-act="del" aria-label="Eliminar">🗑️</button>
+      <button class="odel" data-act="del" aria-label="Eliminar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
     </div>`).join('');
-  const uds=lines.reduce((s,l)=>s+l.q,0),cost=lines.reduce((s,l)=>s+l.cost,0);
-  document.getElementById('tot-skus').textContent=lines.length;document.getElementById('tot-uds').textContent=fmt.format(uds);document.getElementById('tot-cost').textContent=peso(cost);
-  const badge=document.getElementById('cart-badge');
-  if(badge){badge.textContent=lines.length>99?'99+':lines.length;badge.classList.toggle('on',lines.length>0);}
+  cartUpdateTotals();
 }
-// Un solo listener delegado para +/-/eliminar en el carrito (se registra una vez, nunca se duplica en cada render)
+// Listeners delegados del carrito: eliminar, +/- y edición directa del número, todos por
+// actualización quirúrgica (se registran una vez, nunca se duplican en cada render).
 (function(){
   const body=document.getElementById('order-body');
   if(!body)return;
   body.addEventListener('click',ev=>{
-    const btn=ev.target.closest('[data-act]');
-    if(!btn)return;
-    const row=btn.closest('.oline');
-    const ref=row&&row.dataset.ref;
-    if(!ref)return;
-    const it=DB.items.find(i=>i.ref===ref);
-    if(!it)return;
-    const act=btn.dataset.act;
-    if(act==='del'){state.edits[ref]=0;}
-    else{
-      const packsActuales=packsOf(it,qOf(it,analyze(it)));
-      const nuevo=Math.max(0,packsActuales+(act==='+'?1:-1));
-      state.edits[ref]=nuevo*it.fmt;
+    const del=ev.target.closest('[data-act="del"]');
+    if(del){
+      const row=del.closest('.oline');
+      const ref=row&&row.dataset.ref;
+      if(ref)cartApplyQty(ref,0);
+      return;
     }
-    renderOrder();
+    const b=ev.target.closest('.qbtn');
+    if(b){
+      const cell=b.closest('.qcell');
+      const inp=cell.querySelector('.qty-in');
+      const st=+inp.dataset.step||1;
+      const newVal=Math.max(0,(parseInt(inp.value)||0)+(+b.dataset.d)*st);
+      inp.value=newVal;
+      cartApplyQty(inp.dataset.ref,newVal);
+    }
   });
+  body.addEventListener('input',e=>{if(e.target.classList&&e.target.classList.contains('qty-in'))cartApplyQty(e.target.dataset.ref,Math.max(0,parseInt(e.target.value)||0));});
 })();
 function renderOverview(){
   // Gráfico: venta semanal estimada por categoría (u7 × precio)
@@ -1885,7 +2098,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-16.3';
+const APP_VERSION='2026-07-16.16';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -2076,6 +2289,7 @@ function showScreen(name){
   if(name==='pedido')document.getElementById('bn-pedidos').classList.add('active');
   playTabAnim(name);
   persistUI();
+  _actualizarVisibilidadFab();
 }
 // El carrito YA NO es una "pantalla" (showScreen) — es un panel superpuesto, siempre montado,
 // que se muestra/oculta con una clase CSS. El contenido ya se mantiene al día solo con que
@@ -2109,16 +2323,19 @@ function abrirModal(id){
   el.style.removeProperty('display');
   void el.offsetWidth;   // fuerza a que el navegador aplique el cambio ya mismo
   _sincronizarNav();
+  _actualizarVisibilidadFab();
 }
 function cerrarModal(id){
   const el=document.getElementById(id);
   if(el){el.classList.add('hidden');el.style.removeProperty('display');}
   _sincronizarNav();
+  _actualizarVisibilidadFab();
 }
 function cerrarOverlays(){
   document.querySelectorAll('.mm-ov, .scan-ov').forEach(o=>{o.classList.add('hidden');o.style.removeProperty('display');});
   if(typeof toggleCarrito==='function')toggleCarrito(false); // en celular cierra el panel; en tablet/escritorio no tiene efecto (CSS lo mantiene visible)
   _sincronizarNav();
+  _actualizarVisibilidadFab();
 }
 
 // ===================== NAVEGACIÓN + BOTÓN ATRÁS (PWA) =====================
@@ -2138,6 +2355,19 @@ function _sincronizarNav(){
   let activeId='bn-pedidos';
   if(ov){activeId=directos[ov.id]||(ov.id==='scan-ov'?null:'bn-mas');}
   if(activeId)document.querySelectorAll('.bn-item').forEach(b=>b.classList.toggle('active',b.id===activeId));
+}
+// ---- Visibilidad condicional del FAB del carrito ----
+// Solo debe verse en "Armar pedido" (Pedidos) y nunca tapado por un modal abierto encima
+// (Recepción, Vencimientos, Más, Escanear factura, etc.). En tablet/escritorio el FAB ya
+// queda oculto siempre por CSS (html.carrito-fijo .cart-fab{display:none}), así que esto
+// solo importa en celular — no interfiere con esa regla existente.
+function _actualizarVisibilidadFab(){
+  const fab=document.getElementById('cart-fab');
+  const tab=document.getElementById('tab-pedido');
+  if(!fab||!tab)return;
+  const enPedidos=!tab.classList.contains('hidden');
+  const hayModal=!!_overlaySuperior();
+  fab.classList.toggle('fab-oculto',!enPedidos||hayModal);
 }
 // Botón físico "Atrás" de Android: cierra SOLO la ventana abierta; si no hay
 // ninguna y estás en el carrito, vuelve a Pedidos; y solo sale de la app cuando
@@ -2436,7 +2666,7 @@ function fpModoEdicion(f){
     <div class="mm-field" style="margin-top:10px"><label>Código de barras (opcional)</label>
       <div class="mm-search">
         <input id="fp-e-barcode" value="${(p.barcode||'').replace(/"/g,'&quot;')}" placeholder="Escanea o escribe" autocomplete="off" style="padding-right:44px">
-        <button class="mm-scan" id="fp-e-scan" type="button" aria-label="Escanear">📷</button>
+        <button class="mm-scan" id="fp-e-scan" type="button" aria-label="Escanear"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
       </div>
     </div>
     <div class="mm-field" style="margin-top:10px"><label>Descripción (opcional)</label>
@@ -2560,25 +2790,10 @@ async function fpGuardarEdicion(sku){
 // Puntos de entrada a la ficha: tocar el nombre del producto en la tabla de Pedidos o en Reconteo.
 // Un solo listener delegado por lista (no se duplica en cada render).
 document.getElementById('ptbody').addEventListener('click',ev=>{
-  const info=ev.target.closest('.prod-info-btn');
-  if(info){
-    const tr=info.closest('tr[data-ref]');
-    const it=tr&&DB.items.find(x=>x.ref===tr.dataset.ref);
-    if(it)mostrarNombreCompleto(it.nombre);
-    return;
-  }
   const nom=ev.target.closest('.prod-name');
   if(!nom)return;
   const tr=nom.closest('tr[data-ref]');
   if(tr)fpAbrir(tr.dataset.ref);
-});
-function mostrarNombreCompleto(nombre){
-  document.getElementById('name-popup-text').textContent=nombre;
-  document.getElementById('name-popup').classList.remove('hidden');
-}
-document.getElementById('name-popup-close').onclick=()=>document.getElementById('name-popup').classList.add('hidden');
-document.getElementById('name-popup').addEventListener('click',ev=>{
-  if(ev.target.id==='name-popup')document.getElementById('name-popup').classList.add('hidden'); // toca fuera de la tarjeta = cierra
 });
 document.getElementById('rk-list').addEventListener('click',ev=>{
   const nom=ev.target.closest('.sm-info');
@@ -2837,6 +3052,8 @@ function cpLlenarSelect(preselectId){
   s.innerHTML='<option value="">Elige una categoría…</option>'+_cpCats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
   if(prev)s.value=prev;
   cpValidar();
+  const input=document.getElementById('cp-cat-input');
+  if(input){const chosen=_cpCats.find(c=>String(c.id)===String(s.value));input.value=chosen?chosen.name:'';}
 }
 function cpValidar(){
   const nombre=(document.getElementById('cp-nombre').value||'').trim();
@@ -2864,10 +3081,360 @@ document.getElementById('cp-cat-crear').onclick=async()=>{
   }catch(e){showToast('Error de conexión');}
   finally{btn.disabled=false;}
 };
+// ---- Combobox de categoría con búsqueda (Crear producto) ----
+// El <select> #cp-cat original queda oculto en el DOM como única fuente de verdad:
+// cpValidar(), cpLlenarSelect() y el flujo de "crear categoría nueva" siguen intactos.
+// Este bloque solo lee _cpCats, escribe sel.value y dispara 'change'. El desplegable se
+// monta en <body> (portal) mientras está abierto — igual que el buscador de proveedor —
+// para no quedar recortado por .mm-card{overflow:hidden} ni por el scroll de .mm-body.
+let _catComboHome=null;
+function catComboItems(){return _cpCats.slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),'es'));}
+function catComboPosition(){
+  const anchor=document.getElementById('cat-combo'),menu=document.getElementById('cat-combo-menu');
+  if(!anchor||!menu||menu.classList.contains('hidden'))return;
+  const r=anchor.getBoundingClientRect();
+  menu.style.left=r.left+'px';menu.style.top=(r.bottom+4)+'px';menu.style.width=r.width+'px';
+}
+function catComboMount(){
+  const menu=document.getElementById('cat-combo-menu');
+  if(!menu||_catComboHome)return;
+  _catComboHome={parent:menu.parentNode,next:menu.nextSibling};
+  document.body.appendChild(menu);
+  menu.style.position='fixed';
+  catComboPosition();
+}
+function catComboUnmount(){
+  const menu=document.getElementById('cat-combo-menu');
+  if(!menu||!_catComboHome)return;
+  menu.style.position='';menu.style.left='';menu.style.top='';menu.style.width='';
+  const{parent,next}=_catComboHome;
+  if(next&&next.parentNode===parent)parent.insertBefore(menu,next);else parent.appendChild(menu);
+  _catComboHome=null;
+}
+function catComboRender(query){
+  const menu=document.getElementById('cat-combo-menu');
+  if(!menu)return;
+  const q=normTxt(query||'');
+  const items=catComboItems().filter(c=>!q||normTxt(c.name).indexOf(q)>-1);
+  let html=items.length
+    ?items.map(c=>`<div class="cat-opt" role="option" data-id="${c.id}" data-name="${String(c.name).replace(/"/g,'&quot;')}">${c.name}</div>`).join('')
+    :'<div class="cat-opt-empty">No se encontraron categorías</div>';
+  html+=`<div class="cat-opt cat-opt-new" data-new="1">➕ Nueva categoría${query?` "${query.trim()}"`:''}</div>`;
+  menu.innerHTML=html;
+}
+function catComboOpen(){
+  const menu=document.getElementById('cat-combo-menu'),input=document.getElementById('cp-cat-input');
+  if(!menu||!input)return;
+  catComboRender(input.value);
+  menu.classList.remove('hidden');
+  input.setAttribute('aria-expanded','true');
+  catComboMount();
+}
+function catComboClose(){
+  const menu=document.getElementById('cat-combo-menu'),input=document.getElementById('cp-cat-input');
+  if(!menu)return;
+  menu.classList.add('hidden');
+  if(input)input.setAttribute('aria-expanded','false');
+  catComboUnmount();
+}
+function catComboChoose(id,name){
+  const sel=document.getElementById('cp-cat');
+  sel.value=id;
+  sel.dispatchEvent(new Event('change'));
+  document.getElementById('cp-cat-input').value=name;
+  catComboClose();
+}
+(function(){
+  const input=document.getElementById('cp-cat-input'),menu=document.getElementById('cat-combo-menu');
+  if(!input||!menu)return;
+  input.addEventListener('focus',catComboOpen);
+  input.addEventListener('click',()=>{if(menu.classList.contains('hidden'))catComboOpen();});
+  input.addEventListener('input',()=>{catComboRender(input.value);if(menu.classList.contains('hidden')){menu.classList.remove('hidden');catComboMount();}else catComboPosition();});
+  menu.addEventListener('click',ev=>{
+    const opt=ev.target.closest('.cat-opt');
+    if(!opt||opt.classList.contains('cat-opt-empty'))return;
+    if(opt.dataset.new){
+      catComboClose();
+      document.getElementById('cp-cat-nuevabox').classList.remove('hidden');
+      const nombreInp=document.getElementById('cp-cat-nuevanom');
+      nombreInp.value=input.value.trim();
+      nombreInp.focus();
+      return;
+    }
+    catComboChoose(opt.dataset.id,opt.dataset.name);
+  });
+  document.addEventListener('pointerdown',ev=>{
+    if(menu.classList.contains('hidden'))return;
+    if(input.contains(ev.target)||menu.contains(ev.target))return;
+    catComboClose();
+  });
+  window.addEventListener('resize',()=>{if(_catComboHome)catComboPosition();});
+  window.addEventListener('scroll',()=>{if(_catComboHome)catComboPosition();},true);
+})();
+// ---- Autocompletar producto nuevo por código de barras (APIs públicas y gratuitas) ----
+// Cadena de proveedores: se intenta el primero, si no responde o no tiene el producto se
+// prueba el siguiente. Para agregar o cambiar de API más adelante, solo hay que sumar o
+// quitar una función de este array — cada una recibe el código y debe devolver null (sin
+// datos) o {name, brand, presentation}. No se toca nada más del flujo de creación.
+const BARCODE_LOOKUP_PROVIDERS=[
+  async function openFoodFacts(code){
+    const r=await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json`);
+    if(!r.ok)return null;
+    const j=await r.json();
+    if(!j||j.status!==1||!j.product)return null;
+    const p=j.product;
+    const name=p.product_name||p.product_name_es||p.generic_name||'';
+    if(!name)return null;
+    return{name,brand:p.brands||'',presentation:p.quantity||''};
+  },
+  // Espacio para sumar otra API en el futuro, ej: UPCitemdb, Open GTIN, catálogo propio, etc.
+];
+async function lookupBarcodeInfo(code){
+  code=String(code||'').trim();
+  if(!code)return null;
+  for(const provider of BARCODE_LOOKUP_PROVIDERS){
+    try{const info=await provider(code);if(info&&info.name)return info;}catch(e){/* proveedor caído o sin red: se prueba el siguiente */}
+  }
+  return null;
+}
+async function cpAutocompletarPorCodigo(code){
+  code=String(code||'').trim();
+  if(!code)return;
+  const nombreInp=document.getElementById('cp-nombre');
+  if(!nombreInp||nombreInp.value.trim())return; // el usuario ya escribió un nombre: no lo pisamos
+  const info=await lookupBarcodeInfo(code);
+  if(!info)return; // sin datos: se sigue con el ingreso manual, sin afectar el flujo
+  if(nombreInp.value.trim())return; // pudo escribir mientras esperábamos la respuesta
+  if((document.getElementById('cp-barcode').value||'').trim()!==code)return; // el código cambió mientras esperábamos
+  let nombre=info.name.trim();
+  if(info.presentation&&nombre.toLowerCase().indexOf(String(info.presentation).toLowerCase())<0)nombre+=' '+info.presentation;
+  nombreInp.value=nombre.trim();
+  cpValidar();
+  showToast('✓ Producto encontrado'+(info.brand?': '+info.brand+' — '+info.name:''));
+}
+document.getElementById('cp-barcode').addEventListener('blur',()=>{cpAutocompletarPorCodigo(document.getElementById('cp-barcode').value);});
+// ---- Escanear factura: cálculo de precios desde foto (Claude, visión) ----
+// Fórmula obligatoria: Precio Venta = Costo / (1 - Margen). Redondeo a terminación .90
+// (ej: 1437→1490, 2468→2490, 3525→3590). Margen sugerido según categoría — el usuario
+// SIEMPRE puede corregir cada campo antes de guardar; nada se confía 100% a la IA.
+const FC_MARGEN_POR_CATEGORIA={bebidas:30,snacks:37,confites:42,abarrotes:37,premium:50,otro:30};
+function fcPsico(precio){
+  precio=Math.max(0,Math.round(precio||0));
+  if(!precio)return 0;
+  return Math.ceil((precio+1)/100)*100-10;
+}
+function fcVenta(costo,margenPct){
+  costo=Number(costo)||0;const m=Math.min(95,Math.max(0,Number(margenPct)||0))/100;
+  if(costo<=0||m<=0)return 0;
+  return costo/(1-m);
+}
+let _fcImagenB64=null,_fcMediaType='image/jpeg',_fcItems=[],_fcEditandoIdx=null;
+function fcReset(){
+  _fcImagenB64=null;_fcItems=[];_fcEditandoIdx=null;
+  document.getElementById('fc-input').value='';
+  document.getElementById('fc-input-galeria').value='';
+  document.getElementById('fc-preview-wrap').classList.add('hidden');
+  document.getElementById('fc-loading').classList.add('hidden');
+  document.getElementById('fc-error').classList.add('hidden');
+  document.getElementById('fc-resultados').classList.add('hidden');
+  document.getElementById('fc-paso-foto').classList.remove('hidden');
+}
+function fcCargarArchivo(ev){
+  const file=ev.target.files&&ev.target.files[0];
+  if(!file)return;
+  _fcMediaType=file.type||'image/jpeg';
+  const reader=new FileReader();
+  reader.onload=()=>{
+    _fcImagenB64=String(reader.result).split(',')[1]||'';
+    document.getElementById('fc-preview').src=reader.result;
+    document.getElementById('fc-preview-wrap').classList.remove('hidden');
+    document.getElementById('fc-error').classList.add('hidden');
+  };
+  reader.readAsDataURL(file);
+}
+document.getElementById('fc-input').addEventListener('change',fcCargarArchivo);
+document.getElementById('fc-input-galeria').addEventListener('change',fcCargarArchivo);
+document.getElementById('fc-procesar').onclick=async()=>{
+  if(!_fcImagenB64)return;
+  const err=document.getElementById('fc-error');err.classList.add('hidden');
+  document.getElementById('fc-preview-wrap').classList.add('hidden');
+  document.getElementById('fc-loading').classList.remove('hidden');
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'procesar_factura',payload:{imagen_base64:_fcImagenB64,media_type:_fcMediaType}})});
+    const j=await res.json();
+    if(!j||!j.ok)throw new Error((j&&j.error)||'No se pudo procesar la factura');
+    _fcItems=(j.items||[]).map((it,i)=>({id:'fc'+i,...it}));
+    if(!_fcItems.length){err.textContent='No se detectaron productos legibles en la foto. Prueba con más luz o más cerca.';err.classList.remove('hidden');document.getElementById('fc-preview-wrap').classList.remove('hidden');}
+    else fcRenderResultados();
+  }catch(e){
+    err.textContent='⚠️ '+e.message;err.classList.remove('hidden');
+    document.getElementById('fc-preview-wrap').classList.remove('hidden');
+  }finally{
+    document.getElementById('fc-loading').classList.add('hidden');
+  }
+};
+// ---- IVA inteligente ----
+// Si el costo extraído de la factura NO incluye IVA (o Claude no está seguro), se le suma
+// automáticamente el 19% para usar el costo BRUTO real como base del margen y precio de
+// venta — así el margen calculado nunca queda inflado por estar comparando venta (con IVA)
+// contra un costo neto (sin IVA).
+const FC_IVA=0.19;
+function fcCostoConIva(costoRaw,incluyeIva){
+  costoRaw=Number(costoRaw)||0;
+  if(costoRaw<=0)return 0;
+  return incluyeIva?costoRaw:costoRaw*(1+FC_IVA);
+}
+// ---- Excepción de empaque: Chocman/Chopman ----
+// CAMBIO: se elimina el parser genérico anterior que intentaba deducir un multiplicador de
+// CUALQUIER nombre de producto (ej. "1X24X85") y lo multiplicaba por la cantidad — esa
+// heurística resultó incorrecta para la mayoría de los productos (dividía por cientos de
+// "unidades" inexistentes y arrojaba costos absurdamente bajos). Ahora, por defecto, se usa
+// el precio unitario de la factura TAL CUAL. Solo Chocman/Chopman es una excepción
+// confirmada: la factura imprime el precio de la CAJA de 32 unidades, así que se divide por
+// 32 para obtener el costo real por unidad individual.
+const FC_DIVISOR_CHOCMAN=32;
+function fcEsChocman(nombre){
+  return /\bcho[cp]man\b/i.test(String(nombre||''));
+}
+function fcRenderResultados(){
+  document.getElementById('fc-paso-foto').classList.add('hidden');
+  const wrap=document.getElementById('fc-resultados');wrap.classList.remove('hidden');
+  const list=document.getElementById('fc-list');
+  list.innerHTML=_fcItems.map(it=>{
+    const esEdicion=it.margen!=null;
+    const margen=esEdicion?it.margen:(FC_MARGEN_POR_CATEGORIA[it.categoria_sugerida]||FC_MARGEN_POR_CATEGORIA.otro);
+    const costoBruto=esEdicion?it.costo_unitario:fcCostoConIva(it.costo_unitario,it.incluye_iva);
+    const esChocman=!esEdicion&&fcEsChocman(it.producto);
+    const costoFinal=esChocman?(costoBruto/FC_DIVISOR_CHOCMAN):costoBruto;
+    const venta=fcVenta(costoFinal,margen),psico=fcPsico(venta);
+    const meta=esEdicion?['Editando cálculo guardado — vuelve a guardar para actualizarlo']:[
+      it.incluye_iva?'costo ya incluía IVA':'+19% IVA aplicado',
+      esChocman?(peso(costoBruto)+' ÷ 32 u (caja Chocman) = '+peso(costoFinal)+'/u'):null,
+      'categoría sugerida: '+it.categoria_sugerida
+    ].filter(Boolean);
+    return `<div class="fc-row" data-id="${it.id}">
+      <input class="fc-row-name" value="${String(it.producto).replace(/"/g,'&quot;')}" data-f="producto">
+      <div class="fc-grid">
+        <div class="fc-field"><label>Costo unitario</label><input inputmode="numeric" value="${Math.round(costoFinal)}" data-f="costo"></div>
+        <div class="fc-field"><label>Margen %</label><input inputmode="numeric" value="${margen}" data-f="margen"></div>
+        <div class="fc-field fc-out"><label>Precio venta</label><input inputmode="numeric" value="${Math.round(venta)}" data-f="venta"></div>
+        <div class="fc-field fc-out fc-psico"><label>Precio psicológico</label><input inputmode="numeric" value="${psico}" data-f="psico"></div>
+      </div>
+      <div class="fc-row-meta">${meta.join(' · ')}</div>
+    </div>`;
+  }).join('');
+}
+document.getElementById('fc-list').addEventListener('input',ev=>{
+  const inp=ev.target;const field=inp.dataset.f;
+  if(!field||(field!=='costo'&&field!=='margen'))return;
+  const row=inp.closest('.fc-row');if(!row)return;
+  const costo=+row.querySelector('[data-f="costo"]').value||0;
+  const margen=+row.querySelector('[data-f="margen"]').value||0;
+  const venta=fcVenta(costo,margen);
+  row.querySelector('[data-f="venta"]').value=Math.round(venta);
+  row.querySelector('[data-f="psico"]').value=fcPsico(venta);
+});
+document.getElementById('fc-guardar').onclick=async()=>{
+  const rows=document.querySelectorAll('#fc-list .fc-row');
+  if(!rows.length){showToast('No hay productos para guardar');return;}
+  const items=Array.from(rows).map(row=>{
+    const g=f=>row.querySelector(`[data-f="${f}"]`).value;
+    return {producto:g('producto').trim(),costo_unitario:+g('costo')||0,margen:+g('margen')||0,precio_venta:+g('venta')||0,precio_psicologico:+g('psico')||0,categoria:row.querySelector('.fc-row-meta').textContent};
+  }).filter(it=>it.producto);
+  const editandoIdx=_fcEditandoIdx;
+  const facturaIdExistente=(editandoIdx!=null&&_fcHistorial[editandoIdx])?_fcHistorial[editandoIdx].facturaId:null;
+  const btn=document.getElementById('fc-guardar');btn.disabled=true;
+  try{
+    const payload=facturaIdExistente?{items,factura_id:facturaIdExistente}:{items};
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'guardar_calculo_precio',payload})});
+    const j=await res.json();
+    if(j&&j.ok){
+      if(facturaIdExistente&&_fcHistorial[editandoIdx]){
+        // Edición: se actualiza el registro EN SU MISMO LUGAR, nunca se agrega uno nuevo.
+        _fcHistorial[editandoIdx].items=items;
+        _fcHistorial[editandoIdx].fecha=new Date().toLocaleString('es-CL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+        fcRenderHistorial();
+        showToast('✓ Cálculo actualizado');
+      }else{
+        showToast('✓ Guardado: '+j.guardados+' producto(s)');
+        fcAgregarAlHistorial(j.factura_id,items);
+      }
+      fcReset();cerrarModal('fc-ov');
+    }
+    else showToast('Error: '+((j&&j.error)||'no se pudo guardar'));
+  }catch(e){showToast('Error de conexión');}
+  finally{btn.disabled=false;}
+};
+// ---- Historial de facturas calculadas (sesión actual) ----
+// Confirma visualmente que el guardado se registró. Vive solo en memoria del navegador
+// mientras la pestaña sigue abierta — no reemplaza la tabla D1 (esa es la fuente real),
+// es solo una bitácora rápida para tranquilidad del usuario en la misma sesión.
+let _fcHistorial=[];
+function fcAgregarAlHistorial(facturaId,items){
+  const fecha=new Date().toLocaleString('es-CL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+  _fcHistorial.unshift({facturaId,fecha,items});
+  document.getElementById('fc-hist-card').classList.remove('hidden');
+  fcRenderHistorial();
+  toggleAccordion(document.getElementById('fc-hist-head'),document.getElementById('fc-hist-body'),true);
+}
+function fcRenderHistorial(){
+  document.getElementById('fc-hist-sub').textContent=_fcHistorial.length+(_fcHistorial.length===1?' guardada en esta sesión':' guardadas en esta sesión');
+  document.getElementById('fc-hist-body').innerHTML=_fcHistorial.map((f,i)=>{
+    const costoTotal=f.items.reduce((s,it)=>s+(it.costo_unitario||0),0);
+    const margenProm=f.items.length?Math.round(f.items.reduce((s,it)=>s+(it.margen||0),0)/f.items.length):0;
+    return `<div class="fc-hist-item" data-idx="${i}">
+      <div class="fc-hist-item-head">
+        <div><b>${f.items.length} producto(s)</b><span class="fc-hist-item-meta">${f.fecha} · Costo total ${peso(costoTotal)} · Margen prom. ${margenProm}%</span></div>
+        <div class="fc-hist-actions">
+          <button class="fc-hist-act" data-act="editar" aria-label="Editar" title="Editar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+          <button class="fc-hist-act fc-hist-act-danger" data-act="eliminar" aria-label="Eliminar" title="Eliminar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg></button>
+          <svg class="accordion-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div class="fc-hist-item-body accordion-body collapsed">${f.items.map(it=>`<div class="fc-hist-line">
+          <div class="fc-hist-line-name">${it.producto}</div>
+          <div class="fc-hist-line-nums"><span>Costo <b>${peso(it.costo_unitario)}</b></span><span>Venta <b>${peso(it.precio_venta)}</b></span><span>Margen <b>${Math.round(it.margen)||0}%</b></span></div>
+        </div>`).join('')}</div>
+    </div>`;
+  }).join('');
+}
+function fcEditarDesdeHistorial(idx){
+  const f=_fcHistorial[idx];
+  if(!f)return;
+  cerrarModal('mas-ov');abrirModal('fc-ov');
+  _fcEditandoIdx=idx;
+  _fcItems=f.items.map((it,i)=>({id:'fce'+i,producto:it.producto,costo_unitario:it.costo_unitario,margen:it.margen,categoria_sugerida:'otro',cantidad:0,incluye_iva:true}));
+  fcRenderResultados();
+  showToast('Editando cálculo guardado — vuelve a "Guardar cálculos" para actualizarlo');
+}
+function fcEliminarDelHistorial(idx){
+  if(!confirm('¿Eliminar este cálculo del historial?'))return;
+  _fcHistorial.splice(idx,1);
+  fcRenderHistorial();
+  if(!_fcHistorial.length)document.getElementById('fc-hist-card').classList.add('hidden');
+}
+document.getElementById('fc-hist-head').onclick=()=>{toggleAccordion(document.getElementById('fc-hist-head'),document.getElementById('fc-hist-body'));};
+document.getElementById('fc-hist-body').addEventListener('click',ev=>{
+  const item=ev.target.closest('.fc-hist-item');
+  if(!item)return;
+  const idx=+item.dataset.idx;
+  const actBtn=ev.target.closest('[data-act]');
+  if(actBtn){
+    if(actBtn.dataset.act==='editar')fcEditarDesdeHistorial(idx);
+    else if(actBtn.dataset.act==='eliminar')fcEliminarDelHistorial(idx);
+    return;
+  }
+  const head=ev.target.closest('.fc-hist-item-head');
+  if(!head)return;
+  toggleAccordion(head,item.querySelector('.fc-hist-item-body'));
+});
+document.getElementById('fc-otra').onclick=fcReset;
+document.getElementById('fc-cerrar').onclick=()=>{cerrarModal('fc-ov');fcReset();};
+document.getElementById('mas-q-factura').onclick=()=>{cerrarModal('mas-ov');abrirModal('fc-ov');fcReset();};
 document.getElementById('cp-scan').onclick=()=>{
   const reopen=()=>{document.getElementById('cp-ov').classList.remove('hidden');_sincronizarNav();};
   document.getElementById('cp-ov').classList.add('hidden');
-  openScanner(code=>{reopen();document.getElementById('cp-barcode').value=code;},reopen);
+  openScanner(code=>{reopen();document.getElementById('cp-barcode').value=code;cpAutocompletarPorCodigo(code);},reopen);
 };
 document.getElementById('cp-guardar').onclick=async()=>{
   const btn=document.getElementById('cp-guardar');
@@ -4052,6 +4619,7 @@ function rcProductoNoEncontrado(code){
   cerrarModal('rc-ov');
   cpAbrir();
   document.getElementById('cp-barcode').value=code;
+  cpAutocompletarPorCodigo(code);
   if(_rcPendiente.costo)document.getElementById('cp-costo').value=_rcPendiente.costo;
   if(_rcPendiente.cantidad){document.getElementById('cp-stock').value=_rcPendiente.cantidad;document.getElementById('cp-track').checked=true;cpToggleStock();}
   if(_rcPendiente.fecha)document.getElementById('cp-fecha').value=_rcPendiente.fecha;
@@ -4373,6 +4941,22 @@ restore();retagAll();
 const _ui=restoreUI();
 render();renderProvDay();
 if(_ui)restoreScroll(_ui);
+// FIX bug de descuadre del carrito en tablet: _actualizarLayout() ya se había llamado más
+// arriba, pero en ese momento .sticky-hdr (buscador/filtros/leyenda) todavía estaba vacío
+// — se llena recién con render(), un poco más abajo. Eso dejaba --top-h/--hdr-h/--nav-h
+// calculados con el header "sin contenido real", así que el carrito fijo (tablet) arrancaba
+// con la posición equivocada. Antes esto se corregía por accidente cuando algún evento
+// (ej: el teclado del celular al enfocar el buscador) disparaba un 'resize'. Ahora se
+// remide de forma explícita, dos veces: apenas el navegador termine de pintar el frame con
+// los datos ya puestos (doble requestAnimationFrame, no basta con "después del script" —
+// el layout puede seguir sin aplicarse), y otra vez cuando terminen de cargar las fuentes
+// web (los webfonts pueden cambiar el alto del texto después de la primera medición).
+requestAnimationFrame(()=>requestAnimationFrame(()=>{
+  _actualizarLayout();
+  window.dispatchEvent(new Event('resize'));
+}));
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(_actualizarLayout);
+_actualizarVisibilidadFab();
 // guarda la posición de scroll mientras navegas, y al salir/cambiar de app
 let _scrollT=null;
 window.addEventListener('scroll',()=>{clearTimeout(_scrollT);_scrollT=setTimeout(persistUI,200);},{passive:true});
