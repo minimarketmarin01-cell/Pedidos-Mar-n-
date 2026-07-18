@@ -2297,7 +2297,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-18.1';
+const APP_VERSION='2026-07-18.2';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -2804,6 +2804,47 @@ async function fpAbrir(ref){
     document.getElementById('fp-content').classList.remove('hidden');
   }catch(e){document.getElementById('fp-loading').textContent='❌ Error de conexión al cargar la ficha';}
 }
+// Buscar/subir imagen desde la ficha de un producto YA existente en Loyverse — a diferencia
+// de Crear producto, acá el id de Loyverse ya existe, así que la imagen se sube apenas se
+// elige, sin esperar ningún paso de creación. Reusa las mismas acciones del Worker.
+async function fpBuscarImagen(p){
+  const btn=document.getElementById('fp-img-buscar');
+  const textoOriginal=btn.textContent;
+  btn.disabled=true;btn.textContent='Buscando…';
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'buscar_imagen_producto',payload:{nombre:p.nombre}})});
+    const j=await res.json();
+    const cont=document.getElementById('fp-img-candidatos');
+    if(j&&j.ok&&j.candidatos&&j.candidatos.length){
+      cont.innerHTML=j.candidatos.map(c=>`<img class="cp-img-cand" src="${c.url}" data-url="${c.url}" loading="lazy" onerror="this.style.display='none'">`).join('');
+      cont.classList.remove('hidden');
+      cont.onclick=async(ev)=>{
+        const img=ev.target.closest('.cp-img-cand');
+        if(!img)return;
+        cont.querySelectorAll('.cp-img-cand').forEach(x=>x.style.opacity=x===img?'.5':'1');
+        showToast('Subiendo imagen a Loyverse…');
+        try{
+          const r2=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'subir_imagen_producto',payload:{sku:p.sku,image_url:img.dataset.url}})});
+          const j2=await r2.json();
+          if(j2&&j2.ok){
+            showToast('🖼️ Imagen subida a Loyverse');
+            cont.classList.add('hidden');cont.innerHTML='';
+            const existente=document.getElementById('fp-img-actual');
+            if(existente)existente.src=j2.imagen_url; else fpAbrir(p.sku); // fuerza refresco simple si no había imagen previa
+          }else{
+            showToast('⚠️ '+((j2&&j2.error)||'No se pudo subir la imagen'));
+            cont.querySelectorAll('.cp-img-cand').forEach(x=>x.style.opacity='1');
+          }
+        }catch(e){showToast('⚠️ Error de conexión al subir la imagen');cont.querySelectorAll('.cp-img-cand').forEach(x=>x.style.opacity='1');}
+      };
+    }else if(j&&j.ok){
+      showToast('No se encontraron imágenes para ese nombre');
+    }else{
+      showToast('⚠️ '+((j&&j.error)||'Error al buscar la imagen'));
+    }
+  }catch(e){showToast('Error de conexión al buscar la imagen');}
+  finally{btn.disabled=false;btn.textContent=textoOriginal;}
+}
 function fpBadgeStock(p){
   if(!p.trackStock)return '<span class="fp-badge gris">Inventario desactivado</span>';
   if(p.stock==null||p.stock<=0)return '<span class="fp-badge rojo">Sin stock</span>';
@@ -2833,9 +2874,16 @@ function fpPintar(f){
     fpRow('Unidad',p.soldByWeight?'Kilo (venta por peso)':'Unidad')+
     fpRow('Seguir inventario',p.trackStock?'✅ Activado':'❌ Desactivado')+
     fpRow('Última modificación',p.ultimaModificacion||'Sin registros de cambios aún')+
+    '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">'+
+      '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px">Imagen</div>'+
+      (p.imagen?'<img id="fp-img-actual" src="'+p.imagen+'" style="width:64px;height:64px;object-fit:cover;border-radius:9px;border:1px solid var(--line);margin-bottom:9px;display:block">':'<div style="font-size:12.5px;color:var(--muted);margin-bottom:9px">Este producto no tiene imagen en Loyverse.</div>')+
+      '<button id="fp-img-buscar" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font-weight:700;font-size:13px;cursor:pointer">🔍 '+(p.imagen?'Buscar otra imagen':'Buscar imagen')+' con IA</button>'+
+      '<div id="fp-img-candidatos" class="hidden" style="display:flex;gap:8px;overflow-x:auto;margin-top:9px;padding-bottom:2px"></div>'+
+    '</div>'+
     '<button id="fp-eliminar-btn" style="width:100%;padding:10px;margin-top:14px;border-radius:10px;border:1.5px solid var(--rojo);background:#FCE9E7;color:var(--rojo);font-weight:700;font-size:13px;cursor:pointer">🗑️ Eliminar este producto de Loyverse</button>';
   document.getElementById('fp-editar-btn').onclick=()=>fpModoEdicion(f);
   document.getElementById('fp-eliminar-btn').onclick=()=>fpEliminarProducto(f);
+  document.getElementById('fp-img-buscar').onclick=()=>fpBuscarImagen(p);
 
   // --- Inventario ---
   const v=f.ventas;
@@ -3284,8 +3332,10 @@ document.getElementById('cp-img-buscar').onclick=async()=>{
     if(j&&j.ok&&j.candidatos&&j.candidatos.length){
       cont.innerHTML=j.candidatos.map(c=>`<img class="cp-img-cand" src="${c.url}" data-url="${c.url}" loading="lazy" onerror="this.style.display='none'">`).join('');
       cont.classList.remove('hidden');
-    }else{
+    }else if(j&&j.ok){
       showToast('No se encontraron imágenes para ese nombre');
+    }else{
+      showToast('⚠️ '+((j&&j.error)||'Error al buscar la imagen'));
     }
   }catch(e){showToast('Error de conexión al buscar la imagen');}
   finally{btn.disabled=false;btn.textContent=textoOriginal;}
