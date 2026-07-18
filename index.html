@@ -1454,7 +1454,11 @@ html.vista-filas thead th:nth-child(5){width:88px;padding-right:16px}
       </div>
       <div class="mm-field">
         <label>Imagen (opcional)</label>
-        <button type="button" class="loadbtn" id="cp-img-buscar" style="width:100%">🔍 Buscar imagen en la web</button>
+        <div style="display:flex;gap:8px">
+          <button type="button" class="loadbtn" id="cp-img-galeria-btn" style="flex:1">📎 Adjuntar de galería</button>
+          <button type="button" class="loadbtn" id="cp-img-buscar" style="flex:1">🔍 Buscar en la web</button>
+        </div>
+        <input type="file" accept="image/*" id="cp-img-galeria" style="display:none">
         <div id="cp-img-candidatos" class="hidden" style="display:flex;gap:8px;overflow-x:auto;margin-top:9px;padding-bottom:2px"></div>
         <div id="cp-img-elegida" class="hidden" style="margin-top:9px;display:flex;align-items:center;gap:10px;padding:8px 10px;border:1.5px solid var(--wa);border-radius:10px;background:#F1FBF5">
           <img id="cp-img-preview" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0">
@@ -2297,7 +2301,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-18.5';
+const APP_VERSION='2026-07-18.6';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -2895,13 +2899,36 @@ function fpPintar(f){
     '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">'+
       '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px">Imagen</div>'+
       (p.imagen?'<img id="fp-img-actual" src="'+p.imagen+'" style="width:64px;height:64px;object-fit:cover;border-radius:9px;border:1px solid var(--line);margin-bottom:9px;display:block">':'<div style="font-size:12.5px;color:var(--muted);margin-bottom:9px">Este producto no tiene imagen en Loyverse.</div>')+
-      '<button id="fp-img-buscar" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font-weight:700;font-size:13px;cursor:pointer">🔍 '+(p.imagen?'Buscar otra imagen':'Buscar imagen')+' en la web</button>'+
+      '<div style="display:flex;gap:8px">'+
+        '<button id="fp-img-galeria-btn" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font-weight:700;font-size:13px;cursor:pointer">📎 Galería</button>'+
+        '<button id="fp-img-buscar" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font-weight:700;font-size:13px;cursor:pointer">🔍 Buscar en la web</button>'+
+      '</div>'+
+      '<input type="file" accept="image/*" id="fp-img-galeria" style="display:none">'+
       '<div id="fp-img-candidatos" class="hidden" style="display:flex;gap:8px;overflow-x:auto;margin-top:9px;padding-bottom:2px"></div>'+
     '</div>'+
     '<button id="fp-eliminar-btn" style="width:100%;padding:10px;margin-top:14px;border-radius:10px;border:1.5px solid var(--rojo);background:#FCE9E7;color:var(--rojo);font-weight:700;font-size:13px;cursor:pointer">🗑️ Eliminar este producto de Loyverse</button>';
   document.getElementById('fp-editar-btn').onclick=()=>fpModoEdicion(f);
   document.getElementById('fp-eliminar-btn').onclick=()=>fpEliminarProducto(f);
   document.getElementById('fp-img-buscar').onclick=()=>fpBuscarImagen(p);
+  document.getElementById('fp-img-galeria-btn').onclick=()=>document.getElementById('fp-img-galeria').click();
+  document.getElementById('fp-img-galeria').addEventListener('change',async(ev)=>{
+    const file=ev.target.files&&ev.target.files[0];
+    if(!file)return;
+    ev.target.value='';
+    try{
+      const b64=await resizeImageToBase64(file);
+      showToast('Subiendo imagen a Loyverse…');
+      const r=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'subir_imagen_producto',payload:{sku:p.sku,image_base64:b64}})});
+      const j=await r.json();
+      if(j&&j.ok){
+        showToast('🖼️ Imagen subida a Loyverse');
+        const existente=document.getElementById('fp-img-actual');
+        if(existente)existente.src=j.imagen_url; else fpAbrir(p.sku);
+      }else{
+        showToast('⚠️ '+((j&&j.error)||'No se pudo subir la imagen'));
+      }
+    }catch(e){showToast('⚠️ No se pudo procesar esa imagen');}
+  });
 
   // --- Inventario ---
   const v=f.ventas;
@@ -3326,7 +3353,7 @@ function cpReset(){
   document.getElementById('cp-iva').checked=true;
   document.getElementById('cp-activo').checked=true;
   document.getElementById('cp-cat-nuevabox').classList.add('hidden');
-  _cpImagenUrl=null;
+  _cpImagenUrl=null;_cpImagenBase64=null;
   document.getElementById('cp-img-candidatos').classList.add('hidden');
   document.getElementById('cp-img-candidatos').innerHTML='';
   document.getElementById('cp-img-elegida').classList.add('hidden');
@@ -3337,6 +3364,30 @@ function cpReset(){
 // con búsqueda web. No bloquea la creación del producto — si no se elige imagen, se crea
 // igual, exactamente como funcionaba antes.
 let _cpImagenUrl=null;
+let _cpImagenBase64=null; // imagen elegida desde la galería (ya comprimida), alternativa a _cpImagenUrl
+// Redimensiona/comprime una foto local antes de subirla — funciona bien acá porque es un
+// archivo del propio celular (sin el bloqueo CORS que sí afecta a las imágenes de la web).
+function resizeImageToBase64(file,maxDim=1024,quality=0.82){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        let w=img.width,h=img.height;
+        if(w>h&&w>maxDim){h=Math.round(h*maxDim/w);w=maxDim;}
+        else if(h>=w&&h>maxDim){w=Math.round(w*maxDim/h);h=maxDim;}
+        const canvas=document.createElement('canvas');
+        canvas.width=w;canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL('image/jpeg',quality).split(',')[1]); // solo el base64, sin el prefijo data:...
+      };
+      img.onerror=()=>reject(new Error('No se pudo leer la imagen'));
+      img.src=e.target.result;
+    };
+    reader.onerror=()=>reject(new Error('No se pudo leer el archivo'));
+    reader.readAsDataURL(file);
+  });
+}
 document.getElementById('cp-img-buscar').onclick=async()=>{
   const nombre=(document.getElementById('cp-nombre').value||'').trim();
   if(!nombre){showToast('Escribe el nombre del producto primero');return;}
@@ -3362,12 +3413,25 @@ document.getElementById('cp-img-candidatos').addEventListener('click',ev=>{
   const img=ev.target.closest('.cp-img-cand');
   if(!img)return;
   document.querySelectorAll('.cp-img-cand').forEach(x=>x.classList.toggle('sel',x===img));
-  _cpImagenUrl=img.dataset.url;
+  _cpImagenUrl=img.dataset.url;_cpImagenBase64=null;
   document.getElementById('cp-img-preview').src=_cpImagenUrl;
   document.getElementById('cp-img-elegida').classList.remove('hidden');
 });
+document.getElementById('cp-img-galeria-btn').onclick=()=>document.getElementById('cp-img-galeria').click();
+document.getElementById('cp-img-galeria').addEventListener('change',async(ev)=>{
+  const file=ev.target.files&&ev.target.files[0];
+  if(!file)return;
+  try{
+    const b64=await resizeImageToBase64(file);
+    _cpImagenBase64=b64;_cpImagenUrl=null;
+    document.getElementById('cp-img-preview').src='data:image/jpeg;base64,'+b64;
+    document.getElementById('cp-img-elegida').classList.remove('hidden');
+    document.getElementById('cp-img-candidatos').classList.add('hidden');
+  }catch(e){showToast('No se pudo procesar esa imagen');}
+  ev.target.value='';
+});
 document.getElementById('cp-img-quitar').onclick=()=>{
-  _cpImagenUrl=null;
+  _cpImagenUrl=null;_cpImagenBase64=null;
   document.getElementById('cp-img-elegida').classList.add('hidden');
   document.querySelectorAll('.cp-img-cand').forEach(x=>x.classList.remove('sel'));
 };
@@ -4484,8 +4548,9 @@ document.getElementById('cp-guardar').onclick=async()=>{
       else if(j.producto.enEstaTienda===false)m+=' ⚠️ no asignado a tu tienda';
       else m+=' ✓ verificado en Loyverse';
       showToast(m);
-      if(_cpImagenUrl){
-        fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'subir_imagen_producto',payload:{sku:j.producto.ref,image_url:_cpImagenUrl}})})
+      if(_cpImagenUrl||_cpImagenBase64){
+        const payloadImg=_cpImagenBase64?{sku:j.producto.ref,image_base64:_cpImagenBase64}:{sku:j.producto.ref,image_url:_cpImagenUrl};
+        fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'subir_imagen_producto',payload:payloadImg})})
           .then(r=>r.json()).then(ji=>{
             if(ji&&ji.ok)showToast('🖼️ Imagen subida a Loyverse');
             else showToast('⚠️ El producto se creó, pero la imagen no se pudo subir: '+((ji&&ji.error)||'error desconocido'));
