@@ -503,7 +503,7 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .card-cell{padding:13px 10px !important;white-space:normal !important;text-align:left !important;border-bottom:1px solid var(--line2) !important;box-sizing:border-box;overflow:hidden}
 .card-row{display:flex;flex-wrap:nowrap;align-items:flex-start;gap:10px;min-width:0;width:100%;box-sizing:border-box}
 /* ---- Vista de fila (pantallas grandes, ej. monitor táctil BlissOS) ---- */
-html.vista-filas .card-cell{padding:7px 16px!important}
+html.vista-filas .card-cell{padding:7px 12px!important}
 /* La tabla debe terminar donde empieza el carrito fijo. #ptable usa table-layout:auto, que
    ensancha la tabla hasta el max-content de su contenido (los nombres largos de producto),
    ignorando el ancho que le reserva la grilla de dos columnas — por eso las últimas columnas
@@ -519,7 +519,7 @@ html.carrito-fijo.vista-filas #ptable{
   width:100%
   max-width:100%
 }
-html.vista-filas .fila-row{display:grid;grid-template-columns:28px minmax(0,1fr) 60px 52px 56px 120px;align-items:center;column-gap:6px;width:100%;box-sizing:border-box;min-width:0;overflow:hidden}
+html.vista-filas .fila-row{display:grid;grid-template-columns:28px minmax(140,1fr) auto auto auto auto;align-items:center;column-gap:8px;width:100%;box-sizing:border-box;min-width:0;overflow:hidden}
 html.vista-filas .fila-thumb{width:28px;height:28px;overflow:hidden;border-radius:8px;box-sizing:border-box}
 html.vista-filas .fila-thumb .card-thumb,html.vista-filas .fila-thumb .card-thumb-empty{width:28px;height:28px;object-fit:cover;display:block}
 html.vista-filas .fila-nombre-col{min-width:0;max-width: 240px; overflow:hidden;display:flex;flex-direction:column;gap:2px}
