@@ -515,8 +515,8 @@ html.vista-filas #ptable{table-layout:fixed;width:100%;min-width:0;max-width:100
    BlissOS esa cadena no la estaba respetando y la tabla se metía debajo del carrito.
    100vw - ancho del carrito - margen de padding = ancho real disponible. */
 html.carrito-fijo.vista-filas #ptable{
-  width:calc(100vw - var(--cart-w) - 24px);
-  max-width:calc(100vw - var(--cart-w) - 24px);
+  width:calc(100vw - var(--cart-w) - 12px);
+  max-width:calc(100vw - var(--cart-w) - 12px);
 }
 html.vista-filas .fila-row{display:grid;grid-template-columns:28px minmax(0,1fr) 52px 44px 50px 88px;align-items:center;column-gap:6px;width:100%;box-sizing:border-box;min-width:0;overflow:hidden}
 html.vista-filas .fila-thumb{width:28px;height:28px;overflow:hidden;border-radius:8px;box-sizing:border-box}
@@ -535,8 +535,12 @@ html.vista-filas .fila-pedir{display:flex;justify-content:flex-end}
    display:table-row, ese cálculo se corrompe y termina recortando las últimas columnas del
    tbody (Stock/COB/Pedir) en algunos motores de renderizado. Solo ajustes cosméticos que no
    tocan "display". */
-html.vista-filas thead th{text-align:right;white-space:nowrap;font-size:11px}
+html.vista-filas thead th{text-align:right;white-space:nowrap;font-size:11px;box-sizing:border-box}
 html.vista-filas thead th:first-child{text-align:left}
+html.vista-filas thead th:nth-child(2){width:52px}
+html.vista-filas thead th:nth-child(3){width:44px}
+html.vista-filas thead th:nth-child(4){width:50px}
+html.vista-filas thead th:nth-child(5){width:88px;padding-right:16px}
 .card-thumb-wrap{flex:0 0 44px;width:44px;height:44px;box-sizing:border-box}
 .card-thumb{width:44px;height:44px;border-radius:10px;object-fit:cover;background:var(--gris-bg,#F3F1EA);display:block}
 /* Producto sin foto: ícono neutro y sutil, no un punto de color llamativo —
@@ -2280,7 +2284,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-17.25';
+const APP_VERSION='2026-07-17.27';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -5275,8 +5279,8 @@ function inReset(){
   document.querySelectorAll('#in-resp button').forEach(b=>b.classList.remove('sel'));
   inRenderCart();
 }
-function openInsumos(){inReset();document.getElementById('in-ov').classList.remove('hidden');}
-function closeInsumos(){document.getElementById('in-ov').classList.add('hidden');}
+function openInsumos(){inReset();abrirModal('in-ov');}
+function closeInsumos(){cerrarModal('in-ov');}
 
 document.getElementById('btn-insumos').onclick=openInsumos;
 document.getElementById('in-cancelar').onclick=()=>{inLimpiarBorrador();closeInsumos();};
