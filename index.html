@@ -502,19 +502,18 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 #ptable{min-width:100%;width:100%;max-width:100%;table-layout:auto}
 .card-cell{padding:13px 10px !important;white-space:normal !important;text-align:left !important;border-bottom:1px solid var(--line2) !important;box-sizing:border-box;overflow:hidden}
 .card-row{display:flex;flex-wrap:nowrap;align-items:flex-start;gap:10px;min-width:0;width:100%;box-sizing:border-box}
-/* Headers Venta/Costo/Margen solo existen para la vista de fila (planilla) — en tarjeta
-   (celular/tablet chica) no hay columnas reales que les correspondan, así que quedan
-   ocultos por defecto y solo se muestran cuando vista-filas está activa. */
+/* Headers Venta/Costo/Margen: nunca son columnas visibles propias (van dentro de la
+   celda de Producto, igual que en tarjeta) — quedan solo como <th> ocultos para no
+   romper el conteo de columnas de la tabla (colspan) en ningún ancho. */
 th.vf-only{display:none}
-html.vista-filas th.vf-only{display:table-cell}
-/* ---- Vista de fila (pantallas grandes, ej. monitor táctil BlissOS) ---- */
+/* ---- Vista de fila (tablet ≥1000px y POS táctil BlissOS) ---- */
 html.vista-filas .card-cell{padding:4px 8px!important}
 /* La tabla debe terminar donde empieza el carrito fijo. #ptable usa table-layout:auto, que
    ensancha la tabla hasta el max-content de su contenido (los nombres largos de producto),
    ignorando el ancho que le reserva la grilla de dos columnas — por eso las últimas columnas
    (COB/PEDIR) quedaban ocultas debajo del carrito. Con table-layout:fixed la tabla toma
    exactamente el ancho de su contenedor y la grilla minmax() de cada fila se compacta sola
-   para caber. Scoped a vista-filas: la vista de tarjeta (celular/tablet) no se toca. */
+   para caber. Scoped a vista-filas: la vista de tarjeta (celular) no se toca. */
 html.vista-filas #ptable{table-layout:fixed;width:100%;min-width:0;max-width:100%}
 /* Con el carrito fijo al costado, el ancho se calcula DIRECTO desde el viewport en vez de
    depender de que la cadena de contenedores propague la restricción — en el Chromium de
@@ -524,38 +523,51 @@ html.carrito-fijo.vista-filas #ptable{
   width:calc(100vw - var(--cart-w) - 12px);
   max-width:calc(100vw - var(--cart-w) - 12px);
 }
-/* Grid denso: cada columna tiene el ancho mínimo que necesita su contenido (Venta/Costo/
-   Margen/Rot/Stk/Cob son valores cortos de ancho fijo), y el nombre del producto se lleva
-   todo el ancho restante (minmax(0,1fr)) sin invadir a las demás columnas. */
-html.vista-filas .fila-row{display:grid;grid-template-columns:22px minmax(0,1fr) 58px 58px 42px 46px 40px 42px auto;align-items:center;column-gap:6px;width:100%;box-sizing:border-box;min-width:0;overflow:hidden}
-html.vista-filas .fila-thumb{width:22px;height:22px;overflow:hidden;border-radius:6px;box-sizing:border-box}
-html.vista-filas .fila-thumb .card-thumb,html.vista-filas .fila-thumb .card-thumb-empty{width:22px;height:22px;object-fit:cover;display:block}
-html.vista-filas .fila-nombre-col{min-width:0;overflow:hidden;display:flex;flex-direction:column;justify-content:center}
-html.vista-filas .fila-nombre{font-weight:800;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);display:block;line-height:1.2}
-html.vista-filas .fila-prov{font-size:8.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-html.vista-filas .fila-venta,html.vista-filas .fila-costo,html.vista-filas .fila-margen{min-width:0;font-family:'JetBrains Mono';font-weight:700;font-size:12px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
+/* Solo 5 columnas visibles: Producto (nombre + V/C/M en una línea debajo, dentro de la
+   misma celda) | Rot | Stk | Cob | Pedir. Los anchos fijos (46/40/42/78) son EXACTAMENTE
+   los mismos que se usan más abajo en thead th:nth-child, para que encabezado y valores
+   queden perfectamente alineados en cualquier ancho ≥1000px. */
+html.vista-filas .fila-row{display:grid;grid-template-columns:20px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 46px 40px 42px 78px;grid-template-rows:auto auto;align-items:center;column-gap:6px;row-gap:0;width:100%;box-sizing:border-box;min-width:0;overflow:hidden}
+html.vista-filas .fila-thumb{grid-column:1;grid-row:1/3;width:20px;height:20px;overflow:hidden;border-radius:5px;box-sizing:border-box}
+html.vista-filas .fila-thumb .card-thumb,html.vista-filas .fila-thumb .card-thumb-empty{width:20px;height:20px;object-fit:cover;display:block}
+html.vista-filas .fila-nombre-col{grid-column:2/5;grid-row:1;min-width:0;overflow:hidden;display:block}
+html.vista-filas .fila-nombre{font-weight:800;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);display:block;line-height:1.25}
+html.vista-filas .fila-prov{display:none}
+/* Venta/Costo/Margen: misma celda de producto, fila de abajo, en una sola línea — igual
+   que la tarjeta (priceLine), solo adaptado al maquetado de fila. */
+html.vista-filas .fila-venta{grid-column:2;grid-row:2}
+html.vista-filas .fila-costo{grid-column:3;grid-row:2}
+html.vista-filas .fila-margen{grid-column:4;grid-row:2}
+html.vista-filas .fila-venta,html.vista-filas .fila-costo,html.vista-filas .fila-margen{min-width:0;font-family:'JetBrains Mono';font-weight:700;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
+html.vista-filas .fila-costo::before{content:'C ';opacity:.7}
+html.vista-filas .fila-margen::before{content:'M ';opacity:.7}
 html.vista-filas .fila-margen.mg-hi{color:var(--verde)}
 html.vista-filas .fila-margen.mg-lo{color:var(--rojo)}
+/* Rot/Stk/Cob/Pedir: columnas propias por posición real (todas son <div>, así que
+   nth-of-type cuenta su orden sin depender de que compartan clase), centradas contra
+   las dos filas del nombre+V/C/M. */
+html.vista-filas .fila-row>div:nth-of-type(6){grid-column:5;grid-row:1/3}
+html.vista-filas .fila-row>div:nth-of-type(7){grid-column:6;grid-row:1/3}
+html.vista-filas .fila-row>div:nth-of-type(8){grid-column:7;grid-row:1/3}
+html.vista-filas .fila-pedir{grid-column:8;grid-row:1/3}
 html.vista-filas .fila-col{min-width:0;display:flex;flex-direction:column;align-items:flex-end;gap:0;font-family:'JetBrains Mono';font-weight:700;font-size:12px;color:var(--ink);white-space:nowrap;overflow:hidden}
 html.vista-filas .fila-lbl{font-size:7.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.03em;font-family:'Archivo'}
 html.vista-filas .fila-pedir{display:flex;justify-content:flex-end;align-items:center}
 /* Selector de cantidad compacto: solo el ancho que necesita, sin la etiqueta larga que
    se usa en la tarjeta de celular (ahí sí hay espacio de sobra para explicarla). */
-html.vista-filas .qcell{flex-direction:row;align-items:center;gap:4px}
-html.vista-filas .qbtn{width:19px;height:26px;font-size:14px}
-html.vista-filas .qty-in{width:22px;padding:4px 1px;font-size:12.5px}
+html.vista-filas .qcell{flex-direction:row;align-items:center;gap:3px}
+html.vista-filas .qbtn{width:18px;height:25px;font-size:13px}
+html.vista-filas .qty-in{width:20px;padding:3px 1px;font-size:12px}
 html.vista-filas .qword{display:none}
 /* Encabezado: NO se fuerza display:grid acá — #ptable usa table-layout:auto, que calcula
    el ancho de columnas mirando las celdas del thead. Si la fila del thead deja de ser
    display:table-row, ese cálculo se corrompe y termina recortando las últimas columnas del
    tbody (Stock/COB/Pedir) en algunos motores de renderizado. Solo ajustes cosméticos que no
-   tocan "display". Los anchos de cada <th> reflejan los mismos valores usados en el grid de
-   .fila-row de arriba, para que encabezado y valores queden alineados. */
+   tocan "display". Venta/Costo/Margen (nth-child 2/3/4) quedan ocultos (th.vf-only) — el
+   resto de anchos son IDÉNTICOS a los del grid de .fila-row de arriba para que encabezado
+   y valores queden perfectamente alineados. */
 html.vista-filas thead th{text-align:right;white-space:nowrap;font-size:10.5px;box-sizing:border-box;padding:6px 4px}
 html.vista-filas thead th:first-child{text-align:left}
-html.vista-filas thead th:nth-child(2){width:58px}
-html.vista-filas thead th:nth-child(3){width:58px}
-html.vista-filas thead th:nth-child(4){width:42px}
 html.vista-filas thead th:nth-child(5){width:46px}
 html.vista-filas thead th:nth-child(6){width:40px}
 html.vista-filas thead th:nth-child(7){width:42px}
@@ -739,6 +751,17 @@ html.vista-filas thead th:nth-child(8){width:78px;padding-right:12px}
 .qword.gold{color:var(--gold)}
 .qpacks{font-size:9.5px;color:var(--gold);font-weight:700;font-family:'Archivo';white-space:normal;text-align:right;max-width:78px}
 .row-urgent td{box-shadow:inset 3px 0 0 var(--rojo)}
+/* Modo teléfono (<1000px, sin vista-filas): identificación reforzada de "urgente"/"pedir"
+   — borde más grueso + fondo tenue + punto de color antes del nombre + badge de Cobertura
+   resaltado. Solo celular: en vista-filas ya existe su propio indicador (modo-bliss). */
+html:not(.vista-filas) tr.row-urgent td{box-shadow:inset 4px 0 0 var(--rojo);background:#FCEBEA}
+html:not(.vista-filas) tr.row-pedir td{box-shadow:inset 4px 0 0 var(--ambar);background:#FFF6E8}
+html:not(.vista-filas) tr.row-urgent .prod-name::before{content:'● ';color:var(--rojo)}
+html:not(.vista-filas) tr.row-pedir .prod-name::before{content:'● ';color:var(--ambar)}
+html:not(.vista-filas) tr.row-urgent .card-stats .cstat:last-child,
+html:not(.vista-filas) tr.row-pedir .card-stats .cstat:last-child{font-weight:800;padding:1px 6px;border-radius:5px}
+html:not(.vista-filas) tr.row-urgent .card-stats .cstat:last-child{background:#FBD8D3}
+html:not(.vista-filas) tr.row-pedir .card-stats .cstat:last-child{background:#FCE8C2}
 .rcol{display:flex;flex-direction:column;gap:13px;position:sticky;top:16px}
 @media(max-width:1080px){.rcol{position:static}}
 .scalecard,.order{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
@@ -875,54 +898,10 @@ html.vista-filas thead th:nth-child(8){width:78px;padding-right:12px}
 .modo-switch{display:flex;gap:2px;background:var(--line2,#eee);border-radius:8px;padding:2px;margin-right:4px}
 .modo-switch button{border:none;background:transparent;border-radius:6px;width:28px;height:28px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.55}
 .modo-switch button.active{background:#fff;opacity:1;box-shadow:0 1px 2px rgba(0,0,0,.15)}
-/* ==== Modo BlissOS (3:4 táctil): variante densa del grid de vista-filas donde
-   Costo/Precio/Margen NO son columnas propias — van en una sola línea debajo del
-   nombre, dentro de la misma celda de producto. Reutiliza el mismo grid base de
-   vista-filas (.fila-row) y las mismas clases/nodos que ya genera el JS existente
-   (.fila-venta/.fila-costo/.fila-margen/.fila-col/.fila-pedir); solo cambia dónde
-   los ubica el grid. No se tocó el modo Tablet (vista-filas por defecto, intacto). */
-html.modo-bliss th.vf-only{display:none !important}
-html.modo-bliss .fila-row{
-  display:grid;
-  grid-template-columns:20px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 44px 38px 40px auto;
-  grid-template-rows:auto auto;
-  column-gap:4px;row-gap:0;align-items:center;
-  width:100%;box-sizing:border-box;min-width:0;overflow:hidden;
-  border-left:4px solid transparent;padding-left:4px;
-}
-html.modo-bliss .fila-thumb{grid-column:1;grid-row:1/3;width:20px;height:20px;border-radius:5px}
-html.modo-bliss .fila-thumb .card-thumb,html.modo-bliss .fila-thumb .card-thumb-empty{width:20px;height:20px}
-html.modo-bliss .fila-nombre-col{grid-column:2/5;grid-row:1;min-width:0;overflow:hidden;display:block}
-html.modo-bliss .fila-nombre{font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;line-height:1.25}
-html.modo-bliss .fila-prov{display:none}
-html.modo-bliss .fila-venta{grid-column:2;grid-row:2}
-html.modo-bliss .fila-costo{grid-column:3;grid-row:2}
-html.modo-bliss .fila-margen{grid-column:4;grid-row:2}
-html.modo-bliss .fila-venta,html.modo-bliss .fila-costo,html.modo-bliss .fila-margen{
-  font-family:'JetBrains Mono';font-size:10px;font-weight:700;color:var(--muted);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left;
-}
-html.modo-bliss .fila-costo::before{content:'C ';opacity:.7}
-html.modo-bliss .fila-margen::before{content:'M ';opacity:.7}
-html.modo-bliss .fila-margen.mg-hi{color:var(--verde)}
-html.modo-bliss .fila-margen.mg-lo{color:var(--rojo)}
-/* Rot/Stock/Cobertura/Pedir: columnas propias, distribuidas uniformemente, centradas
-   verticalmente contra las dos filas del nombre+costos. Se ubican por posición (todas
-   son <div>, así que nth-of-type cuenta su orden real sin depender de coincidir clases). */
-html.modo-bliss .fila-row>div:nth-of-type(6){grid-column:5;grid-row:1/3}
-html.modo-bliss .fila-row>div:nth-of-type(7){grid-column:6;grid-row:1/3}
-html.modo-bliss .fila-row>div:nth-of-type(8){grid-column:7;grid-row:1/3}
-html.modo-bliss .fila-pedir{grid-column:8;grid-row:1/3}
-html.modo-bliss .fila-col{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:0;font-size:11.5px}
-html.modo-bliss .fila-lbl{font-size:7px}
-/* Selector de cantidad al mínimo ancho posible */
-html.modo-bliss .qcell{flex-direction:row;align-items:center;gap:3px}
-html.modo-bliss .qbtn{width:17px;height:24px;font-size:13px}
-html.modo-bliss .qty-in{width:20px;padding:3px 1px;font-size:12px}
-html.modo-bliss .qword{display:none}
-/* Indicadores de prioridad — alta (urgente, clase ya existente en el <tr>) y media
-   (hay cantidad sugerida en el carrito, .qstep.has ya existe): borde + punto de color
-   a la izquierda del nombre. Normal = sin marca, para no perder densidad visual. */
+/* ==== Modo BlissOS (3:4 táctil): el grid denso de 5 columnas ya es el layout base de
+   html.vista-filas (arriba) — no hace falta redefinirlo acá. Lo único propio de BlissOS
+   es el indicador de prioridad (borde + punto de color) en el nombre del producto. */
+html.modo-bliss .fila-row{border-left:4px solid transparent;padding-left:4px}
 html.modo-bliss tr.row-urgent .fila-row{border-left-color:var(--rojo);background:#FCEBEA}
 html.modo-bliss tr.row-urgent .fila-nombre::before{content:'● ';color:var(--rojo)}
 html.modo-bliss tr:has(.qstep.has):not(.row-urgent) .fila-row{border-left-color:var(--ambar);background:#FFF6E8}
@@ -2202,7 +2181,7 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
       `</div>`+
     `</td></tr>`;
   }
-  return `<tr data-ref="${it.ref}" class="${a.status==='urgente'?'row-urgent':''}" title="${tooltip}"><td class="card-cell" colspan="5">`+
+  return `<tr data-ref="${it.ref}" class="${a.status==='urgente'?'row-urgent':a.status==='pedir'?'row-pedir':''}" title="${tooltip}"><td class="card-cell" colspan="5">`+
     `<div class="card-row">`+
       `<div class="card-thumb-wrap">${thumb}</div>`+
       `<div class="card-main">`+
@@ -2393,7 +2372,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-18.12';
+const APP_VERSION='2026-07-18.13';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
