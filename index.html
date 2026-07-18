@@ -1456,10 +1456,9 @@ html.vista-filas thead th:nth-child(5){width:88px;padding-right:16px}
         <label>Imagen (opcional)</label>
         <div style="display:flex;gap:8px">
           <button type="button" class="loadbtn" id="cp-img-galeria-btn" style="flex:1">📎 Adjuntar de galería</button>
-          <button type="button" class="loadbtn" id="cp-img-buscar" style="flex:1">🔍 Buscar en la web</button>
         </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Si el código de barras tiene imagen en el catálogo (OpenFoodFacts/UPCitemdb), se precarga sola abajo.</div>
         <input type="file" accept="image/*" id="cp-img-galeria" style="display:none">
-        <div id="cp-img-candidatos" class="hidden" style="display:flex;gap:8px;overflow-x:auto;margin-top:9px;padding-bottom:2px"></div>
         <div id="cp-img-elegida" class="hidden" style="margin-top:9px;display:flex;align-items:center;gap:10px;padding:8px 10px;border:1.5px solid var(--wa);border-radius:10px;background:#F1FBF5">
           <img id="cp-img-preview" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0">
           <span style="font-size:12px;color:var(--wa-d);font-weight:700;flex:1">✓ Imagen lista — se sube al crear el producto</span>
@@ -2301,7 +2300,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-18.7';
+const APP_VERSION='2026-07-18.8';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -2789,7 +2788,9 @@ document.querySelectorAll('#fp-tabs .fp-tab').forEach(btn=>{
   };
 });
 let _fpActual=null;
+let _fpImagenPreviewUrl=null; // imagen encontrada en el catálogo (código de barras), pendiente de confirmar o cancelar
 async function fpAbrir(ref){
+  _fpImagenPreviewUrl=null;
   const it=DB.items.find(x=>x.ref===ref);
   document.getElementById('fp-titulo').textContent='📇 '+(it?it.nombre:ref);
   document.getElementById('fp-content').classList.add('hidden');
@@ -2808,64 +2809,47 @@ async function fpAbrir(ref){
     document.getElementById('fp-content').classList.remove('hidden');
   }catch(e){document.getElementById('fp-loading').textContent='❌ Error de conexión al cargar la ficha';}
 }
-// Buscar/subir imagen desde la ficha de un producto YA existente en Loyverse — a diferencia
-// de Crear producto, acá el id de Loyverse ya existe, así que la imagen se sube apenas se
-// elige, sin esperar ningún paso de creación. Reusa las mismas acciones del Worker.
+// Buscar imagen desde la ficha de un producto YA existente en Loyverse, usando SOLO el
+// catálogo gratuito por código de barras (OpenFoodFacts + UPCitemdb) — sin búsqueda web.
+// A diferencia de antes, NO sube directo a Loyverse: deja la imagen en previsualización
+// (fp-img-preview-box) y espera que el usuario confirme (fpConfirmarImagen) o cancele
+// (fpCancelarImagenPreview).
 async function fpBuscarImagen(p){
   const btn=document.getElementById('fp-img-buscar');
   const textoOriginal=btn.textContent;
+  if(!p.barcode){showToast('Este producto no tiene código de barras registrado');return;}
   btn.disabled=true;btn.textContent='Buscando…';
   try{
-    // Primero, gratis: si hay código de barras, prueba la cadena de bases de datos (OpenFoodFacts
-    // + UPCitemdb) antes de gastar créditos de Searlo.
-    if(p.barcode){
-      const urlBarcode=await lookupBarcodeImage(p.barcode).catch(()=>null);
-      if(urlBarcode){
-        showToast('Subiendo imagen a Loyverse…');
-        const r1=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'subir_imagen_producto',payload:{sku:p.sku,image_url:urlBarcode}})});
-        const j1=await r1.json();
-        if(j1&&j1.ok){
-          showToast('🖼️ Imagen encontrada por código de barras y subida a Loyverse');
-          const existente=document.getElementById('fp-img-actual');
-          if(existente)existente.src=j1.imagen_url; else fpAbrir(p.sku);
-          btn.disabled=false;btn.textContent=textoOriginal;
-          return;
-        }
-        // si falló la subida, sigue igual a la búsqueda en la web como respaldo
-      }
-    }
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'buscar_imagen_producto',payload:{nombre:p.nombre}})});
-    const j=await res.json();
-    const cont=document.getElementById('fp-img-candidatos');
-    if(j&&j.ok&&j.candidatos&&j.candidatos.length){
-      cont.innerHTML=j.candidatos.map(c=>`<img class="cp-img-cand" src="${c.url}" data-url="${c.url}" loading="lazy" onerror="this.style.display='none'">`).join('');
-      cont.classList.remove('hidden');
-      cont.onclick=async(ev)=>{
-        const img=ev.target.closest('.cp-img-cand');
-        if(!img)return;
-        cont.querySelectorAll('.cp-img-cand').forEach(x=>x.style.opacity=x===img?'.5':'1');
-        showToast('Subiendo imagen a Loyverse…');
-        try{
-          const r2=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'subir_imagen_producto',payload:{sku:p.sku,image_url:img.dataset.url}})});
-          const j2=await r2.json();
-          if(j2&&j2.ok){
-            showToast('🖼️ Imagen subida a Loyverse');
-            cont.classList.add('hidden');cont.innerHTML='';
-            const existente=document.getElementById('fp-img-actual');
-            if(existente)existente.src=j2.imagen_url; else fpAbrir(p.sku); // fuerza refresco simple si no había imagen previa
-          }else{
-            showToast('⚠️ '+((j2&&j2.error)||'No se pudo subir la imagen'));
-            cont.querySelectorAll('.cp-img-cand').forEach(x=>x.style.opacity='1');
-          }
-        }catch(e){showToast('⚠️ Error de conexión al subir la imagen');cont.querySelectorAll('.cp-img-cand').forEach(x=>x.style.opacity='1');}
-      };
-    }else if(j&&j.ok){
-      showToast('No se encontraron imágenes para ese nombre');
-    }else{
-      showToast('⚠️ '+((j&&j.error)||'Error al buscar la imagen'));
-    }
+    const urlBarcode=await lookupBarcodeImage(p.barcode).catch(()=>null);
+    if(!urlBarcode){showToast('No se encontró imagen en el catálogo para este código de barras');return;}
+    _fpImagenPreviewUrl=urlBarcode;
+    document.getElementById('fp-img-preview-img').src=urlBarcode;
+    document.getElementById('fp-img-preview-box').classList.remove('hidden');
   }catch(e){showToast('Error de conexión al buscar la imagen');}
   finally{btn.disabled=false;btn.textContent=textoOriginal;}
+}
+// Confirma la imagen previsualizada y recién ahí la sube a Loyverse.
+async function fpConfirmarImagen(p){
+  if(!_fpImagenPreviewUrl)return;
+  showToast('Subiendo imagen a Loyverse…');
+  try{
+    const r=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'subir_imagen_producto',payload:{sku:p.sku,image_url:_fpImagenPreviewUrl}})});
+    const j=await r.json();
+    if(j&&j.ok){
+      showToast('🖼️ Imagen subida a Loyverse');
+      _fpImagenPreviewUrl=null;
+      document.getElementById('fp-img-preview-box').classList.add('hidden');
+      const existente=document.getElementById('fp-img-actual');
+      if(existente)existente.src=j.imagen_url; else fpAbrir(p.sku); // fuerza refresco simple si no había imagen previa
+    }else{
+      showToast('⚠️ '+((j&&j.error)||'No se pudo subir la imagen'));
+    }
+  }catch(e){showToast('⚠️ Error de conexión al subir la imagen');}
+}
+// Descarta la imagen previsualizada sin tocar Loyverse.
+function fpCancelarImagenPreview(){
+  _fpImagenPreviewUrl=null;
+  document.getElementById('fp-img-preview-box').classList.add('hidden');
 }
 function fpBadgeStock(p){
   if(!p.trackStock)return '<span class="fp-badge gris">Inventario desactivado</span>';
@@ -2901,15 +2885,22 @@ function fpPintar(f){
       (p.imagen?'<img id="fp-img-actual" src="'+p.imagen+'" style="width:64px;height:64px;object-fit:cover;border-radius:9px;border:1px solid var(--line);margin-bottom:9px;display:block">':'<div style="font-size:12.5px;color:var(--muted);margin-bottom:9px">Este producto no tiene imagen en Loyverse.</div>')+
       '<div style="display:flex;gap:8px">'+
         '<button id="fp-img-galeria-btn" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font-weight:700;font-size:13px;cursor:pointer">📎 Galería</button>'+
-        '<button id="fp-img-buscar" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font-weight:700;font-size:13px;cursor:pointer">🔍 Buscar en la web</button>'+
+        '<button id="fp-img-buscar" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font-weight:700;font-size:13px;cursor:pointer">🔍 Buscar por código</button>'+
       '</div>'+
       '<input type="file" accept="image/*" id="fp-img-galeria" style="display:none">'+
-      '<div id="fp-img-candidatos" class="hidden" style="display:flex;gap:8px;overflow-x:auto;margin-top:9px;padding-bottom:2px"></div>'+
+      '<div id="fp-img-preview-box" class="hidden" style="margin-top:9px;display:flex;align-items:center;gap:10px;padding:8px 10px;border:1.5px solid var(--wa);border-radius:10px;background:#F1FBF5">'+
+        '<img id="fp-img-preview-img" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0">'+
+        '<span style="font-size:12px;color:var(--wa-d);font-weight:700;flex:1">¿Usar esta imagen?</span>'+
+        '<button type="button" id="fp-img-usar" style="background:var(--wa);border:none;color:#fff;font-weight:700;font-size:11.5px;padding:6px 10px;border-radius:7px;cursor:pointer">✓ Usar</button>'+
+        '<button type="button" id="fp-img-cancelar" style="background:none;border:none;color:var(--muted);font-size:11px;text-decoration:underline;cursor:pointer">Cancelar</button>'+
+      '</div>'+
     '</div>'+
     '<button id="fp-eliminar-btn" style="width:100%;padding:10px;margin-top:14px;border-radius:10px;border:1.5px solid var(--rojo);background:#FCE9E7;color:var(--rojo);font-weight:700;font-size:13px;cursor:pointer">🗑️ Eliminar este producto de Loyverse</button>';
   document.getElementById('fp-editar-btn').onclick=()=>fpModoEdicion(f);
   document.getElementById('fp-eliminar-btn').onclick=()=>fpEliminarProducto(f);
   document.getElementById('fp-img-buscar').onclick=()=>fpBuscarImagen(p);
+  document.getElementById('fp-img-usar').onclick=()=>fpConfirmarImagen(p);
+  document.getElementById('fp-img-cancelar').onclick=()=>fpCancelarImagenPreview();
   document.getElementById('fp-img-galeria-btn').onclick=()=>document.getElementById('fp-img-galeria').click();
   document.getElementById('fp-img-galeria').addEventListener('change',async(ev)=>{
     const file=ev.target.files&&ev.target.files[0];
@@ -3354,15 +3345,13 @@ function cpReset(){
   document.getElementById('cp-activo').checked=true;
   document.getElementById('cp-cat-nuevabox').classList.add('hidden');
   _cpImagenUrl=null;_cpImagenBase64=null;
-  document.getElementById('cp-img-candidatos').classList.add('hidden');
-  document.getElementById('cp-img-candidatos').innerHTML='';
   document.getElementById('cp-img-elegida').classList.add('hidden');
   cpSetVenta('u');cpToggleStock();cpValidar();
 }
-// ---- Buscar imagen en la web (opcional, sin IA — vía Searlo) ----
-// Reusa la misma acción del Worker que ya llamamos para escanear facturas (Claude), ahora
-// con búsqueda web. No bloquea la creación del producto — si no se elige imagen, se crea
-// igual, exactamente como funcionaba antes.
+// ---- Imagen del producto: galería o precarga automática por código de barras ----
+// La búsqueda web (Searlo) se quitó — solo queda galería y el catálogo gratuito por
+// código de barras (cpAutocompletarPorCodigo, más abajo). No bloquea la creación del
+// producto — si no se elige imagen, se crea igual, exactamente como funcionaba antes.
 let _cpImagenUrl=null;
 let _cpImagenBase64=null; // imagen elegida desde la galería (ya comprimida), alternativa a _cpImagenUrl
 // Redimensiona/comprime una foto local antes de subirla — funciona bien acá porque es un
@@ -3388,35 +3377,6 @@ function resizeImageToBase64(file,maxDim=1024,quality=0.82){
     reader.readAsDataURL(file);
   });
 }
-document.getElementById('cp-img-buscar').onclick=async()=>{
-  const nombre=(document.getElementById('cp-nombre').value||'').trim();
-  if(!nombre){showToast('Escribe el nombre del producto primero');return;}
-  const btn=document.getElementById('cp-img-buscar');
-  const textoOriginal=btn.textContent;
-  btn.disabled=true;btn.textContent='Buscando…';
-  try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'buscar_imagen_producto',payload:{nombre}})});
-    const j=await res.json();
-    const cont=document.getElementById('cp-img-candidatos');
-    if(j&&j.ok&&j.candidatos&&j.candidatos.length){
-      cont.innerHTML=j.candidatos.map(c=>`<img class="cp-img-cand" src="${c.url}" data-url="${c.url}" loading="lazy" onerror="this.style.display='none'">`).join('');
-      cont.classList.remove('hidden');
-    }else if(j&&j.ok){
-      showToast('No se encontraron imágenes para ese nombre');
-    }else{
-      showToast('⚠️ '+((j&&j.error)||'Error al buscar la imagen'));
-    }
-  }catch(e){showToast('Error de conexión al buscar la imagen');}
-  finally{btn.disabled=false;btn.textContent=textoOriginal;}
-};
-document.getElementById('cp-img-candidatos').addEventListener('click',ev=>{
-  const img=ev.target.closest('.cp-img-cand');
-  if(!img)return;
-  document.querySelectorAll('.cp-img-cand').forEach(x=>x.classList.toggle('sel',x===img));
-  _cpImagenUrl=img.dataset.url;_cpImagenBase64=null;
-  document.getElementById('cp-img-preview').src=_cpImagenUrl;
-  document.getElementById('cp-img-elegida').classList.remove('hidden');
-});
 document.getElementById('cp-img-galeria-btn').onclick=()=>document.getElementById('cp-img-galeria').click();
 document.getElementById('cp-img-galeria').addEventListener('change',async(ev)=>{
   const file=ev.target.files&&ev.target.files[0];
@@ -3426,7 +3386,6 @@ document.getElementById('cp-img-galeria').addEventListener('change',async(ev)=>{
     _cpImagenBase64=b64;_cpImagenUrl=null;
     document.getElementById('cp-img-preview').src='data:image/jpeg;base64,'+b64;
     document.getElementById('cp-img-elegida').classList.remove('hidden');
-    document.getElementById('cp-img-candidatos').classList.add('hidden');
   }catch(e){showToast('No se pudo procesar esa imagen');}
   ev.target.value='';
 });
