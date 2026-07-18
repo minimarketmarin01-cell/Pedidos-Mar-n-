@@ -1454,7 +1454,7 @@ html.vista-filas thead th:nth-child(5){width:88px;padding-right:16px}
       </div>
       <div class="mm-field">
         <label>Imagen (opcional)</label>
-        <button type="button" class="loadbtn" id="cp-img-buscar" style="width:100%">🔍 Buscar imagen con IA</button>
+        <button type="button" class="loadbtn" id="cp-img-buscar" style="width:100%">🔍 Buscar imagen en la web</button>
         <div id="cp-img-candidatos" class="hidden" style="display:flex;gap:8px;overflow-x:auto;margin-top:9px;padding-bottom:2px"></div>
         <div id="cp-img-elegida" class="hidden" style="margin-top:9px;display:flex;align-items:center;gap:10px;padding:8px 10px;border:1.5px solid var(--wa);border-radius:10px;background:#F1FBF5">
           <img id="cp-img-preview" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0">
@@ -2297,7 +2297,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-18.2';
+const APP_VERSION='2026-07-18.4';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -2812,6 +2812,24 @@ async function fpBuscarImagen(p){
   const textoOriginal=btn.textContent;
   btn.disabled=true;btn.textContent='Buscando…';
   try{
+    // Primero, gratis: si hay código de barras, prueba la cadena de bases de datos (OpenFoodFacts
+    // + UPCitemdb) antes de gastar créditos de Searlo.
+    if(p.barcode){
+      const urlBarcode=await lookupBarcodeImage(p.barcode).catch(()=>null);
+      if(urlBarcode){
+        showToast('Subiendo imagen a Loyverse…');
+        const r1=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'subir_imagen_producto',payload:{sku:p.sku,image_url:urlBarcode}})});
+        const j1=await r1.json();
+        if(j1&&j1.ok){
+          showToast('🖼️ Imagen encontrada por código de barras y subida a Loyverse');
+          const existente=document.getElementById('fp-img-actual');
+          if(existente)existente.src=j1.imagen_url; else fpAbrir(p.sku);
+          btn.disabled=false;btn.textContent=textoOriginal;
+          return;
+        }
+        // si falló la subida, sigue igual a la búsqueda en la web como respaldo
+      }
+    }
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'buscar_imagen_producto',payload:{nombre:p.nombre}})});
     const j=await res.json();
     const cont=document.getElementById('fp-img-candidatos');
@@ -2877,7 +2895,7 @@ function fpPintar(f){
     '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">'+
       '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px">Imagen</div>'+
       (p.imagen?'<img id="fp-img-actual" src="'+p.imagen+'" style="width:64px;height:64px;object-fit:cover;border-radius:9px;border:1px solid var(--line);margin-bottom:9px;display:block">':'<div style="font-size:12.5px;color:var(--muted);margin-bottom:9px">Este producto no tiene imagen en Loyverse.</div>')+
-      '<button id="fp-img-buscar" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font-weight:700;font-size:13px;cursor:pointer">🔍 '+(p.imagen?'Buscar otra imagen':'Buscar imagen')+' con IA</button>'+
+      '<button id="fp-img-buscar" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font-weight:700;font-size:13px;cursor:pointer">🔍 '+(p.imagen?'Buscar otra imagen':'Buscar imagen')+' en la web</button>'+
       '<div id="fp-img-candidatos" class="hidden" style="display:flex;gap:8px;overflow-x:auto;margin-top:9px;padding-bottom:2px"></div>'+
     '</div>'+
     '<button id="fp-eliminar-btn" style="width:100%;padding:10px;margin-top:14px;border-radius:10px;border:1.5px solid var(--rojo);background:#FCE9E7;color:var(--rojo);font-weight:700;font-size:13px;cursor:pointer">🗑️ Eliminar este producto de Loyverse</button>';
@@ -3314,7 +3332,7 @@ function cpReset(){
   document.getElementById('cp-img-elegida').classList.add('hidden');
   cpSetVenta('u');cpToggleStock();cpValidar();
 }
-// ---- Buscar imagen con IA (opcional) ----
+// ---- Buscar imagen en la web (opcional, sin IA — vía Searlo) ----
 // Reusa la misma acción del Worker que ya llamamos para escanear facturas (Claude), ahora
 // con búsqueda web. No bloquea la creación del producto — si no se elige imagen, se crea
 // igual, exactamente como funcionaba antes.
@@ -3511,9 +3529,22 @@ const BARCODE_LOOKUP_PROVIDERS=[
     const p=j.product;
     const name=p.product_name||p.product_name_es||p.generic_name||'';
     if(!name)return null;
-    return{name,brand:p.brands||'',presentation:p.quantity||''};
+    return{name,brand:p.brands||'',presentation:p.quantity||'',image:p.image_front_url||p.image_url||''};
   },
-  // Espacio para sumar otra API en el futuro, ej: UPCitemdb, Open GTIN, catálogo propio, etc.
+  // UPCitemdb: base de datos más amplia (no solo alimentos) — plan gratis sin necesidad de
+  // cuenta ni API key, 100 consultas/día por IP. Se prueba después de OpenFoodFacts, así que
+  // cubre los casos que esa no tiene (limpieza, ferretería, útiles, etc.).
+  async function upcItemDb(code){
+    const r=await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${encodeURIComponent(code)}`,{headers:{'Accept':'application/json'}});
+    if(!r.ok)return null;
+    const j=await r.json();
+    if(!j||j.code!=='OK'||!j.items||!j.items.length)return null;
+    const it=j.items[0];
+    const name=it.title||'';
+    if(!name)return null;
+    return{name,brand:it.brand||'',presentation:it.size||'',image:(it.images&&it.images[0])||''};
+  },
+  // Espacio para sumar otra API en el futuro, ej: Open GTIN, catálogo propio, etc.
 ];
 async function lookupBarcodeInfo(code){
   code=String(code||'').trim();
@@ -3523,9 +3554,30 @@ async function lookupBarcodeInfo(code){
   }
   return null;
 }
+// Recorre la MISMA cadena de proveedores buscando imagen específicamente — separada de
+// lookupBarcodeInfo para no tocar la lógica de autocompletar nombre, que ya funciona.
+async function lookupBarcodeImage(code){
+  code=String(code||'').trim();
+  if(!code)return null;
+  for(const provider of BARCODE_LOOKUP_PROVIDERS){
+    try{const info=await provider(code);if(info&&info.image)return info.image;}catch(e){}
+  }
+  return null;
+}
 async function cpAutocompletarPorCodigo(code){
   code=String(code||'').trim();
   if(!code)return;
+  // Imagen: independiente del nombre (puede venir de un proveedor distinto), no bloquea ni
+  // espera al resto del flujo. Si encuentra algo, la deja preseleccionada — igual que si el
+  // usuario hubiera tocado un candidato de "Buscar imagen en la web" a mano.
+  lookupBarcodeImage(code).then(url=>{
+    if(!url)return;
+    if((document.getElementById('cp-barcode').value||'').trim()!==code)return; // el código cambió mientras esperábamos
+    if(_cpImagenUrl)return; // el usuario ya eligió una a mano: no la pisamos
+    _cpImagenUrl=url;
+    document.getElementById('cp-img-preview').src=url;
+    document.getElementById('cp-img-elegida').classList.remove('hidden');
+  }).catch(()=>{});
   const nombreInp=document.getElementById('cp-nombre');
   if(!nombreInp||nombreInp.value.trim())return; // el usuario ya escribió un nombre: no lo pisamos
   const info=await lookupBarcodeInfo(code);
