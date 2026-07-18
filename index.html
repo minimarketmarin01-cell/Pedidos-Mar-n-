@@ -519,7 +519,7 @@ html.carrito-fijo.vista-filas #ptable{
   width:100%
   max-width:100%
 }
-html.vista-filas .fila-row{display:grid;grid-template-columns:28px minmax(140,1fr) auto auto auto auto;align-items:center;column-gap:8px;width:100%;box-sizing:border-box;min-width:0;overflow:hidden}
+html.vista-filas .fila-row{display:grid;grid-template-columns:28px minmax(0,1fr) 52px 44px 50px 120px;align-items:center;column-gap:8px;width:100%;box-sizing:border-box;min-width:0;overflow:hidden}
 html.vista-filas .fila-thumb{width:28px;height:28px;overflow:hidden;border-radius:8px;box-sizing:border-box}
 html.vista-filas .fila-thumb .card-thumb,html.vista-filas .fila-thumb .card-thumb-empty{width:28px;height:28px;object-fit:cover;display:block}
 html.vista-filas .fila-nombre-col{min-width:0;max-width: 240px; overflow:hidden;display:flex;flex-direction:column;gap:2px}
@@ -841,6 +841,19 @@ html.vista-filas thead th:nth-child(5){width:120px;padding-right:8px}
 .mas-badge{position:absolute;top:-5px;right:-5px;background:var(--rojo);color:#fff;border-radius:10px;min-width:16px;height:16px;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 3px}
 .mas-badge.on{display:flex}
 @media(prefers-reduced-motion:reduce){.bn-item,.bn-item .ic{transition:none!important}}
+  @media (min-width: 1000px) and (max-width: 1399px) {
+  html.carrito-fijo .wrap {
+    padding-right: 0 !important;   /* elimina el padding derecho que crea el hueco */
+  }
+  html.carrito-fijo #tab-pedido .wrap {
+    padding-right: 0 !important;
+  }
+  /* Opcional: si el carrito está fijo, la tabla debe ocupar todo el ancho */
+  html.carrito-fijo #ptable {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
 </style>
 </head>
 <body>
