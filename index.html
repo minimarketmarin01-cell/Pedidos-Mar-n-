@@ -127,6 +127,7 @@ html.carrito-fijo #tab-pedido{
   box-sizing:border-box;overflow:hidden;min-width:0;
 }
 html.carrito-fijo #tab-pedido>.sticky-hdr,html.carrito-fijo #tab-pedido>.wrap{grid-column:1;min-width:0}
+html.carrito-fijo #tab-pedido>.wrap{grid-template-columns:1fr}
 html.carrito-fijo #tab-pedido .wrap,html.carrito-fijo #tab-pedido .tablecard,html.carrito-fijo #tab-pedido .tbl-scroll,html.carrito-fijo #tab-pedido table{min-width:0}
 #tab-carrito.cart-open{transform:translateY(0);opacity:1;pointer-events:auto}
 .cart-badge{position:absolute;top:-3px;right:-3px;background:var(--rojo);color:#fff;border-radius:10px;min-width:18px;height:18px;font-size:10.5px;font-weight:800;display:none;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--card)}
@@ -2284,7 +2285,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-17.27';
+const APP_VERSION='2026-07-17.28';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
