@@ -2309,7 +2309,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-18.9';
+const APP_VERSION='2026-07-18.10';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -5991,11 +5991,14 @@ const CARRITO_BREAKPOINT=1000;
 function _aplicarLayoutCarrito(){
   document.documentElement.classList.toggle('carrito-fijo',window.innerWidth>=CARRITO_BREAKPOINT);
 }
-// Pantallas grandes (monitor táctil tipo BlissOS, no solo tablet): la tabla de "Armar
+// Pantallas grandes (tablet horizontal y monitor táctil tipo BlissOS): la tabla de "Armar
 // pedido" pasa a formato de fila (más parecido a una planilla) en vez de tarjeta, porque ahí
-// sobra ancho para leer nombre/rotación/stock/pedido alineados de un vistazo. Umbral más
-// alto que el de tablet (1000) a propósito, para no activarse en una tablet en horizontal.
-const VISTA_FILAS_BREAKPOINT=1400;
+// sobra ancho para leer nombre/rotación/stock/pedido alineados de un vistazo. Mismo umbral
+// que el carrito fijo (1000): si el carrito ya va fijo a la derecha, la tarjeta ancha queda
+// descuadrada contra él — antes el umbral era 1400 "a propósito" para no activarse en tablet,
+// pero eso dejaba el rango 1000–1399 con carrito fijo + tarjeta ancha a la vez, que es lo que
+// generaba los huecos y el desorden reportado en la Samsung tablet.
+const VISTA_FILAS_BREAKPOINT=1000;
 let _vistaFilasActual=false;
 const VISTA_FILAS_LS_KEY='vista_filas_manual';
 function _vistaFilasManualActiva(){try{return localStorage.getItem(VISTA_FILAS_LS_KEY)==='1';}catch(e){return false;}}
