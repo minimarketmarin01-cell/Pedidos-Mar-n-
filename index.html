@@ -535,15 +535,8 @@ html.vista-filas .fila-pedir{display:flex;justify-content:flex-end}
    display:table-row, ese cálculo se corrompe y termina recortando las últimas columnas del
    tbody (Stock/COB/Pedir) en algunos motores de renderizado. Solo ajustes cosméticos que no
    tocan "display". */
-html.vista-filas thead th{text-align:right;white-space:nowrap;font-size:11px;box-sizing:border-box;padding:7px 0}
-/* Anchos que replican los tracks de .fila-row (52/44/50/88 + el column-gap de 6px y el
-   padding lateral de 16px de la celda), para que cada título quede sobre su columna.
-   Fijar anchos acá es seguro porque la tabla usa table-layout:fixed. */
-html.vista-filas thead th:nth-child(2){width:58px}
-html.vista-filas thead th:nth-child(3){width:50px}
-html.vista-filas thead th:nth-child(4){width:56px}
-html.vista-filas thead th:nth-child(5){width:104px;padding-right:16px}
-html.vista-filas thead th:first-child{text-align:left;padding-left:16px}
+html.vista-filas thead th{text-align:right;white-space:nowrap;font-size:11px}
+html.vista-filas thead th:first-child{text-align:left}
 .card-thumb-wrap{flex:0 0 44px;width:44px;height:44px;box-sizing:border-box}
 .card-thumb{width:44px;height:44px;border-radius:10px;object-fit:cover;background:var(--gris-bg,#F3F1EA);display:block}
 /* Producto sin foto: ícono neutro y sutil, no un punto de color llamativo —
@@ -2286,7 +2279,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-17.23';
+const APP_VERSION='2026-07-17.24';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
