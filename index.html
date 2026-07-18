@@ -516,13 +516,13 @@ html.vista-filas #ptable{table-layout:fixed;width:100%;min-width:0;max-width:100
    BlissOS esa cadena no la estaba respetando y la tabla se metía debajo del carrito.
    100vw - ancho del carrito - margen de padding = ancho real disponible. */
 html.carrito-fijo.vista-filas #ptable{
-  width:calc(100vw - var(--cart-w) - 12px);
-  max-width:calc(100vw - var(--cart-w) - 12px);
+  width:100%
+  max-width:100%
 }
-html.vista-filas .fila-row{display:grid;grid-template-columns:28px minmax(0,1fr) 52px 44px 50px 88px;align-items:center;column-gap:6px;width:100%;box-sizing:border-box;min-width:0;overflow:hidden}
+html.vista-filas .fila-row{display:grid;grid-template-columns:28px minmax(0,1fr) 60px 52px 56px 120px;align-items:center;column-gap:6px;width:100%;box-sizing:border-box;min-width:0;overflow:hidden}
 html.vista-filas .fila-thumb{width:28px;height:28px;overflow:hidden;border-radius:8px;box-sizing:border-box}
 html.vista-filas .fila-thumb .card-thumb,html.vista-filas .fila-thumb .card-thumb-empty{width:28px;height:28px;object-fit:cover;display:block}
-html.vista-filas .fila-nombre-col{min-width:0;overflow:hidden;display:flex;flex-direction:column;gap:2px}
+html.vista-filas .fila-nombre-col{min-width:0;max-width: 240px; overflow:hidden;display:flex;flex-direction:column;gap:2px}
 html.vista-filas .fila-nombre{font-weight:800;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);display:block}
 html.vista-filas .fila-prov{font-size:9px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 html.vista-filas .fila-datos{display:flex;gap:10px;font-family:'JetBrains Mono';font-weight:700;font-size:11.5px;color:var(--ink2);white-space:nowrap;overflow:hidden}
@@ -538,10 +538,10 @@ html.vista-filas .fila-pedir{display:flex;justify-content:flex-end}
    tocan "display". */
 html.vista-filas thead th{text-align:right;white-space:nowrap;font-size:11px;box-sizing:border-box}
 html.vista-filas thead th:first-child{text-align:left}
-html.vista-filas thead th:nth-child(2){width:52px}
-html.vista-filas thead th:nth-child(3){width:44px}
-html.vista-filas thead th:nth-child(4){width:50px}
-html.vista-filas thead th:nth-child(5){width:88px;padding-right:16px}
+html.vista-filas thead th:nth-child(2){width:60px}
+html.vista-filas thead th:nth-child(3){width:52px}
+html.vista-filas thead th:nth-child(4){width:56px}
+html.vista-filas thead th:nth-child(5){width:120px;padding-right:8px}
 .card-thumb-wrap{flex:0 0 44px;width:44px;height:44px;box-sizing:border-box}
 .card-thumb{width:44px;height:44px;border-radius:10px;object-fit:cover;background:var(--gris-bg,#F3F1EA);display:block}
 /* Producto sin foto: ícono neutro y sutil, no un punto de color llamativo —
@@ -5791,7 +5791,7 @@ function _aplicarLayoutCarrito(){
 // pedido" pasa a formato de fila (más parecido a una planilla) en vez de tarjeta, porque ahí
 // sobra ancho para leer nombre/rotación/stock/pedido alineados de un vistazo. Umbral más
 // alto que el de tablet (1000) a propósito, para no activarse en una tablet en horizontal.
-const VISTA_FILAS_BREAKPOINT=1400;
+const VISTA_FILAS_BREAKPOINT=1100;
 let _vistaFilasActual=false;
 const VISTA_FILAS_LS_KEY='vista_filas_manual';
 function _vistaFilasManualActiva(){try{return localStorage.getItem(VISTA_FILAS_LS_KEY)==='1';}catch(e){return false;}}
