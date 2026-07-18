@@ -503,7 +503,7 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 .card-cell{padding:13px 10px !important;white-space:normal !important;text-align:left !important;border-bottom:1px solid var(--line2) !important;box-sizing:border-box;overflow:hidden}
 .card-row{display:flex;flex-wrap:nowrap;align-items:flex-start;gap:10px;min-width:0;width:100%;box-sizing:border-box}
 /* ---- Vista de fila (pantallas grandes, ej. monitor táctil BlissOS) ---- */
-html.vista-filas .card-cell{padding:7px 12px!important}
+html.vista-filas .card-cell{padding:7px 16px!important}
 /* La tabla debe terminar donde empieza el carrito fijo. #ptable usa table-layout:auto, que
    ensancha la tabla hasta el max-content de su contenido (los nombres largos de producto),
    ignorando el ancho que le reserva la grilla de dos columnas — por eso las últimas columnas
@@ -516,13 +516,13 @@ html.vista-filas #ptable{table-layout:fixed;width:100%;min-width:0;max-width:100
    BlissOS esa cadena no la estaba respetando y la tabla se metía debajo del carrito.
    100vw - ancho del carrito - margen de padding = ancho real disponible. */
 html.carrito-fijo.vista-filas #ptable{
-  width:100%
-  max-width:100%
+  width:calc(100vw - var(--cart-w) - 12px);
+  max-width:calc(100vw - var(--cart-w) - 12px);
 }
-html.vista-filas .fila-row{display:grid;grid-template-columns:28px minmax(0,1fr) 52px 44px 50px 120px;align-items:center;column-gap:8px;width:100%;box-sizing:border-box;min-width:0;overflow:hidden}
+html.vista-filas .fila-row{display:grid;grid-template-columns:28px minmax(0,1fr) 52px 44px 50px 88px;align-items:center;column-gap:6px;width:100%;box-sizing:border-box;min-width:0;overflow:hidden}
 html.vista-filas .fila-thumb{width:28px;height:28px;overflow:hidden;border-radius:8px;box-sizing:border-box}
 html.vista-filas .fila-thumb .card-thumb,html.vista-filas .fila-thumb .card-thumb-empty{width:28px;height:28px;object-fit:cover;display:block}
-html.vista-filas .fila-nombre-col{min-width:0;max-width: 240px; overflow:hidden;display:flex;flex-direction:column;gap:2px}
+html.vista-filas .fila-nombre-col{min-width:0;overflow:hidden;display:flex;flex-direction:column;gap:2px}
 html.vista-filas .fila-nombre{font-weight:800;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);display:block}
 html.vista-filas .fila-prov{font-size:9px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 html.vista-filas .fila-datos{display:flex;gap:10px;font-family:'JetBrains Mono';font-weight:700;font-size:11.5px;color:var(--ink2);white-space:nowrap;overflow:hidden}
@@ -538,10 +538,10 @@ html.vista-filas .fila-pedir{display:flex;justify-content:flex-end}
    tocan "display". */
 html.vista-filas thead th{text-align:right;white-space:nowrap;font-size:11px;box-sizing:border-box}
 html.vista-filas thead th:first-child{text-align:left}
-html.vista-filas thead th:nth-child(2){width:60px}
-html.vista-filas thead th:nth-child(3){width:52px}
-html.vista-filas thead th:nth-child(4){width:56px}
-html.vista-filas thead th:nth-child(5){width:120px;padding-right:8px}
+html.vista-filas thead th:nth-child(2){width:52px}
+html.vista-filas thead th:nth-child(3){width:44px}
+html.vista-filas thead th:nth-child(4){width:50px}
+html.vista-filas thead th:nth-child(5){width:88px;padding-right:16px}
 .card-thumb-wrap{flex:0 0 44px;width:44px;height:44px;box-sizing:border-box}
 .card-thumb{width:44px;height:44px;border-radius:10px;object-fit:cover;background:var(--gris-bg,#F3F1EA);display:block}
 /* Producto sin foto: ícono neutro y sutil, no un punto de color llamativo —
@@ -629,6 +629,9 @@ html.vista-filas thead th:nth-child(5){width:120px;padding-right:8px}
 .search-x{position:absolute;top:50%;right:6px;transform:translateY(-50%);width:24px;height:24px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0;-webkit-tap-highlight-color:transparent}
 .search-x.hidden{display:none}
 .fp-actual{margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--paper);font-size:11px;color:var(--ink2)}
+.cp-img-cand{flex-shrink:0;width:64px;height:64px;object-fit:cover;border-radius:9px;border:1.5px solid var(--line);cursor:pointer}
+.cp-img-cand:active{border-color:var(--wa)}
+.cp-img-cand.sel{border-color:var(--wa);border-width:2.5px}
 .fp-actual.hidden{display:none}
 .fp-actual b{color:var(--ink)}
 .fp-actual-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -841,31 +844,6 @@ html.vista-filas thead th:nth-child(5){width:120px;padding-right:8px}
 .mas-badge{position:absolute;top:-5px;right:-5px;background:var(--rojo);color:#fff;border-radius:10px;min-width:16px;height:16px;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 3px}
 .mas-badge.on{display:flex}
 @media(prefers-reduced-motion:reduce){.bn-item,.bn-item .ic{transition:none!important}}
-  @media (min-width: 1000px) and (max-width: 1399px) {
-  html.carrito-fijo .wrap {
-    padding-right: 0 !important;   /* elimina el padding derecho que crea el hueco */
-  }
-  html.carrito-fijo #tab-pedido .wrap {
-    padding-right: 0 !important;
-  }
-  /* Opcional: si el carrito está fijo, la tabla debe ocupar todo el ancho */
-  html.carrito-fijo #ptable {
-    width: 100% !important;
-    max-width: 100% !important;
-  }
-}
-  @media (min-width: 1000px) and (max-width: 1399px) {
-  html.carrito-fijo .wrap {
-    padding-right: 0 !important;
-  }
-  html.carrito-fijo #tab-pedido .wrap {
-    padding-right: 0 !important;
-  }
-  html.carrito-fijo #ptable {
-    width: 100% !important;
-    max-width: 100% !important;
-  }
-}
 </style>
 </head>
 <body>
@@ -1408,6 +1386,14 @@ html.vista-filas thead th:nth-child(5){width:120px;padding-right:8px}
     <div class="mm-head"><h3>➕ Crear producto</h3></div>
     <div class="mm-body">
       <div class="mm-field">
+        <label>Código de barras (opcional, pero recomendado primero)</label>
+        <div class="mm-search">
+          <input id="cp-barcode" placeholder="Escanea o escribe" autocomplete="off" style="padding-right:44px">
+          <button class="mm-scan" id="cp-scan" type="button" aria-label="Escanear"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:5px">Si el código se reconoce, el nombre se completa solo.</div>
+      </div>
+      <div class="mm-field">
         <label>Nombre *</label>
         <input id="cp-nombre" placeholder="Ej: 7 up 2.0L" autocomplete="off" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
       </div>
@@ -1441,13 +1427,6 @@ html.vista-filas thead th:nth-child(5){width:120px;padding-right:8px}
         <input id="cp-costo" inputmode="numeric" placeholder="0" autocomplete="off" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
       </div>
       <div class="mm-field">
-        <label>Código de barras (opcional)</label>
-        <div class="mm-search">
-          <input id="cp-barcode" placeholder="Escanea o escribe" autocomplete="off" style="padding-right:44px">
-          <button class="mm-scan" id="cp-scan" type="button" aria-label="Escanear"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
-        </div>
-      </div>
-      <div class="mm-field">
         <label class="cp-toggle">Seguir inventario <input type="checkbox" id="cp-track" checked></label>
       </div>
       <div class="mm-field" id="cp-stock-field">
@@ -1473,9 +1452,17 @@ html.vista-filas thead th:nth-child(5){width:120px;padding-right:8px}
       <div class="mm-field">
         <label class="cp-toggle">Producto activo (a la venta) <input type="checkbox" id="cp-activo" checked></label>
       </div>
-      <!-- Imagen: preparado para una versión futura (Loyverse la recibe por multipart aparte).
-      <div class="mm-field" id="cp-img-field"><label>Imagen</label> … </div> -->
-      <div style="font-size:11.5px;color:var(--muted);margin:2px 0 10px">El código interno (SKU) se genera <b>automáticamente</b> y es único — no se edita a mano. La imagen se podrá agregar en una próxima versión.</div>
+      <div class="mm-field">
+        <label>Imagen (opcional)</label>
+        <button type="button" class="loadbtn" id="cp-img-buscar" style="width:100%">🔍 Buscar imagen con IA</button>
+        <div id="cp-img-candidatos" class="hidden" style="display:flex;gap:8px;overflow-x:auto;margin-top:9px;padding-bottom:2px"></div>
+        <div id="cp-img-elegida" class="hidden" style="margin-top:9px;display:flex;align-items:center;gap:10px;padding:8px 10px;border:1.5px solid var(--wa);border-radius:10px;background:#F1FBF5">
+          <img id="cp-img-preview" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0">
+          <span style="font-size:12px;color:var(--wa-d);font-weight:700;flex:1">✓ Imagen lista — se sube al crear el producto</span>
+          <button type="button" id="cp-img-quitar" style="background:none;border:none;color:var(--muted);font-size:11px;text-decoration:underline;cursor:pointer">Quitar</button>
+        </div>
+      </div>
+      <div style="font-size:11.5px;color:var(--muted);margin:2px 0 10px">El código interno (SKU) se genera <b>automáticamente</b> y es único — no se edita a mano.</div>
       <button class="mm-save" id="cp-guardar" disabled>Crear producto</button>
       <button class="loadbtn" id="cp-cerrar" style="width:100%;margin-top:8px">Cancelar</button>
     </div>
@@ -2310,7 +2297,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-17.28';
+const APP_VERSION='2026-07-18.1';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -2467,6 +2454,15 @@ async function autoSyncIfStale(){
   // Los datos guardados se muestran al instante y se refrescan en segundo plano.
   await cloudSync(true,true);
 }
+// ---- Sync liviano automático cada 15 min mientras la app sigue abierta ----
+// Antes esto SOLO pasaba una vez al abrir (autoSyncIfStale) — si alguien dejaba la pestaña
+// abierta varias horas, el stock/ventas no se volvía a refrescar solo. Reutiliza el mismo
+// cloudSync() de siempre, en modo silencioso (sin toast) y solo trae stock+ventas (liviano,
+// nunca el catálogo completo). Se salta el sync si la pestaña está en segundo plano, para no
+// gastar batería/datos sin necesidad.
+setInterval(()=>{
+  if(document.visibilityState==='visible')cloudSync(true,true);
+},15*60*1000);
 
 document.getElementById('btn-sync').onclick=()=>cloudSync(false,true,false,'sync');
 document.getElementById('btn-prices').onclick=()=>cloudSync(false,false,true,'prices');
@@ -3264,8 +3260,49 @@ function cpReset(){
   document.getElementById('cp-iva').checked=true;
   document.getElementById('cp-activo').checked=true;
   document.getElementById('cp-cat-nuevabox').classList.add('hidden');
+  _cpImagenUrl=null;
+  document.getElementById('cp-img-candidatos').classList.add('hidden');
+  document.getElementById('cp-img-candidatos').innerHTML='';
+  document.getElementById('cp-img-elegida').classList.add('hidden');
   cpSetVenta('u');cpToggleStock();cpValidar();
 }
+// ---- Buscar imagen con IA (opcional) ----
+// Reusa la misma acción del Worker que ya llamamos para escanear facturas (Claude), ahora
+// con búsqueda web. No bloquea la creación del producto — si no se elige imagen, se crea
+// igual, exactamente como funcionaba antes.
+let _cpImagenUrl=null;
+document.getElementById('cp-img-buscar').onclick=async()=>{
+  const nombre=(document.getElementById('cp-nombre').value||'').trim();
+  if(!nombre){showToast('Escribe el nombre del producto primero');return;}
+  const btn=document.getElementById('cp-img-buscar');
+  const textoOriginal=btn.textContent;
+  btn.disabled=true;btn.textContent='Buscando…';
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'buscar_imagen_producto',payload:{nombre}})});
+    const j=await res.json();
+    const cont=document.getElementById('cp-img-candidatos');
+    if(j&&j.ok&&j.candidatos&&j.candidatos.length){
+      cont.innerHTML=j.candidatos.map(c=>`<img class="cp-img-cand" src="${c.url}" data-url="${c.url}" loading="lazy" onerror="this.style.display='none'">`).join('');
+      cont.classList.remove('hidden');
+    }else{
+      showToast('No se encontraron imágenes para ese nombre');
+    }
+  }catch(e){showToast('Error de conexión al buscar la imagen');}
+  finally{btn.disabled=false;btn.textContent=textoOriginal;}
+};
+document.getElementById('cp-img-candidatos').addEventListener('click',ev=>{
+  const img=ev.target.closest('.cp-img-cand');
+  if(!img)return;
+  document.querySelectorAll('.cp-img-cand').forEach(x=>x.classList.toggle('sel',x===img));
+  _cpImagenUrl=img.dataset.url;
+  document.getElementById('cp-img-preview').src=_cpImagenUrl;
+  document.getElementById('cp-img-elegida').classList.remove('hidden');
+});
+document.getElementById('cp-img-quitar').onclick=()=>{
+  _cpImagenUrl=null;
+  document.getElementById('cp-img-elegida').classList.add('hidden');
+  document.querySelectorAll('.cp-img-cand').forEach(x=>x.classList.remove('sel'));
+};
 function cpSetVenta(v){_cpVenta=v;document.querySelectorAll('#cp-venta button').forEach(b=>b.classList.toggle('active',b.dataset.v===v));}
 document.querySelectorAll('#cp-venta button').forEach(b=>b.onclick=()=>cpSetVenta(b.dataset.v));
 function cpToggleStock(){
@@ -4345,6 +4382,13 @@ document.getElementById('cp-guardar').onclick=async()=>{
       else if(j.producto.enEstaTienda===false)m+=' ⚠️ no asignado a tu tienda';
       else m+=' ✓ verificado en Loyverse';
       showToast(m);
+      if(_cpImagenUrl){
+        fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'subir_imagen_producto',payload:{sku:j.producto.ref,image_url:_cpImagenUrl}})})
+          .then(r=>r.json()).then(ji=>{
+            if(ji&&ji.ok)showToast('🖼️ Imagen subida a Loyverse');
+            else showToast('⚠️ El producto se creó, pero la imagen no se pudo subir: '+((ji&&ji.error)||'error desconocido'));
+          }).catch(()=>showToast('⚠️ El producto se creó, pero la imagen no se pudo subir (sin conexión)'));
+      }
       cerrarModal('cp-ov');
       if(_cpDesdeRecepcion){
         _cpDesdeRecepcion=false;
@@ -5816,7 +5860,7 @@ function _aplicarLayoutCarrito(){
 // pedido" pasa a formato de fila (más parecido a una planilla) en vez de tarjeta, porque ahí
 // sobra ancho para leer nombre/rotación/stock/pedido alineados de un vistazo. Umbral más
 // alto que el de tablet (1000) a propósito, para no activarse en una tablet en horizontal.
-const VISTA_FILAS_BREAKPOINT=1100;
+const VISTA_FILAS_BREAKPOINT=1400;
 let _vistaFilasActual=false;
 const VISTA_FILAS_LS_KEY='vista_filas_manual';
 function _vistaFilasManualActiva(){try{return localStorage.getItem(VISTA_FILAS_LS_KEY)==='1';}catch(e){return false;}}
