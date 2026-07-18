@@ -758,6 +758,8 @@ html:not(.vista-filas) tr.row-urgent td{box-shadow:inset 4px 0 0 var(--rojo);bac
 html:not(.vista-filas) tr.row-pedir td{box-shadow:inset 4px 0 0 var(--ambar);background:#FFF6E8}
 html:not(.vista-filas) tr.row-urgent .prod-name::before{content:'● ';color:var(--rojo)}
 html:not(.vista-filas) tr.row-pedir .prod-name::before{content:'● ';color:var(--ambar)}
+html:not(.vista-filas) tr.row-urgent .card-main::before{content:'🔴 URGENTE — reponer ya';display:block;font-size:9.5px;font-weight:800;color:#fff;background:var(--rojo);padding:2px 7px;border-radius:5px;margin-bottom:4px;width:fit-content}
+html:not(.vista-filas) tr.row-pedir .card-main::before{content:'🟠 A PEDIR';display:block;font-size:9.5px;font-weight:800;color:#fff;background:var(--ambar);padding:2px 7px;border-radius:5px;margin-bottom:4px;width:fit-content}
 html:not(.vista-filas) tr.row-urgent .card-stats .cstat:last-child,
 html:not(.vista-filas) tr.row-pedir .card-stats .cstat:last-child{font-weight:800;padding:1px 6px;border-radius:5px}
 html:not(.vista-filas) tr.row-urgent .card-stats .cstat:last-child{background:#FBD8D3}
@@ -896,8 +898,10 @@ html:not(.vista-filas) tr.row-pedir .card-stats .cstat:last-child{background:#FC
 }
 /* ==== Selector manual de modo de pantalla (Celular / BlissOS / Tablet) ==== */
 .modo-switch{display:flex;gap:2px;background:var(--line2,#eee);border-radius:8px;padding:2px;margin-right:4px}
-.modo-switch button{border:none;background:transparent;border-radius:6px;width:28px;height:28px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.55}
-.modo-switch button.active{background:#fff;opacity:1;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.modo-switch button{border:none;background:transparent;border-radius:6px;padding:4px 7px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:3px;opacity:.6;color:var(--ink2,#444)}
+.modo-switch .ms-tx{font-size:10px;font-weight:700;white-space:nowrap}
+.modo-switch button.active{background:var(--wa,#1a73e8);opacity:1;color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+@media(max-width:520px){.modo-switch .ms-tx{display:none}}
 /* ==== Modo BlissOS (3:4 táctil): el grid denso de 5 columnas ya es el layout base de
    html.vista-filas (arriba) — no hace falta redefinirlo acá. Lo único propio de BlissOS
    es el indicador de prioridad (borde + punto de color) en el nombre del producto. */
@@ -914,9 +918,9 @@ html.modo-bliss tr:has(.qstep.has):not(.row-urgent) .fila-nombre::before{content
   <div class="brand"><span class="mk">Marín 376</span><span class="loc">Pedidos</span></div>
   <div class="toprt">
     <div class="modo-switch" id="modo-switch">
-      <button data-modo="celular" title="Modo Celular" onclick="setModo('celular')">📱</button>
-      <button data-modo="bliss" title="Modo BlissOS 3:4" onclick="setModo('bliss')">🖥️</button>
-      <button data-modo="tablet" title="Modo Tablet" onclick="setModo('tablet')">📲</button>
+      <button data-modo="celular" title="Modo Celular" onclick="setModo('celular')"><span class="ms-ic">📱</span><span class="ms-tx">Cel</span></button>
+      <button data-modo="bliss" title="Modo POS táctil 3:4 (BlissOS)" onclick="setModo('bliss')"><span class="ms-ic">🖥️</span><span class="ms-tx">POS 3:4</span></button>
+      <button data-modo="tablet" title="Modo Tablet" onclick="setModo('tablet')"><span class="ms-ic">📲</span><span class="ms-tx">Tablet</span></button>
     </div>
     <button class="loadbtn acc" id="btn-sync"><svg class="sync-ic" id="sync-ic-sync" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.7-3"/><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.7 3"/><polyline points="21 3 21 9 15 9"/><polyline points="3 21 3 15 9 15"/></svg> Sincronizar</button>
     <button class="loadbtn" id="btn-prices"><span class="sync-ic" id="sync-ic-prices"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg></span> Catálogo</button>
@@ -2372,7 +2376,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-18.13';
+const APP_VERSION='2026-07-18.14';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -6110,8 +6114,15 @@ function _aplicarModo(m){
 }
 function setModo(m){_guardarModo(m);_aplicarModo(m);}
 (function _initModo(){
-  const guardado=_modoGuardado();
-  if(guardado){_aplicarModo(guardado);}
+  let guardado=_modoGuardado();
+  if(!guardado){
+    // Primer arranque: sin preferencia guardada, se infiere un modo explícito según el
+    // ancho actual y queda grabado — así el selector nunca arranca "sin marcar" y el
+    // usuario siempre puede ver (y cambiar) en qué modo está.
+    guardado=window.innerWidth<1000?'celular':'tablet';
+    _guardarModo(guardado);
+  }
+  _aplicarModo(guardado);
   // Reafirma el modo manual si algo más toca las clases del <html> (p.ej. el resize
   // automático de _actualizarLayout) — así el selector manual siempre gana.
   const obs=new MutationObserver(()=>{
