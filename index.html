@@ -1821,7 +1821,7 @@ function qOf(it,a){return (it.ref in state.edits)?state.edits[it.ref]:a.sug;}
 function packsOf(it,u){return it.fmt>1?Math.round(u/it.fmt):u;}
 function plural(w,n){return w==='u'?'u':(n===1?w:w+'s');}
 function labelFor(it,b){return it.fmt>1?`${plural(it.word,b||2)} · ${(b||0)*it.fmt} u`:(multOf(it)>1?`de a ${multOf(it)} u`:'unidades');}
-function onQty(inp){const ref=inp.dataset.ref,fmt=+inp.dataset.fmt;let b=Math.max(0,parseInt(inp.value)||0);state.edits[ref]=b*fmt;const cell=inp.closest('.qcell');cell.querySelector('.qstep').classList.toggle('has',b>0);const it=DB.items.find(i=>i.ref===ref);const qw=cell.querySelector('.qword');if(qw&&it)qw.textContent=labelFor(it,b);renderOrder();renderScale();}
+function onQty(inp){const ref=inp.dataset.ref,fmt=+inp.dataset.fmt;let b=Math.max(0,parseInt(inp.value)||0);state.edits[ref]=b*fmt;const cell=inp.closest('.qcell');cell.querySelector('.qstep').classList.toggle('has',b>0);const it=DB.items.find(i=>i.ref===ref);const qw=cell.querySelector('.qword');if(qw&&it)qw.textContent=labelFor(it,b);renderOrder();renderScale();persistUI();}
 function stepQty(btn){const cell=btn.closest('.qcell');const inp=cell.querySelector('.qty-in');const st=+inp.dataset.step||1;inp.value=Math.max(0,(parseInt(inp.value)||0)+(+btn.dataset.d)*st);onQty(inp);}
 function ccuMixedPacks(){let p=0;itemsFor('CCU').forEach(it=>{if(it.scale==='ccu_ret'){const a=analyze(it);p+=Math.ceil(qOf(it,a)/it.fmt);}});return p;}
 function ccuTierIdx(packs){const b=SCALES.ccu_ret.breaks;let idx=0;for(let i=0;i<b.length;i++)if(packs>=b[i])idx=i;return idx;}
@@ -2198,6 +2198,7 @@ function cartApplyQty(ref,newPacks){
     const qw=row.querySelector('.qword');if(qw)qw.textContent=labelFor(it,newPacks);
   }
   cartUpdateTotals();
+  persistUI();
   renderScale();
 }
 function renderOrder(){
@@ -2279,7 +2280,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-17.24';
+const APP_VERSION='2026-07-17.25';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -5203,6 +5204,22 @@ document.getElementById('hm-cerrar').onclick=()=>document.getElementById('hm-ov'
 
 // ===================== INSUMOS / CONSUMO INTERNO (ticket) =====================
 let inCart=[],inResp=null;
+// ---- Borrador del carrito de Insumos (localStorage, con demora — no bloquea el toque) ----
+const IN_DRAFT_LS_KEY='marin376_insumos_draft';
+let _inDraftT=null;
+function inGuardarBorrador(){
+  clearTimeout(_inDraftT);
+  _inDraftT=setTimeout(()=>{
+    try{
+      if(inCart.length)localStorage.setItem(IN_DRAFT_LS_KEY,JSON.stringify({inCart,inResp}));
+      else localStorage.removeItem(IN_DRAFT_LS_KEY); // carrito vacío: nada que restaurar
+    }catch(e){}
+  },150);
+}
+function inLimpiarBorrador(){clearTimeout(_inDraftT);try{localStorage.removeItem(IN_DRAFT_LS_KEY);}catch(e){}}
+function inCargarBorrador(){
+  try{const raw=localStorage.getItem(IN_DRAFT_LS_KEY);const d=raw?JSON.parse(raw):null;return(d&&Array.isArray(d.inCart))?d:null;}catch(e){return null;}
+}
 function inFindItems(q){return mmFindItems(q);}   // mismo buscador que merma/vencimientos
 function inAdd(ref){
   const it=(DB.items||[]).find(i=>i.ref===ref);
@@ -5241,7 +5258,7 @@ function inRenderCart(){
     box.querySelectorAll('[data-qty]').forEach(inp=>inp.oninput=()=>{const c=inCart.find(x=>x.ref===inp.dataset.qty);c.cantidad=Number(inp.value)||0;inUpdateTotal();});
     box.querySelectorAll('[data-costo]').forEach(inp=>inp.oninput=()=>{const c=inCart.find(x=>x.ref===inp.dataset.costo);c.costoManual=inp.value;inUpdateTotal();inValidar();});
   }
-  inUpdateTotal();inValidar();
+  inUpdateTotal();inValidar();inGuardarBorrador();
 }
 function inUpdateTotal(){
   const total=inCart.reduce((s,c)=>s+(c.cantidad*inCostoUnit(c)),0);
@@ -5262,7 +5279,7 @@ function openInsumos(){inReset();document.getElementById('in-ov').classList.remo
 function closeInsumos(){document.getElementById('in-ov').classList.add('hidden');}
 
 document.getElementById('btn-insumos').onclick=openInsumos;
-document.getElementById('in-cancelar').onclick=closeInsumos;
+document.getElementById('in-cancelar').onclick=()=>{inLimpiarBorrador();closeInsumos();};
 document.getElementById('in-search').oninput=e=>{
   const list=inFindItems(e.target.value).filter(it=>!inCart.some(c=>c.ref===it.ref));
   document.getElementById('in-results').innerHTML=list.map(it=>`<div class="mm-motivo" style="display:block;margin-bottom:6px;cursor:pointer" data-ref="${it.ref}">${it.nombre} <span style="color:var(--muted);font-weight:400">· ${it.prov}</span></div>`).join('');
@@ -5284,7 +5301,7 @@ document.getElementById('in-mic').onclick=()=>voiceSearch(document.getElementByI
 });
 document.querySelectorAll('#in-resp button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('#in-resp button').forEach(x=>x.classList.remove('sel'));
-  b.classList.add('sel');inResp=b.dataset.r;inValidar();
+  b.classList.add('sel');inResp=b.dataset.r;inValidar();inGuardarBorrador();
 });
 document.getElementById('in-guardar').onclick=async()=>{
   const btn=document.getElementById('in-guardar');
@@ -5297,6 +5314,7 @@ document.getElementById('in-guardar').onclick=async()=>{
       let msg='✓ Consumo registrado: '+j.resumen.n+' producto'+(j.resumen.n===1?'':'s')+' · '+peso(j.resumen.total);
       if(j.resumen.avisoStock)msg+=' · '+j.resumen.avisoStock;
       showToast(msg);
+      inLimpiarBorrador();
       closeInsumos();
     }else{showToast('Error: '+((j&&j.error)||'no se pudo guardar'));}
   }catch(e){showToast('Error de conexión al guardar el consumo');}
@@ -5619,8 +5637,8 @@ async function llIgnorar(filaIndex){
 document.getElementById('btn-llegadas').onclick=()=>{document.getElementById('ll-ov').classList.remove('hidden');llLoad();};
 document.getElementById('ll-cerrar').onclick=()=>document.getElementById('ll-ov').classList.add('hidden');
 
-document.getElementById('btn-suggest').onclick=()=>{currentItems().forEach(it=>{delete state.edits[it.ref];});render();showToast('↺ Volví a las cantidades sugeridas');};
-document.getElementById('btn-clear').onclick=()=>{currentItems().forEach(it=>{state.edits[it.ref]=0;});render();showToast('✕ Pedido vaciado (todo en 0)');};
+document.getElementById('btn-suggest').onclick=()=>{currentItems().forEach(it=>{delete state.edits[it.ref];});render();persistUI();showToast('↺ Volví a las cantidades sugeridas');};
+document.getElementById('btn-clear').onclick=()=>{currentItems().forEach(it=>{state.edits[it.ref]=0;});render();persistUI();showToast('✕ Pedido vaciado (todo en 0)');};
 document.getElementById('btn-copy').onclick=()=>{const lines=currentOrder();if(!lines.length){showToast('No hay productos en el pedido');return;}lines.sort((a,b)=>b.q-a.q);const uds=lines.reduce((s,l)=>s+l.q,0);const prov=(state.search||state.allProv)?'(varios)':state.prov;
   let txt=`*Pedido ${prov}*\nMinimarket Marín 376 · Local 03\nFecha: ${new Date().toLocaleDateString('es-CL')}\n\n`;
   lines.forEach(l=>{txt+=l.it.fmt>1?`• ${l.nombre} — ${l.packs} ${plural(l.word,l.packs)} (${l.q} u)\n`:`• ${l.nombre} — ${l.q} und\n`;});
@@ -5697,7 +5715,8 @@ function persistUI(){
         prov:state.prov,allProv:state.allProv,search:state.search,
         basis:state.basis,unit:state.unit,sort:state.sort,dir:state.dir,
         winY:window.scrollY||0,
-        tblY:sc?sc.scrollTop:0
+        tblY:sc?sc.scrollTop:0,
+        edits:state.edits
       }));
     }catch(e){}
   },150);
@@ -5713,6 +5732,7 @@ function restoreUI(){
   if(['dia','sem','mes'].includes(u.unit))state.unit=u.unit;
   if(u.sort)state.sort=u.sort;
   if(u.dir===1||u.dir===-1)state.dir=u.dir;
+  if(u.edits&&typeof u.edits==='object')state.edits=u.edits;
   // refleja en los controles visuales
   document.querySelectorAll('#seg-basis button').forEach(b=>b.classList.toggle('active',+b.dataset.b===state.basis));
   document.querySelectorAll('#seg-unit button').forEach(b=>b.classList.toggle('active',b.dataset.u===state.unit));
@@ -5821,7 +5841,14 @@ historyService.init();
 const REABRIR_MODULO={
   'rc-ov':()=>{try{rcReset();}catch(e){}abrirModal('rc-ov');},
   'vc-ov':()=>{abrirModal('vc-ov');try{vcShowList();}catch(e){}try{vcLoad();}catch(e){}},
-  'cp-ov':()=>{try{cpReset();}catch(e){}abrirModal('cp-ov');try{cpCargarCatalogo();}catch(e){}}
+  'cp-ov':()=>{try{cpReset();}catch(e){}abrirModal('cp-ov');try{cpCargarCatalogo();}catch(e){}},
+  'in-ov':()=>{
+    const d=inCargarBorrador();
+    if(d){inCart=d.inCart;inResp=d.inResp||null;}else{inCart=[];inResp=null;}
+    abrirModal('in-ov');
+    inRenderCart();
+    if(inResp)document.querySelectorAll('#in-resp button').forEach(b=>b.classList.toggle('sel',b.dataset.r===inResp));
+  }
 };
 (function restaurarUltimaPantallaAlCargar(){
   const id=cargarUltimaPantalla();
