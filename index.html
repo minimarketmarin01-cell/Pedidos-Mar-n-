@@ -1747,7 +1747,7 @@ function tag(nm,prov){const n=(nm||'').toLowerCase();
   const s3=(/\b3\s?l/.test(n)||/3000\s?ml/.test(n))&&!/6[.,]?5/.test(n);
   const s65=/6[.,]?5\s?l/.test(n);
   const v600=/600\s?ml/.test(n), v500=/500\s?ml/.test(n);
-  const v473=/473/.test(n), lata=/\b350\s?ml/.test(n)||/lata/.test(n), v310=/310/.test(n);
+  const v473=/473/.test(n), lata=/\b350\s?ml/.test(n)||/lata/.test(n), v310=/310/.test(n), v591=/591/.test(n);
   const v300=/\b300\s?ml/.test(n), v250=/\b250\s?ml|250 ml/.test(n), v220=/220/.test(n), v200=/\b200\s?ml/.test(n);
   if(/lipton/.test(n)&&(s15||s16))return F(6,'display');
   if(prov==='COCA COLA'){
@@ -1758,7 +1758,7 @@ function tag(nm,prov){const n=(nm||'').toLowerCase();
       if(ret&&s3)return F(6,'caja');
       if(s15)return F(6,'display',/coca cola/.test(n)?'cc_15':null);
       if(s2||s25||s3)return F(6,'display');
-      if(lata||v473)return F(6,'display');
+      if(lata||v473||v591)return F(6,'display');
       if(v250||v220)return F(12,'display');
       return F(1,'u');
     }
@@ -2403,7 +2403,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-19.8';
+const APP_VERSION='2026-07-19.9';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
