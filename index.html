@@ -546,38 +546,6 @@ html.vista-filas .ptable-head>*{flex:0 0 auto;box-sizing:border-box;padding:6px 
 html.vista-filas .ptable-head>*:first-child{flex:1 1 auto;min-width:0;text-align:left}
 
 
-/* ==== Modo Tablet (Samsung Tab S9): grid y anchos PROPIOS — tocar este bloque no
-   afecta a POS 3:4 (bloque separado más abajo), aunque hoy compartan los mismos valores.
-   6 columnas: thumb | producto (nombre + precios abajo) | Rot | Stk | Cob | Pedir. Los
-   anchos fijos (46/40/42/78) son EXACTAMENTE los mismos que se usan en thead th:nth-child
-   más abajo — con el thead reducido a los 5 <th> reales (ya no hay th ocultos), ambos
-   sistemas reparten el ancho igual y quedan perfectamente alineados. */
-html.modo-tablet .fila-row{display:grid;grid-template-columns:20px minmax(0,1fr) 50px 42px 48px 82px;grid-template-rows:auto auto;align-items:center;column-gap:5px;row-gap:0;width:100%;box-sizing:border-box;min-width:0;overflow:hidden}
-html.modo-tablet .fila-thumb{grid-column:1;grid-row:1/3;width:20px;height:20px;overflow:hidden;border-radius:5px;box-sizing:border-box}
-html.modo-tablet .fila-thumb .card-thumb,html.modo-tablet .fila-thumb .card-thumb-empty{width:20px;height:20px;object-fit:cover;display:block}
-html.modo-tablet .fila-nombre-col{grid-column:2;grid-row:1;min-width:0;overflow:hidden;display:block}
-html.modo-tablet .fila-nombre{font-weight:800;font-size:15.5px;white-space:normal;overflow:hidden;text-overflow:ellipsis;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.2}
-html.modo-tablet .fila-precios{grid-column:2;grid-row:2}
-html.modo-tablet .fila-row>div:nth-of-type(4){grid-column:3;grid-row:1/3}
-html.modo-tablet .fila-row>div:nth-of-type(5){grid-column:4;grid-row:1/3}
-html.modo-tablet .fila-row>div:nth-of-type(6){grid-column:5;grid-row:1/3}
-html.modo-tablet .fila-pedir{grid-column:6;grid-row:1/3}
-html.modo-tablet .fila-row{grid-template-columns:24px minmax(0,1fr) 58px 48px 54px 92px;column-gap:7px}
-html.modo-tablet .fila-thumb{width:24px;height:24px}
-html.modo-tablet .fila-thumb .card-thumb,html.modo-tablet .fila-thumb .card-thumb-empty{width:24px;height:24px}
-html.modo-tablet .fila-precios,html.modo-tablet .fila-venta,html.modo-tablet .fila-costo,html.modo-tablet .fila-margen{font-size:12.5px}
-html.modo-tablet .fila-col{font-size:14.5px}
-html.modo-tablet .ptable-head{column-gap:7px}
-html.modo-tablet .ptable-head>*{padding:8px 4px;font-size:12px}
-html.modo-tablet .ptable-head>*:first-child{text-align:left}
-html.modo-tablet .ptable-head>*:nth-child(2){flex-basis:58px;text-align:right}
-html.modo-tablet .ptable-head>*:nth-child(3){flex-basis:48px;text-align:right}
-html.modo-tablet .ptable-head>*:nth-child(4){flex-basis:54px;text-align:right}
-html.modo-tablet .ptable-head>*:nth-child(5){flex-basis:92px;text-align:right;padding-right:12px}
-html.modo-tablet .qbtn{width:22px;height:29px;font-size:14px}
-html.modo-tablet .qty-in{width:24px;padding:4px 1px;font-size:13px}
-html.modo-tablet .fila-pedir .qword{font-size:8.5px}
-
 /* ==== Modo POS táctil 3:4 (BlissOS): grid y anchos PROPIOS — independiente del bloque
    de Tablet de arriba. Mismos valores por ahora, pero en reglas separadas a propósito. */
 html.modo-bliss .fila-row{display:grid;grid-template-columns:20px minmax(0,1fr) 50px 42px 48px 82px;grid-template-rows:auto auto;align-items:center;column-gap:5px;row-gap:0;width:100%;box-sizing:border-box;min-width:0;overflow:hidden}
@@ -608,19 +576,19 @@ html.modo-bliss #tab-pedido .tbl-scroll,html.modo-bliss #tab-pedido table{width:
 /* Un poco más de aire vertical para que el texto auxiliar de Pedir (displays·Nu, etc.)
    quepa siempre completo debajo del stepper sin recortarse. */
 html.modo-bliss .card-cell{padding:7px 8px}
-html.modo-bliss .fila-row{grid-template-columns:22px minmax(0,1fr) 100px 64px 66px 100px;column-gap:8px}
-html.modo-bliss .fila-thumb{width:22px;height:22px}
-html.modo-bliss .fila-thumb .card-thumb,html.modo-bliss .fila-thumb .card-thumb-empty{width:22px;height:22px}
+html.modo-bliss .fila-row{grid-template-columns:52px minmax(0,1fr) 100px 64px 66px 100px;column-gap:8px}
+html.modo-bliss .fila-thumb{width:52px;height:52px;border-radius:9px}
+html.modo-bliss .fila-thumb .card-thumb,html.modo-bliss .fila-thumb .card-thumb-empty{width:52px;height:52px;font-size:22px}
 html.modo-bliss .fila-nombre{font-size:18.5px;line-height:1.18}
 html.modo-bliss .fila-precios,html.modo-bliss .fila-venta,html.modo-bliss .fila-costo,html.modo-bliss .fila-margen{font-size:13px}
 html.modo-bliss .fila-col{font-size:15.5px}
 html.modo-bliss .ptable-head{column-gap:8px}
 html.modo-bliss .ptable-head>*{font-size:13.5px;padding:8px 4px}
 html.modo-bliss .ptable-head>*:first-child{text-align:left}
-html.modo-bliss .ptable-head>*:nth-child(2){flex-basis:100px;text-align:right}
-html.modo-bliss .ptable-head>*:nth-child(3){flex-basis:64px;text-align:right}
-html.modo-bliss .ptable-head>*:nth-child(4){flex-basis:66px;text-align:right}
-html.modo-bliss .ptable-head>*:nth-child(5){flex-basis:100px;text-align:right;padding-right:14px}
+html.modo-bliss .ptable-head>*:nth-child(2){flex-basis:100px;text-align:center}
+html.modo-bliss .ptable-head>*:nth-child(3){flex-basis:64px;text-align:center}
+html.modo-bliss .ptable-head>*:nth-child(4){flex-basis:66px;text-align:center}
+html.modo-bliss .ptable-head>*:nth-child(5){flex-basis:100px;text-align:center}
 /* Pedir: ancho fijo cómodo para botones grandes; el texto auxiliar (displays·Nu, cajas·Nu,
    unidades·Nu) queda SIEMPRE centrado debajo del stepper, sin desplazarse según el largo
    del texto de cada producto. */
@@ -987,7 +955,6 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
     <div class="modo-switch" id="modo-switch">
       <button data-modo="celular" title="Modo Celular" onclick="setModo('celular')"><svg class="ms-ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2.5" width="8" height="19" rx="1.5"/><line x1="11" y1="18" x2="13" y2="18"/></svg><span class="ms-tx">Cel</span></button>
       <button data-modo="bliss" title="Modo POS táctil 3:4 (BlissOS)" onclick="setModo('bliss')"><svg class="ms-ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="15" rx="1.5"/><line x1="9" y1="21" x2="15" y2="21"/></svg><span class="ms-tx">POS 3:4</span></button>
-      <button data-modo="tablet" title="Modo Tablet" onclick="setModo('tablet')"><svg class="ms-ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="1.5"/></svg><span class="ms-tx">Tablet</span></button>
     </div>
     <button class="loadbtn acc" id="btn-sync"><svg class="sync-ic" id="sync-ic-sync" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.7-3"/><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.7 3"/><polyline points="21 3 21 9 15 9"/><polyline points="3 21 3 15 9 15"/></svg> Sincronizar</button>
     <button class="loadbtn" id="btn-prices"><span class="sync-ic" id="sync-ic-prices"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg></span> Catálogo</button>
@@ -2436,7 +2403,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-19.6';
+const APP_VERSION='2026-07-19.7';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -6154,14 +6121,12 @@ function _modoGuardado(){try{return localStorage.getItem(MODO_LS_KEY);}catch(e){
 function _guardarModo(m){try{localStorage.setItem(MODO_LS_KEY,m);}catch(e){}}
 function _aplicarModo(m){
   const html=document.documentElement;
-  html.classList.remove('modo-celular','modo-bliss','modo-tablet');
+  html.classList.remove('modo-celular','modo-bliss');
   if(m==='celular'){
     html.classList.add('modo-celular');
     html.classList.remove('carrito-fijo','vista-filas');
   }else if(m==='bliss'){
     html.classList.add('modo-bliss','carrito-fijo','vista-filas');
-  }else if(m==='tablet'){
-    html.classList.add('modo-tablet','carrito-fijo','vista-filas');
   }
   document.querySelectorAll('#modo-switch button').forEach(b=>b.classList.toggle('active',b.dataset.modo===m));
   if(typeof renderTable==='function'&&document.getElementById('ptbody'))renderTable();
@@ -6173,11 +6138,17 @@ if(new URLSearchParams(location.search).get('debug')==='1'){
 }
 (function _initModo(){
   let guardado=_modoGuardado();
+  if(guardado==='tablet'){
+    // Modo Tablet eliminado (el modo POS 3:4 ya cubre tablet horizontal) — a quien
+    // tuviera esta preferencia guardada de antes, lo migramos a Bliss sin preguntarle.
+    guardado='bliss';
+    _guardarModo(guardado);
+  }
   if(!guardado){
     // Primer arranque: sin preferencia guardada, se infiere un modo explícito según el
     // ancho actual y queda grabado — así el selector nunca arranca "sin marcar" y el
     // usuario siempre puede ver (y cambiar) en qué modo está.
-    guardado=window.innerWidth<1000?'celular':'tablet';
+    guardado=window.innerWidth<1000?'celular':'bliss';
     _guardarModo(guardado);
   }
   _aplicarModo(guardado);
@@ -6188,7 +6159,7 @@ if(new URLSearchParams(location.search).get('debug')==='1'){
     if(!m)return;
     const html=document.documentElement;
     const ok=(m==='celular'&&html.classList.contains('modo-celular')&&!html.classList.contains('vista-filas'))
-      ||(m!=='celular'&&html.classList.contains(m==='bliss'?'modo-bliss':'modo-tablet')&&html.classList.contains('carrito-fijo')&&html.classList.contains('vista-filas'));
+      ||(m==='bliss'&&html.classList.contains('modo-bliss')&&html.classList.contains('carrito-fijo')&&html.classList.contains('vista-filas'));
     if(!ok)_aplicarModo(m);
   });
   obs.observe(document.documentElement,{attributes:true,attributeFilter:['class']});
