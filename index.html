@@ -950,6 +950,7 @@ html.modo-bliss tr:has(.qstep.has):not(.row-urgent) .fila-nombre::before{content
 .debug-outline #ptable{outline:3px solid #27ae60!important}
 .debug-outline #tab-carrito{outline:3px solid #f1c40f!important}
 .debug-outline::before{content:'DEBUG: morado=tab-pedido · naranja=.wrap · rojo=.tablecard · azul=.tbl-scroll · verde=#ptable · amarillo=carrito';position:fixed;top:0;left:0;right:0;z-index:99999;background:#000;color:#fff;font-size:10px;padding:3px 6px;text-align:center}
+</style>
 </head>
 <body>
 <div id="diag-ancho" style="position:fixed;right:4px;top:max(4px,env(safe-area-inset-top));z-index:9999;font-size:9px;font-family:'JetBrains Mono',monospace;color:rgba(0,0,0,.4);background:rgba(255,255,255,.75);padding:2px 6px;border-radius:6px;pointer-events:none"></div>
@@ -2409,7 +2410,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-18.24';
+const APP_VERSION='2026-07-18.25';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -6138,10 +6139,6 @@ function _aplicarModo(m){
 }
 function setModo(m){_guardarModo(m);_aplicarModo(m);}
 // ==== Modo diagnóstico visual (?debug=1 en la URL) ====
-// Dibuja un borde de color distinto alrededor de cada contenedor relevante de la tabla/
-// carrito, para encontrar visualmente de dónde sale un hueco o un desborde sin necesitar
-// herramientas de desarrollador (que en Chrome Android no vienen integradas). Se activa
-// solo si la URL trae ?debug=1 — no afecta nada en uso normal.
 if(new URLSearchParams(location.search).get('debug')==='1'){
   document.documentElement.classList.add('debug-outline');
 }
