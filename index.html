@@ -539,7 +539,7 @@ html.vista-filas thead th:first-child{text-align:left}
    anchos fijos (46/40/42/78) son EXACTAMENTE los mismos que se usan en thead th:nth-child
    más abajo — con el thead reducido a los 5 <th> reales (ya no hay th ocultos), ambos
    sistemas reparten el ancho igual y quedan perfectamente alineados. */
-html.modo-tablet .fila-row{display:grid;grid-template-columns:20px minmax(0,1fr) 50px 42px 48px 82px;grid-template-rows:auto auto;align-items:center;column-gap:5px;row-gap:0;width:100%;box-sizing:border-box;min-width:0;overflow:hidden}
+html.modo-tablet .fila-row{display:grid;grid-template-columns:20px minmax(0,1fr) 50px 42px 48px 82px;grid-template-rows:auto auto;align-items:center;column-gap:8px;row-gap:0;width:100%;box-sizing:border-box;min-width:0;overflow:hidden}
 html.modo-tablet .fila-thumb{grid-column:1;grid-row:1/3;width:20px;height:20px;overflow:hidden;border-radius:5px;box-sizing:border-box}
 html.modo-tablet .fila-thumb .card-thumb,html.modo-tablet .fila-thumb .card-thumb-empty{width:20px;height:20px;object-fit:cover;display:block}
 html.modo-tablet .fila-nombre-col{grid-column:2;grid-row:1;min-width:0;overflow:hidden;display:block}
@@ -556,11 +556,11 @@ html.modo-tablet thead th:nth-child(5){width:82px;padding-right:12px}
 
 /* ==== Modo POS táctil 3:4 (BlissOS): grid y anchos PROPIOS — independiente del bloque
    de Tablet de arriba. Mismos valores por ahora, pero en reglas separadas a propósito. */
-html.modo-bliss .fila-row{display:grid;grid-template-columns:20px minmax(0,1fr) 50px 42px 48px 82px;grid-template-rows:auto auto;align-items:center;column-gap:5px;row-gap:0;width:100%;box-sizing:border-box;min-width:0;overflow:hidden}
+html.modo-bliss .fila-row{display:grid;grid-template-columns:32px minmax(220px,1fr) 65px 55px 60px 95px;grid-template-rows:auto auto;align-items:center;column-gap:5px;row-gap:0;width:100%;box-sizing:border-box;min-width:0;overflow:hidden}
 html.modo-bliss .fila-thumb{grid-column:1;grid-row:1/3;width:20px;height:20px;overflow:hidden;border-radius:5px;box-sizing:border-box}
 html.modo-bliss .fila-thumb .card-thumb,html.modo-bliss .fila-thumb .card-thumb-empty{width:20px;height:20px;object-fit:cover;display:block}
 html.modo-bliss .fila-nombre-col{grid-column:2;grid-row:1;min-width:0;overflow:hidden;display:block}
-html.modo-bliss .fila-nombre{font-weight:800;font-size:12.5px;white-space:normal;overflow:hidden;text-overflow:ellipsis;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.2}
+html.modo-bliss .fila-nombre{font-weight:800;font-size:17px;white-space:normal;overflow:hidden;text-overflow:ellipsis;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.2}
 html.modo-bliss .fila-precios{grid-column:2;grid-row:2}
 html.modo-bliss .fila-row>div:nth-of-type(4){grid-column:3;grid-row:1/3}
 html.modo-bliss .fila-row>div:nth-of-type(5){grid-column:4;grid-row:1/3}
