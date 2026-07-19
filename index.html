@@ -1026,7 +1026,6 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
     <span><i class="ldot" style="background:var(--gris)"></i>Sobrestock</span>
   </div>
   </div>
-</div>
 <div class="wrap">
   <div>
     <div class="scan-ov hidden" id="scan-ov">
@@ -2437,7 +2436,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-19.4';
+const APP_VERSION='2026-07-19.5';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
