@@ -2437,7 +2437,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-19.3';
+const APP_VERSION='2026-07-19.4';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -6137,7 +6137,7 @@ function _actualizarLayout(){
   _aplicarLayoutCarrito();
   _aplicarVistaFilas();
   const diag=document.getElementById('diag-ancho');
-  if(diag)diag.textContent=window.innerWidth+'×'+window.innerHeight;
+  if(diag)diag.textContent=window.innerWidth+'×'+window.innerHeight+' · v'+APP_VERSION;
 }
 _actualizarLayout();
 window.addEventListener('resize',()=>{clearTimeout(_layoutT);_layoutT=setTimeout(_actualizarLayout,100);});
