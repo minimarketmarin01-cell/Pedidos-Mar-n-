@@ -491,7 +491,13 @@ thead th:first-child{text-align:left;padding-left:12px;font-size:10.5px;letter-s
 thead th .ar{opacity:.35;font-size:9px;display:inline-block;margin-left:2px}
 thead th.sorted{color:var(--ink2);background:var(--paper)}
 thead th.sorted .ar{opacity:.8}
+.ptable-head>* .ar{opacity:.35;font-size:9px;display:inline-block;margin-left:2px}
+.ptable-head>*.sorted{color:var(--ink2);background:var(--paper)}
+.ptable-head>*.sorted .ar{opacity:.8}
 thead th.l{text-align:left}
+.ptable-head{display:flex;width:100%;box-sizing:border-box}
+.ptable-head>*{background:var(--card);text-align:center;font-size:9.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:7px 4px;white-space:nowrap;cursor:pointer;user-select:none;position:sticky;top:0;z-index:6;border-bottom:1px solid var(--line2)}
+.ptable-head>*:first-child{text-align:left;padding-left:12px;font-size:10.5px;letter-spacing:.01em}
 tbody td{padding:5px 6px;border-bottom:1px solid var(--line2);text-align:right;white-space:nowrap;font-size:13px}
 tbody td.num,tbody td.tdc{overflow:visible}
 tbody tr:hover td{background:#fafaf7}
@@ -499,13 +505,18 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 /* Ya no hay columnas que alinear — cada fila es una sola celda (colspan) con la
    tarjeta completa adentro. El encabezado de arriba quedó como una barra de
    chips de orden, independiente del ancho de las tarjetas. */
-#ptable{min-width:100%;width:100%;max-width:100%;table-layout:auto}
-.card-cell{padding:13px 10px !important;white-space:normal !important;text-align:left !important;border-bottom:1px solid var(--line2) !important;box-sizing:border-box;overflow:hidden}
+#ptable{min-width:100%;width:100%;max-width:100%}
+.card-cell{display:block;padding:13px 10px !important;white-space:normal !important;text-align:left !important;border-bottom:1px solid var(--line2) !important;box-sizing:border-box;overflow:hidden}
 .card-row{display:flex;flex-wrap:nowrap;align-items:flex-start;gap:10px;min-width:0;width:100%;box-sizing:border-box}
 /* ---- Vista de fila: reglas MECÁNICAS compartidas por Tablet y POS 3:4 (estructura de
    tabla, no anchos de columna — esas van abajo, cada modo por separado). ---- */
 html.vista-filas .card-cell{padding:4px 8px!important;width:100%}
-html.vista-filas #ptable{table-layout:fixed;width:100%;min-width:0;max-width:100%}
+/* #ptable ya NO es una <table> HTML — es un <div>, y cada fila es otro <div> (.card-cell)
+   con un <div class="ptable-head"> como encabezado. Se eliminó el elemento <table> de raíz
+   (bug conocido de colspan con contenido bajo table-layout:fixed — ref. Bugzilla 734569),
+   así que ya no hace falta ningún parche de display:block/flex sobre thead/tbody/tr/td:
+   son divs normales y se comportan como divs normales, sin ambigüedad de motor de tablas. */
+html.vista-filas #ptable{width:100%;min-width:0;max-width:100%}
 html.carrito-fijo.vista-filas #ptable{
   width:calc(100vw - var(--cart-w) - 12px);
   max-width:calc(100vw - var(--cart-w) - 12px);
@@ -530,8 +541,10 @@ html.vista-filas .fila-pedir .qstep{flex-direction:row;align-items:center;gap:3p
 html.vista-filas .qbtn{width:18px;height:25px;font-size:13px}
 html.vista-filas .qty-in{width:20px;padding:3px 1px;font-size:12px}
 html.vista-filas .fila-pedir .qword{display:block;font-size:7.5px;max-width:80px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
-html.vista-filas thead th{text-align:right;white-space:nowrap;font-size:10.5px;box-sizing:border-box;padding:6px 4px}
-html.vista-filas thead th:first-child{text-align:left}
+html.vista-filas .ptable-head{display:flex;width:100%;box-sizing:border-box;align-items:stretch;text-align:right;white-space:nowrap;font-size:10.5px;background:var(--paper);position:sticky;top:0;z-index:2;border-bottom:1px solid var(--line2)}
+html.vista-filas .ptable-head>*{flex:0 0 auto;box-sizing:border-box;padding:6px 4px;overflow:visible;cursor:pointer}
+html.vista-filas .ptable-head>*:first-child{flex:1 1 auto;min-width:0;text-align:left}
+
 
 /* ==== Modo Tablet (Samsung Tab S9): grid y anchos PROPIOS — tocar este bloque no
    afecta a POS 3:4 (bloque separado más abajo), aunque hoy compartan los mismos valores.
@@ -549,10 +562,13 @@ html.modo-tablet .fila-row>div:nth-of-type(4){grid-column:3;grid-row:1/3}
 html.modo-tablet .fila-row>div:nth-of-type(5){grid-column:4;grid-row:1/3}
 html.modo-tablet .fila-row>div:nth-of-type(6){grid-column:5;grid-row:1/3}
 html.modo-tablet .fila-pedir{grid-column:6;grid-row:1/3}
-html.modo-tablet thead th:nth-child(2){width:50px}
-html.modo-tablet thead th:nth-child(3){width:42px}
-html.modo-tablet thead th:nth-child(4){width:48px}
-html.modo-tablet thead th:nth-child(5){width:82px;padding-right:12px}
+html.modo-tablet .ptable-head{column-gap:5px}
+html.modo-tablet .ptable-head>*{padding:6px 4px}
+html.modo-tablet .ptable-head>*:first-child{text-align:left}
+html.modo-tablet .ptable-head>*:nth-child(2){flex-basis:50px;text-align:right}
+html.modo-tablet .ptable-head>*:nth-child(3){flex-basis:42px;text-align:right}
+html.modo-tablet .ptable-head>*:nth-child(4){flex-basis:48px;text-align:right}
+html.modo-tablet .ptable-head>*:nth-child(5){flex-basis:82px;text-align:right;padding-right:12px}
 
 /* ==== Modo POS táctil 3:4 (BlissOS): grid y anchos PROPIOS — independiente del bloque
    de Tablet de arriba. Mismos valores por ahora, pero en reglas separadas a propósito. */
@@ -566,10 +582,7 @@ html.modo-bliss .fila-row>div:nth-of-type(4){grid-column:3;grid-row:1/3}
 html.modo-bliss .fila-row>div:nth-of-type(5){grid-column:4;grid-row:1/3}
 html.modo-bliss .fila-row>div:nth-of-type(6){grid-column:5;grid-row:1/3}
 html.modo-bliss .fila-pedir{grid-column:6;grid-row:1/3}
-html.modo-bliss thead th:nth-child(2){width:50px}
-html.modo-bliss thead th:nth-child(3){width:42px}
-html.modo-bliss thead th:nth-child(4){width:48px}
-html.modo-bliss thead th:nth-child(5){width:82px;padding-right:12px}
+/* (anchos de thead de bliss unificados más abajo, como grid) */
 /* ==== Overrides EXCLUSIVOS de POS 3:4 (BlissOS 1024×768, lectura a ~50cm): tipografía
    más grande y columnas más anchas. Todo bajo html.modo-bliss — no toca Cel/Tablet. ==== */
 /* El carrito necesita un mínimo ~300px para no cortar el botón "Copiar" — achicarlo a 260px
@@ -593,12 +606,13 @@ html.modo-bliss .fila-thumb .card-thumb,html.modo-bliss .fila-thumb .card-thumb-
 html.modo-bliss .fila-nombre{font-size:18.5px;line-height:1.18}
 html.modo-bliss .fila-precios,html.modo-bliss .fila-venta,html.modo-bliss .fila-costo,html.modo-bliss .fila-margen{font-size:13px}
 html.modo-bliss .fila-col{font-size:15.5px}
-html.modo-bliss thead th{font-size:13.5px;padding:8px 4px}
-html.modo-bliss thead th:first-child{width:calc(100% - 276px)}
-html.modo-bliss thead th:nth-child(2){width:62px}
-html.modo-bliss thead th:nth-child(3){width:54px}
-html.modo-bliss thead th:nth-child(4){width:60px}
-html.modo-bliss thead th:nth-child(5){width:100px;padding-right:14px}
+html.modo-bliss .ptable-head{column-gap:8px}
+html.modo-bliss .ptable-head>*{font-size:13.5px;padding:8px 4px}
+html.modo-bliss .ptable-head>*:first-child{text-align:left}
+html.modo-bliss .ptable-head>*:nth-child(2){flex-basis:62px;text-align:right}
+html.modo-bliss .ptable-head>*:nth-child(3){flex-basis:54px;text-align:right}
+html.modo-bliss .ptable-head>*:nth-child(4){flex-basis:60px;text-align:right}
+html.modo-bliss .ptable-head>*:nth-child(5){flex-basis:100px;text-align:right;padding-right:14px}
 /* Pedir: ancho fijo cómodo para botones grandes; el texto auxiliar (displays·Nu, cajas·Nu,
    unidades·Nu) queda SIEMPRE centrado debajo del stepper, sin desplazarse según el largo
    del texto de cada producto. */
@@ -784,20 +798,20 @@ html.modo-bliss .fila-pedir .qword{text-align:center;max-width:100px;font-size:9
 .qword{font-size:9.5px;color:var(--muted);font-weight:600;font-family:'Archivo';white-space:normal;text-align:right;max-width:78px}
 .qword.gold{color:var(--gold)}
 .qpacks{font-size:9.5px;color:var(--gold);font-weight:700;font-family:'Archivo';white-space:normal;text-align:right;max-width:78px}
-.row-urgent td{box-shadow:inset 3px 0 0 var(--rojo)}
+.row-urgent{box-shadow:inset 3px 0 0 var(--rojo)}
 /* Modo teléfono (<1000px, sin vista-filas): identificación reforzada de "urgente"/"pedir"
    — borde más grueso + fondo tenue + punto de color antes del nombre + badge de Cobertura
    resaltado. Solo celular: en vista-filas ya existe su propio indicador (modo-bliss). */
-html:not(.vista-filas) tr.row-urgent td{box-shadow:inset 4px 0 0 var(--rojo);background:#FCEBEA}
-html:not(.vista-filas) tr.row-pedir td{box-shadow:inset 4px 0 0 var(--ambar);background:#FFF6E8}
-html:not(.vista-filas) tr.row-urgent .prod-name::before{content:'● ';color:var(--rojo)}
-html:not(.vista-filas) tr.row-pedir .prod-name::before{content:'● ';color:var(--ambar)}
-html:not(.vista-filas) tr.row-urgent .card-main::before{content:'🔴 URGENTE — reponer ya';display:block;font-size:9.5px;font-weight:800;color:#fff;background:var(--rojo);padding:2px 7px;border-radius:5px;margin-bottom:4px;width:fit-content}
-html:not(.vista-filas) tr.row-pedir .card-main::before{content:'🟠 A PEDIR';display:block;font-size:9.5px;font-weight:800;color:#fff;background:var(--ambar);padding:2px 7px;border-radius:5px;margin-bottom:4px;width:fit-content}
-html:not(.vista-filas) tr.row-urgent .card-stats .cstat:last-child,
-html:not(.vista-filas) tr.row-pedir .card-stats .cstat:last-child{font-weight:800;padding:1px 6px;border-radius:5px}
-html:not(.vista-filas) tr.row-urgent .card-stats .cstat:last-child{background:#FBD8D3}
-html:not(.vista-filas) tr.row-pedir .card-stats .cstat:last-child{background:#FCE8C2}
+html:not(.vista-filas) .row-urgent{box-shadow:inset 4px 0 0 var(--rojo);background:#FCEBEA}
+html:not(.vista-filas) .row-pedir{box-shadow:inset 4px 0 0 var(--ambar);background:#FFF6E8}
+html:not(.vista-filas) .row-urgent .prod-name::before{content:'● ';color:var(--rojo)}
+html:not(.vista-filas) .row-pedir .prod-name::before{content:'● ';color:var(--ambar)}
+html:not(.vista-filas) .row-urgent .card-main::before{content:'🔴 URGENTE — reponer ya';display:block;font-size:9.5px;font-weight:800;color:#fff;background:var(--rojo);padding:2px 7px;border-radius:5px;margin-bottom:4px;width:fit-content}
+html:not(.vista-filas) .row-pedir .card-main::before{content:'🟠 A PEDIR';display:block;font-size:9.5px;font-weight:800;color:#fff;background:var(--ambar);padding:2px 7px;border-radius:5px;margin-bottom:4px;width:fit-content}
+html:not(.vista-filas) .row-urgent .card-stats .cstat:last-child,
+html:not(.vista-filas) .row-pedir .card-stats .cstat:last-child{font-weight:800;padding:1px 6px;border-radius:5px}
+html:not(.vista-filas) .row-urgent .card-stats .cstat:last-child{background:#FBD8D3}
+html:not(.vista-filas) .row-pedir .card-stats .cstat:last-child{background:#FCE8C2}
 .rcol{display:flex;flex-direction:column;gap:13px;position:sticky;top:16px}
 @media(max-width:1080px){.rcol{position:static}}
 .scalecard,.order{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
@@ -936,256 +950,14 @@ html:not(.vista-filas) tr.row-pedir .card-stats .cstat:last-child{background:#FC
 .modo-switch .ms-tx{font-size:10px;font-weight:700;white-space:nowrap}
 .modo-switch button.active{background:var(--wa,#1a73e8);opacity:1;color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25)}
 @media(max-width:520px){.modo-switch .ms-tx{display:none}}
-/* === Modo BlissOS (3:4 táctil): layout específico para pantalla 1024x768 === */
-html.modo-bliss {
-  --cart-w: clamp(300px, 26vw, 340px);
-}
-
-/* Grid base del modo BlissOS */
-html.modo-bliss .fila-row {
-  display: grid;
-  grid-template-columns: 22px minmax(0,1fr) 62px 54px 60px 110px;
-  grid-template-rows: auto auto;
-  align-items: center;
-  column-gap: 8px;
-  row-gap: 0;
-  width: 100%;
-  box-sizing: border-box;
-  min-width: 0;
-  overflow: hidden;
-  border-left: 4px solid transparent;
-  padding-left: 4px;
-}
-
-html.modo-bliss .fila-thumb {
-  grid-column: 1;
-  grid-row: 1/3;
-  width: 22px;
-  height: 22px;
-  overflow: hidden;
-  border-radius: 5px;
-  box-sizing: border-box;
-}
-
-html.modo-bliss .fila-thumb .card-thumb,
-html.modo-bliss .fila-thumb .card-thumb-empty {
-  width: 22px;
-  height: 22px;
-  object-fit: cover;
-  display: block;
-}
-
-html.modo-bliss .fila-nombre-col {
-  grid-column: 2;
-  grid-row: 1;
-  min-width: 0;
-  overflow: hidden;
-  display: block;
-}
-
-html.modo-bliss .fila-nombre {
-  font-weight: 800;
-  font-size: 18.5px;
-  white-space: normal;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--ink);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  line-height: 1.18;
-}
-
-html.modo-bliss .fila-precios {
-  grid-column: 2;
-  grid-row: 2;
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  min-width: 0;
-  overflow: hidden;
-}
-
-html.modo-bliss .fila-venta,
-html.modo-bliss .fila-costo,
-html.modo-bliss .fila-margen {
-  flex: 0 0 auto;
-  font-family: 'JetBrains Mono', monospace;
-  font-weight: 700;
-  font-size: 13px;
-  color: var(--muted);
-  white-space: nowrap;
-}
-
-html.modo-bliss .fila-costo::before {
-  content: 'C ';
-  opacity: 0.7;
-}
-
-html.modo-bliss .fila-margen::before {
-  content: 'M ';
-  opacity: 0.7;
-}
-
-html.modo-bliss .fila-margen.mg-hi {
-  color: var(--verde);
-}
-
-html.modo-bliss .fila-margen.mg-lo {
-  color: var(--rojo);
-}
-
-html.modo-bliss .fila-row > div:nth-of-type(4) {
-  grid-column: 3;
-  grid-row: 1/3;
-}
-
-html.modo-bliss .fila-row > div:nth-of-type(5) {
-  grid-column: 4;
-  grid-row: 1/3;
-}
-
-html.modo-bliss .fila-row > div:nth-of-type(6) {
-  grid-column: 5;
-  grid-row: 1/3;
-}
-
-html.modo-bliss .fila-pedir {
-  grid-column: 6;
-  grid-row: 1/3;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1px;
-}
-
-html.modo-bliss .fila-pedir .qstep {
-  flex-direction: row;
-  align-items: center;
-  gap: 3px;
-}
-
-html.modo-bliss .qbtn {
-  width: 22px;
-  height: 29px;
-  font-size: 14px;
-}
-
-html.modo-bliss .qty-in {
-  width: 25px;
-  padding: 4px 1px;
-  font-size: 13px;
-}
-
-html.modo-bliss .fila-pedir .qword {
-  text-align: center;
-  max-width: 100px;
-  font-size: 9px;
-}
-
-html.modo-bliss .fila-col {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0;
-  font-family: 'JetBrains Mono', monospace;
-  font-weight: 700;
-  font-size: 15.5px;
-  color: var(--ink);
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-/* Encabezados alineados con el grid */
-html.modo-bliss #ptable thead tr {
-  column-gap: 8px;
-}
-
-html.modo-bliss thead th {
-  font-size: 13.5px;
-  padding: 8px 4px;
-}
-
-html.modo-bliss thead th:first-child {
-  text-align: left;
-}
-
-html.modo-bliss thead th:nth-child(2) {
-  flex-basis: 62px;
-  text-align: right;
-}
-
-html.modo-bliss thead th:nth-child(3) {
-  flex-basis: 54px;
-  text-align: right;
-}
-
-html.modo-bliss thead th:nth-child(4) {
-  flex-basis: 60px;
-  text-align: right;
-}
-
-html.modo-bliss thead th:nth-child(5) {
-  flex-basis: 110px;
-  text-align: right;
-  padding-right: 14px;
-}
-
-/* Anular huecos y padding heredados */
-html.modo-bliss .wrap,
-html.modo-bliss #tab-pedido .wrap {
-  padding-right: 0 !important;
-  padding-left: 8px !important;
-}
-
-html.modo-bliss.carrito-fijo.vista-filas #ptable {
-  width: 100% !important;
-  max-width: 100% !important;
-}
-
-html.modo-bliss #tab-pedido .tablecard {
-  max-width: 100%;
-  margin: 0;
-  width: 100%;
-}
-
-html.modo-bliss #tab-pedido .tbl-scroll,
-html.modo-bliss #tab-pedido table {
-  width: 100% !important;
-  max-width: 100% !important;
-}
-
-html.modo-bliss .card-cell {
-  padding: 7px 8px !important;
-}
-
-/* Indicadores de urgencia y pedido */
-html.modo-bliss tr.row-urgent .fila-row {
-  border-left-color: var(--rojo);
-  background: #FCEBEA;
-}
-
-html.modo-bliss tr.row-urgent .fila-nombre::before {
-  content: '● ';
-  color: var(--rojo);
-}
-
-html.modo-bliss tr:has(.qstep.has):not(.row-urgent) .fila-row {
-  border-left-color: var(--ambar);
-  background: #FFF6E8;
-}
-
-html.modo-bliss tr:has(.qstep.has):not(.row-urgent) .fila-nombre::before {
-  content: '● ';
-  color: var(--ambar);
-}
-
-/* Asegurar que el acordeón de proveedores no quede tapado */
-html.modo-bliss #sticky-hdr:has(#prov-menu:not(.hidden)) {
-  z-index: 260;
-}
+/* ==== Modo BlissOS (3:4 táctil): el grid denso de 5 columnas ya es el layout base de
+   html.vista-filas (arriba) — no hace falta redefinirlo acá. Lo único propio de BlissOS
+   es el indicador de prioridad (borde + punto de color) en el nombre del producto. */
+html.modo-bliss .fila-row{border-left:4px solid transparent;padding-left:4px}
+html.modo-bliss .row-urgent .fila-row{border-left-color:var(--rojo);background:#FCEBEA}
+html.modo-bliss .row-urgent .fila-nombre::before{content:'● ';color:var(--rojo)}
+html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-row{border-left-color:var(--ambar);background:#FFF6E8}
+html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before{content:'● ';color:var(--ambar)}
 /* ==== Modo diagnóstico visual (?debug=1) — un color por contenedor ==== */
 .debug-outline #tab-pedido{outline:3px solid #9b59b6!important}
 .debug-outline #tab-pedido>.wrap{outline:3px solid #e67e22!important}
@@ -1193,7 +965,7 @@ html.modo-bliss #sticky-hdr:has(#prov-menu:not(.hidden)) {
 .debug-outline .tbl-scroll{outline:3px solid #2980b9!important}
 .debug-outline #ptable{outline:3px solid #27ae60!important}
 .debug-outline #tab-carrito{outline:3px solid #f1c40f!important}
-.debug-outline td.card-cell{outline:2px dashed #ff00ff!important}
+.debug-outline .card-cell{outline:2px dashed #ff00ff!important}
 .debug-outline .fila-row{outline:2px dashed #00ffff!important}
 .debug-outline .fila-pedir{outline:2px solid #ff6600!important;background:rgba(255,102,0,.15)!important}
 .debug-outline::before{content:'DEBUG: morado=tab-pedido·naranja=.wrap·rojo=.tablecard·azul=.tbl-scroll·verde=#ptable·amarillo=carrito·magenta punteado=td·cian punteado=fila-row·NARANJA SÓLIDO=fila-pedir';position:fixed;top:0;left:0;right:0;z-index:99999;background:#000;color:#fff;font-size:9px;padding:3px 6px;text-align:center}
@@ -1543,16 +1315,16 @@ html.modo-bliss #sticky-hdr:has(#prov-menu:not(.hidden)) {
         </div>
       </div>
     </div>
-    <div class="tablecard"><div class="tbl-scroll"><table id="ptable">
-      <thead><tr>
-        <th class="l" data-s="nombre">Producto <span class="ar">▲▼</span></th>
-        <th data-s="rate" id="th-rate">Rot <span class="ar">▲▼</span></th>
-        <th data-s="stock">Stk <span class="ar">▲▼</span></th>
-        <th data-s="cov" class="sorted">Cob <span class="ar">▲▼</span></th>
-        <th data-s="sug">Pedir <span class="ar">▲▼</span></th>
-      </tr></thead>
-      <tbody id="ptbody"></tbody>
-    </table></div></div>
+    <div class="tablecard"><div class="tbl-scroll"><div id="ptable">
+      <div class="ptable-head">
+        <span class="l" data-s="nombre">Producto <span class="ar">▲▼</span></span>
+        <span data-s="rate" id="th-rate">Rot <span class="ar">▲▼</span></span>
+        <span data-s="stock">Stk <span class="ar">▲▼</span></span>
+        <span data-s="cov" class="sorted">Cob <span class="ar">▲▼</span></span>
+        <span data-s="sug">Pedir <span class="ar">▲▼</span></span>
+      </div>
+      <div id="ptbody"></div>
+    </div></div></div>
   </div>
 
 </div>
@@ -2451,7 +2223,7 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
     // Pantallas grandes (BlissOS/monitor táctil): formato de fila tipo planilla — mismos
     // datos que la tarjeta (arriba), reutilizados tal cual, solo en otro maquetado.
     const stepper=`<div class="qcell"><div class="qstep ${sug>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}" data-step="${inStep(it)}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${(it.fmt>1||multOf(it)>1)?'gold':''}">${labelFor(it,bundles)}</span></div>`;
-    return `<tr data-ref="${it.ref}" class="${a.status==='urgente'?'row-urgent':''}" title="${tooltip}"><td class="card-cell" colspan="5">`+
+    return `<div data-ref="${it.ref}" class="card-cell ${a.status==='urgente'?'row-urgent':''}" title="${tooltip}">`+
       `<div class="fila-row">`+
         `<div class="fila-thumb">${thumb}</div>`+
         `<div class="fila-nombre-col">`+
@@ -2464,9 +2236,9 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
         `<div class="fila-col" style="color:${covColor(a)}"><span class="fila-lbl">COB</span><span>${covTxt}</span></div>`+
         `<div class="fila-pedir">${stepper}</div>`+
       `</div>`+
-    `</td></tr>`;
+    `</div>`;
   }
-  return `<tr data-ref="${it.ref}" class="${a.status==='urgente'?'row-urgent':a.status==='pedir'?'row-pedir':''}" title="${tooltip}"><td class="card-cell" colspan="5">`+
+  return `<div data-ref="${it.ref}" class="card-cell ${a.status==='urgente'?'row-urgent':a.status==='pedir'?'row-pedir':''}" title="${tooltip}">`+
     `<div class="card-row">`+
       `<div class="card-thumb-wrap">${thumb}</div>`+
       `<div class="card-main">`+
@@ -2481,7 +2253,7 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
       `</div>`+
       `<div class="card-stepper"><div class="qcell"><div class="qstep ${sug>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}" data-step="${inStep(it)}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${(it.fmt>1||multOf(it)>1)?'gold':''}">${labelFor(it,bundles)}</span></div></div>`+
     `</div>`+
-  `</td></tr>`;
+  `</div>`;
 }
 function tableScrollEl(){const tb=document.getElementById('ptbody');return tb?tb.closest('.tbl-scroll'):null;}
 function tableMore(){
@@ -2491,7 +2263,7 @@ function tableMore(){
   for(let i=_tbState.idx;i<end;i++)html+=rowHTML(items[i].it,items[i].a,f);
   tb.insertAdjacentHTML('beforeend',html);_tbState.idx=end;
   if(_tbState.idx<items.length){
-    tb.insertAdjacentHTML('beforeend',`<tr id="tbl-sentinel"><td colspan="6" class="tbl-more"><span class="sp"></span>Cargando más… (${_tbState.idx} de ${items.length})</td></tr>`);
+    tb.insertAdjacentHTML('beforeend',`<div id="tbl-sentinel" class="tbl-more"><span class="sp"></span>Cargando más… (${_tbState.idx} de ${items.length})</div>`);
     const sent=document.getElementById('tbl-sentinel');
     if('IntersectionObserver'in window){if(_tbIO)_tbIO.disconnect();_tbIO=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting)tableMore();});},{root:tableScrollEl(),rootMargin:'250px'});_tbIO.observe(sent);}
   }else if(_tbIO){_tbIO.disconnect();_tbIO=null;}
@@ -2499,11 +2271,11 @@ function tableMore(){
 function renderTable(){
   const items=currentItems().map(it=>({it,a:analyze(it)}));const f=unitFactor();
   items.sort((x,y)=>{let va=rowSortVal(x.it,x.a),vb=rowSortVal(y.it,y.a);if(typeof va==='string')return state.dir*va.localeCompare(vb);return state.dir*(va-vb);});
-  document.querySelectorAll('#ptable th').forEach(th=>th.classList.toggle('sorted',th.dataset.s===state.sort));
+  document.querySelectorAll('#ptable .ptable-head [data-s]').forEach(th=>th.classList.toggle('sorted',th.dataset.s===state.sort));
   if(_tbIO){_tbIO.disconnect();_tbIO=null;}
   const tb=document.getElementById('ptbody');tb.innerHTML='';
   const sc=tableScrollEl();if(sc)sc.scrollTop=0;
-  if(!items.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--muted)">Sin resultados.</td></tr>';_tbState=null;return;}
+  if(!items.length){tb.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted)">Sin resultados.</div>';_tbState=null;return;}
   _tbState={items,f,idx:0};
   tableMore();
 }
@@ -2657,7 +2429,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-18.32';
+const APP_VERSION='2026-07-19.1';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -2848,7 +2620,7 @@ document.querySelectorAll('#seg-basis button').forEach(b=>b.onclick=()=>{
 document.querySelectorAll('#seg-unit button').forEach(b=>b.onclick=()=>{state.unit=b.dataset.u;document.querySelectorAll('#seg-unit button').forEach(x=>x.classList.remove('active'));b.classList.add('active');render();persistUI();});
 document.getElementById('lead').oninput=e=>{state.lead=Math.max(0,+e.target.value||0);render();};
 document.getElementById('cover').oninput=e=>{state.cover=Math.max(1,+e.target.value||1);render();};
-document.querySelectorAll('#ptable th[data-s]').forEach(th=>th.onclick=()=>{const s=th.dataset.s;if(state.sort===s)state.dir*=-1;else{state.sort=s;state.dir=1;}renderTable();persistUI();});
+document.querySelectorAll('#ptable .ptable-head [data-s]').forEach(th=>th.onclick=()=>{const s=th.dataset.s;if(state.sort===s)state.dir*=-1;else{state.sort=s;state.dir=1;}renderTable();persistUI();});
 
 // ===================== NAVEGACIÓN: Pedidos (única pantalla) + Carrito aparte =====================
 // ---- Persistencia general de "última pantalla activa" (F5-safe) ----
@@ -3459,7 +3231,7 @@ async function fpGuardarEdicion(sku){
 document.getElementById('ptbody').addEventListener('click',ev=>{
   const nom=ev.target.closest('.prod-name');
   if(!nom)return;
-  const tr=nom.closest('tr[data-ref]');
+  const tr=nom.closest('[data-ref]');
   if(tr)fpAbrir(tr.dataset.ref);
 });
 document.getElementById('rk-list').addEventListener('click',ev=>{
