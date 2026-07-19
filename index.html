@@ -2429,7 +2429,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-19.1';
+const APP_VERSION='2026-07-19.2';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -2536,7 +2536,10 @@ async function cloudSync(silent,live,full,origen){
     if(!silent)showToast(full?'♻️ Actualizando catálogo completo…':(live?'🔄 Trayendo ventas en vivo…':'🔄 Sincronizando…'));
     const url=SYNC_URL+((full||live)?(SYNC_URL.indexOf('?')<0?'?':'&')+'action='+(full?'full':'sync'):'');
     const res=await fetch(url,{method:'GET'});
-    const j=await res.json();
+    if(!res.ok){throw new Error('HTTP '+res.status+' '+res.statusText);}
+    let j;
+    try{j=await res.json();}
+    catch(parseErr){throw new Error('Respuesta no es JSON válido (status '+res.status+') — posible corte de conexión');}
     if(j&&j.ok){
       DB=buildDBfromCloud(j.items,j.ventas);
       INVMAP=invMapFromItems(DB.items);
@@ -2557,7 +2560,7 @@ async function cloudSync(silent,live,full,origen){
       }
       return true;
     }else{if(!silent)showToast('La nube no devolvió datos');return false;}
-  }catch(e){if(!silent)showToast('Error al sincronizar');return false;}
+  }catch(e){if(!silent)showToast('Error al sincronizar: '+(e&&e.message?e.message:e));console.error('cloudSync falló:',e);return false;}
   finally{setSyncSpinning(false);}
 }
 // Ícono girando + botones deshabilitados mientras hay una sincronización en curso (evita doble toque)
