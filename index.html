@@ -579,10 +579,10 @@ html.modo-bliss thead th:nth-child(5){width:82px;padding-right:12px}
 .card-main{flex:1 1 auto;min-width:0;box-sizing:border-box;overflow:hidden}
 /* Micro-chips: fuente liviana, gris suave, sin fondos saturados — solo el
    valor toma color (y únicamente para COB, que es la alerta de urgencia). */
-.card-stats{display:flex;gap:7px;margin-top:5px;font-size:11px;font-weight:600;color:var(--ink2);flex-wrap:wrap;min-width:0}
+.card-stats{display:flex;gap:9px;margin-top:6px;font-size:13.5px;font-weight:800;color:var(--ink);flex-wrap:wrap;min-width:0}
 .card-stats .cstat{display:flex;align-items:center;gap:3px;line-height:1}
-.card-stats .cstat-label{color:var(--muted);font-weight:600;font-size:9px;text-transform:uppercase;letter-spacing:.04em}
-.card-stats .cstat-stock{font-weight:700;color:var(--ink2)}
+.card-stats .cstat-label{color:var(--muted);font-weight:700;font-size:9.5px;text-transform:uppercase;letter-spacing:.04em}
+.card-stats .cstat-stock{font-weight:800;color:var(--ink)}
 .card-stepper{flex:0 0 auto;min-width:78px;display:flex;align-items:center;box-sizing:border-box}
 .tdc{text-align:center!important;padding-left:2px!important;padding-right:2px!important}
 .prod-name-wrap{display:flex;align-items:flex-start;gap:3px;min-width:0}
@@ -2368,7 +2368,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-18.19';
+const APP_VERSION='2026-07-18.20';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
