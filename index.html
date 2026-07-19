@@ -526,7 +526,7 @@ html.vista-filas .fila-col{min-width:0;display:flex;flex-direction:column;align-
    (antes se ocultaba con display:none — ahora se muestra en una línea aparte, chica,
    sin romper la altura de fila porque el nombre+V/C/M ya ocupan 2 líneas arriba). */
 html.vista-filas .fila-pedir{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:1px;margin-left:4px;padding-left:4px;border-left:1px solid var(--line2)}
-html.vista-filas .fila-pedir .qstep{flex-direction:row;align-items:center;gap:3px}
+html.vista-filas .fila-pedir .qcell{flex-direction:row;align-items:center;gap:3px}
 html.vista-filas .qbtn{width:18px;height:25px;font-size:13px}
 html.vista-filas .qty-in{width:20px;padding:3px 1px;font-size:12px}
 html.vista-filas .fila-pedir .qword{display:block;font-size:7.5px;max-width:80px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
@@ -582,6 +582,7 @@ html.modo-bliss{--cart-w:clamp(300px,26vw,340px)}
    con 100vw exacto (padding/márgenes de por medio) y dejaba una franja vacía. En modo-bliss
    se anula y se vuelve a 100% del contenedor real. */
 html.modo-bliss.carrito-fijo.vista-filas #ptable{width:100%;max-width:100%}
+html.modo-bliss #tab-pedido .tablecard{max-width:100%;margin:0;width:100%}
 /* Un poco más de aire vertical para que el texto auxiliar de Pedir (displays·Nu, etc.)
    quepa siempre completo debajo del stepper sin recortarse. */
 html.modo-bliss .card-cell{padding:7px 8px}
@@ -941,7 +942,14 @@ html.modo-bliss tr.row-urgent .fila-row{border-left-color:var(--rojo);background
 html.modo-bliss tr.row-urgent .fila-nombre::before{content:'● ';color:var(--rojo)}
 html.modo-bliss tr:has(.qstep.has):not(.row-urgent) .fila-row{border-left-color:var(--ambar);background:#FFF6E8}
 html.modo-bliss tr:has(.qstep.has):not(.row-urgent) .fila-nombre::before{content:'● ';color:var(--ambar)}
-</style>
+/* ==== Modo diagnóstico visual (?debug=1) — un color por contenedor ==== */
+.debug-outline #tab-pedido{outline:3px solid #9b59b6!important}
+.debug-outline #tab-pedido>.wrap{outline:3px solid #e67e22!important}
+.debug-outline .tablecard{outline:3px solid #e74c3c!important}
+.debug-outline .tbl-scroll{outline:3px solid #2980b9!important}
+.debug-outline #ptable{outline:3px solid #27ae60!important}
+.debug-outline #tab-carrito{outline:3px solid #f1c40f!important}
+.debug-outline::before{content:'DEBUG: morado=tab-pedido · naranja=.wrap · rojo=.tablecard · azul=.tbl-scroll · verde=#ptable · amarillo=carrito';position:fixed;top:0;left:0;right:0;z-index:99999;background:#000;color:#fff;font-size:10px;padding:3px 6px;text-align:center}
 </head>
 <body>
 <div id="diag-ancho" style="position:fixed;right:4px;top:max(4px,env(safe-area-inset-top));z-index:9999;font-size:9px;font-family:'JetBrains Mono',monospace;color:rgba(0,0,0,.4);background:rgba(255,255,255,.75);padding:2px 6px;border-radius:6px;pointer-events:none"></div>
@@ -2401,7 +2409,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-18.22';
+const APP_VERSION='2026-07-18.24';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -6129,6 +6137,14 @@ function _aplicarModo(m){
   if(typeof renderTable==='function'&&document.getElementById('ptbody'))renderTable();
 }
 function setModo(m){_guardarModo(m);_aplicarModo(m);}
+// ==== Modo diagnóstico visual (?debug=1 en la URL) ====
+// Dibuja un borde de color distinto alrededor de cada contenedor relevante de la tabla/
+// carrito, para encontrar visualmente de dónde sale un hueco o un desborde sin necesitar
+// herramientas de desarrollador (que en Chrome Android no vienen integradas). Se activa
+// solo si la URL trae ?debug=1 — no afecta nada en uso normal.
+if(new URLSearchParams(location.search).get('debug')==='1'){
+  document.documentElement.classList.add('debug-outline');
+}
 (function _initModo(){
   let guardado=_modoGuardado();
   if(!guardado){
