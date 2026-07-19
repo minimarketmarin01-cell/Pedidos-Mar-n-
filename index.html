@@ -502,10 +502,6 @@ tbody td.l{text-align:left;white-space:normal;overflow:visible}
 #ptable{min-width:100%;width:100%;max-width:100%;table-layout:auto}
 .card-cell{padding:13px 10px !important;white-space:normal !important;text-align:left !important;border-bottom:1px solid var(--line2) !important;box-sizing:border-box;overflow:hidden}
 .card-row{display:flex;flex-wrap:nowrap;align-items:flex-start;gap:10px;min-width:0;width:100%;box-sizing:border-box}
-/* Headers Venta/Costo/Margen: nunca son columnas visibles propias (van dentro de la
-   celda de Producto, igual que en tarjeta) — quedan solo como <th> ocultos para no
-   romper el conteo de columnas de la tabla (colspan) en ningún ancho. */
-th.vf-only{display:none}
 /* ---- Vista de fila: reglas MECÁNICAS compartidas por Tablet y POS 3:4 (estructura de
    tabla, no anchos de columna — esas van abajo, cada modo por separado). ---- */
 html.vista-filas .card-cell{padding:4px 8px!important}
@@ -516,7 +512,11 @@ html.carrito-fijo.vista-filas #ptable{
 }
 html.vista-filas .fila-prov{display:none}
 html.vista-filas .fila-lbl{display:none}
-html.vista-filas .fila-venta,html.vista-filas .fila-costo,html.vista-filas .fila-margen{min-width:0;font-family:'JetBrains Mono';font-weight:700;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
+/* Venta/Costo/Margen empaquetados en un solo contenedor flex (fila-precios) — así se
+   quedan pegados y a la izquierda, en vez de que cada uno se estire por su propia
+   columna de grid (eso era lo que los separaba tanto en pantallas anchas). */
+html.vista-filas .fila-precios{display:flex;align-items:baseline;gap:6px;min-width:0;overflow:hidden}
+html.vista-filas .fila-venta,html.vista-filas .fila-costo,html.vista-filas .fila-margen{flex:0 0 auto;font-family:'JetBrains Mono';font-weight:700;font-size:10px;color:var(--muted);white-space:nowrap}
 html.vista-filas .fila-costo::before{content:'C ';opacity:.7}
 html.vista-filas .fila-margen::before{content:'M ';opacity:.7}
 html.vista-filas .fila-margen.mg-hi{color:var(--verde)}
@@ -534,42 +534,42 @@ html.vista-filas thead th{text-align:right;white-space:nowrap;font-size:10.5px;b
 html.vista-filas thead th:first-child{text-align:left}
 
 /* ==== Modo Tablet (Samsung Tab S9): grid y anchos PROPIOS — tocar este bloque no
-   afecta a POS 3:4 (bloque separado más abajo), aunque hoy compartan los mismos valores. */
-html.modo-tablet .fila-row{display:grid;grid-template-columns:20px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 46px 40px 42px 78px;grid-template-rows:auto auto;align-items:center;column-gap:6px;row-gap:0;width:100%;box-sizing:border-box;min-width:0;overflow:hidden}
+   afecta a POS 3:4 (bloque separado más abajo), aunque hoy compartan los mismos valores.
+   6 columnas: thumb | producto (nombre + precios abajo) | Rot | Stk | Cob | Pedir. Los
+   anchos fijos (46/40/42/78) son EXACTAMENTE los mismos que se usan en thead th:nth-child
+   más abajo — con el thead reducido a los 5 <th> reales (ya no hay th ocultos), ambos
+   sistemas reparten el ancho igual y quedan perfectamente alineados. */
+html.modo-tablet .fila-row{display:grid;grid-template-columns:20px minmax(0,1fr) 46px 40px 42px 78px;grid-template-rows:auto auto;align-items:center;column-gap:6px;row-gap:0;width:100%;box-sizing:border-box;min-width:0;overflow:hidden}
 html.modo-tablet .fila-thumb{grid-column:1;grid-row:1/3;width:20px;height:20px;overflow:hidden;border-radius:5px;box-sizing:border-box}
 html.modo-tablet .fila-thumb .card-thumb,html.modo-tablet .fila-thumb .card-thumb-empty{width:20px;height:20px;object-fit:cover;display:block}
-html.modo-tablet .fila-nombre-col{grid-column:2/5;grid-row:1;min-width:0;overflow:hidden;display:block}
+html.modo-tablet .fila-nombre-col{grid-column:2;grid-row:1;min-width:0;overflow:hidden;display:block}
 html.modo-tablet .fila-nombre{font-weight:800;font-size:12.5px;white-space:normal;overflow:hidden;text-overflow:ellipsis;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.2}
-html.modo-tablet .fila-venta{grid-column:2;grid-row:2}
-html.modo-tablet .fila-costo{grid-column:3;grid-row:2}
-html.modo-tablet .fila-margen{grid-column:4;grid-row:2}
+html.modo-tablet .fila-precios{grid-column:2;grid-row:2}
+html.modo-tablet .fila-row>div:nth-of-type(4){grid-column:3;grid-row:1/3}
+html.modo-tablet .fila-row>div:nth-of-type(5){grid-column:4;grid-row:1/3}
 html.modo-tablet .fila-row>div:nth-of-type(6){grid-column:5;grid-row:1/3}
-html.modo-tablet .fila-row>div:nth-of-type(7){grid-column:6;grid-row:1/3}
-html.modo-tablet .fila-row>div:nth-of-type(8){grid-column:7;grid-row:1/3}
-html.modo-tablet .fila-pedir{grid-column:8;grid-row:1/3}
-html.modo-tablet thead th:nth-child(5){width:46px}
-html.modo-tablet thead th:nth-child(6){width:40px}
-html.modo-tablet thead th:nth-child(7){width:42px}
-html.modo-tablet thead th:nth-child(8){width:78px;padding-right:12px}
+html.modo-tablet .fila-pedir{grid-column:6;grid-row:1/3}
+html.modo-tablet thead th:nth-child(2){width:46px}
+html.modo-tablet thead th:nth-child(3){width:40px}
+html.modo-tablet thead th:nth-child(4){width:42px}
+html.modo-tablet thead th:nth-child(5){width:78px;padding-right:12px}
 
 /* ==== Modo POS táctil 3:4 (BlissOS): grid y anchos PROPIOS — independiente del bloque
    de Tablet de arriba. Mismos valores por ahora, pero en reglas separadas a propósito. */
-html.modo-bliss .fila-row{display:grid;grid-template-columns:20px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 46px 40px 42px 78px;grid-template-rows:auto auto;align-items:center;column-gap:6px;row-gap:0;width:100%;box-sizing:border-box;min-width:0;overflow:hidden}
+html.modo-bliss .fila-row{display:grid;grid-template-columns:20px minmax(0,1fr) 46px 40px 42px 78px;grid-template-rows:auto auto;align-items:center;column-gap:6px;row-gap:0;width:100%;box-sizing:border-box;min-width:0;overflow:hidden}
 html.modo-bliss .fila-thumb{grid-column:1;grid-row:1/3;width:20px;height:20px;overflow:hidden;border-radius:5px;box-sizing:border-box}
 html.modo-bliss .fila-thumb .card-thumb,html.modo-bliss .fila-thumb .card-thumb-empty{width:20px;height:20px;object-fit:cover;display:block}
-html.modo-bliss .fila-nombre-col{grid-column:2/5;grid-row:1;min-width:0;overflow:hidden;display:block}
+html.modo-bliss .fila-nombre-col{grid-column:2;grid-row:1;min-width:0;overflow:hidden;display:block}
 html.modo-bliss .fila-nombre{font-weight:800;font-size:12.5px;white-space:normal;overflow:hidden;text-overflow:ellipsis;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.2}
-html.modo-bliss .fila-venta{grid-column:2;grid-row:2}
-html.modo-bliss .fila-costo{grid-column:3;grid-row:2}
-html.modo-bliss .fila-margen{grid-column:4;grid-row:2}
+html.modo-bliss .fila-precios{grid-column:2;grid-row:2}
+html.modo-bliss .fila-row>div:nth-of-type(4){grid-column:3;grid-row:1/3}
+html.modo-bliss .fila-row>div:nth-of-type(5){grid-column:4;grid-row:1/3}
 html.modo-bliss .fila-row>div:nth-of-type(6){grid-column:5;grid-row:1/3}
-html.modo-bliss .fila-row>div:nth-of-type(7){grid-column:6;grid-row:1/3}
-html.modo-bliss .fila-row>div:nth-of-type(8){grid-column:7;grid-row:1/3}
-html.modo-bliss .fila-pedir{grid-column:8;grid-row:1/3}
-html.modo-bliss thead th:nth-child(5){width:46px}
-html.modo-bliss thead th:nth-child(6){width:40px}
-html.modo-bliss thead th:nth-child(7){width:42px}
-html.modo-bliss thead th:nth-child(8){width:78px;padding-right:12px}
+html.modo-bliss .fila-pedir{grid-column:6;grid-row:1/3}
+html.modo-bliss thead th:nth-child(2){width:46px}
+html.modo-bliss thead th:nth-child(3){width:40px}
+html.modo-bliss thead th:nth-child(4){width:42px}
+html.modo-bliss thead th:nth-child(5){width:78px;padding-right:12px}
 .card-thumb-wrap{flex:0 0 44px;width:44px;height:44px;box-sizing:border-box}
 .card-thumb{width:44px;height:44px;border-radius:10px;object-fit:cover;background:var(--gris-bg,#F3F1EA);display:block}
 /* Producto sin foto: ícono neutro y sutil, no un punto de color llamativo —
@@ -1257,9 +1257,6 @@ html.modo-bliss tr:has(.qstep.has):not(.row-urgent) .fila-nombre::before{content
     <div class="tablecard"><div class="tbl-scroll"><table id="ptable">
       <thead><tr>
         <th class="l" data-s="nombre">Producto <span class="ar">▲▼</span></th>
-        <th class="vf-only">Venta</th>
-        <th class="vf-only">Costo</th>
-        <th class="vf-only">Margen</th>
         <th data-s="rate" id="th-rate">Rot <span class="ar">▲▼</span></th>
         <th data-s="stock">Stk <span class="ar">▲▼</span></th>
         <th data-s="cov" class="sorted">Cob <span class="ar">▲▼</span></th>
@@ -2165,16 +2162,14 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
     // Pantallas grandes (BlissOS/monitor táctil): formato de fila tipo planilla — mismos
     // datos que la tarjeta (arriba), reutilizados tal cual, solo en otro maquetado.
     const stepper=`<div class="qcell"><div class="qstep ${sug>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}" data-step="${inStep(it)}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${(it.fmt>1||multOf(it)>1)?'gold':''}">${labelFor(it,bundles)}</span></div>`;
-    return `<tr data-ref="${it.ref}" class="${a.status==='urgente'?'row-urgent':''}" title="${tooltip}"><td class="card-cell" colspan="8">`+
+    return `<tr data-ref="${it.ref}" class="${a.status==='urgente'?'row-urgent':''}" title="${tooltip}"><td class="card-cell" colspan="5">`+
       `<div class="fila-row">`+
         `<div class="fila-thumb">${thumb}</div>`+
         `<div class="fila-nombre-col">`+
           `<span class="fila-nombre prod-name">${it.nombre}</span>`+
           `${showProv?`<span class="fila-prov">${it.prov}</span>`:''}`+
         `</div>`+
-        `<div class="fila-venta">${precioVal}</div>`+
-        `<div class="fila-costo">${costoVal}</div>`+
-        `<div class="fila-margen ${mgCls}">${mgVal}</div>`+
+        `<div class="fila-precios"><span class="fila-venta">${precioVal}</span><span class="fila-costo">${costoVal}</span><span class="fila-margen ${mgCls}">${mgVal}</span></div>`+
         `<div class="fila-col"><span class="fila-lbl">ROT</span><span><span class="trend ${a.trend.k}">${a.trend.t}</span> ${fmt1(ventasPeriodo)}</span></div>`+
         `<div class="fila-col"><span class="fila-lbl">STK</span><span>${statStock}</span></div>`+
         `<div class="fila-col" style="color:${covColor(a)}"><span class="fila-lbl">COB</span><span>${covTxt}</span></div>`+
@@ -2373,7 +2368,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-18.16';
+const APP_VERSION='2026-07-18.17';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
