@@ -581,8 +581,9 @@ html.modo-bliss{--cart-w:clamp(300px,26vw,340px)}
    minmax(0,1fr)) reparta el espacio real disponible. Esa fórmula manual no siempre coincide
    con 100vw exacto (padding/márgenes de por medio) y dejaba una franja vacía. En modo-bliss
    se anula y se vuelve a 100% del contenedor real. */
-html.modo-bliss.carrito-fijo.vista-filas #ptable{width:100%;max-width:100%}
+html.modo-bliss.carrito-fijo.vista-filas #ptable{width:100%!important;max-width:100%!important}
 html.modo-bliss #tab-pedido .tablecard{max-width:100%;margin:0;width:100%}
+html.modo-bliss #tab-pedido .tbl-scroll,html.modo-bliss #tab-pedido table{width:100%!important;max-width:100%!important}
 /* Un poco más de aire vertical para que el texto auxiliar de Pedir (displays·Nu, etc.)
    quepa siempre completo debajo del stepper sin recortarse. */
 html.modo-bliss .card-cell{padding:7px 8px}
@@ -2414,7 +2415,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-18.29';
+const APP_VERSION='2026-07-18.32';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
