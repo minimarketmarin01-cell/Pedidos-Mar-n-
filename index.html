@@ -572,7 +572,19 @@ html.modo-bliss thead th:nth-child(4){width:48px}
 html.modo-bliss thead th:nth-child(5){width:82px;padding-right:12px}
 /* ==== Overrides EXCLUSIVOS de POS 3:4 (BlissOS 1024×768, lectura a ~50cm): tipografía
    más grande y columnas más anchas. Todo bajo html.modo-bliss — no toca Cel/Tablet. ==== */
-html.modo-bliss{--cart-w:clamp(260px,25vw,300px)}
+/* El carrito necesita un mínimo ~300px para no cortar el botón "Copiar" — achicarlo a 260px
+   lo dejaba recortado. Se mantiene el mismo mínimo que el resto de la app, solo se recorta
+   un poco el máximo en pantallas grandes. */
+html.modo-bliss{--cart-w:clamp(300px,26vw,340px)}
+/* El hueco entre la tabla y el carrito venía de una regla vieja que recalculaba el ancho de
+   #ptable con calc(100vw - cart-w), en vez de dejar que el grid de #tab-pedido (columna
+   minmax(0,1fr)) reparta el espacio real disponible. Esa fórmula manual no siempre coincide
+   con 100vw exacto (padding/márgenes de por medio) y dejaba una franja vacía. En modo-bliss
+   se anula y se vuelve a 100% del contenedor real. */
+html.modo-bliss.carrito-fijo.vista-filas #ptable{width:100%;max-width:100%}
+/* Un poco más de aire vertical para que el texto auxiliar de Pedir (displays·Nu, etc.)
+   quepa siempre completo debajo del stepper sin recortarse. */
+html.modo-bliss .card-cell{padding:7px 8px}
 html.modo-bliss .fila-row{grid-template-columns:22px minmax(0,1fr) 62px 54px 60px 100px;column-gap:8px}
 html.modo-bliss .fila-thumb{width:22px;height:22px}
 html.modo-bliss .fila-thumb .card-thumb,html.modo-bliss .fila-thumb .card-thumb-empty{width:22px;height:22px}
@@ -2389,7 +2401,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-18.21';
+const APP_VERSION='2026-07-18.22';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
