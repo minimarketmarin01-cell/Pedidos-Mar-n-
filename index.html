@@ -949,7 +949,10 @@ html.modo-bliss tr:has(.qstep.has):not(.row-urgent) .fila-nombre::before{content
 .debug-outline .tbl-scroll{outline:3px solid #2980b9!important}
 .debug-outline #ptable{outline:3px solid #27ae60!important}
 .debug-outline #tab-carrito{outline:3px solid #f1c40f!important}
-.debug-outline::before{content:'DEBUG: morado=tab-pedido · naranja=.wrap · rojo=.tablecard · azul=.tbl-scroll · verde=#ptable · amarillo=carrito';position:fixed;top:0;left:0;right:0;z-index:99999;background:#000;color:#fff;font-size:10px;padding:3px 6px;text-align:center}
+.debug-outline td.card-cell{outline:2px dashed #ff00ff!important}
+.debug-outline .fila-row{outline:2px dashed #00ffff!important}
+.debug-outline .fila-pedir{outline:2px solid #ff6600!important;background:rgba(255,102,0,.15)!important}
+.debug-outline::before{content:'DEBUG: morado=tab-pedido·naranja=.wrap·rojo=.tablecard·azul=.tbl-scroll·verde=#ptable·amarillo=carrito·magenta punteado=td·cian punteado=fila-row·NARANJA SÓLIDO=fila-pedir';position:fixed;top:0;left:0;right:0;z-index:99999;background:#000;color:#fff;font-size:9px;padding:3px 6px;text-align:center}
 </style>
 </head>
 <body>
@@ -2410,7 +2413,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-18.26';
+const APP_VERSION='2026-07-18.27';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
