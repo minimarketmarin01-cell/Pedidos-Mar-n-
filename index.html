@@ -593,6 +593,7 @@ html.modo-bliss .fila-nombre{font-size:18.5px;line-height:1.18}
 html.modo-bliss .fila-precios,html.modo-bliss .fila-venta,html.modo-bliss .fila-costo,html.modo-bliss .fila-margen{font-size:13px}
 html.modo-bliss .fila-col{font-size:15.5px}
 html.modo-bliss thead th{font-size:13.5px;padding:8px 4px}
+html.modo-bliss thead th:first-child{width:calc(100% - 276px)}
 html.modo-bliss thead th:nth-child(2){width:62px}
 html.modo-bliss thead th:nth-child(3){width:54px}
 html.modo-bliss thead th:nth-child(4){width:60px}
@@ -2413,7 +2414,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-18.28';
+const APP_VERSION='2026-07-18.29';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
