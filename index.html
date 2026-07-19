@@ -539,7 +539,7 @@ html.vista-filas thead th:first-child{text-align:left}
    anchos fijos (46/40/42/78) son EXACTAMENTE los mismos que se usan en thead th:nth-child
    más abajo — con el thead reducido a los 5 <th> reales (ya no hay th ocultos), ambos
    sistemas reparten el ancho igual y quedan perfectamente alineados. */
-html.modo-tablet .fila-row{display:grid;grid-template-columns:20px minmax(0,1fr) 50px 42px 48px 82px;grid-template-rows:auto auto;align-items:center;column-gap:8px;row-gap:0;width:100%;box-sizing:border-box;min-width:0;overflow:hidden}
+html.modo-tablet .fila-row{display:grid;grid-template-columns:20px minmax(0,1fr) 50px 42px 48px 82px;grid-template-rows:auto auto;align-items:center;column-gap:5px;row-gap:0;width:100%;box-sizing:border-box;min-width:0;overflow:hidden}
 html.modo-tablet .fila-thumb{grid-column:1;grid-row:1/3;width:20px;height:20px;overflow:hidden;border-radius:5px;box-sizing:border-box}
 html.modo-tablet .fila-thumb .card-thumb,html.modo-tablet .fila-thumb .card-thumb-empty{width:20px;height:20px;object-fit:cover;display:block}
 html.modo-tablet .fila-nombre-col{grid-column:2;grid-row:1;min-width:0;overflow:hidden;display:block}
@@ -556,21 +556,41 @@ html.modo-tablet thead th:nth-child(5){width:82px;padding-right:12px}
 
 /* ==== Modo POS táctil 3:4 (BlissOS): grid y anchos PROPIOS — independiente del bloque
    de Tablet de arriba. Mismos valores por ahora, pero en reglas separadas a propósito. */
-html.modo-bliss .fila-row{display:grid;grid-template-columns:28px minmax(0,1fr) 72px 60px 65px 100px;grid-template-rows:auto auto;align-items:center;column-gap:5px;row-gap:0;width:100%;box-sizing:border-box;min-width:0;overflow:hidden;column-gap:2px;
-align-items:center;}
+html.modo-bliss .fila-row{display:grid;grid-template-columns:20px minmax(0,1fr) 50px 42px 48px 82px;grid-template-rows:auto auto;align-items:center;column-gap:5px;row-gap:0;width:100%;box-sizing:border-box;min-width:0;overflow:hidden}
 html.modo-bliss .fila-thumb{grid-column:1;grid-row:1/3;width:20px;height:20px;overflow:hidden;border-radius:5px;box-sizing:border-box}
 html.modo-bliss .fila-thumb .card-thumb,html.modo-bliss .fila-thumb .card-thumb-empty{width:20px;height:20px;object-fit:cover;display:block}
 html.modo-bliss .fila-nombre-col{grid-column:2;grid-row:1;min-width:0;overflow:hidden;display:block}
-html.modo-bliss .fila-nombre{font-weight:800;font-size:17px;white-space:normal;overflow:hidden;text-overflow:ellipsis;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.2}
+html.modo-bliss .fila-nombre{font-weight:800;font-size:12.5px;white-space:normal;overflow:hidden;text-overflow:ellipsis;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.2}
 html.modo-bliss .fila-precios{grid-column:2;grid-row:2}
 html.modo-bliss .fila-row>div:nth-of-type(4){grid-column:3;grid-row:1/3}
 html.modo-bliss .fila-row>div:nth-of-type(5){grid-column:4;grid-row:1/3}
 html.modo-bliss .fila-row>div:nth-of-type(6){grid-column:5;grid-row:1/3}
 html.modo-bliss .fila-pedir{grid-column:6;grid-row:1/3}
-html.modo-bliss thead th:nth-child(2){width:72px}
-html.modo-bliss thead th:nth-child(3){width:60px}
-html.modo-bliss thead th:nth-child(4){width:65px}
-html.modo-bliss thead th:nth-child(5){width:100px;padding-right:6px}
+html.modo-bliss thead th:nth-child(2){width:50px}
+html.modo-bliss thead th:nth-child(3){width:42px}
+html.modo-bliss thead th:nth-child(4){width:48px}
+html.modo-bliss thead th:nth-child(5){width:82px;padding-right:12px}
+/* ==== Overrides EXCLUSIVOS de POS 3:4 (BlissOS 1024×768, lectura a ~50cm): tipografía
+   más grande y columnas más anchas. Todo bajo html.modo-bliss — no toca Cel/Tablet. ==== */
+html.modo-bliss{--cart-w:clamp(260px,25vw,300px)}
+html.modo-bliss .fila-row{grid-template-columns:22px minmax(0,1fr) 62px 54px 60px 100px;column-gap:8px}
+html.modo-bliss .fila-thumb{width:22px;height:22px}
+html.modo-bliss .fila-thumb .card-thumb,html.modo-bliss .fila-thumb .card-thumb-empty{width:22px;height:22px}
+html.modo-bliss .fila-nombre{font-size:18.5px;line-height:1.18}
+html.modo-bliss .fila-precios,html.modo-bliss .fila-venta,html.modo-bliss .fila-costo,html.modo-bliss .fila-margen{font-size:13px}
+html.modo-bliss .fila-col{font-size:15.5px}
+html.modo-bliss thead th{font-size:13.5px;padding:8px 4px}
+html.modo-bliss thead th:nth-child(2){width:62px}
+html.modo-bliss thead th:nth-child(3){width:54px}
+html.modo-bliss thead th:nth-child(4){width:60px}
+html.modo-bliss thead th:nth-child(5){width:100px;padding-right:14px}
+/* Pedir: ancho fijo cómodo para botones grandes; el texto auxiliar (displays·Nu, cajas·Nu,
+   unidades·Nu) queda SIEMPRE centrado debajo del stepper, sin desplazarse según el largo
+   del texto de cada producto. */
+html.modo-bliss .fila-pedir{align-items:center}
+html.modo-bliss .qbtn{width:26px;height:34px;font-size:17px}
+html.modo-bliss .qty-in{width:30px;padding:5px 2px;font-size:15px}
+html.modo-bliss .fila-pedir .qword{text-align:center;max-width:100px;font-size:9px}
 .card-thumb-wrap{flex:0 0 44px;width:44px;height:44px;box-sizing:border-box}
 .card-thumb{width:44px;height:44px;border-radius:10px;object-fit:cover;background:var(--gris-bg,#F3F1EA);display:block}
 /* Producto sin foto: ícono neutro y sutil, no un punto de color llamativo —
@@ -2369,7 +2389,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-18.20';
+const APP_VERSION='2026-07-18.21';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
