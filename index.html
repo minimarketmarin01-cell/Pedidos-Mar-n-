@@ -556,19 +556,27 @@ html.modo-tablet .fila-row{display:grid;grid-template-columns:20px minmax(0,1fr)
 html.modo-tablet .fila-thumb{grid-column:1;grid-row:1/3;width:20px;height:20px;overflow:hidden;border-radius:5px;box-sizing:border-box}
 html.modo-tablet .fila-thumb .card-thumb,html.modo-tablet .fila-thumb .card-thumb-empty{width:20px;height:20px;object-fit:cover;display:block}
 html.modo-tablet .fila-nombre-col{grid-column:2;grid-row:1;min-width:0;overflow:hidden;display:block}
-html.modo-tablet .fila-nombre{font-weight:800;font-size:12.5px;white-space:normal;overflow:hidden;text-overflow:ellipsis;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.2}
+html.modo-tablet .fila-nombre{font-weight:800;font-size:15.5px;white-space:normal;overflow:hidden;text-overflow:ellipsis;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.2}
 html.modo-tablet .fila-precios{grid-column:2;grid-row:2}
 html.modo-tablet .fila-row>div:nth-of-type(4){grid-column:3;grid-row:1/3}
 html.modo-tablet .fila-row>div:nth-of-type(5){grid-column:4;grid-row:1/3}
 html.modo-tablet .fila-row>div:nth-of-type(6){grid-column:5;grid-row:1/3}
 html.modo-tablet .fila-pedir{grid-column:6;grid-row:1/3}
-html.modo-tablet .ptable-head{column-gap:5px}
-html.modo-tablet .ptable-head>*{padding:6px 4px}
+html.modo-tablet .fila-row{grid-template-columns:24px minmax(0,1fr) 58px 48px 54px 92px;column-gap:7px}
+html.modo-tablet .fila-thumb{width:24px;height:24px}
+html.modo-tablet .fila-thumb .card-thumb,html.modo-tablet .fila-thumb .card-thumb-empty{width:24px;height:24px}
+html.modo-tablet .fila-precios,html.modo-tablet .fila-venta,html.modo-tablet .fila-costo,html.modo-tablet .fila-margen{font-size:12.5px}
+html.modo-tablet .fila-col{font-size:14.5px}
+html.modo-tablet .ptable-head{column-gap:7px}
+html.modo-tablet .ptable-head>*{padding:8px 4px;font-size:12px}
 html.modo-tablet .ptable-head>*:first-child{text-align:left}
-html.modo-tablet .ptable-head>*:nth-child(2){flex-basis:50px;text-align:right}
-html.modo-tablet .ptable-head>*:nth-child(3){flex-basis:42px;text-align:right}
-html.modo-tablet .ptable-head>*:nth-child(4){flex-basis:48px;text-align:right}
-html.modo-tablet .ptable-head>*:nth-child(5){flex-basis:82px;text-align:right;padding-right:12px}
+html.modo-tablet .ptable-head>*:nth-child(2){flex-basis:58px;text-align:right}
+html.modo-tablet .ptable-head>*:nth-child(3){flex-basis:48px;text-align:right}
+html.modo-tablet .ptable-head>*:nth-child(4){flex-basis:54px;text-align:right}
+html.modo-tablet .ptable-head>*:nth-child(5){flex-basis:92px;text-align:right;padding-right:12px}
+html.modo-tablet .qbtn{width:22px;height:29px;font-size:14px}
+html.modo-tablet .qty-in{width:24px;padding:4px 1px;font-size:13px}
+html.modo-tablet .fila-pedir .qword{font-size:8.5px}
 
 /* ==== Modo POS táctil 3:4 (BlissOS): grid y anchos PROPIOS — independiente del bloque
    de Tablet de arriba. Mismos valores por ahora, pero en reglas separadas a propósito. */
@@ -2429,7 +2437,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-19.2';
+const APP_VERSION='2026-07-19.3';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
