@@ -1765,9 +1765,9 @@ function tag(nm,prov){const n=(nm||'').toLowerCase();
     if(/monster|reign/.test(n))return F(6,'display');
     if(/power ?ade/.test(n))return F(6,'display');
     if(/tónica|tonica|ginger ale|schwep|shwep/.test(n))return F(6,'display');
-    if(/vital|benedictino|benedicto|aquari/.test(n)){if(s65)return F(1,'u');if(v500)return F(12,'display');if(v600)return F(6,'display');return F(6,'display');}
+    if(/vital|benedictino|benedicto|aquari/.test(n)){if(s65)return F(2,'display');if(v500)return F(12,'display');if(v600)return F(6,'display');return F(6,'display');}
     if(/kapo/.test(n))return F(24,'caja');
-    if(/guallarauco/.test(n)&&/1l|1 l/.test(n))return F(6,'display');
+    if(/guallarauco/.test(n)){if(v200)return F(24,'display');if(/1l|1 l/.test(n))return F(6,'display');}
     if(/fastlyte/.test(n))return F(6,'display');
     if(/limonada kion/.test(n))return F(6,'display');
     return F(1,'u');
@@ -2403,7 +2403,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-19.9';
+const APP_VERSION='2026-07-19.10';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
