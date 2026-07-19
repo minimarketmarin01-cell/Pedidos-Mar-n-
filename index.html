@@ -1967,7 +1967,7 @@ function buildChips(){
   sel.onfocus=()=>{openMenu(sel.value);setTimeout(()=>caretToEnd(sel),0);};
   sel.oninput=()=>{openMenu(sel.value);state.search=sel.value.trim();document.getElementById('prov-x').classList.toggle('on',!!state.search);clearTimeout(window._searchT);window._searchT=setTimeout(()=>{render();persistUI();},200);};
   const xb=document.getElementById('prov-x');
-  if(xb)xb.onclick=ev=>{ev.preventDefault();ev.stopPropagation();sel.value='';state.search='';xb.classList.remove('on');clearTimeout(window._searchT);openMenu('');sel.focus();render();persistUI();};
+  if(xb)xb.onclick=ev=>{ev.preventDefault();ev.stopPropagation();state.search='';xb.classList.remove('on');clearTimeout(window._searchT);menu.classList.add('hidden');sel.blur();setProvInputValue();render();persistUI();};
   sel.onkeydown=e=>{
     if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();if(!acts.length)return;let i=acts.indexOf(menu.querySelector('.prov-opt.act'));acts.forEach(o=>o.classList.remove('act'));i=e.key==='ArrowDown'?(i+1)%acts.length:(i<=0?acts.length-1:i-1);acts[i].classList.add('act');acts[i].scrollIntoView({block:'nearest'});}
     else if(e.key==='Enter'){e.preventDefault();const a=menu.querySelector('.prov-opt.act');if(a&&a.dataset.val){pickProv(a.dataset.val);}else{menu.classList.add('hidden');if(sel.value.trim()&&!commitProv(sel.value))setProvInputValue();sel.blur();}}
@@ -2403,7 +2403,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-19.10';
+const APP_VERSION='2026-07-19.11';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
