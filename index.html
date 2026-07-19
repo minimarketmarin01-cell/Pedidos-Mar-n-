@@ -608,7 +608,7 @@ html.modo-bliss #tab-pedido .tbl-scroll,html.modo-bliss #tab-pedido table{width:
 /* Un poco más de aire vertical para que el texto auxiliar de Pedir (displays·Nu, etc.)
    quepa siempre completo debajo del stepper sin recortarse. */
 html.modo-bliss .card-cell{padding:7px 8px}
-html.modo-bliss .fila-row{grid-template-columns:22px minmax(0,1fr) 62px 54px 60px 100px;column-gap:8px}
+html.modo-bliss .fila-row{grid-template-columns:22px minmax(0,1fr) 100px 64px 66px 100px;column-gap:8px}
 html.modo-bliss .fila-thumb{width:22px;height:22px}
 html.modo-bliss .fila-thumb .card-thumb,html.modo-bliss .fila-thumb .card-thumb-empty{width:22px;height:22px}
 html.modo-bliss .fila-nombre{font-size:18.5px;line-height:1.18}
@@ -617,9 +617,9 @@ html.modo-bliss .fila-col{font-size:15.5px}
 html.modo-bliss .ptable-head{column-gap:8px}
 html.modo-bliss .ptable-head>*{font-size:13.5px;padding:8px 4px}
 html.modo-bliss .ptable-head>*:first-child{text-align:left}
-html.modo-bliss .ptable-head>*:nth-child(2){flex-basis:62px;text-align:right}
-html.modo-bliss .ptable-head>*:nth-child(3){flex-basis:54px;text-align:right}
-html.modo-bliss .ptable-head>*:nth-child(4){flex-basis:60px;text-align:right}
+html.modo-bliss .ptable-head>*:nth-child(2){flex-basis:100px;text-align:right}
+html.modo-bliss .ptable-head>*:nth-child(3){flex-basis:64px;text-align:right}
+html.modo-bliss .ptable-head>*:nth-child(4){flex-basis:66px;text-align:right}
 html.modo-bliss .ptable-head>*:nth-child(5){flex-basis:100px;text-align:right;padding-right:14px}
 /* Pedir: ancho fijo cómodo para botones grandes; el texto auxiliar (displays·Nu, cajas·Nu,
    unidades·Nu) queda SIEMPRE centrado debajo del stepper, sin desplazarse según el largo
@@ -2436,7 +2436,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-19.5';
+const APP_VERSION='2026-07-19.6';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
