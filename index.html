@@ -100,6 +100,13 @@ html.carrito-fijo #tab-carrito{
   transition:bottom .22s ease; /* mismo ritmo que el resto de la barra al ocultarse/mostrarse */
 }
 html.carrito-fijo #tab-carrito.nav-hidden{bottom:0}
+.cart-resizer{display:none}
+html.carrito-fijo .cart-resizer{display:block;position:absolute;left:-6px;top:0;bottom:0;width:12px;cursor:ew-resize;z-index:6;touch-action:none}
+html.carrito-fijo .cart-resizer::after{content:'';position:absolute;left:5px;top:0;bottom:0;width:2px;background:var(--line);opacity:.6}
+html.carrito-fijo .cart-resizer:hover::after,html.carrito-fijo .cart-resizer.dragging::after{background:var(--wa);opacity:1}
+html.carrito-fijo .cart-resizer .grip{position:absolute;top:50%;left:6px;transform:translate(-50%,-50%);width:3px;height:26px;border-radius:2px;background:var(--line);box-shadow:6px 0 0 var(--line),-6px 0 0 var(--line);opacity:.65;pointer-events:none;transition:opacity .15s ease,background .15s ease}
+html.carrito-fijo .cart-resizer:hover .grip,html.carrito-fijo .cart-resizer.dragging .grip{opacity:1;background:var(--wa)}
+html.carrito-fijo .cart-resizer.dragging .grip{box-shadow:6px 0 0 var(--wa),-6px 0 0 var(--wa)}
 /* Encabezado ("Carrito del pedido") y pie (totales + botón de WhatsApp) quedan fijos —
    solo la lista de productos en el medio (.order-body) se desplaza. Es la misma cadena
    flex que ya usamos para la tabla: cada nivel necesita min-height:0 explícito, si no,
@@ -522,6 +529,7 @@ html.carrito-fijo.vista-filas #ptable{
   max-width:calc(100vw - var(--cart-w) - 12px);
 }
 html.vista-filas .fila-prov{display:none}
+html.modo-bliss .fila-prov{display:block;font-size:13px;color:var(--ink2);font-weight:600;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 html.vista-filas .fila-lbl{display:none}
 /* Venta/Costo/Margen empaquetados en un solo contenedor flex (fila-precios) — así se
    quedan pegados y a la izquierda, en vez de que cada uno se estire por su propia
@@ -616,7 +624,7 @@ html.modo-bliss .fila-pedir .qword{text-align:center;max-width:100px;font-size:9
 @media (min-width:700px){.prod-name{font-size:17px}}
 .sm-info{cursor:pointer}
 .prod-ref{font-size:10px;color:var(--muted);font-family:'JetBrains Mono'}
-.prod-meta{font-size:9.5px;color:var(--muted);font-weight:600;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prod-meta{font-size:11px;color:var(--ink2);font-weight:600;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .prod-prov{font-size:9.5px;font-weight:700;color:var(--muted);font-family:'Archivo';text-transform:uppercase;letter-spacing:.04em;padding-right:6px;border-right:1px solid var(--line)}
 /* Jerarquía de precio: venta en negrita y más grande (es el dato que más se
    consulta), costo y margen como texto secundario gris oscuro — ya no amarillo.
@@ -819,7 +827,8 @@ html:not(.vista-filas) .row-pedir .card-stats .cstat:last-child{background:#FCE8
 .order-body{padding:12px 14px;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .oline{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px dashed var(--line2);font-size:13px}
 .oline .on-wrap{flex:1;min-width:0}
-.oline .on{display:block;font-weight:700;white-space:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.oline .on{display:block;font-weight:700;font-size:14px;white-space:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+@media (min-width:700px){.oline .on{font-size:17px}}
 .oline .oline-sub{display:block;font-size:11px;color:var(--muted);font-family:'JetBrains Mono';margin-top:1px}
 .oline .qcell{flex-shrink:0}
 .odel{flex-shrink:0;width:32px;height:32px;border:none;background:#FCE9E7;color:var(--rojo);border-radius:10px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
@@ -1305,6 +1314,7 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
 </div>
 
 <div id="tab-carrito">
+  <div class="cart-resizer" id="cart-resizer" title="Arrastra para ajustar el ancho" aria-hidden="true"><span class="grip"></span></div>
   <div class="wrap" style="grid-template-columns:1fr;max-width:560px">
     <div>
       <button class="loadbtn" id="cart-back" style="margin-bottom:12px">← Volver a Pedidos</button>
@@ -2202,7 +2212,7 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
         `<div class="fila-thumb">${thumb}</div>`+
         `<div class="fila-nombre-col">`+
           `<span class="fila-nombre prod-name">${it.nombre}</span>`+
-          `${showProv?`<span class="fila-prov">${it.prov}</span>`:''}`+
+          `<span class="fila-prov">${it.prov}</span>`+
         `</div>`+
         `<div class="fila-precios"><span class="fila-venta">${precioVal}</span><span class="fila-costo">${costoVal}</span><span class="fila-margen ${mgCls}">${mgVal}</span></div>`+
         `<div class="fila-col"><span class="fila-lbl">ROT</span><span><span class="trend ${a.trend.k}">${a.trend.t}</span> ${fmt1(ventasPeriodo)}</span></div>`+
@@ -2217,7 +2227,7 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
       `<div class="card-thumb-wrap">${thumb}</div>`+
       `<div class="card-main">`+
         `<div class="prod-name-wrap"><span class="prod-name">${it.nombre}</span></div>`+
-        `${showProv?`<div class="prod-meta">${it.prov}</div>`:''}`+
+        `<div class="prod-meta">${it.prov}</div>`+
         priceLine+
         `<div class="card-stats">`+
           `<span class="cstat"><span class="trend ${a.trend.k}">${a.trend.t}</span><span class="cstat-label">VTA</span> ${fmt1(ventasPeriodo)}</span>`+
@@ -2403,7 +2413,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-19.12';
+const APP_VERSION='2026-07-21.2';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -6097,6 +6107,60 @@ function _aplicarVistaFilas(){
   document.documentElement.classList.toggle('vista-filas',activar);
   if(typeof renderTable==='function'&&document.getElementById('ptbody'))renderTable();
 }
+// ==== Ancho del carrito ajustable a mano (arrastrando el borde izquierdo) ====
+// Solo activo con html.carrito-fijo. El borde derecho queda fijo (right:0 en CSS) — solo
+// se mueve el izquierdo. Se guarda en localStorage aparte de marin_ui para no interferir
+// con restoreUI(). El máximo se calcula según el nombre de producto más largo que haya
+// hoy en el carrito (medido con canvas, mismo font que .oline .on) para que el usuario
+// nunca pueda arrastrar más ancho de lo que realmente hace falta para leer los nombres
+// completos — no es un porcentaje arbitrario de la pantalla.
+const CART_W_LS_KEY='marin_cart_w';
+let _cartMeasureCtx=null;
+function _cartMaxNeededWidth(){
+  const lines=(typeof currentOrder==='function')?currentOrder():[];
+  const sample=document.querySelector('#order-body .oline .on');
+  const cs=sample?getComputedStyle(sample):null;
+  const font=cs?`${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`:'700 14px Inter, sans-serif';
+  if(!_cartMeasureCtx)_cartMeasureCtx=document.createElement('canvas').getContext('2d');
+  _cartMeasureCtx.font=font;
+  let maxText=0;
+  lines.forEach(l=>{const w=_cartMeasureCtx.measureText(l.nombre||'').width;if(w>maxText)maxText=w;});
+  if(!maxText)maxText=240; // carrito vacío: ancho por defecto razonable
+  const RESERVA=130; // padding del panel + gap + stepper de cantidad (+/- y campo)
+  const vpMax=Math.round(window.innerWidth*0.6); // techo de seguridad, nunca tapa la tabla
+  return Math.max(280,Math.min(Math.ceil(maxText+RESERVA),vpMax));
+}
+function _cartWLimits(){return{min:280,max:_cartMaxNeededWidth()};}
+function _restoreCartW(){
+  let w=null;try{w=parseInt(localStorage.getItem(CART_W_LS_KEY),10);}catch(e){}
+  if(w){const{min,max}=_cartWLimits();w=Math.max(min,Math.min(max,w));document.documentElement.style.setProperty('--cart-w',w+'px');}
+}
+(function initCartResizer(){
+  const handle=document.getElementById('cart-resizer');if(!handle)return;
+  let dragging=false,startX=0,startW=0,liveMax=600;
+  function currentW(){const px=getComputedStyle(document.documentElement).getPropertyValue('--cart-w');return parseInt(px,10)||340;}
+  function onMove(clientX){
+    const min=280;
+    let w=startW+(startX-clientX); // arrastrar hacia la izquierda agranda el carrito (el borde derecho no se mueve)
+    w=Math.max(min,Math.min(liveMax,w));
+    document.documentElement.style.setProperty('--cart-w',w+'px');
+  }
+  function stop(){
+    if(!dragging)return;dragging=false;handle.classList.remove('dragging');
+    document.body.style.userSelect='';
+    try{localStorage.setItem(CART_W_LS_KEY,String(currentW()));}catch(e){}
+  }
+  handle.addEventListener('pointerdown',e=>{
+    if(!document.documentElement.classList.contains('carrito-fijo'))return;
+    dragging=true;startX=e.clientX;startW=currentW();liveMax=_cartMaxNeededWidth();handle.classList.add('dragging');
+    document.body.style.userSelect='none';
+    handle.setPointerCapture&&handle.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  handle.addEventListener('pointermove',e=>{if(dragging)onMove(e.clientX);});
+  handle.addEventListener('pointerup',stop);
+  handle.addEventListener('pointercancel',stop);
+})();
 let _layoutT=null;
 function _actualizarLayout(){
   _actualizarAlturaTop();
@@ -6106,6 +6170,7 @@ function _actualizarLayout(){
   if(diag)diag.textContent=window.innerWidth+'×'+window.innerHeight+' · v'+APP_VERSION;
 }
 _actualizarLayout();
+_restoreCartW();
 window.addEventListener('resize',()=>{clearTimeout(_layoutT);_layoutT=setTimeout(_actualizarLayout,100);});
 window.addEventListener('orientationchange',()=>setTimeout(_actualizarLayout,150));
 
