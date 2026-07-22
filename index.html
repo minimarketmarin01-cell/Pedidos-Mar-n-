@@ -137,6 +137,10 @@ html.carrito-fijo #tab-pedido>.sticky-hdr,html.carrito-fijo #tab-pedido>.wrap{gr
 html.carrito-fijo #tab-pedido>.wrap{grid-template-columns:1fr}
 html.carrito-fijo #tab-pedido .wrap,html.carrito-fijo #tab-pedido .tablecard,html.carrito-fijo #tab-pedido .tbl-scroll,html.carrito-fijo #tab-pedido table{min-width:0}
 #tab-carrito.cart-open{transform:translateY(0);opacity:1;pointer-events:auto}
+/* Con un modal/página abierta encima (Recepción, Vencimientos, Más, etc.) el carrito
+   fijo de escritorio/tablet se oculta del todo y su columna deja de reservar ancho. */
+html.carrito-fijo.overlay-open #tab-carrito{transform:translateX(100%)!important;opacity:0!important;pointer-events:none!important}
+html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0}
 .cart-badge{position:absolute;top:-3px;right:-3px;background:var(--rojo);color:#fff;border-radius:10px;min-width:18px;height:18px;font-size:10.5px;font-weight:800;display:none;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--card)}
 .cart-badge.on{display:flex}
 .tab.active{color:#fff;border-bottom-color:var(--wa)}
@@ -163,6 +167,11 @@ html.carrito-fijo #tab-pedido .wrap,html.carrito-fijo #tab-pedido .tablecard,htm
 .mm-ov{position:fixed;inset:0;background:rgba(21,25,31,.55);z-index:210;display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(70px + env(safe-area-inset-bottom))}
 .mm-ov.hidden{display:none}
 .mm-card{background:var(--card);width:100%;max-width:480px;max-height:92vh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;overflow:hidden}
+/* Recepción, Vencimientos y Más se muestran como página completa (fullscreen),
+   no como hoja inferior. Se pisan solo estos 3 IDs — el resto de los modales
+   (Merma, Insumos, Crear producto, Calculadora, etc.) sigue igual. */
+#rc-ov,#vc-ov,#mas-ov{align-items:stretch;background:var(--paper)}
+#rc-ov .mm-card,#vc-ov .mm-card,#mas-ov .mm-card{width:100%;max-width:100%;height:100%;max-height:100%;border-radius:0}
 .mm-head{display:flex;justify-content:space-between;align-items:center;padding:16px 16px 0 16px;flex:none;margin-bottom:12px}
 .mm-topbar{padding:0 16px;flex:none;margin-bottom:10px}
 .mm-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 16px 22px;flex:1;min-height:0}
@@ -1546,6 +1555,11 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
         <label>Stock inicial</label>
         <input id="cp-stock" inputmode="decimal" placeholder="0" autocomplete="off" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
       </div>
+      <div class="mm-field" id="cp-stock-min-field">
+        <label>Inventario bajo / Stock mínimo</label>
+        <input id="cp-stock-min" inputmode="decimal" placeholder="Ej: 5" autocomplete="off" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Cuando el stock llegue a este número o menos, Loyverse genera la alerta de inventario bajo.</div>
+      </div>
       <div class="mm-field" id="cp-fecha-field">
         <label>Fecha de vencimiento (opcional)</label>
         <div class="fecha-wrap">
@@ -1649,6 +1663,13 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
           <div class="fc-field"><label>Kilos totales</label><input type="number" step="any" inputmode="decimal" id="fp-kilos" placeholder="Ej: 20"></div>
           <div class="fc-field"><label>Margen %</label><input type="number" step="any" inputmode="decimal" id="fp-margen" placeholder="Ej: 50"></div>
         </div>
+        <div class="fc-field" style="margin-top:8px">
+          <label class="cp-toggle">Descontar tara (envase / bandeja) <input type="checkbox" id="fp-tara-on"></label>
+        </div>
+        <div class="fc-peso-grid hidden" id="fp-tara-row">
+          <div class="fc-field"><label>Tara / envase (kg)</label><input type="number" step="any" inputmode="decimal" id="fp-tara" placeholder="Ej: 0.35"></div>
+          <div class="fc-field fc-out"><label>Peso neto usado</label><input type="text" id="fp-neto" readonly placeholder="—"></div>
+        </div>
         <div class="fp-actual hidden" id="fp-producto-info"></div>
         <div class="fc-hist-controls-row" style="margin-top:10px">
           <select class="fc-hist-round-select" id="fp-redondeo">
@@ -1661,7 +1682,7 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
         </div>
         <div id="fp-resultado" class="hidden">
           <div class="fc-row" style="margin-top:12px">
-            <div class="fc-row-name" id="fp-r-nombre" style="border:none;font-weight:800;font-size:14px;padding:0 0 8px"></div>
+            <input class="fc-row-name" id="fp-r-nombre" placeholder="Nombre del producto" style="width:100%;font-weight:800;font-size:14px;padding:9px 11px;border:1.5px solid var(--line);border-radius:8px;margin-bottom:8px">
             <div class="fc-grid">
               <div class="fc-field fc-out"><label>Costo por kg</label><input type="text" id="fp-r-costokg" readonly></div>
               <div class="fc-field"><label>Margen aplicado</label><input type="text" id="fp-r-margen" readonly></div>
@@ -2696,6 +2717,9 @@ function _sincronizarNav(){
   let activeId='bn-pedidos';
   if(ov){activeId=directos[ov.id]||(ov.id==='scan-ov'?null:'bn-mas');}
   if(activeId)document.querySelectorAll('.bn-item').forEach(b=>b.classList.toggle('active',b.id===activeId));
+  // El carrito es exclusivo de Pedidos: con cualquier modal/página abierta encima
+  // (Recepción, Vencimientos, Más, Merma, etc.) se oculta y no reserva espacio.
+  document.documentElement.classList.toggle('overlay-open',!!ov);
 }
 // ---- Visibilidad condicional del FAB del carrito ----
 // Solo debe verse en "Armar pedido" (Pedidos) y nunca tapado por un modal abierto encima
@@ -3445,7 +3469,7 @@ document.getElementById('cp-cerrar').onclick=()=>{
 };
 function cpAbrir(){cpReset();abrirModal('cp-ov');cpCargarCatalogo();}
 function cpReset(){
-  ['cp-nombre','cp-precio','cp-costo','cp-barcode','cp-stock','cp-fecha-dd','cp-fecha-mm','cp-fecha-aaaa','cp-cat-nuevanom'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['cp-nombre','cp-precio','cp-costo','cp-barcode','cp-stock','cp-stock-min','cp-fecha-dd','cp-fecha-mm','cp-fecha-aaaa','cp-cat-nuevanom'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('cp-fecha').value='';
   document.getElementById('cp-track').checked=true;
   document.getElementById('cp-iva').checked=true;
@@ -3506,6 +3530,7 @@ document.querySelectorAll('#cp-venta button').forEach(b=>b.onclick=()=>cpSetVent
 function cpToggleStock(){
   const on=document.getElementById('cp-track').checked;
   document.getElementById('cp-stock-field').style.display=on?'':'none';
+  document.getElementById('cp-stock-min-field').style.display=on?'':'none'; // solo tiene sentido si hay control de inventario
   document.getElementById('cp-fecha-field').style.display=on?'':'none';   // la fecha solo aplica si hay stock
 }
 document.getElementById('cp-track').onchange=cpToggleStock;
@@ -4363,17 +4388,35 @@ document.querySelectorAll('.fc-tab-btn').forEach(btn=>{
 });
 // ---- Calculadora por peso/kilo (frutas, verduras, cecinas, etc.) ----
 // Mismo motor de cálculo que el resto del módulo (fcVenta vía fcCalcularPrecioFinalBoton) —
-// solo cambia el primer paso: costo del lote ÷ kilos = costo real por kilo.
+// solo cambia el primer paso: costo del lote ÷ kilos netos = costo real por kilo.
+function fpActualizarNeto(){
+  const on=document.getElementById('fp-tara-on').checked;
+  const bruto=+document.getElementById('fp-kilos').value||0;
+  const tara=on?(+document.getElementById('fp-tara').value||0):0;
+  const neto=Math.max(0,bruto-tara);
+  document.getElementById('fp-neto').value=(on&&bruto>0)?fmt1(neto)+' kg':'—';
+  return neto;
+}
+document.getElementById('fp-tara-on').onchange=()=>{
+  document.getElementById('fp-tara-row').classList.toggle('hidden',!document.getElementById('fp-tara-on').checked);
+  fpActualizarNeto();
+};
+['fp-kilos','fp-tara'].forEach(id=>document.getElementById(id).addEventListener('input',fpActualizarNeto));
 document.getElementById('fp-calcular').onclick=()=>{
   const nombre=(document.getElementById('fp-nombre').value||'Producto al peso').trim();
   const costoLote=+document.getElementById('fp-costo').value||0;
-  const kilos=+document.getElementById('fp-kilos').value||0;
+  const taraOn=document.getElementById('fp-tara-on').checked;
+  const kilosBrutos=+document.getElementById('fp-kilos').value||0;
+  const kilosNetos=taraOn?fpActualizarNeto():kilosBrutos;
   const margen=Math.max(0,Math.min(95,+document.getElementById('fp-margen').value||0));
   const regla=document.getElementById('fp-redondeo').value;
-  if(costoLote<=0||kilos<=0){showToast('Ingresa el costo del lote y los kilos totales');return;}
-  const costoPorKg=costoLote/kilos;
+  if(costoLote<=0||kilosNetos<=0){
+    showToast(taraOn&&kilosBrutos>0&&kilosNetos<=0?'La tara no puede ser igual o mayor al peso bruto':'Ingresa el costo del lote y los kilos totales');
+    return;
+  }
+  const costoPorKg=costoLote/kilosNetos;
   const{precioFinal,margenReal,precioExacto}=fcCalcularPrecioFinalBoton(costoPorKg,margen,regla);
-  document.getElementById('fp-r-nombre').textContent=nombre+' — $/kg';
+  document.getElementById('fp-r-nombre').value=nombre+' — $/kg';
   document.getElementById('fp-r-costokg').value=peso(costoPorKg);
   document.getElementById('fp-r-margen').value=margen+'%';
   document.getElementById('fp-r-ventaexacta').value=peso(precioExacto);
@@ -4385,7 +4428,8 @@ document.getElementById('fp-calcular').onclick=()=>{
 };
 document.getElementById('fp-guardar').onclick=()=>{
   const r=document.getElementById('fp-resultado');
-  const item={producto:r.dataset.nombre+' (por kg)',costo_unitario:+r.dataset.costokg,margen:+r.dataset.margen,precio_venta:+r.dataset.final,precio_psicologico:+r.dataset.final,categoria:'venta por peso'};
+  const nombreEditado=(document.getElementById('fp-r-nombre').value||r.dataset.nombre||'').replace(/\s*—\s*\$\/kg\s*$/,'').trim()||r.dataset.nombre;
+  const item={producto:nombreEditado+' (por kg)',costo_unitario:+r.dataset.costokg,margen:+r.dataset.margen,precio_venta:+r.dataset.final,precio_psicologico:+r.dataset.final,categoria:'venta por peso'};
   const facturaId='FP-'+Date.now();
   fcAgregarAlHistorial(facturaId,[item]); // instantáneo y local — mismo patrón offline-first del resto
   historyService.guardarRemoto(facturaId,[item]); // en segundo plano, no bloquea la UI
@@ -4393,8 +4437,10 @@ document.getElementById('fp-guardar').onclick=()=>{
   r.classList.add('hidden');
   document.getElementById('fp-nombre').dataset.ref='';
   document.getElementById('fp-producto-info').classList.add('hidden');
-  ['fp-nombre','fp-costo','fp-kilos','fp-margen'].forEach(id=>document.getElementById(id).value='');
+  ['fp-nombre','fp-costo','fp-kilos','fp-margen','fp-tara'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fp-nombre-x').classList.add('hidden');
+  document.getElementById('fp-tara-on').checked=false;
+  document.getElementById('fp-tara-row').classList.add('hidden');
 };
 // ---- Buscador de producto por peso, con desplegable idéntico al de proveedores ----
 // Mismo patrón ya probado en este proyecto (prov-menu / cat-combo-menu): portal en <body>
@@ -4578,6 +4624,7 @@ document.getElementById('cp-guardar').onclick=async()=>{
     const precioRaw=(document.getElementById('cp-precio').value||'').replace(/[^\d]/g,'');
     const costoRaw=(document.getElementById('cp-costo').value||'').replace(/[^\d]/g,'');
     const stockRaw=(document.getElementById('cp-stock').value||'').replace(',','.');
+    const stockMinRaw=(document.getElementById('cp-stock-min').value||'').replace(',','.');
     const track=document.getElementById('cp-track').checked;
     // Fecha de vencimiento opcional: mismo helper que usan Recepción y Vencimientos
     const fechaVenc=fmtDateInputToDDMMAAAA(document.getElementById('cp-fecha').value);
@@ -4591,6 +4638,7 @@ document.getElementById('cp-guardar').onclick=async()=>{
       barcode:(document.getElementById('cp-barcode').value||'').trim(),
       trackStock:track,
       stockInicial:(track&&stockRaw)?Number(stockRaw):0,
+      stockMinimo:(track&&stockMinRaw)?Number(stockMinRaw):null,
       fechaVencimiento:fechaVenc,
       taxIds:taxIds,
       activo:document.getElementById('cp-activo').checked
