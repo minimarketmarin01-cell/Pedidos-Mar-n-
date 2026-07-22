@@ -1549,6 +1549,22 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
         <input id="cp-costo" inputmode="numeric" placeholder="0" autocomplete="off" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
       </div>
       <div class="mm-field">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <label style="margin:0">Proveedor y Sector (opcional)</label>
+          <button class="loadbtn" id="cp-ps-sugerir" type="button" style="white-space:nowrap">🤖 Sugerir con IA</button>
+        </div>
+        <div id="cp-ps-hint" class="hidden" style="font-size:11px;color:var(--muted);margin:5px 0"></div>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <select id="cp-proveedor" style="flex:1;min-width:0;padding:11px 10px;border:1.5px solid var(--line);border-radius:10px;font-size:13.5px;background:#fff"><option value="">Cargando…</option></select>
+          <button class="loadbtn" id="cp-prov-nueva" type="button" style="white-space:nowrap">➕ Nuevo</button>
+        </div>
+        <div id="cp-prov-nuevabox" class="hidden" style="gap:8px;margin-top:8px">
+          <input id="cp-prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+          <button class="btn-ok loadbtn" id="cp-prov-crear" type="button" style="white-space:nowrap">Crear</button>
+        </div>
+        <select id="cp-sector" style="width:100%;margin-top:8px;padding:11px 10px;border:1.5px solid var(--line);border-radius:10px;font-size:13.5px;background:#fff"><option value="">Cargando…</option></select>
+      </div>
+      <div class="mm-field">
         <label class="cp-toggle">Seguir inventario <input type="checkbox" id="cp-track" checked></label>
       </div>
       <div class="mm-field" id="cp-stock-field">
@@ -3113,6 +3129,22 @@ function fpModoEdicion(f){
     <div class="mm-field" style="margin-top:10px"><label>Categoría</label>
       <select id="fp-e-cat" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;background:#fff">${opcionesCat}</select>
     </div>
+    <div class="mm-field" style="margin-top:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <label style="margin:0">Proveedor y Sector</label>
+        <button class="loadbtn" id="fp-e-ps-sugerir" type="button" style="white-space:nowrap">🤖 Sugerir con IA</button>
+      </div>
+      <div id="fp-e-ps-hint" class="hidden" style="font-size:11px;color:var(--muted);margin:5px 0"></div>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <select id="fp-e-proveedor" style="flex:1;min-width:0;padding:11px 10px;border:1.5px solid var(--line);border-radius:10px;font-size:13.5px;background:#fff"><option value="">Cargando…</option></select>
+        <button class="loadbtn" id="fp-e-prov-nueva" type="button" style="white-space:nowrap">➕ Nuevo</button>
+      </div>
+      <div id="fp-e-prov-nuevabox" class="hidden" style="gap:8px;margin-top:8px">
+        <input id="fp-e-prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+        <button class="btn-ok loadbtn" id="fp-e-prov-crear" type="button" style="white-space:nowrap">Crear</button>
+      </div>
+      <select id="fp-e-sector" style="width:100%;margin-top:8px;padding:11px 10px;border:1.5px solid var(--line);border-radius:10px;font-size:13.5px;background:#fff"><option value="">Cargando…</option></select>
+    </div>
     <div class="mm-field" style="margin-top:10px"><label>Código de barras (opcional)</label>
       <div class="mm-search">
         <input id="fp-e-barcode" value="${(p.barcode||'').replace(/"/g,'&quot;')}" placeholder="Escanea o escribe" autocomplete="off" style="padding-right:44px">
@@ -3128,6 +3160,13 @@ function fpModoEdicion(f){
     </div>`;
   document.getElementById('fp-e-cancelar').onclick=()=>fpPintar(_fpActual);
   document.getElementById('fp-e-guardar').onclick=()=>fpGuardarEdicion(p.sku);
+  psCargarListas().then(()=>psLlenarSelects('fp-e-proveedor','fp-e-sector',p.proveedorId,p.sector));
+  psWireNuevoProveedor('fp-e-prov-nueva','fp-e-prov-nuevabox','fp-e-prov-nuevonom','fp-e-prov-crear','fp-e-proveedor','fp-e-sector');
+  document.getElementById('fp-e-ps-sugerir').onclick=()=>{
+    const nombreActual=(document.getElementById('fp-e-nombre').value||'').trim();
+    const catActual=document.getElementById('fp-e-cat').value;
+    psSugerir(nombreActual,catActual,'fp-e-proveedor','fp-e-sector','fp-e-ps-hint');
+  };
   document.getElementById('fp-e-scan').onclick=()=>{
     const reopen=()=>{document.getElementById('fp-ov').classList.remove('hidden');_sincronizarNav();};
     document.getElementById('fp-ov').classList.add('hidden');
@@ -3209,10 +3248,12 @@ async function fpGuardarEdicion(sku){
   const categoria=document.getElementById('fp-e-cat').value;
   const descripcion=document.getElementById('fp-e-desc').value.trim();
   const barcode=document.getElementById('fp-e-barcode').value.trim();
+  const proveedorId=document.getElementById('fp-e-proveedor')?(document.getElementById('fp-e-proveedor').value||null):null;
+  const sector=document.getElementById('fp-e-sector')?(document.getElementById('fp-e-sector').value||null):null;
   if(!nombre){showToast('⚠️ El nombre no puede quedar vacío');return;}
   btn.disabled=true;btn.textContent='Guardando…';
   try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_producto',payload:{sku,nombre,categoria,descripcion,responsable:''}})});
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_producto',payload:{sku,nombre,categoria,descripcion,proveedor_id:proveedorId,sector,responsable:''}})});
     const j=await res.json();
     if(!j||!j.ok){
       showToast('❌ '+(j&&j.error?j.error:'No se pudo guardar'));
@@ -3228,6 +3269,7 @@ async function fpGuardarEdicion(sku){
 
     const it=DB.items.find(x=>x.ref===sku);
     if(it){it.nombre=nombre;it.prov=categoria;it.descripcion=descripcion;if(!avisoBarcode)it.barcode=barcode;}
+    if(sector)psGuardarAprendizaje(nombre.toUpperCase(),proveedorId,sector);
     persist();
     showToast('✅ Producto actualizado'+avisoBarcode);
     await fpAbrir(sku); // recarga la ficha completa con los datos ya confirmados desde el servidor
@@ -3459,6 +3501,83 @@ async function smEliminar(){
 }
 document.getElementById('sm-del').onclick=smEliminar;
 
+// ===================== PROVEEDOR / SECTOR (clasificación, ver doc de diseño) =====================
+// Ojo: esto es la tabla dedicada `proveedores` (nueva) — no confundir con DB.provs, que es el
+// agrupador por categoría de Loyverse que ya usa "Proveedores de hoy" (el campo mezclado viejo).
+let _psProveedores=[], _psSectores=[], _psCargado=false;
+async function psCargarListas(force){
+  if(_psCargado&&!force)return;
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=proveedores');
+    const j=await res.json();
+    if(j&&j.ok){_psProveedores=(j.proveedores||[]).slice().sort((a,b)=>a.nombre.localeCompare(b.nombre));_psSectores=j.sectores||[];_psCargado=true;}
+  }catch(e){}
+}
+function psLlenarSelects(provSelId,sectorSelId,provId,sector){
+  const provSel=document.getElementById(provSelId);
+  const sectorSel=document.getElementById(sectorSelId);
+  if(provSel){
+    provSel.innerHTML='<option value="">Sin proveedor</option>'+_psProveedores.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('');
+    provSel.value=provId?String(provId):'';
+  }
+  if(sectorSel){
+    sectorSel.innerHTML='<option value="">Sin sector</option>'+_psSectores.map(s=>`<option value="${s}">${s}</option>`).join('');
+    sectorSel.value=sector||'';
+  }
+}
+async function psCrearProveedorInline(nombre){
+  const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'crear_proveedor',payload:{nombre}})});
+  const j=await res.json();
+  if(j&&j.ok&&j.proveedor){
+    if(!_psProveedores.some(p=>p.id===j.proveedor.id)){_psProveedores.push(j.proveedor);_psProveedores.sort((a,b)=>a.nombre.localeCompare(b.nombre));}
+    return j.proveedor;
+  }
+  throw new Error((j&&j.error)||'No se pudo crear el proveedor');
+}
+// Wire genérico del botón "+ Nuevo proveedor" — reutilizado por Crear producto y por la Ficha.
+function psWireNuevoProveedor(btnId,boxId,inputId,crearBtnId,provSelId,sectorSelId){
+  const btn=document.getElementById(btnId),box=document.getElementById(boxId);
+  if(btn&&box)btn.onclick=()=>{box.classList.toggle('hidden');if(!box.classList.contains('hidden'))document.getElementById(inputId).focus();};
+  const crearBtn=document.getElementById(crearBtnId);
+  if(crearBtn)crearBtn.onclick=async()=>{
+    const nom=(document.getElementById(inputId).value||'').trim();
+    if(!nom){showToast('Escribe el nombre del proveedor');return;}
+    crearBtn.disabled=true;
+    try{
+      const prov=await psCrearProveedorInline(nom);
+      psLlenarSelects(provSelId,sectorSelId,prov.id,document.getElementById(sectorSelId).value);
+      box.classList.add('hidden');document.getElementById(inputId).value='';
+      showToast('✓ Proveedor creado: '+prov.nombre);
+    }catch(e){showToast('❌ '+e.message);}
+    finally{crearBtn.disabled=false;}
+  };
+}
+async function psSugerir(nombreProducto,categoria,provSelId,sectorSelId,hintId){
+  const hint=document.getElementById(hintId);
+  if(!nombreProducto){showToast('Escribe primero el nombre del producto');return null;}
+  if(hint){hint.classList.remove('hidden');hint.textContent='🤖 Consultando…';}
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'clasificar_producto',payload:{nombre:nombreProducto,categoria:categoria||''}})});
+    const j=await res.json();
+    if(!j||!j.ok)throw new Error((j&&j.error)||'Sin respuesta');
+    if(j.confianza==='alta'){
+      psLlenarSelects(provSelId,sectorSelId,j.proveedor_id,j.sector);
+      if(hint)hint.textContent='✓ Sugerencia aplicada ('+(j.proveedor||'sin proveedor')+' · '+j.sector+') — revisa y guarda';
+    }else if(hint){
+      hint.textContent='🤖 Sugerencia (confianza baja, sin aplicar): '+(j.proveedor||'proveedor no identificado')+' · '+(j.sector||'—')+' — elige de la lista si corresponde';
+    }
+    return j;
+  }catch(e){
+    if(hint)hint.textContent='⚠️ No se pudo consultar la IA: '+e.message;
+    return null;
+  }
+}
+// Guarda la elección final del usuario como patrón aprendido — próxima vez ni se llama a la IA.
+function psGuardarAprendizaje(patron,proveedorId,sector){
+  if(!patron||!sector)return;
+  fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'guardar_clasificacion',payload:{patron:patron,proveedor_id:proveedorId||null,sector:sector}})}).catch(()=>{});
+}
+
 // ===================== CREAR PRODUCTO =====================
 let _cpCats=[], _cpImpuestos=[], _cpVenta='u', _cpCargado=false;
 let _cpDesdeRecepcion=false, _rcPendiente=null; // recuerdan volver a Recepción con los datos ya ingresados
@@ -3467,7 +3586,17 @@ document.getElementById('cp-cerrar').onclick=()=>{
   cerrarModal('cp-ov');
   if(_cpDesdeRecepcion){_cpDesdeRecepcion=false;abrirModal('rc-ov');rcRestaurarPendiente();}
 };
-function cpAbrir(){cpReset();abrirModal('cp-ov');cpCargarCatalogo();}
+function cpAbrir(){
+  cpReset();abrirModal('cp-ov');cpCargarCatalogo();
+  psCargarListas().then(()=>psLlenarSelects('cp-proveedor','cp-sector',null,null));
+  psWireNuevoProveedor('cp-prov-nueva','cp-prov-nuevabox','cp-prov-nuevonom','cp-prov-crear','cp-proveedor','cp-sector');
+  const hint=document.getElementById('cp-ps-hint');if(hint)hint.classList.add('hidden');
+}
+document.getElementById('cp-ps-sugerir').onclick=()=>{
+  const nombre=(document.getElementById('cp-nombre').value||'').trim();
+  const catInput=document.getElementById('cp-cat-input');
+  psSugerir(nombre,catInput?catInput.value:'','cp-proveedor','cp-sector','cp-ps-hint');
+};
 function cpReset(){
   ['cp-nombre','cp-precio','cp-costo','cp-barcode','cp-stock','cp-stock-min','cp-fecha-dd','cp-fecha-mm','cp-fecha-aaaa','cp-cat-nuevanom'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('cp-fecha').value='';
@@ -4630,6 +4759,8 @@ document.getElementById('cp-guardar').onclick=async()=>{
     const fechaVenc=fmtDateInputToDDMMAAAA(document.getElementById('cp-fecha').value);
     const taxIds=[];
     if(document.getElementById('cp-iva').checked){const iva=_cpImpuestos.find(t=>/iva/i.test(t.name)||t.rate===19);if(iva)taxIds.push(iva.id);}
+    const cpProveedorId=document.getElementById('cp-proveedor').value||null;
+    const cpSector=document.getElementById('cp-sector').value||null;
     const payload={
       nombre:nombre,categoryId:categoryId,categoriaNombre:categoriaNombre,
       soldByWeight:_cpVenta==='kg',
@@ -4641,7 +4772,9 @@ document.getElementById('cp-guardar').onclick=async()=>{
       stockMinimo:(track&&stockMinRaw)?Number(stockMinRaw):null,
       fechaVencimiento:fechaVenc,
       taxIds:taxIds,
-      activo:document.getElementById('cp-activo').checked
+      activo:document.getElementById('cp-activo').checked,
+      proveedor_id:cpProveedorId,
+      sector:cpSector
     };
     btn.disabled=true;btn.textContent='Creando…';
     showToast('Creando en Loyverse… (puede tardar unos segundos)');
@@ -4657,6 +4790,7 @@ document.getElementById('cp-guardar').onclick=async()=>{
     try{j=JSON.parse(txt);}catch(_){showToast('Respuesta rara del servidor: '+String(txt).slice(0,90));return;}
     if(j&&j.ok&&j.producto){
       try{cpAgregarLocal(j.producto);}catch(_){}   // agregar al catálogo local no debe tapar el aviso
+      if(cpSector)psGuardarAprendizaje(nombre.toUpperCase(),cpProveedorId,cpSector);
       let m='✓ Creado: '+j.producto.nombre+' · SKU '+j.producto.ref;
       if(j.producto.confirmado===false)m+=' ⚠️ NO verificado en Loyverse';
       else if(j.producto.enEstaTienda===false)m+=' ⚠️ no asignado a tu tienda';
