@@ -1555,14 +1555,24 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
         </div>
         <div id="cp-ps-hint" class="hidden" style="font-size:11px;color:var(--muted);margin:5px 0"></div>
         <div style="display:flex;gap:8px;margin-top:6px">
-          <select id="cp-proveedor" style="flex:1;min-width:0;padding:11px 10px;border:1.5px solid var(--line);border-radius:10px;font-size:13.5px;background:#fff"><option value="">Cargando…</option></select>
+          <div class="cat-combo" id="cp-prov-combo">
+            <input id="cp-proveedor-input" class="cat-combo-input" placeholder="Buscar proveedor…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+            <svg class="cat-combo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            <select id="cp-proveedor" style="display:none"><option value="">Sin proveedor</option></select>
+            <div class="cat-combo-menu hidden" id="cp-prov-menu" role="listbox"></div>
+          </div>
           <button class="loadbtn" id="cp-prov-nueva" type="button" style="white-space:nowrap">➕ Nuevo</button>
         </div>
         <div id="cp-prov-nuevabox" class="hidden" style="gap:8px;margin-top:8px">
           <input id="cp-prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
           <button class="btn-ok loadbtn" id="cp-prov-crear" type="button" style="white-space:nowrap">Crear</button>
         </div>
-        <select id="cp-sector" style="width:100%;margin-top:8px;padding:11px 10px;border:1.5px solid var(--line);border-radius:10px;font-size:13.5px;background:#fff"><option value="">Cargando…</option></select>
+        <div class="cat-combo" id="cp-sector-combo" style="margin-top:8px">
+          <input id="cp-sector-input" class="cat-combo-input" placeholder="Buscar sector…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+          <svg class="cat-combo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          <select id="cp-sector" style="display:none"><option value="">Sin sector</option></select>
+          <div class="cat-combo-menu hidden" id="cp-sector-menu" role="listbox"></div>
+        </div>
       </div>
       <div class="mm-field">
         <label class="cp-toggle">Seguir inventario <input type="checkbox" id="cp-track" checked></label>
@@ -3136,14 +3146,24 @@ function fpModoEdicion(f){
       </div>
       <div id="fp-e-ps-hint" class="hidden" style="font-size:11px;color:var(--muted);margin:5px 0"></div>
       <div style="display:flex;gap:8px;margin-top:6px">
-        <select id="fp-e-proveedor" style="flex:1;min-width:0;padding:11px 10px;border:1.5px solid var(--line);border-radius:10px;font-size:13.5px;background:#fff"><option value="">Cargando…</option></select>
+        <div class="cat-combo" id="fp-e-prov-combo">
+          <input id="fp-e-proveedor-input" class="cat-combo-input" placeholder="Buscar proveedor…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+          <svg class="cat-combo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          <select id="fp-e-proveedor" style="display:none"><option value="">Sin proveedor</option></select>
+          <div class="cat-combo-menu hidden" id="fp-e-prov-menu" role="listbox"></div>
+        </div>
         <button class="loadbtn" id="fp-e-prov-nueva" type="button" style="white-space:nowrap">➕ Nuevo</button>
       </div>
       <div id="fp-e-prov-nuevabox" class="hidden" style="gap:8px;margin-top:8px">
         <input id="fp-e-prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
         <button class="btn-ok loadbtn" id="fp-e-prov-crear" type="button" style="white-space:nowrap">Crear</button>
       </div>
-      <select id="fp-e-sector" style="width:100%;margin-top:8px;padding:11px 10px;border:1.5px solid var(--line);border-radius:10px;font-size:13.5px;background:#fff"><option value="">Cargando…</option></select>
+      <div class="cat-combo" id="fp-e-sector-combo" style="margin-top:8px">
+        <input id="fp-e-sector-input" class="cat-combo-input" placeholder="Buscar sector…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+        <svg class="cat-combo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        <select id="fp-e-sector" style="display:none"><option value="">Sin sector</option></select>
+        <div class="cat-combo-menu hidden" id="fp-e-sector-menu" role="listbox"></div>
+      </div>
     </div>
     <div class="mm-field" style="margin-top:10px"><label>Código de barras (opcional)</label>
       <div class="mm-search">
@@ -3160,7 +3180,12 @@ function fpModoEdicion(f){
     </div>`;
   document.getElementById('fp-e-cancelar').onclick=()=>fpPintar(_fpActual);
   document.getElementById('fp-e-guardar').onclick=()=>fpGuardarEdicion(p.sku);
-  psCargarListas().then(()=>psLlenarSelects('fp-e-proveedor','fp-e-sector',p.proveedorId,p.sector));
+  psCargarListas().then(()=>{
+    psLlenarSelects('fp-e-proveedor','fp-e-sector',p.proveedorId,p.sector);
+    psInitCombo('fp-e-proveedor','fp-e-prov-combo','fp-e-proveedor-input','fp-e-prov-menu','fp-e-proveedor','proveedor',
+      texto=>{const box=document.getElementById('fp-e-prov-nuevabox');box.classList.remove('hidden');const inp=document.getElementById('fp-e-prov-nuevonom');inp.value=texto;inp.focus();});
+    psInitCombo('fp-e-sector','fp-e-sector-combo','fp-e-sector-input','fp-e-sector-menu','fp-e-sector','sector');
+  });
   psWireNuevoProveedor('fp-e-prov-nueva','fp-e-prov-nuevabox','fp-e-prov-nuevonom','fp-e-prov-crear','fp-e-proveedor','fp-e-sector');
   document.getElementById('fp-e-ps-sugerir').onclick=()=>{
     const nombreActual=(document.getElementById('fp-e-nombre').value||'').trim();
@@ -3519,11 +3544,119 @@ function psLlenarSelects(provSelId,sectorSelId,provId,sector){
   if(provSel){
     provSel.innerHTML='<option value="">Sin proveedor</option>'+_psProveedores.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('');
     provSel.value=provId?String(provId):'';
+    const provInput=document.getElementById(provSelId+'-input');
+    if(provInput){const hit=_psProveedores.find(p=>String(p.id)===String(provId));provInput.value=hit?hit.nombre:'';}
   }
   if(sectorSel){
     sectorSel.innerHTML='<option value="">Sin sector</option>'+_psSectores.map(s=>`<option value="${s}">${s}</option>`).join('');
     sectorSel.value=sector||'';
+    const sectorInput=document.getElementById(sectorSelId+'-input');
+    if(sectorInput)sectorInput.value=sector||'';
   }
+}
+// ---- Fábrica de combobox con búsqueda (mismo patrón portal que .cat-combo, generalizado) ----
+// El <select> oculto sigue siendo la única fuente de verdad — este combo solo lo pilota
+// (mismo enfoque ya probado con Categoría). Filtra con normTxt (sin tildes/mayúsculas),
+// ordena alfabéticamente, y monta el menú en <body> para no quedar recortado en móviles.
+function crearComboBuscable(cfg){
+  let home=null;
+  function items(){return cfg.getItems().slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),'es'));}
+  function position(){
+    const anchor=document.getElementById(cfg.wrapId),menu=document.getElementById(cfg.menuId);
+    if(!anchor||!menu||menu.classList.contains('hidden'))return;
+    const r=anchor.getBoundingClientRect();
+    menu.style.left=r.left+'px';menu.style.top=(r.bottom+4)+'px';menu.style.width=r.width+'px';
+  }
+  function mount(){
+    const menu=document.getElementById(cfg.menuId);
+    if(!menu||home)return;
+    home={parent:menu.parentNode,next:menu.nextSibling};
+    document.body.appendChild(menu);
+    menu.style.position='fixed';
+    position();
+  }
+  function unmount(){
+    const menu=document.getElementById(cfg.menuId);
+    if(!menu||!home)return;
+    menu.style.position='';menu.style.left='';menu.style.top='';menu.style.width='';
+    const{parent,next}=home;
+    if(next&&next.parentNode===parent)parent.insertBefore(menu,next);else parent.appendChild(menu);
+    home=null;
+  }
+  function render(query){
+    const menu=document.getElementById(cfg.menuId);
+    if(!menu)return;
+    const q=normTxt(query||'');
+    const list=items().filter(it=>!q||normTxt(it.name).indexOf(q)>-1);
+    let html=list.length
+      ?list.map(it=>`<div class="cat-opt" role="option" data-id="${String(it.id).replace(/"/g,'&quot;')}" data-name="${String(it.name).replace(/"/g,'&quot;')}">${it.name}</div>`).join('')
+      :'<div class="cat-opt-empty">Sin resultados</div>';
+    if(cfg.onCreateNueva)html+=`<div class="cat-opt cat-opt-new" data-new="1">➕ ${cfg.placeholderNueva||'Nuevo'}${query?` "${query.trim()}"`:''}</div>`;
+    menu.innerHTML=html;
+  }
+  function open(){
+    const menu=document.getElementById(cfg.menuId),input=document.getElementById(cfg.inputId);
+    if(!menu||!input)return;
+    render(input.value);
+    menu.classList.remove('hidden');
+    input.setAttribute('aria-expanded','true');
+    mount();
+  }
+  function close(){
+    const menu=document.getElementById(cfg.menuId),input=document.getElementById(cfg.inputId);
+    if(!menu)return;
+    menu.classList.add('hidden');
+    if(input)input.setAttribute('aria-expanded','false');
+    unmount();
+  }
+  function setValue(id,name){
+    const sel=document.getElementById(cfg.selectId);
+    if(sel){sel.value=id!=null?String(id):'';sel.dispatchEvent(new Event('change'));}
+    const input=document.getElementById(cfg.inputId);
+    if(input)input.value=name||'';
+  }
+  const input=document.getElementById(cfg.inputId),menu=document.getElementById(cfg.menuId);
+  if(!input||!menu)return null;
+  input.addEventListener('focus',open);
+  input.addEventListener('click',()=>{if(menu.classList.contains('hidden'))open();});
+  input.addEventListener('input',()=>{render(input.value);if(menu.classList.contains('hidden')){menu.classList.remove('hidden');mount();}else position();});
+  menu.addEventListener('click',ev=>{
+    const opt=ev.target.closest('.cat-opt');
+    if(!opt||opt.classList.contains('cat-opt-empty'))return;
+    if(opt.dataset.new){close();if(cfg.onCreateNueva)cfg.onCreateNueva(input.value.trim());return;}
+    setValue(opt.dataset.id,opt.dataset.name);
+    close();
+  });
+  const onPointerDown=ev=>{
+    if(menu.classList.contains('hidden'))return;
+    if(input.contains(ev.target)||menu.contains(ev.target))return;
+    close();
+  };
+  const onResize=()=>{if(home)position();};
+  const onScroll=()=>{if(home)position();};
+  document.addEventListener('pointerdown',onPointerDown);
+  window.addEventListener('resize',onResize);
+  window.addEventListener('scroll',onScroll,true);
+  function destroy(){
+    document.removeEventListener('pointerdown',onPointerDown);
+    window.removeEventListener('resize',onResize);
+    window.removeEventListener('scroll',onScroll,true);
+    unmount();
+  }
+  return {setValue,render,close,destroy};
+}
+// Registro de instancias vivas por clave — evita apilar listeners si un formulario (como la
+// Ficha, que reconstruye su HTML en cada edición) vuelve a inicializar el mismo combo.
+let _psCombosVivos={};
+function psInitCombo(key,wrapId,inputId,menuId,selectId,tipo,onCreateNueva){
+  if(_psCombosVivos[key]){_psCombosVivos[key].destroy();delete _psCombosVivos[key];}
+  const inst=crearComboBuscable({
+    wrapId,inputId,menuId,selectId,
+    getItems:()=>tipo==='proveedor'?_psProveedores.map(p=>({id:p.id,name:p.nombre})):_psSectores.map(s=>({id:s,name:s})),
+    onCreateNueva,
+    placeholderNueva:tipo==='proveedor'?'Crear proveedor':null
+  });
+  if(inst)_psCombosVivos[key]=inst;
 }
 async function psCrearProveedorInline(nombre){
   const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'crear_proveedor',payload:{nombre}})});
@@ -3588,7 +3721,12 @@ document.getElementById('cp-cerrar').onclick=()=>{
 };
 function cpAbrir(){
   cpReset();abrirModal('cp-ov');cpCargarCatalogo();
-  psCargarListas().then(()=>psLlenarSelects('cp-proveedor','cp-sector',null,null));
+  psCargarListas().then(()=>{
+    psLlenarSelects('cp-proveedor','cp-sector',null,null);
+    psInitCombo('cp-proveedor','cp-prov-combo','cp-proveedor-input','cp-prov-menu','cp-proveedor','proveedor',
+      texto=>{const box=document.getElementById('cp-prov-nuevabox');box.classList.remove('hidden');const inp=document.getElementById('cp-prov-nuevonom');inp.value=texto;inp.focus();});
+    psInitCombo('cp-sector','cp-sector-combo','cp-sector-input','cp-sector-menu','cp-sector','sector');
+  });
   psWireNuevoProveedor('cp-prov-nueva','cp-prov-nuevabox','cp-prov-nuevonom','cp-prov-crear','cp-proveedor','cp-sector');
   const hint=document.getElementById('cp-ps-hint');if(hint)hint.classList.add('hidden');
 }
