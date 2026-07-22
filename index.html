@@ -1386,6 +1386,7 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
         <button id="mas-q-sinmov"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="10" y1="9" x2="10" y2="15"/><line x1="14" y1="9" x2="14" y2="15"/></svg><br>Sin movimiento</button>
         <button id="mas-q-reconteo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="10" y1="4" x2="8" y2="20"/><line x1="16" y1="4" x2="14" y2="20"/></svg><br>Reconteo stock</button>
         <button id="mas-q-crear"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><br>Crear producto</button>
+        <button id="mas-q-proveedores"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg><br>Proveedores</button>
         <button id="mas-q-recargar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="20" x2="5" y2="11"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="19" y1="20" x2="19" y2="14"/></svg><br>Recargar historial</button>
         <button id="mas-q-factura"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="10" y2="12"/><line x1="13" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="10" y2="16"/><line x1="13" y1="16" x2="16" y2="16"/></svg><br>Calculadora de precios</button>
       </div>
@@ -1621,6 +1622,31 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
       <div style="font-size:11.5px;color:var(--muted);margin:2px 0 10px">El código interno (SKU) se genera <b>automáticamente</b> y es único — no se edita a mano.</div>
       <button class="mm-save" id="cp-guardar" disabled>Crear producto</button>
       <button class="loadbtn" id="cp-cerrar" style="width:100%;margin-top:8px">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="mm-ov hidden" id="gp-ov">
+  <div class="mm-card">
+    <div class="mm-head"><h3>🏷️ Gestionar proveedores</h3></div>
+    <div class="mm-body">
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <input id="gp-nuevo-nombre" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+        <button class="btn-ok loadbtn" id="gp-nuevo-crear" type="button" style="white-space:nowrap">➕ Crear</button>
+      </div>
+      <div id="gp-lista"><div class="vc-empty">Cargando…</div></div>
+      <div id="gp-reasignar-box" class="hidden" style="margin-top:12px;padding:12px;border:1.5px solid var(--ambar);border-radius:10px;background:var(--ambar-bg)">
+        <div id="gp-reasignar-msg" style="font-size:13px;font-weight:700;margin-bottom:10px"></div>
+        <select id="gp-reasignar-select" style="width:100%;padding:10px;border:1.5px solid var(--line);border-radius:10px;font-size:13.5px;background:#fff;margin-bottom:10px"></select>
+        <div style="display:flex;gap:8px">
+          <button class="loadbtn" id="gp-reasignar-ir" style="flex:1">Reasignar a este proveedor</button>
+          <button class="loadbtn" id="gp-reasignar-null" style="flex:1">Dejar sin proveedor</button>
+        </div>
+        <button class="loadbtn" id="gp-reasignar-cancelar" style="width:100%;margin-top:8px">Cancelar</button>
+      </div>
+    </div>
+    <div class="mm-body" style="padding-top:0">
+      <button class="loadbtn" id="gp-cerrar" style="width:100%">Cerrar</button>
     </div>
   </div>
 </div>
@@ -3710,6 +3736,106 @@ function psGuardarAprendizaje(patron,proveedorId,sector){
   if(!patron||!sector)return;
   fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'guardar_clasificacion',payload:{patron:patron,proveedor_id:proveedorId||null,sector:sector}})}).catch(()=>{});
 }
+
+// ===================== GESTIONAR PROVEEDORES =====================
+let _gpLista=[], _gpEliminarPendiente=null; // {id, nombre} — mientras se decide reasignar/null
+document.getElementById('mas-q-proveedores').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');gpAbrir();};
+document.getElementById('gp-cerrar').onclick=()=>cerrarModal('gp-ov');
+function gpAbrir(){
+  document.getElementById('gp-reasignar-box').classList.add('hidden');
+  _gpEliminarPendiente=null;
+  abrirModal('gp-ov');
+  gpCargar();
+}
+async function gpCargar(){
+  document.getElementById('gp-lista').innerHTML='<div class="vc-empty">Cargando…</div>';
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=proveedores');
+    const j=await res.json();
+    if(!j||!j.ok)throw new Error(j&&j.error);
+    _gpLista=(j.proveedores||[]).slice().sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),'es'));
+    // Mantiene sincronizada la caché que usan los combobox de Crear producto / Ficha.
+    _psProveedores=_gpLista;_psCargado=true;
+    gpRender();
+  }catch(e){document.getElementById('gp-lista').innerHTML='<div class="vc-empty">Error al cargar proveedores</div>';}
+}
+function gpRender(){
+  const cont=document.getElementById('gp-lista');
+  if(!_gpLista.length){cont.innerHTML='<div class="vc-empty">Todavía no hay proveedores creados.</div>';return;}
+  cont.innerHTML=_gpLista.map(p=>`
+    <div class="fp-row" data-gp-id="${p.id}">
+      <span class="k">${p.nombre}</span>
+      <span class="v" style="display:flex;align-items:center;gap:8px">
+        <span style="color:var(--muted);font-size:11.5px">${p.productos||0} producto${p.productos===1?'':'s'}</span>
+        <button class="loadbtn" data-gp-del="${p.id}" style="padding:5px 9px;font-size:11px">🗑️</button>
+      </span>
+    </div>`).join('');
+}
+document.getElementById('gp-lista').addEventListener('click',ev=>{
+  const btn=ev.target.closest('[data-gp-del]');
+  if(!btn)return;
+  const id=Number(btn.dataset.gpDel);
+  const prov=_gpLista.find(p=>p.id===id);
+  if(prov)gpEliminar(prov);
+});
+async function gpEliminar(prov){
+  if(!confirm('¿Eliminar el proveedor "'+prov.nombre+'"?'))return;
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'eliminar_proveedor',payload:{id:prov.id}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      showToast('✓ Proveedor eliminado'+(j.productosAfectados?' · '+j.productosAfectados+' producto(s) quedaron sin proveedor':''));
+      gpCargar();
+    }else if(j&&j.requiereModo){
+      gpAbrirReasignar(prov,j.productosAfectados);
+    }else{
+      showToast('❌ '+((j&&j.error)||'No se pudo eliminar'));
+    }
+  }catch(e){showToast('❌ Error de conexión al eliminar');}
+}
+function gpAbrirReasignar(prov,n){
+  _gpEliminarPendiente=prov;
+  const box=document.getElementById('gp-reasignar-box');
+  document.getElementById('gp-reasignar-msg').textContent=
+    '"'+prov.nombre+'" tiene '+n+' producto'+(n===1?'':'s')+' asignado'+(n===1?'':'s')+'. ¿Qué hacemos con ellos?';
+  const sel=document.getElementById('gp-reasignar-select');
+  sel.innerHTML=_gpLista.filter(p=>p.id!==prov.id).map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('');
+  box.classList.remove('hidden');
+  box.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+document.getElementById('gp-reasignar-cancelar').onclick=()=>{_gpEliminarPendiente=null;document.getElementById('gp-reasignar-box').classList.add('hidden');};
+document.getElementById('gp-reasignar-ir').onclick=()=>gpConfirmarEliminacion('reasignar');
+document.getElementById('gp-reasignar-null').onclick=()=>gpConfirmarEliminacion('null');
+async function gpConfirmarEliminacion(modo){
+  if(!_gpEliminarPendiente)return;
+  const nuevoId=modo==='reasignar'?document.getElementById('gp-reasignar-select').value:null;
+  if(modo==='reasignar'&&!nuevoId){showToast('Elige un proveedor de reemplazo');return;}
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'eliminar_proveedor',payload:{
+      id:_gpEliminarPendiente.id,modo:modo,nuevo_proveedor_id:nuevoId
+    }})});
+    const j=await res.json();
+    if(j&&j.ok){
+      showToast('✓ Proveedor eliminado · '+j.productosAfectados+' producto(s) '+(modo==='reasignar'?'reasignados':'quedaron sin proveedor'));
+      document.getElementById('gp-reasignar-box').classList.add('hidden');
+      _gpEliminarPendiente=null;
+      gpCargar();
+    }else showToast('❌ '+((j&&j.error)||'No se pudo eliminar'));
+  }catch(e){showToast('❌ Error de conexión al eliminar');}
+}
+document.getElementById('gp-nuevo-crear').onclick=async()=>{
+  const inp=document.getElementById('gp-nuevo-nombre');
+  const nombre=(inp.value||'').trim();
+  if(!nombre){showToast('Escribe el nombre del proveedor');return;}
+  const btn=document.getElementById('gp-nuevo-crear');btn.disabled=true;
+  try{
+    const prov=await psCrearProveedorInline(nombre);
+    inp.value='';
+    showToast('✓ Proveedor creado: '+prov.nombre);
+    gpCargar();
+  }catch(e){showToast('❌ '+e.message);}
+  finally{btn.disabled=false;}
+};
 
 // ===================== CREAR PRODUCTO =====================
 let _cpCats=[], _cpImpuestos=[], _cpVenta='u', _cpCargado=false;
