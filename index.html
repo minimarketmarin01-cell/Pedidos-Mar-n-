@@ -1387,6 +1387,7 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
         <button id="mas-q-reconteo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="10" y1="4" x2="8" y2="20"/><line x1="16" y1="4" x2="14" y2="20"/></svg><br>Reconteo stock</button>
         <button id="mas-q-crear"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><br>Crear producto</button>
         <button id="mas-q-proveedores"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg><br>Proveedores</button>
+        <button id="mas-q-clasificar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 5V3M12 21v-2M5 12H3M21 12h-2M6.6 6.6 5.2 5.2M18.8 18.8l-1.4-1.4M6.6 17.4l-1.4 1.4M18.8 5.2l-1.4 1.4"/></svg><br>Clasificar catálogo</button>
         <button id="mas-q-recargar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="20" x2="5" y2="11"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="19" y1="20" x2="19" y2="14"/></svg><br>Recargar historial</button>
         <button id="mas-q-factura"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="10" y2="12"/><line x1="13" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="10" y2="16"/><line x1="13" y1="16" x2="16" y2="16"/></svg><br>Calculadora de precios</button>
       </div>
@@ -1647,6 +1648,36 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
     </div>
     <div class="mm-body" style="padding-top:0">
       <button class="loadbtn" id="gp-cerrar" style="width:100%">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="mm-ov hidden" id="cc-ov">
+  <div class="mm-card">
+    <div class="mm-head"><h3>🤖 Clasificar catálogo</h3></div>
+    <div class="mm-body">
+      <div id="cc-intro">
+        <p style="font-size:13px;color:var(--muted);margin:0 0 12px;line-height:1.5">Analiza todos los productos que todavía no tienen proveedor ni sector, usando su nombre y la categoría de Loyverse. Los casos dudosos <b>no se adivinan</b>: quedan marcados como pendientes de revisión.</p>
+        <button class="mm-save" id="cc-iniciar">Iniciar análisis</button>
+      </div>
+      <div id="cc-progreso" class="hidden">
+        <div style="font-size:13px;font-weight:700;margin-bottom:6px" id="cc-progreso-txt">Procesando…</div>
+        <div style="height:10px;border-radius:6px;background:var(--paper);overflow:hidden;margin-bottom:10px">
+          <div id="cc-progreso-barra" style="height:100%;width:0%;background:var(--wa);transition:width .2s"></div>
+        </div>
+        <div style="display:flex;gap:14px;font-size:12px;color:var(--muted)">
+          <span>✅ Asignados: <b id="cc-cont-asignados">0</b></span>
+          <span>⚠️ Pendientes: <b id="cc-cont-pendientes">0</b></span>
+        </div>
+        <button class="loadbtn" id="cc-detener" style="width:100%;margin-top:12px">Detener</button>
+      </div>
+      <div id="cc-resumen" class="hidden">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px" id="cc-resumen-titulo"></div>
+        <div id="cc-resumen-pendientes"></div>
+      </div>
+    </div>
+    <div class="mm-body" style="padding-top:0">
+      <button class="loadbtn" id="cc-cerrar" style="width:100%">Cerrar</button>
     </div>
   </div>
 </div>
@@ -3836,6 +3867,93 @@ document.getElementById('gp-nuevo-crear').onclick=async()=>{
   }catch(e){showToast('❌ '+e.message);}
   finally{btn.disabled=false;}
 };
+
+// ===================== CLASIFICAR CATÁLOGO (masivo) =====================
+let _ccCancelado=false,_ccTotal=0,_ccProcesados=0,_ccAsignados=[],_ccPendientes=[];
+document.getElementById('mas-q-clasificar').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');ccAbrir();};
+document.getElementById('cc-cerrar').onclick=()=>{_ccCancelado=true;cerrarModal('cc-ov');};
+document.getElementById('cc-detener').onclick=()=>{_ccCancelado=true;};
+document.getElementById('cc-iniciar').onclick=ccIniciar;
+function ccAbrir(){
+  document.getElementById('cc-intro').classList.remove('hidden');
+  document.getElementById('cc-progreso').classList.add('hidden');
+  document.getElementById('cc-resumen').classList.add('hidden');
+  abrirModal('cc-ov');
+}
+async function ccIniciar(){
+  _ccCancelado=false;_ccProcesados=0;_ccAsignados=[];_ccPendientes=[];
+  document.getElementById('cc-intro').classList.add('hidden');
+  document.getElementById('cc-resumen').classList.add('hidden');
+  document.getElementById('cc-progreso').classList.remove('hidden');
+  document.getElementById('cc-progreso-txt').textContent='Cargando catálogo…';
+  document.getElementById('cc-progreso-barra').style.width='0%';
+  document.getElementById('cc-cont-asignados').textContent='0';
+  document.getElementById('cc-cont-pendientes').textContent='0';
+  let productos=[];
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=productos_sin_clasificar');
+    const j=await res.json();
+    if(!j||!j.ok)throw new Error((j&&j.error)||'respuesta inválida');
+    productos=j.productos||[];
+  }catch(e){
+    document.getElementById('cc-progreso-txt').textContent='❌ Error al cargar el catálogo: '+e.message;
+    return;
+  }
+  _ccTotal=productos.length;
+  if(!_ccTotal){document.getElementById('cc-progreso').classList.add('hidden');ccMostrarResumen();return;}
+
+  const TAM_LOTE=20;
+  for(let i=0;i<productos.length;i+=TAM_LOTE){
+    if(_ccCancelado)break;
+    const loteProductos=productos.slice(i,i+TAM_LOTE);
+    const loteSkus=loteProductos.map(p=>p.sku);
+    document.getElementById('cc-progreso-txt').textContent='Analizando '+Math.min(i+TAM_LOTE,_ccTotal)+' de '+_ccTotal+'…';
+    try{
+      const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'clasificar_lote',payload:{skus:loteSkus}})});
+      const j=await res.json();
+      if(j&&j.ok){
+        _ccAsignados.push(...(j.asignados||[]));
+        _ccPendientes.push(...(j.pendientes||[]));
+      }else{
+        _ccPendientes.push(...loteProductos.map(p=>({sku:p.sku,nombre:p.nombre,motivo:'Error al procesar el lote: '+((j&&j.error)||'desconocido')})));
+      }
+    }catch(e){
+      _ccPendientes.push(...loteProductos.map(p=>({sku:p.sku,nombre:p.nombre,motivo:'Error de conexión al procesar este lote'})));
+    }
+    _ccProcesados+=loteSkus.length;
+    document.getElementById('cc-progreso-barra').style.width=Math.round(_ccProcesados/_ccTotal*100)+'%';
+    document.getElementById('cc-cont-asignados').textContent=_ccAsignados.length;
+    document.getElementById('cc-cont-pendientes').textContent=_ccPendientes.length;
+  }
+  document.getElementById('cc-progreso').classList.add('hidden');
+  ccMostrarResumen();
+}
+function ccMostrarResumen(){
+  const res=document.getElementById('cc-resumen');
+  res.classList.remove('hidden');
+  document.getElementById('cc-resumen-titulo').textContent=
+    (_ccCancelado?'⏹️ Análisis detenido — ':'✅ Análisis completo — ')+
+    _ccAsignados.length+' asignado'+(_ccAsignados.length===1?'':'s')+' automáticamente, '+
+    _ccPendientes.length+' pendiente'+(_ccPendientes.length===1?'':'s')+' de revisión'+
+    (_ccTotal?' (de '+_ccTotal+' analizados)':'');
+  const cont=document.getElementById('cc-resumen-pendientes');
+  if(!_ccPendientes.length){
+    cont.innerHTML=_ccTotal?'<div class="vc-empty">🎉 No quedaron productos pendientes de revisión.</div>':'<div class="vc-empty">No había productos sin clasificar.</div>';
+    return;
+  }
+  cont.innerHTML='<div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px">Pendientes de revisión — toca uno para abrir su Ficha:</div>'+
+    _ccPendientes.map(p=>`
+      <div class="fp-row" data-cc-sku="${p.sku}" style="cursor:pointer">
+        <span class="k">${p.nombre}</span>
+        <span class="v" style="font-size:11px;color:var(--muted);text-align:right;font-weight:600">${p.motivo}</span>
+      </div>`).join('');
+}
+document.getElementById('cc-resumen-pendientes').addEventListener('click',ev=>{
+  const row=ev.target.closest('[data-cc-sku]');
+  if(!row)return;
+  cerrarModal('cc-ov');
+  fpAbrir(row.dataset.ccSku);
+});
 
 // ===================== CREAR PRODUCTO =====================
 let _cpCats=[], _cpImpuestos=[], _cpVenta='u', _cpCargado=false;
