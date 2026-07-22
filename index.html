@@ -3902,7 +3902,7 @@ async function ccIniciar(){
   _ccTotal=productos.length;
   if(!_ccTotal){document.getElementById('cc-progreso').classList.add('hidden');ccMostrarResumen();return;}
 
-  const TAM_LOTE=20;
+  const TAM_LOTE=10;
   for(let i=0;i<productos.length;i+=TAM_LOTE){
     if(_ccCancelado)break;
     const loteProductos=productos.slice(i,i+TAM_LOTE);
@@ -3910,15 +3910,18 @@ async function ccIniciar(){
     document.getElementById('cc-progreso-txt').textContent='Analizando '+Math.min(i+TAM_LOTE,_ccTotal)+' de '+_ccTotal+'…';
     try{
       const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'clasificar_lote',payload:{skus:loteSkus}})});
-      const j=await res.json();
+      const texto=await res.text();
+      let j=null;
+      try{j=JSON.parse(texto);}catch(_){/* respuesta no era JSON — se maneja abajo con el texto crudo */}
       if(j&&j.ok){
         _ccAsignados.push(...(j.asignados||[]));
         _ccPendientes.push(...(j.pendientes||[]));
       }else{
-        _ccPendientes.push(...loteProductos.map(p=>({sku:p.sku,nombre:p.nombre,motivo:'Error al procesar el lote: '+((j&&j.error)||'desconocido')})));
+        const detalle=j&&j.error?j.error:('HTTP '+res.status+' — '+texto.slice(0,140).replace(/\s+/g,' '));
+        _ccPendientes.push(...loteProductos.map(p=>({sku:p.sku,nombre:p.nombre,motivo:'Error al procesar el lote: '+detalle})));
       }
     }catch(e){
-      _ccPendientes.push(...loteProductos.map(p=>({sku:p.sku,nombre:p.nombre,motivo:'Error de conexión al procesar este lote'})));
+      _ccPendientes.push(...loteProductos.map(p=>({sku:p.sku,nombre:p.nombre,motivo:'Error de conexión: '+e.message})));
     }
     _ccProcesados+=loteSkus.length;
     document.getElementById('cc-progreso-barra').style.width=Math.round(_ccProcesados/_ccTotal*100)+'%';
