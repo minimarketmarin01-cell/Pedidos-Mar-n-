@@ -848,6 +848,8 @@ html:not(.vista-filas) .row-pedir .card-stats .cstat:last-child{background:#FCE8
 .oline .on{display:block;font-weight:700;font-size:14px;white-space:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 @media (min-width:700px){.oline .on{font-size:17px}}
 .oline .oline-sub{display:block;font-size:11px;color:var(--muted);font-family:'JetBrains Mono';margin-top:1px}
+.oline-cambio{display:inline-block;margin-top:3px;font-size:11px;font-weight:700;color:var(--gold);background:var(--gold-bg);padding:2px 7px;border-radius:20px}
+.oline-cambio-only{opacity:.92}
 .oline .qcell{flex-shrink:0}
 .odel{flex-shrink:0;width:32px;height:32px;border:none;background:#FCE9E7;color:var(--rojo);border-radius:10px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
 .odel:active{background:#F8D2CE}
@@ -2462,6 +2464,15 @@ function toggleAccordion(headEl,bodyEl,openState){
   if(head)head.onclick=()=>{_scaleOpen=toggleAccordion(head,document.getElementById('scale-body'));};
 })();
 function currentOrder(){const lines=[];const base=(state.search||state.allProv)?currentItems():itemsFor(state.prov);base.forEach(it=>{const a=analyze(it);const q=qOf(it,a);if(q>0)lines.push({it,nombre:it.nombre,q,packs:packsOf(it,q),cost:tierCostUn(it)*q,word:it.word});});return lines;}
+// Productos con unidades pendientes de "cambio con proveedor" (a.vencido, ya usado en la
+// columna STK), separado de currentOrder() a propósito: un producto puede necesitar cambio
+// aunque no tenga nada que pedir (q=0), y currentOrder() solo lista lo que hay que pedir.
+function currentCambios(){
+  const base=(state.search||state.allProv)?currentItems():itemsFor(state.prov);
+  const out=[];
+  base.forEach(it=>{const a=analyze(it);if(a.vencido>0)out.push({it,nombre:it.nombre,cambio:a.vencido});});
+  return out;
+}
 // Actualiza SOLO la fila afectada del carrito (sin reconstruir #order-body) para que la
 // posición, el scroll y el foco del teclado nunca salten al tocar +/- o escribir la
 // cantidad. Si la cantidad llega a 0, se quita solo esa fila. El resto de las filas ni se
@@ -2473,8 +2484,11 @@ function cartUpdateTotals(){
   const lines=currentOrder();
   const cost=lines.reduce((s,l)=>s+l.cost,0);
   document.getElementById('tot-cost').textContent=peso(cost);
+  const cambiosRefs=new Set(currentCambios().map(c=>c.it.ref));
+  lines.forEach(l=>cambiosRefs.delete(l.it.ref)); // ya contados como línea de pedido
+  const totalFilas=lines.length+cambiosRefs.size;
   const badge=document.getElementById('cart-badge');
-  if(badge){badge.textContent=lines.length>99?'99+':lines.length;badge.classList.toggle('on',lines.length>0);}
+  if(badge){badge.textContent=totalFilas>99?'99+':totalFilas;badge.classList.toggle('on',totalFilas>0);}
 }
 function cartApplyQty(ref,newPacks){
   const it=DB.items.find(i=>i.ref===ref);
@@ -2482,7 +2496,11 @@ function cartApplyQty(ref,newPacks){
   newPacks=Math.max(0,newPacks||0);
   state.edits[ref]=newPacks*it.fmt;
   const row=document.querySelector(`#order-body .oline[data-ref="${CSS&&CSS.escape?CSS.escape(ref):ref}"]`);
+  const cambio=analyze(it).vencido||0;
   if(newPacks<=0){
+    // Si tiene cambio pendiente, la fila se queda (requisito: visible aunque el pedido sea 0)
+    // — solo se re-renderiza completo para simplificar (poco frecuente, no afecta scroll de las demás).
+    if(cambio>0){renderOrder();cartUpdateTotals();persistUI();renderScale();return;}
     if(row)row.remove();
     if(!document.querySelector('#order-body .oline'))document.getElementById('order-body').innerHTML='<div class="order-empty">Sin productos sugeridos con los parámetros actuales.</div>';
   }else if(row){
@@ -2497,12 +2515,26 @@ function cartApplyQty(ref,newPacks){
   renderScale();
 }
 function renderOrder(){
-  const lines=currentOrder();const body=document.getElementById('order-body');
-  if(!lines.length)body.innerHTML='<div class="order-empty">Sin productos sugeridos con los parámetros actuales.</div>';
-  else body.innerHTML=lines.map(l=>`<div class="oline" data-ref="${l.it.ref}">
+  const lines=currentOrder();
+  const body=document.getElementById('order-body');
+  const cambiosMap={};
+  currentCambios().forEach(c=>{cambiosMap[c.it.ref]=c.cambio;});
+  const refsConPedido=new Set(lines.map(l=>l.it.ref));
+  // Productos que solo tienen cambio pendiente, sin nada que pedir (q=0) — currentOrder() no
+  // los incluye, así que se agregan aparte para que "aunque la cantidad a pedir sea 0" el
+  // cambio siga siendo visible en el carrito, como pide el requisito.
+  const soloCambio=Object.keys(cambiosMap)
+    .filter(ref=>!refsConPedido.has(ref))
+    .map(ref=>{const it=DB.items.find(i=>i.ref===ref);return it?{it,nombre:it.nombre}:null;})
+    .filter(Boolean);
+  if(!lines.length&&!soloCambio.length){body.innerHTML='<div class="order-empty">Sin productos sugeridos con los parámetros actuales.</div>';cartUpdateTotals();return;}
+  let html=lines.map(l=>{
+    const cambio=cambiosMap[l.it.ref]||0;
+    return `<div class="oline" data-ref="${l.it.ref}">
       <div class="on-wrap">
         <span class="on">${l.nombre}</span>
         <span class="oline-sub">${peso(l.cost)}${l.it.fmt>1?' · '+(l.q)+' u':''}</span>
+        ${cambio>0?`<span class="oline-cambio">🔄 Cambio: ${fmt.format(cambio)} u</span>`:''}
       </div>
       <div class="qcell">
         <div class="qstep ${l.packs>0?'has':''}">
@@ -2513,7 +2545,15 @@ function renderOrder(){
         <span class="qword ${(l.it.fmt>1||multOf(l.it)>1)?'gold':''}">${labelFor(l.it,l.packs)}</span>
       </div>
       <button class="odel" data-act="del" aria-label="Eliminar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
+    </div>`;
+  }).join('');
+  html+=soloCambio.map(c=>`<div class="oline oline-cambio-only" data-ref="${c.it.ref}">
+      <div class="on-wrap">
+        <span class="on">${c.nombre}</span>
+        <span class="oline-cambio">🔄 Cambio: ${fmt.format(cambiosMap[c.it.ref])} u</span>
+      </div>
     </div>`).join('');
+  body.innerHTML=html;
   cartUpdateTotals();
 }
 // Listeners delegados del carrito: eliminar, +/- y edición directa del número, todos por
@@ -2575,7 +2615,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-23.6';
+const APP_VERSION='2026-07-23.7';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -6796,9 +6836,35 @@ document.getElementById('ll-cerrar').onclick=()=>document.getElementById('ll-ov'
 
 document.getElementById('btn-suggest').onclick=()=>{currentItems().forEach(it=>{delete state.edits[it.ref];});render();persistUI();showToast('↺ Volví a las cantidades sugeridas');};
 document.getElementById('btn-clear').onclick=()=>{currentItems().forEach(it=>{state.edits[it.ref]=0;});render();persistUI();showToast('✕ Pedido vaciado (todo en 0)');};
-document.getElementById('btn-copy').onclick=()=>{const lines=currentOrder();if(!lines.length){showToast('No hay productos en el pedido');return;}lines.sort((a,b)=>b.q-a.q);const uds=lines.reduce((s,l)=>s+l.q,0);const prov=(state.search||state.allProv)?'(varios)':state.prov;
+document.getElementById('btn-copy').onclick=()=>{
+  const lines=currentOrder();
+  const cambiosMap={};
+  currentCambios().forEach(c=>{cambiosMap[c.it.ref]=c.cambio;});
+  const refsConPedido=new Set(lines.map(l=>l.it.ref));
+  // Productos con cambio pendiente pero sin nada que pedir (q=0) — también van en el mensaje,
+  // como pide el requisito ("incluso si la cantidad a pedir es 0").
+  const soloCambio=Object.keys(cambiosMap)
+    .filter(ref=>!refsConPedido.has(ref))
+    .map(ref=>{const it=DB.items.find(i=>i.ref===ref);return it?{it,nombre:it.nombre}:null;})
+    .filter(Boolean);
+  if(!lines.length&&!soloCambio.length){showToast('No hay productos en el pedido');return;}
+  lines.sort((a,b)=>b.q-a.q);
+  const uds=lines.reduce((s,l)=>s+l.q,0);
+  const prov=(state.search||state.allProv)?'(varios)':state.prov;
   let txt=`*Pedido ${prov}*\nMinimarket Marín 376 · Local 03\nFecha: ${new Date().toLocaleDateString('es-CL')}\n\n`;
-  lines.forEach(l=>{txt+=l.it.fmt>1?`• ${l.nombre} — ${l.packs} ${plural(l.word,l.packs)} (${l.q} u)\n`:`• ${l.nombre} — ${l.q} und\n`;});
+  lines.forEach(l=>{
+    const cambio=cambiosMap[l.it.ref]||0;
+    if(cambio>0){
+      // Pedir y Cambio nunca se mezclan en una sola línea — cada uno con su propia etiqueta.
+      txt+=`• ${l.nombre}\n  📦 Pedir: ${l.q} unidades\n  🔄 Cambio: ${cambio} unidades\n`;
+    }else{
+      txt+=l.it.fmt>1?`• ${l.nombre} — ${l.packs} ${plural(l.word,l.packs)} (${l.q} u)\n`:`• ${l.nombre} — ${l.q} und\n`;
+    }
+  });
+  if(soloCambio.length){
+    txt+=`\n*Solo cambio (sin pedido nuevo):*\n`;
+    soloCambio.forEach(c=>{txt+=`• ${c.nombre}\n  🔄 Cambio: ${cambiosMap[c.it.ref]} unidades\n`;});
+  }
   if(state.prov==='CCU'&&!state.search&&!state.allProv){const p=ccuMixedPacks();if(p>0)txt+=`\n(Retornables 2.5L: ${p} packs → -${SCALES.ccu_ret.dtoG[ccuTierIdx(p)]}%)`;}
   const ok=()=>{showToast('Pedido copiado ✓ Pégalo en WhatsApp');const b=document.getElementById('btn-copy');b.classList.add('copied');setTimeout(()=>b.classList.remove('copied'),1400);};
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok,()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();ok();});
