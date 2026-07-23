@@ -1389,6 +1389,7 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
         <button id="mas-q-proveedores"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg><br>Proveedores</button>
         <button id="mas-q-clasificar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 5V3M12 21v-2M5 12H3M21 12h-2M6.6 6.6 5.2 5.2M18.8 18.8l-1.4-1.4M6.6 17.4l-1.4 1.4M18.8 5.2l-1.4 1.4"/></svg><br>Clasificar catálogo</button>
         <button id="mas-q-revision"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><br>Revisión de productos</button>
+        <button id="mas-q-categorias"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg><br>Mapeo de categorías</button>
         <button id="mas-q-recargar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="20" x2="5" y2="11"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="19" y1="20" x2="19" y2="14"/></svg><br>Recargar historial</button>
         <button id="mas-q-factura"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="10" y2="12"/><line x1="13" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="10" y2="16"/><line x1="13" y1="16" x2="16" y2="16"/></svg><br>Calculadora de precios</button>
       </div>
@@ -1696,6 +1697,22 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
     <div class="mm-body" style="padding-top:0">
       <button class="loadbtn hidden" id="rv-cargar-mas" style="width:100%;margin-bottom:8px"></button>
       <button class="loadbtn" id="rv-cerrar" style="width:100%">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="mm-ov hidden" id="mc-ov">
+  <div class="mm-card">
+    <div class="mm-head"><h3>🗂️ Mapeo de categorías</h3></div>
+    <div class="mm-body" style="padding-bottom:0">
+      <p style="font-size:12.5px;color:var(--muted);margin:0 0 10px;line-height:1.5">Estas son las categorías reales de Loyverse en tu catálogo. Para las que en realidad son un proveedor, elegí el proveedor y el sector — se aplica a todos sus productos de una vez (sin pisar los que ya tengan algo asignado).</p>
+      <input id="mc-buscar" placeholder="Buscar categoría…" autocomplete="off" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;margin-bottom:10px">
+      <div id="mc-contador" style="font-size:11.5px;color:var(--muted);margin-bottom:8px"></div>
+    </div>
+    <div class="mm-body" style="padding-top:0;max-height:56vh;overflow-y:auto" id="mc-lista"><div class="vc-empty">Cargando…</div></div>
+    <div class="mm-body" style="padding-top:0">
+      <button class="loadbtn hidden" id="mc-cargar-mas" style="width:100%;margin-bottom:8px"></button>
+      <button class="loadbtn" id="mc-cerrar" style="width:100%">Cerrar</button>
     </div>
   </div>
 </div>
@@ -2535,7 +2552,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-23.1';
+const APP_VERSION='2026-07-23.2';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -4084,6 +4101,93 @@ document.getElementById('rv-lista').addEventListener('click',async ev=>{
       showToast('✓ Guardado');
       rvFiltrar(document.getElementById('rv-buscar').value);
     }
+  }catch(e){
+    showToast('❌ '+e.message);
+    btn.disabled=false;btn.textContent=txtOriginal;
+  }
+});
+
+// ===================== MAPEO DE CATEGORÍAS =====================
+let _mcCategorias=[],_mcFiltradas=[],_mcMostradas=0;
+const MC_TAM_PAGINA=40;
+document.getElementById('mas-q-categorias').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');mcAbrir();};
+document.getElementById('mc-cerrar').onclick=()=>cerrarModal('mc-ov');
+document.getElementById('mc-buscar').addEventListener('input',ev=>mcFiltrar(ev.target.value));
+document.getElementById('mc-cargar-mas').onclick=()=>{_mcMostradas+=MC_TAM_PAGINA;mcRender();};
+function mcAbrir(){
+  document.getElementById('mc-buscar').value='';
+  abrirModal('mc-ov');
+  mcCargar();
+}
+async function mcCargar(){
+  document.getElementById('mc-lista').innerHTML='<div class="vc-empty">Cargando…</div>';
+  document.getElementById('mc-contador').textContent='';
+  try{
+    await psCargarListas();
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=categorias_resumen');
+    const j=await res.json();
+    if(!j||!j.ok)throw new Error((j&&j.error)||'respuesta inválida');
+    _mcCategorias=j.categorias||[];
+    mcFiltrar(document.getElementById('mc-buscar').value);
+  }catch(e){
+    document.getElementById('mc-lista').innerHTML='<div class="vc-empty">❌ Error al cargar: '+e.message+'</div>';
+  }
+}
+function mcFiltrar(texto){
+  const q=normTxt(texto||'');
+  _mcFiltradas=q?_mcCategorias.filter(c=>normTxt(c.categoria).indexOf(q)>-1):_mcCategorias;
+  _mcMostradas=MC_TAM_PAGINA;
+  mcRender();
+}
+function mcRender(){
+  const cont=document.getElementById('mc-lista');
+  const total=_mcFiltradas.length;
+  document.getElementById('mc-contador').textContent=total+' categoría'+(total===1?'':'s')+(total!==_mcCategorias.length?' (de '+_mcCategorias.length+' en total)':'');
+  if(!total){cont.innerHTML='<div class="vc-empty">Sin resultados.</div>';document.getElementById('mc-cargar-mas').classList.add('hidden');return;}
+  const visibles=_mcFiltradas.slice(0,_mcMostradas);
+  cont.innerHTML=visibles.map(c=>{
+    const opcionesProv='<option value="">— No es proveedor —</option>'+_psProveedores.map(pr=>`<option value="${pr.id}">${pr.nombre}</option>`).join('');
+    const opcionesSector='<option value="">— Sin sector —</option>'+_psSectores.map(s=>`<option value="${s}">${s}</option>`).join('');
+    const completo=(c.sin_proveedor|0)===0&&(c.sin_sector|0)===0;
+    return `<div class="fp-row" style="flex-direction:column;align-items:stretch;gap:8px;padding:12px 0" data-mc-categoria="${c.categoria.replace(/"/g,'&quot;')}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div>
+          <div style="font-weight:700;font-size:13.5px">${c.categoria}</div>
+          <div style="font-size:11px;color:var(--muted)">ej: ${c.ejemplo||'—'}</div>
+        </div>
+        <span style="font-size:10.5px;font-weight:700;color:${completo?'var(--wa-d)':'var(--muted)'};background:${completo?'var(--wa-bg,#e8f7ee)':'var(--paper)'};padding:3px 8px;border-radius:20px;white-space:nowrap">${c.total} prod${completo?' · completo':' · '+(c.sin_proveedor||0)+' sin prov / '+(c.sin_sector||0)+' sin sect'}</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <select class="mc-sel-proveedor" style="flex:1;min-width:0;padding:9px 8px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff">${opcionesProv}</select>
+        <select class="mc-sel-sector" style="flex:1;min-width:0;padding:9px 8px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff">${opcionesSector}</select>
+      </div>
+      <button class="btn-ok loadbtn mc-aplicar" type="button" style="width:100%;padding:8px">Aplicar a los ${c.total} productos</button>
+    </div>`;
+  }).join('');
+  const masBtn=document.getElementById('mc-cargar-mas');
+  if(_mcMostradas<total){masBtn.classList.remove('hidden');masBtn.textContent='Cargar más ('+(total-_mcMostradas)+' restantes)';}
+  else masBtn.classList.add('hidden');
+}
+document.getElementById('mc-lista').addEventListener('click',async ev=>{
+  const btn=ev.target.closest('.mc-aplicar');
+  if(!btn)return;
+  const fila=ev.target.closest('[data-mc-categoria]');
+  const categoria=fila.dataset.mcCategoria;
+  const provId=fila.querySelector('.mc-sel-proveedor').value||null;
+  const sectorVal=fila.querySelector('.mc-sel-sector').value||null;
+  if(!provId&&!sectorVal){showToast('Elegí al menos un proveedor o un sector');return;}
+  btn.disabled=true;const txtOriginal=btn.textContent;btn.textContent='Aplicando…';
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'mapear_categoria',payload:{categoria,proveedor_id:provId,sector:sectorVal}})});
+    const j=await res.json();
+    if(!j||!j.ok)throw new Error((j&&j.error)||'No se pudo aplicar');
+    showToast('✓ '+categoria+': '+Math.max(j.actualizadosProveedor||0,j.actualizadosSector||0)+' producto(s) actualizados');
+    const idx=_mcCategorias.findIndex(c=>c.categoria===categoria);
+    if(idx>-1){
+      if(provId)_mcCategorias[idx].sin_proveedor=0;
+      if(sectorVal)_mcCategorias[idx].sin_sector=0;
+    }
+    mcFiltrar(document.getElementById('mc-buscar').value);
   }catch(e){
     showToast('❌ '+e.message);
     btn.disabled=false;btn.textContent=txtOriginal;
