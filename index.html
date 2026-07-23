@@ -671,6 +671,9 @@ html.modo-bliss .fila-pedir .qword{text-align:center;max-width:100px;font-size:9
 .b-sobre{background:var(--gris-bg);color:var(--gris)}.b-sobre .d{background:var(--gris)}
 .b-sinstock{background:var(--azul-bg);color:var(--azul)}.b-sinstock .d{background:var(--azul)}
 .qcell{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.cambio-badge{font-size:10px;font-weight:700;color:var(--rojo);white-space:nowrap;line-height:1.3}
+.cambio-badge .sep{color:var(--muted);font-weight:400}
+.cambio-badge .pedir{color:var(--verde)}
 .cat-combo{position:relative;flex:1;min-width:0}
 .cat-combo-input{width:100%;padding:11px 34px 11px 10px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;background:#fff;color:var(--text);cursor:pointer}
 .cat-combo-input:focus{outline:none;border-color:var(--wa)}
@@ -2367,10 +2370,15 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
     }
     return fmt.format(it.stock);
   })();
+  // Indicador "Cambio: -N | Pedir: +N" junto al selector de cantidad — aparece siempre que
+  // haya unidades pendientes de cambio con proveedor, aunque lo que haya que pedir sea 0.
+  const cambioLine=a.vencido>0
+    ?`<div class="cambio-badge">Cambio: -${fmt.format(a.vencido)}${sug>0?` <span class="sep">|</span> <span class="pedir">Pedir: +${fmt.format(sug)}</span>`:''}</div>`
+    :'';
   if(document.documentElement.classList.contains('vista-filas')){
     // Pantallas grandes (BlissOS/monitor táctil): formato de fila tipo planilla — mismos
     // datos que la tarjeta (arriba), reutilizados tal cual, solo en otro maquetado.
-    const stepper=`<div class="qcell"><div class="qstep ${sug>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}" data-step="${inStep(it)}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${(it.fmt>1||multOf(it)>1)?'gold':''}">${labelFor(it,bundles)}</span></div>`;
+    const stepper=`<div class="qcell">${cambioLine}<div class="qstep ${sug>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}" data-step="${inStep(it)}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${(it.fmt>1||multOf(it)>1)?'gold':''}">${labelFor(it,bundles)}</span></div>`;
     return `<div data-ref="${it.ref}" class="card-cell ${a.status==='urgente'?'row-urgent':''}" title="${tooltip}">`+
       `<div class="fila-row">`+
         `<div class="fila-thumb">${thumb}</div>`+
@@ -2399,7 +2407,7 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
           `<span class="cstat" style="color:${covColor(a)}"><span class="cstat-label" style="color:inherit">COB</span> ${covTxt}</span>`+
         `</div>`+
       `</div>`+
-      `<div class="card-stepper"><div class="qcell"><div class="qstep ${sug>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}" data-step="${inStep(it)}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${(it.fmt>1||multOf(it)>1)?'gold':''}">${labelFor(it,bundles)}</span></div></div>`+
+      `<div class="card-stepper"><div class="qcell">${cambioLine}<div class="qstep ${sug>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}" data-step="${inStep(it)}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${(it.fmt>1||multOf(it)>1)?'gold':''}">${labelFor(it,bundles)}</span></div></div>`+
     `</div>`+
   `</div>`;
 }
@@ -2615,7 +2623,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-23.7';
+const APP_VERSION='2026-07-23.8';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
