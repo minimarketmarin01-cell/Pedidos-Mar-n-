@@ -2350,7 +2350,21 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
   const thumb=it.imagen
     ?`<img class="card-thumb" src="${it.imagen}" loading="lazy" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'card-thumb-empty',textContent:'📦'}))">`
     :`<span class="card-thumb-empty">📦</span>`;
-  const statStock=it.stock==null?'<span style="color:var(--azul)">s/c</span>':fmt.format(it.stock)+(a.vencido>0?` <span style="color:var(--rojo);font-weight:700">(-${fmt.format(a.vencido)})</span>`:'');
+  // Antes mostraba "2 (-2)" (stock crudo + unidades para cambio), confuso porque parecía que
+  // había 2 unidades vendibles. Ahora siempre se muestra un único número: el stock realmente
+  // disponible para vender. El color indica la situación, sin agregar texto ni ancho extra:
+  //  - negro: sin unidades reservadas para cambio con proveedor (caso normal)
+  //  - ámbar: hay unidades disponibles además de las reservadas para cambio
+  //  - rojo, en negativo: todas las unidades (o más) están reservadas para cambio — nada vendible
+  const statStock=(()=>{
+    if(it.stock==null)return '<span style="color:var(--azul)">s/c</span>';
+    if(a.vencido>0){
+      const disp=it.stock-a.vencido;
+      if(disp<=0)return `<span style="color:var(--rojo);font-weight:700">-${fmt.format(a.vencido)}</span>`;
+      return `<span style="color:var(--ambar);font-weight:700">${fmt.format(disp)}</span>`;
+    }
+    return fmt.format(it.stock);
+  })();
   if(document.documentElement.classList.contains('vista-filas')){
     // Pantallas grandes (BlissOS/monitor táctil): formato de fila tipo planilla — mismos
     // datos que la tarjeta (arriba), reutilizados tal cual, solo en otro maquetado.
@@ -2561,7 +2575,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-23.5';
+const APP_VERSION='2026-07-23.6';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -6252,6 +6266,7 @@ function hmPintar(items){
           ${it.responsable?('· '+it.responsable):''}
           ${warn?'<span style="color:var(--rojo);font-weight:700">⚠️ costo sin confirmar</span>':''}
           <button class="hm-fix" data-fi="${it.filaIndex}" data-mot="${it.motivo}">✏️ Corregir</button>
+          <button class="hm-fix hm-del" data-fi="${it.filaIndex}" data-nombre="${(it.nombre||'').replace(/"/g,'&quot;')}" style="color:var(--rojo);border-color:var(--rojo)">🗑 Eliminar</button>
         </div>
         <div class="hm-fixbox hidden" data-fibox="${it.filaIndex}">
           <span class="hm-fixlbl">Cambiar motivo a:</span>
@@ -6268,6 +6283,7 @@ function hmPintar(items){
       if(bx)bx.classList.toggle('hidden');
     });
     box.querySelectorAll('.hm-motbtn').forEach(b=>b.onclick=()=>hmCorregir(b.dataset.fi,b.dataset.newmot));
+    box.querySelectorAll('.hm-del').forEach(b=>b.onclick=(ev)=>{ev.stopPropagation();hmEliminar(b.dataset.fi,b.dataset.nombre);});
 }
 function hmAplicarFiltro(){
   const inp=document.getElementById('hm-lsearch');
@@ -6308,6 +6324,28 @@ async function hmCorregir(filaIndex,nuevoMotivo){
       showToast('Error: '+((j&&j.error)||'no se pudo corregir'));
     }
   }catch(e){showToast('Error de conexión al corregir');}
+}
+async function hmEliminar(filaIndex,nombre){
+  if(!confirm('¿Eliminar este registro? Esta acción no se puede deshacer.'))return;
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'eliminar_merma',payload:{filaIndex:Number(filaIndex)}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      let msg='✓ Merma eliminada: '+(nombre||'');
+      if(j.stockNuevo!=null)msg+=' · stock restaurado a '+j.stockNuevo;
+      if(j.avisoStock)msg+=' · '+j.avisoStock;
+      showToast(msg);
+      // Actualiza también el stock cacheado localmente, si el producto sigue en catálogo
+      if(j.sku&&j.stockNuevo!=null){
+        const it=DB.items&&DB.items.find(x=>x.ref===j.sku);
+        if(it)it.stock=j.stockNuevo;
+        persist();
+      }
+      hmLoad();  // refresca historial y el total de mermas mostrado
+    }else{
+      showToast('Error: '+((j&&j.error)||'no se pudo eliminar'));
+    }
+  }catch(e){showToast('Error de conexión al eliminar');}
 }
 document.getElementById('btn-hist-merma').onclick=()=>{document.getElementById('hm-lsearch').value='';document.getElementById('hm-ov').classList.remove('hidden');_sincronizarNav();hmLoad();};
 // Buscador del HISTORIAL de mermas (filtra en memoria, instantáneo)
