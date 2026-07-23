@@ -1660,6 +1660,8 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
       <div id="cc-intro">
         <p style="font-size:13px;color:var(--muted);margin:0 0 12px;line-height:1.5">Analiza todos los productos que todavía no tienen proveedor ni sector, usando su nombre y la categoría de Loyverse. Los casos dudosos <b>no se adivinan</b>: quedan marcados como pendientes de revisión.</p>
         <button class="mm-save" id="cc-iniciar">Iniciar análisis</button>
+        <button class="loadbtn" id="cc-reintentar-error" style="width:100%;margin-top:8px">🔁 Reintentar los que fallaron por error técnico</button>
+        <p style="font-size:11px;color:var(--muted);margin:8px 0 0;line-height:1.4">Solo libera los pendientes marcados por error de conexión o cuota — no toca los que quedaron pendientes por ser genuinamente ambiguos.</p>
       </div>
       <div id="cc-progreso" class="hidden">
         <div style="font-size:13px;font-weight:700;margin-bottom:6px" id="cc-progreso-txt">Procesando…</div>
@@ -2533,7 +2535,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-22.2';
+const APP_VERSION='2026-07-23.1';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -3890,6 +3892,21 @@ document.getElementById('mas-q-clasificar').onclick=()=>{document.getElementById
 document.getElementById('cc-cerrar').onclick=()=>{_ccCancelado=true;cerrarModal('cc-ov');};
 document.getElementById('cc-detener').onclick=()=>{_ccCancelado=true;};
 document.getElementById('cc-iniciar').onclick=ccIniciar;
+document.getElementById('cc-reintentar-error').onclick=async()=>{
+  const btn=document.getElementById('cc-reintentar-error');
+  btn.disabled=true;const txtOriginal=btn.textContent;btn.textContent='Reintentando…';
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'reintentar_pendientes_error'})});
+    const j=await res.json();
+    if(!j||!j.ok)throw new Error((j&&j.error)||'No se pudo reintentar');
+    showToast('✓ '+j.liberados+' producto(s) liberado(s) — iniciando análisis…');
+    ccIniciar();
+  }catch(e){
+    showToast('❌ '+e.message);
+  }finally{
+    btn.disabled=false;btn.textContent=txtOriginal;
+  }
+};
 function ccAbrir(){
   document.getElementById('cc-intro').classList.remove('hidden');
   document.getElementById('cc-progreso').classList.add('hidden');
