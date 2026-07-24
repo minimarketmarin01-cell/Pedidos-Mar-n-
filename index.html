@@ -1194,6 +1194,7 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
         <div class="mm-topbar"><button class="loadbtn" id="sc-cerrar" style="width:100%">Cerrar</button></div>
         <div class="mm-body">
         <div class="sc-warn">Al guardar, el costo se escribe directo en Loyverse (no solo aquí). Revisa el valor antes de guardar.</div>
+        <select id="sc-filtro-cat" style="width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:13px;background:#fff;margin-bottom:8px"><option value="">Todas las categorías</option></select>
         <div class="sc-summary" id="sc-summary">Cargando…</div>
         <div id="sc-list"></div>
         </div>
@@ -1272,7 +1273,7 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
           <button id="rc-activar-inv" class="hidden" type="button" style="width:100%;margin:8px 0 0;padding:9px 10px;border-radius:10px;border:1.5px solid var(--azul);background:var(--azul-bg);color:var(--azul);font-weight:700;font-size:13px;cursor:pointer">🔓 Activar inventario</button>
         </div>
 
-        <div class="mm-field">
+        <div class="mm-field" id="rc-cantidad-field">
           <label>Cantidad recibida</label>
           <div class="mm-qty">
             <button class="qbtn" id="rc-qty-menos" type="button">−</button>
@@ -1280,6 +1281,9 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
             <span class="unidad" id="rc-unidad">u</span>
             <button class="qbtn" id="rc-qty-mas" type="button">+</button>
           </div>
+        </div>
+        <div class="mm-field hidden" id="rc-sin-track-msg">
+          <div style="background:var(--azul-bg);border-radius:10px;padding:12px;color:var(--azul);font-size:13px;font-weight:600;line-height:1.4">Para registrar una recepción, primero activa "Seguir inventario".</div>
         </div>
 
         <div class="mm-field">
@@ -1725,6 +1729,7 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
     <div class="mm-head"><h3>🗂️ Mapeo de categorías</h3></div>
     <div class="mm-body" style="padding-bottom:0">
       <p style="font-size:12.5px;color:var(--muted);margin:0 0 10px;line-height:1.5">Estas son las categorías reales de Loyverse en tu catálogo. Para las que en realidad son un proveedor, elegí el proveedor y el sector — se aplica a todos sus productos de una vez (sin pisar los que ya tengan algo asignado).</p>
+      <div id="mc-desglose" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
       <input id="mc-buscar" placeholder="Buscar categoría…" autocomplete="off" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;margin-bottom:10px">
       <div id="mc-contador" style="font-size:11.5px;color:var(--muted);margin-bottom:8px"></div>
     </div>
@@ -2628,7 +2633,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-23.9';
+const APP_VERSION='2026-07-24.1';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -3339,15 +3344,38 @@ function fpModoEdicion(f){
         <button class="mm-scan cam-btn" id="fp-e-scan" type="button" aria-label="Escanear"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
       </div>
     </div>
+    <div class="mm-field" style="margin-top:10px"><label>Tipo de venta</label>
+      <div style="display:flex;gap:8px">
+        <button type="button" id="fp-e-tipo-unidad" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:13px;cursor:pointer">📦 Unidad</button>
+        <button type="button" id="fp-e-tipo-peso" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:13px;cursor:pointer">⚖️ Peso (kg)</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:5px">Define si el precio y el costo son por unidad o por kilo.</div>
+    </div>
     <div class="mm-field" style="margin-top:10px"><label>Descripción (opcional)</label>
       <textarea id="fp-e-desc" rows="3" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit;resize:vertical">${(p.descripcion||'').replace(/</g,'&lt;')}</textarea>
     </div>
     <div style="display:flex;gap:8px;margin-top:14px">
       <button id="fp-e-cancelar" style="flex:1;padding:11px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:13px;cursor:pointer">Cancelar</button>
       <button id="fp-e-guardar" style="flex:2;padding:11px;border-radius:10px;border:none;background:var(--verde);color:#fff;font-weight:700;font-size:13px;cursor:pointer">💾 Guardar cambios</button>
-    </div>`;
+    </div>
+    <button type="button" id="fp-e-reconteo" style="width:100%;margin-top:8px;padding:11px;border-radius:10px;border:1.5px solid var(--gold);background:var(--gold-bg);color:var(--gold);font-weight:700;font-size:13px;cursor:pointer">🔢 Ir a Reconteo de stock</button>`;
   document.getElementById('fp-e-cancelar').onclick=()=>fpPintar(_fpActual);
   document.getElementById('fp-e-guardar').onclick=()=>fpGuardarEdicion(p.sku);
+  document.getElementById('fp-e-reconteo').onclick=()=>{cerrarModal('fp-ov');rkAbrir(p.nombre);};
+  let _fpSoldByWeightNuevo=!!p.soldByWeight;
+  const fpPintarTipoVenta=()=>{
+    const bU=document.getElementById('fp-e-tipo-unidad'),bP=document.getElementById('fp-e-tipo-peso');
+    bU.style.background=_fpSoldByWeightNuevo?'#fff':'var(--verde)';
+    bU.style.color=_fpSoldByWeightNuevo?'var(--text)':'#fff';
+    bU.style.borderColor=_fpSoldByWeightNuevo?'var(--line)':'var(--verde)';
+    bP.style.background=_fpSoldByWeightNuevo?'var(--verde)':'#fff';
+    bP.style.color=_fpSoldByWeightNuevo?'#fff':'var(--text)';
+    bP.style.borderColor=_fpSoldByWeightNuevo?'var(--verde)':'var(--line)';
+  };
+  document.getElementById('fp-e-tipo-unidad').onclick=()=>{_fpSoldByWeightNuevo=false;fpPintarTipoVenta();};
+  document.getElementById('fp-e-tipo-peso').onclick=()=>{_fpSoldByWeightNuevo=true;fpPintarTipoVenta();};
+  fpPintarTipoVenta();
+  window._fpSoldByWeightGetter=()=>_fpSoldByWeightNuevo;
   psCargarListas().then(()=>{
     psLlenarSelects('fp-e-proveedor','fp-e-sector',p.proveedorId,p.sector);
     psInitCombo('fp-e-proveedor','fp-e-prov-combo','fp-e-proveedor-input','fp-e-prov-menu','fp-e-proveedor','proveedor',
@@ -3443,10 +3471,11 @@ async function fpGuardarEdicion(sku){
   const barcode=document.getElementById('fp-e-barcode').value.trim();
   const proveedorId=document.getElementById('fp-e-proveedor')?(document.getElementById('fp-e-proveedor').value||null):null;
   const sector=document.getElementById('fp-e-sector')?(document.getElementById('fp-e-sector').value||null):null;
+  const soldByWeight=typeof window._fpSoldByWeightGetter==='function'?window._fpSoldByWeightGetter():undefined;
   if(!nombre){showToast('⚠️ El nombre no puede quedar vacío');return;}
   btn.disabled=true;btn.textContent='Guardando…';
   try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_producto',payload:{sku,nombre,categoria,descripcion,proveedor_id:proveedorId,sector,responsable:''}})});
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_producto',payload:{sku,nombre,categoria,descripcion,proveedor_id:proveedorId,sector,soldByWeight,responsable:''}})});
     const j=await res.json();
     if(!j||!j.ok){
       showToast('❌ '+(j&&j.error?j.error:'No se pudo guardar'));
@@ -3461,7 +3490,7 @@ async function fpGuardarEdicion(sku){
     if(!jb||!jb.ok)avisoBarcode=' — ⚠️ código de barras: '+((jb&&jb.error)||'no se pudo guardar');
 
     const it=DB.items.find(x=>x.ref===sku);
-    if(it){it.nombre=nombre;it.prov=categoria;it.descripcion=descripcion;if(!avisoBarcode)it.barcode=barcode;}
+    if(it){it.nombre=nombre;it.prov=categoria;it.descripcion=descripcion;if(!avisoBarcode)it.barcode=barcode;if(soldByWeight!==undefined)it.peso=soldByWeight;}
     if(sector)psGuardarAprendizaje(nombre.toUpperCase(),proveedorId,sector);
     persist();
     showToast('✅ Producto actualizado'+avisoBarcode);
@@ -3489,10 +3518,10 @@ document.getElementById('rk-list').addEventListener('click',ev=>{
 const rkState={cat:'',search:'',sort:'nombre',dir:1};
 document.getElementById('mas-q-reconteo').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');rkAbrir();};
 document.getElementById('rk-cerrar').onclick=()=>cerrarModal('rk-ov');
-function rkAbrir(){
-  rkState.cat='';rkState.search='';rkState.sort='nombre';rkState.dir=1;
-  const inp=document.getElementById('rk-all');if(inp)inp.value='';
-  document.getElementById('rk-x').classList.remove('on');
+function rkAbrir(presetSearch){
+  rkState.cat='';rkState.search=presetSearch||'';rkState.sort='nombre';rkState.dir=1;
+  const inp=document.getElementById('rk-all');if(inp)inp.value=presetSearch||'';
+  document.getElementById('rk-x').classList.toggle('on',!!presetSearch);
   abrirModal('rk-ov');
   rkRender();
 }
@@ -3896,8 +3925,11 @@ async function gpCargar(){
     const j=await res.json();
     if(!j||!j.ok)throw new Error(j&&j.error);
     _gpLista=(j.proveedores||[]).slice().sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),'es'));
-    // Mantiene sincronizada la caché que usan los combobox de Crear producto / Ficha.
-    _psProveedores=_gpLista;_psCargado=true;
+    // Mantiene sincronizada la caché que usan los combobox de Crear producto / Ficha — antes solo
+    // actualizaba _psProveedores y marcaba _psCargado=true sin tocar _psSectores, así que si el
+    // usuario entraba primero a "Gestionar proveedores", el combobox de Sector quedaba vacío para
+    // siempre en esa sesión (psCargarListas ya no volvía a pedirlo, por el flag _psCargado).
+    _psProveedores=_gpLista;_psSectores=j.sectores||_psSectores;_psCargado=true;
     gpRender();
   }catch(e){document.getElementById('gp-lista').innerHTML='<div class="vc-empty">Error al cargar proveedores</div>';}
 }
@@ -4204,10 +4236,21 @@ async function mcCargar(){
     const j=await res.json();
     if(!j||!j.ok)throw new Error((j&&j.error)||'respuesta inválida');
     _mcCategorias=j.categorias||[];
+    mcPintarDesglose(j.desglose||{});
     mcFiltrar(document.getElementById('mc-buscar').value);
   }catch(e){
     document.getElementById('mc-lista').innerHTML='<div class="vc-empty">❌ Error al cargar: '+e.message+'</div>';
   }
+}
+function mcPintarDesglose(d){
+  const cont=document.getElementById('mc-desglose');
+  if(!cont)return;
+  const chip=(n,label,color,bg)=>`<span style="font-size:11px;font-weight:700;color:${color};background:${bg};padding:4px 9px;border-radius:20px;white-space:nowrap">${n||0} ${label}</span>`;
+  cont.innerHTML=
+    chip(d.sin_categoria,'sin categoría','var(--rojo)','var(--rojo-bg)')+
+    chip(d.sin_sector,'sin sector','var(--gold)','var(--gold-bg)')+
+    chip(d.sin_proveedor,'sin proveedor','var(--azul)','var(--azul-bg)')+
+    chip(d.total,'productos en total','var(--muted)','var(--paper)');
 }
 function mcFiltrar(texto){
   const q=normTxt(texto||'');
@@ -4222,7 +4265,7 @@ function mcRender(){
   if(!total){cont.innerHTML='<div class="vc-empty">Sin resultados.</div>';document.getElementById('mc-cargar-mas').classList.add('hidden');return;}
   const visibles=_mcFiltradas.slice(0,_mcMostradas);
   cont.innerHTML=visibles.map(c=>{
-    const opcionesProv='<option value="">— No es proveedor —</option>'+_psProveedores.map(pr=>`<option value="${pr.id}">${pr.nombre}</option>`).join('');
+    const opcionesProv='<option value="">— No es proveedor —</option><option value="__nuevo__">➕ Crear proveedor nuevo…</option>'+_psProveedores.map(pr=>`<option value="${pr.id}">${pr.nombre}</option>`).join('');
     const opcionesSector='<option value="">— Sin sector —</option>'+_psSectores.map(s=>`<option value="${s}">${s}</option>`).join('');
     const completo=(c.sin_proveedor|0)===0&&(c.sin_sector|0)===0;
     return `<div class="fp-row" style="flex-direction:column;align-items:stretch;gap:8px;padding:12px 0" data-mc-categoria="${c.categoria.replace(/"/g,'&quot;')}">
@@ -4237,6 +4280,10 @@ function mcRender(){
         <select class="mc-sel-proveedor" style="flex:1;min-width:0;padding:9px 8px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff">${opcionesProv}</select>
         <select class="mc-sel-sector" style="flex:1;min-width:0;padding:9px 8px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff">${opcionesSector}</select>
       </div>
+      <div class="mc-prov-nuevabox hidden" style="display:flex;gap:8px">
+        <input class="mc-prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px">
+        <button class="btn-ok loadbtn mc-prov-crear" type="button" style="white-space:nowrap;padding:8px 10px">Crear</button>
+      </div>
       <button class="btn-ok loadbtn mc-aplicar" type="button" style="width:100%;padding:8px">Aplicar a los ${c.total} productos</button>
     </div>`;
   }).join('');
@@ -4244,7 +4291,36 @@ function mcRender(){
   if(_mcMostradas<total){masBtn.classList.remove('hidden');masBtn.textContent='Cargar más ('+(total-_mcMostradas)+' restantes)';}
   else masBtn.classList.add('hidden');
 }
+document.getElementById('mc-lista').addEventListener('change',ev=>{
+  const sel=ev.target.closest('.mc-sel-proveedor');
+  if(!sel||sel.value!=='__nuevo__')return;
+  sel.value='';
+  const fila=ev.target.closest('[data-mc-categoria]');
+  const box=fila.querySelector('.mc-prov-nuevabox');
+  box.classList.remove('hidden');
+  box.querySelector('.mc-prov-nuevonom').focus();
+});
 document.getElementById('mc-lista').addEventListener('click',async ev=>{
+  const crearBtn=ev.target.closest('.mc-prov-crear');
+  if(crearBtn){
+    const fila=ev.target.closest('[data-mc-categoria]');
+    const categoria=fila.dataset.mcCategoria;
+    const inp=fila.querySelector('.mc-prov-nuevonom');
+    const nombre=(inp.value||'').trim();
+    if(!nombre){showToast('Escribe el nombre del proveedor');return;}
+    crearBtn.disabled=true;const txtOriginal=crearBtn.textContent;crearBtn.textContent='Creando…';
+    try{
+      const prov=await psCrearProveedorInline(nombre);
+      showToast('✓ Proveedor creado: '+prov.nombre);
+      mcRender(); // reconstruye la lista con el proveedor nuevo ya disponible en todos los selects
+      const filaNueva=document.querySelector(`#mc-lista [data-mc-categoria="${categoria.replace(/"/g,'\\"')}"]`);
+      if(filaNueva){const selNueva=filaNueva.querySelector('.mc-sel-proveedor');if(selNueva)selNueva.value=prov.id;}
+    }catch(e){
+      showToast('❌ '+e.message);
+      crearBtn.disabled=false;crearBtn.textContent=txtOriginal;
+    }
+    return;
+  }
   const btn=ev.target.closest('.mc-aplicar');
   if(!btn)return;
   const fila=ev.target.closest('[data-mc-categoria]');
@@ -6234,6 +6310,7 @@ function scDraftSaveVal(ref,val){const d=scDraftGet();if(val)d[ref]={...(d[ref]|
 function scDraftSkip(ref,skip){const d=scDraftGet();d[ref]={...(d[ref]||{}),skipped:skip};scDraftSet(d);}
 function scDraftClear(ref){const d=scDraftGet();delete d[ref];scDraftSet(d);}
 
+let _scItemsAll=[]; // caché de todos los productos sin costo cargados, para filtrar sin repedir al servidor
 async function scLoad(){
   const box=document.getElementById('sc-list'),sum=document.getElementById('sc-summary');
   box.innerHTML='';sum.textContent='Cargando…';
@@ -6242,39 +6319,62 @@ async function scLoad(){
     const j=await res.json();
     if(!j||!j.ok){sum.textContent='Error al cargar.';return;}
     const rep=j.reporte;
+    _scItemsAll=rep.items||[];
+    scPoblarFiltroCat(_scItemsAll);
     if(!rep.total){box.innerHTML='<div class="vc-empty">Todos los productos tienen costo cargado 🎉</div>';sum.textContent='';return;}
-    const draft=scDraftGet();
-    // pendientes/saltados van al final, para que lo urgente quede arriba
-    const items=[...rep.items].sort((a,b)=>{
-      const sa=draft[a.ref]&&draft[a.ref].skipped?1:0, sb=draft[b.ref]&&draft[b.ref].skipped?1:0;
-      if(sa!==sb)return sa-sb;
-      return (b.peso-a.peso);
-    });
-    const nSkip=items.filter(it=>draft[it.ref]&&draft[it.ref].skipped).length;
-    sum.textContent=rep.total+' productos sin costo · '+rep.porPeso+' vendidos por peso'+(nSkip?(' · '+nSkip+' pendientes que saltaste'):'');
-    box.innerHTML=items.map(it=>{
-      const dv=draft[it.ref]||{};
-      const skipped=!!dv.skipped;
-      return `
-      <div class="sc-row${skipped?' skipped':''}" id="sc-row-${it.ref}">
-        <div class="nom">${it.nombre}</div>
-        <div class="cat">${it.prov}${it.peso?' · ⚖️ vendido por kg':''}${skipped?' · <span style="color:var(--gold)">pendiente</span>':''}</div>
-        <div class="inrow">
-          <input type="text" inputmode="numeric" placeholder="Costo${it.peso?' por kg':''} ($)" id="sc-in-${it.ref}" value="${dv.costo||''}">
-          <button class="sc-skip" data-ref="${it.ref}">${skipped?'↺ Retomar':'Saltar por ahora'}</button>
-          <button data-ref="${it.ref}">Guardar</button>
-        </div>
-      </div>`;
-    }).join('');
-    box.querySelectorAll('.sc-row input').forEach(inp=>inp.oninput=()=>scDraftSaveVal(inp.id.replace('sc-in-',''),inp.value));
-    box.querySelectorAll('.sc-row button:not(.sc-skip)').forEach(b=>b.onclick=()=>scGuardar(b.dataset.ref));
-    box.querySelectorAll('.sc-skip').forEach(b=>b.onclick=()=>{
-      const ref=b.dataset.ref,d=scDraftGet();
-      scDraftSkip(ref,!(d[ref]&&d[ref].skipped));
-      scLoad();
-    });
+    scRenderList();
   }catch(e){sum.textContent='Error de conexión.';}
 }
+function scPoblarFiltroCat(items){
+  const sel=document.getElementById('sc-filtro-cat');
+  if(!sel)return;
+  const actual=sel.value;
+  const cats=[...new Set(items.map(it=>it.prov||'SIN CATEGORÍA'))].sort((a,b)=>a.localeCompare(b,'es'));
+  sel.innerHTML='<option value="">Todas las categorías</option>'+cats.map(c=>`<option value="${c.replace(/"/g,'&quot;')}">${c}</option>`).join('');
+  if(cats.includes(actual))sel.value=actual;
+}
+function scRenderList(){
+  const box=document.getElementById('sc-list'),sum=document.getElementById('sc-summary');
+  const filtroCat=document.getElementById('sc-filtro-cat')?document.getElementById('sc-filtro-cat').value:'';
+  const draft=scDraftGet();
+  const base=filtroCat?_scItemsAll.filter(it=>(it.prov||'SIN CATEGORÍA')===filtroCat):_scItemsAll;
+  // pendientes/saltados van al final, para que lo urgente quede arriba
+  const items=[...base].sort((a,b)=>{
+    const sa=draft[a.ref]&&draft[a.ref].skipped?1:0, sb=draft[b.ref]&&draft[b.ref].skipped?1:0;
+    if(sa!==sb)return sa-sb;
+    return (b.peso-a.peso);
+  });
+  const nSkip=items.filter(it=>draft[it.ref]&&draft[it.ref].skipped).length;
+  const nPeso=items.filter(it=>it.peso).length;
+  if(!items.length){
+    box.innerHTML='<div class="vc-empty">'+(filtroCat?'No hay productos sin costo en esta categoría.':'Todos los productos tienen costo cargado 🎉')+'</div>';
+    sum.textContent=filtroCat?'0 productos en "'+filtroCat+'"':'';
+    return;
+  }
+  sum.textContent=items.length+' producto'+(items.length===1?'':'s')+' sin costo'+(filtroCat?' en "'+filtroCat+'"':'')+' · '+nPeso+' vendidos por peso'+(nSkip?(' · '+nSkip+' pendientes que saltaste'):'');
+  box.innerHTML=items.map(it=>{
+    const dv=draft[it.ref]||{};
+    const skipped=!!dv.skipped;
+    return `
+    <div class="sc-row${skipped?' skipped':''}" id="sc-row-${it.ref}">
+      <div class="nom">${it.nombre}</div>
+      <div class="cat">${it.prov}${it.peso?' · ⚖️ vendido por kg':''}${skipped?' · <span style="color:var(--gold)">pendiente</span>':''}</div>
+      <div class="inrow">
+        <input type="text" inputmode="numeric" placeholder="Costo${it.peso?' por kg':''} ($)" id="sc-in-${it.ref}" value="${dv.costo||''}">
+        <button class="sc-skip" data-ref="${it.ref}">${skipped?'↺ Retomar':'Saltar por ahora'}</button>
+        <button data-ref="${it.ref}">Guardar</button>
+      </div>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('.sc-row input').forEach(inp=>inp.oninput=()=>scDraftSaveVal(inp.id.replace('sc-in-',''),inp.value));
+  box.querySelectorAll('.sc-row button:not(.sc-skip)').forEach(b=>b.onclick=()=>scGuardar(b.dataset.ref));
+  box.querySelectorAll('.sc-skip').forEach(b=>b.onclick=()=>{
+    const ref=b.dataset.ref,d=scDraftGet();
+    scDraftSkip(ref,!(d[ref]&&d[ref].skipped));
+    scRenderList();
+  });
+}
+document.getElementById('sc-filtro-cat').addEventListener('change',scRenderList);
 async function scGuardar(ref){
   const inp=document.getElementById('sc-in-'+ref);
   const btn=document.querySelector('#sc-row-'+ref+' button:not(.sc-skip)');
@@ -6571,11 +6671,20 @@ function rcPick(ref){
 // (se reinicia cada vez que se elige un producto distinto — nunca queda "gastado" de uno anterior).
 function rcActualizarBotonInventario(it){
   const btn=document.getElementById('rc-activar-inv');
-  if(it.track){btn.classList.add('hidden');return;}
+  const campoCant=document.getElementById('rc-cantidad-field');
+  const msg=document.getElementById('rc-sin-track-msg');
+  if(it.track){
+    btn.classList.add('hidden');
+    campoCant.classList.remove('hidden');
+    msg.classList.add('hidden');
+    return;
+  }
   btn.classList.remove('hidden');
   btn.disabled=false;
   btn.textContent='🔓 Activar inventario';
   btn.style.opacity=1;
+  campoCant.classList.add('hidden');
+  msg.classList.remove('hidden');
 }
 document.getElementById('rc-activar-inv').onclick=async()=>{
   const it=rcState.item;
@@ -6587,6 +6696,8 @@ document.getElementById('rc-activar-inv').onclick=async()=>{
     const j=await res.json();
     if(j&&j.ok){
       it.track=true;persist();
+      document.getElementById('rc-cantidad-field').classList.remove('hidden');
+      document.getElementById('rc-sin-track-msg').classList.add('hidden');
       if(j.yaEstaba){btn.textContent='✅ Inventario ya activado';}
       else{btn.textContent='✅ Inventario activado';showToast('🔓 Seguimiento activado · '+it.nombre);}
       btn.style.opacity=.7;
@@ -6612,6 +6723,8 @@ function rcReset(){
   document.getElementById('rc-results').innerHTML='';
   document.getElementById('rc-picked').classList.remove('on');
   document.getElementById('rc-activar-inv').classList.add('hidden');
+  document.getElementById('rc-cantidad-field').classList.remove('hidden');
+  document.getElementById('rc-sin-track-msg').classList.add('hidden');
   const cIn=document.getElementById('rc-cantidad');cIn.value='';cIn.disabled=true;cIn.placeholder='0';
   document.getElementById('rc-unidad').textContent='u';
   document.getElementById('rc-fecha').value='';
