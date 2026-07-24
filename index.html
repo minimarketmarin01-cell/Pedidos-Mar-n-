@@ -646,6 +646,7 @@ html.modo-bliss .fila-pedir .qword{text-align:center;max-width:100px;font-size:9
 .prod-name{font-weight:800;font-size:14px;line-height:1.2;letter-spacing:-.01em;white-space:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;cursor:pointer;flex:1;min-width:0}
 @media (min-width:700px){.prod-name{font-size:17px}}
 .sm-info{cursor:pointer}
+#rk-list .sm-info{cursor:default}
 .prod-ref{font-size:10px;color:var(--muted);font-family:'JetBrains Mono'}
 .prod-meta{font-size:11px;color:var(--ink2);font-weight:600;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .prod-prov{font-size:9.5px;font-weight:700;color:var(--muted);font-family:'Manrope';text-transform:uppercase;letter-spacing:.04em;padding-right:6px;border-right:1px solid var(--line)}
@@ -2633,7 +2634,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-24.1';
+const APP_VERSION='2026-07-24.2';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -3509,12 +3510,8 @@ document.getElementById('ptbody').addEventListener('click',ev=>{
   const tr=nom.closest('[data-ref]');
   if(tr)fpAbrir(tr.dataset.ref);
 });
-document.getElementById('rk-list').addEventListener('click',ev=>{
-  const nom=ev.target.closest('.sm-info');
-  if(!nom)return;
-  const row=nom.closest('.sm-row[data-rk-ref]');
-  if(row)fpAbrir(row.dataset.rkRef);
-});
+// En Reconteo el nombre es solo informativo — a diferencia de Pedidos, acá NO abre la Ficha,
+// para no interrumpir el flujo de contar/escribir stock por accidente al tocar el nombre.
 const rkState={cat:'',search:'',sort:'nombre',dir:1};
 document.getElementById('mas-q-reconteo').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');rkAbrir();};
 document.getElementById('rk-cerrar').onclick=()=>cerrarModal('rk-ov');
