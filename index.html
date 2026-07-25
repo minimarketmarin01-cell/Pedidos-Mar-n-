@@ -284,6 +284,11 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .btn-ok.loadbtn{background:var(--brand-grad);border-color:transparent}
 .vc-row .btn-merma{background:var(--rojo);color:#fff;border-color:var(--rojo)}
 .vc-row .btn-cambio{background:var(--azul);color:#fff;border-color:var(--azul)}
+/* Estas dos necesitan más especificidad que ".vc-row .btns button" (que ya trae su propio
+   background) para que el color de fondo realmente se aplique — si no, quedan con texto
+   blanco sobre fondo blanco (invisibles, aunque siguen siendo clickeables). */
+.vc-row .btns button.btn-merma{background:var(--rojo)}
+.vc-row .btns button.btn-cambio{background:var(--azul)}
 .vc-empty{padding:20px;text-align:center;color:var(--muted);font-size:13px}
 .vc-toprow{display:flex;gap:8px;margin-bottom:12px}
 .vc-toprow button{flex:1}
@@ -1595,11 +1600,18 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
           <input id="cp-prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
           <button class="btn-ok loadbtn" id="cp-prov-crear" type="button" style="white-space:nowrap">Crear</button>
         </div>
-        <div class="cat-combo" id="cp-sector-combo" style="margin-top:8px">
-          <input id="cp-sector-input" class="cat-combo-input" placeholder="Buscar sector…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
-          <svg class="cat-combo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          <select id="cp-sector" style="display:none"><option value="">Sin sector</option></select>
-          <div class="cat-combo-menu hidden" id="cp-sector-menu" role="listbox"></div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <div class="cat-combo" id="cp-sector-combo">
+            <input id="cp-sector-input" class="cat-combo-input" placeholder="Buscar sector…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+            <svg class="cat-combo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            <select id="cp-sector" style="display:none"><option value="">Sin sector</option></select>
+            <div class="cat-combo-menu hidden" id="cp-sector-menu" role="listbox"></div>
+          </div>
+          <button class="loadbtn" id="cp-sector-nueva" type="button" style="white-space:nowrap">➕ Nuevo</button>
+        </div>
+        <div id="cp-sector-nuevabox" class="hidden" style="gap:8px;margin-top:8px">
+          <input id="cp-sector-nuevonom" placeholder="Nombre del sector nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+          <button class="btn-ok loadbtn" id="cp-sector-crear" type="button" style="white-space:nowrap">Crear</button>
         </div>
       </div>
       <div class="mm-field">
@@ -2639,7 +2651,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-24.3';
+const APP_VERSION='2026-07-24.4';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -3337,11 +3349,18 @@ function fpModoEdicion(f){
         <input id="fp-e-prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
         <button class="btn-ok loadbtn" id="fp-e-prov-crear" type="button" style="white-space:nowrap">Crear</button>
       </div>
-      <div class="cat-combo" id="fp-e-sector-combo" style="margin-top:8px">
-        <input id="fp-e-sector-input" class="cat-combo-input" placeholder="Buscar sector…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
-        <svg class="cat-combo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-        <select id="fp-e-sector" style="display:none"><option value="">Sin sector</option></select>
-        <div class="cat-combo-menu hidden" id="fp-e-sector-menu" role="listbox"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <div class="cat-combo" id="fp-e-sector-combo">
+          <input id="fp-e-sector-input" class="cat-combo-input" placeholder="Buscar sector…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+          <svg class="cat-combo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          <select id="fp-e-sector" style="display:none"><option value="">Sin sector</option></select>
+          <div class="cat-combo-menu hidden" id="fp-e-sector-menu" role="listbox"></div>
+        </div>
+        <button class="loadbtn" id="fp-e-sector-nueva" type="button" style="white-space:nowrap">➕ Nuevo</button>
+      </div>
+      <div id="fp-e-sector-nuevabox" class="hidden" style="gap:8px;margin-top:8px">
+        <input id="fp-e-sector-nuevonom" placeholder="Nombre del sector nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+        <button class="btn-ok loadbtn" id="fp-e-sector-crear" type="button" style="white-space:nowrap">Crear</button>
       </div>
     </div>
     <div class="mm-field" style="margin-top:10px"><label>Código de barras (opcional)</label>
@@ -3389,6 +3408,7 @@ function fpModoEdicion(f){
     psInitCombo('fp-e-sector','fp-e-sector-combo','fp-e-sector-input','fp-e-sector-menu','fp-e-sector','sector');
   });
   psWireNuevoProveedor('fp-e-prov-nueva','fp-e-prov-nuevabox','fp-e-prov-nuevonom','fp-e-prov-crear','fp-e-proveedor','fp-e-sector');
+  psWireNuevoSector('fp-e-sector-nueva','fp-e-sector-nuevabox','fp-e-sector-nuevonom','fp-e-sector-crear','fp-e-proveedor','fp-e-sector');
   document.getElementById('fp-e-ps-sugerir').onclick=()=>{
     const nombreActual=(document.getElementById('fp-e-nombre').value||'').trim();
     const catActual=document.getElementById('fp-e-cat').value;
@@ -3866,6 +3886,17 @@ async function psCrearProveedorInline(nombre){
   }
   throw new Error((j&&j.error)||'No se pudo crear el proveedor');
 }
+// Mismo patrón que psCrearProveedorInline, pero para sectores — usado por el botón "+ Nuevo
+// sector" en todos los buscadores/selects de sector de la app.
+async function psCrearSectorInline(nombre){
+  const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'crear_sector',payload:{nombre}})});
+  const j=await res.json();
+  if(j&&j.ok&&j.sector){
+    if(!_psSectores.includes(j.sector)){_psSectores.push(j.sector);_psSectores.sort((a,b)=>a.localeCompare(b,'es'));}
+    return j.sector;
+  }
+  throw new Error((j&&j.error)||'No se pudo crear el sector');
+}
 // Wire genérico del botón "+ Nuevo proveedor" — reutilizado por Crear producto y por la Ficha.
 function psWireNuevoProveedor(btnId,boxId,inputId,crearBtnId,provSelId,sectorSelId){
   const btn=document.getElementById(btnId),box=document.getElementById(boxId);
@@ -3880,6 +3911,24 @@ function psWireNuevoProveedor(btnId,boxId,inputId,crearBtnId,provSelId,sectorSel
       psLlenarSelects(provSelId,sectorSelId,prov.id,document.getElementById(sectorSelId).value);
       box.classList.add('hidden');document.getElementById(inputId).value='';
       showToast('✓ Proveedor creado: '+prov.nombre);
+    }catch(e){showToast('❌ '+e.message);}
+    finally{crearBtn.disabled=false;}
+  };
+}
+// Wire genérico del botón "+ Nuevo sector" — mismo patrón que el de proveedor.
+function psWireNuevoSector(btnId,boxId,inputId,crearBtnId,provSelId,sectorSelId){
+  const btn=document.getElementById(btnId),box=document.getElementById(boxId);
+  if(btn&&box)btn.onclick=()=>{box.classList.toggle('hidden');if(!box.classList.contains('hidden'))document.getElementById(inputId).focus();};
+  const crearBtn=document.getElementById(crearBtnId);
+  if(crearBtn)crearBtn.onclick=async()=>{
+    const nom=(document.getElementById(inputId).value||'').trim();
+    if(!nom){showToast('Escribe el nombre del sector');return;}
+    crearBtn.disabled=true;
+    try{
+      const sector=await psCrearSectorInline(nom);
+      psLlenarSelects(provSelId,sectorSelId,document.getElementById(provSelId).value,sector);
+      box.classList.add('hidden');document.getElementById(inputId).value='';
+      showToast('✓ Sector creado: '+sector);
     }catch(e){showToast('❌ '+e.message);}
     finally{crearBtn.disabled=false;}
   };
@@ -4211,7 +4260,7 @@ function rvRender(){
   cont.innerHTML=visibles.map(p=>{
     const e=rvEstado(p);
     const opcionesProv='<option value="">Sin proveedor</option>'+_psProveedores.map(pr=>`<option value="${pr.id}"${String(pr.id)===String(p.proveedor_id)?' selected':''}>${pr.nombre}</option>`).join('');
-    const opcionesSector='<option value="">Sin sector</option>'+_psSectores.map(s=>`<option value="${s}"${s===p.sector?' selected':''}>${s}</option>`).join('');
+    const opcionesSector='<option value="">Sin sector</option><option value="__nuevo__">➕ Crear sector nuevo…</option>'+_psSectores.map(s=>`<option value="${s}"${s===p.sector?' selected':''}>${s}</option>`).join('');
     return `<div class="fp-row" style="flex-direction:column;align-items:stretch;gap:8px;padding:12px 0" data-rv-sku="${p.sku}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
         <div>
@@ -4224,6 +4273,10 @@ function rvRender(){
         <select class="rv-sel-proveedor" style="flex:1;min-width:0;padding:9px 8px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff">${opcionesProv}</select>
         <select class="rv-sel-sector" style="flex:1;min-width:0;padding:9px 8px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff">${opcionesSector}</select>
       </div>
+      <div class="rv-sector-nuevabox hidden" style="display:flex;gap:8px">
+        <input class="rv-sector-nuevonom" placeholder="Nombre del sector nuevo" autocomplete="off" style="flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px">
+        <button class="btn-ok loadbtn rv-sector-crear" type="button" style="white-space:nowrap;padding:8px 10px">Crear</button>
+      </div>
       <button class="btn-ok loadbtn rv-guardar" type="button" style="width:100%;padding:8px">Guardar</button>
     </div>`;
   }).join('');
@@ -4231,7 +4284,35 @@ function rvRender(){
   if(_rvMostrados<total){masBtn.classList.remove('hidden');masBtn.textContent='Cargar más ('+(total-_rvMostrados)+' restantes)';}
   else masBtn.classList.add('hidden');
 }
+document.getElementById('rv-lista').addEventListener('change',ev=>{
+  const sel=ev.target.closest('.rv-sel-sector');
+  if(!sel||sel.value!=='__nuevo__')return;
+  sel.value='';
+  const fila=ev.target.closest('[data-rv-sku]');
+  const box=fila.querySelector('.rv-sector-nuevabox');
+  box.classList.remove('hidden');
+  box.querySelector('.rv-sector-nuevonom').focus();
+});
 document.getElementById('rv-lista').addEventListener('click',async ev=>{
+  const crearBtn=ev.target.closest('.rv-sector-crear');
+  if(crearBtn){
+    const fila=ev.target.closest('[data-rv-sku]');
+    const inp=fila.querySelector('.rv-sector-nuevonom');
+    const nombre=(inp.value||'').trim();
+    if(!nombre){showToast('Escribe el nombre del sector');return;}
+    crearBtn.disabled=true;const txtOriginal=crearBtn.textContent;crearBtn.textContent='Creando…';
+    try{
+      const sector=await psCrearSectorInline(nombre);
+      showToast('✓ Sector creado: '+sector);
+      fila.querySelector('.rv-sector-nuevabox').classList.add('hidden');
+      inp.value='';
+      const selSector=fila.querySelector('.rv-sel-sector');
+      const opt=document.createElement('option');opt.value=sector;opt.textContent=sector;
+      selSector.appendChild(opt);selSector.value=sector;
+    }catch(e){showToast('❌ '+e.message);}
+    finally{crearBtn.disabled=false;crearBtn.textContent=txtOriginal;}
+    return;
+  }
   const btn=ev.target.closest('.rv-guardar');
   if(!btn)return;
   const fila=ev.target.closest('[data-rv-sku]');
@@ -4314,7 +4395,7 @@ function mcRender(){
   const visibles=_mcFiltradas.slice(0,_mcMostradas);
   cont.innerHTML=visibles.map(c=>{
     const opcionesProv='<option value="">— No es proveedor —</option><option value="__nuevo__">➕ Crear proveedor nuevo…</option>'+_psProveedores.map(pr=>`<option value="${pr.id}">${pr.nombre}</option>`).join('');
-    const opcionesSector='<option value="">— Sin sector —</option>'+_psSectores.map(s=>`<option value="${s}">${s}</option>`).join('');
+    const opcionesSector='<option value="">— Sin sector —</option><option value="__nuevo__">➕ Crear sector nuevo…</option>'+_psSectores.map(s=>`<option value="${s}">${s}</option>`).join('');
     const completo=(c.sin_proveedor|0)===0&&(c.sin_sector|0)===0;
     return `<div class="fp-row" style="flex-direction:column;align-items:stretch;gap:8px;padding:12px 0" data-mc-categoria="${c.categoria.replace(/"/g,'&quot;')}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
@@ -4332,6 +4413,10 @@ function mcRender(){
         <input class="mc-prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px">
         <button class="btn-ok loadbtn mc-prov-crear" type="button" style="white-space:nowrap;padding:8px 10px">Crear</button>
       </div>
+      <div class="mc-sector-nuevabox hidden" style="display:flex;gap:8px">
+        <input class="mc-sector-nuevonom" placeholder="Nombre del sector nuevo" autocomplete="off" style="flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px">
+        <button class="btn-ok loadbtn mc-sector-crear" type="button" style="white-space:nowrap;padding:8px 10px">Crear</button>
+      </div>
       <button class="btn-ok loadbtn mc-aplicar" type="button" style="width:100%;padding:8px">Aplicar a los ${c.total} productos</button>
     </div>`;
   }).join('');
@@ -4340,13 +4425,23 @@ function mcRender(){
   else masBtn.classList.add('hidden');
 }
 document.getElementById('mc-lista').addEventListener('change',ev=>{
-  const sel=ev.target.closest('.mc-sel-proveedor');
-  if(!sel||sel.value!=='__nuevo__')return;
-  sel.value='';
-  const fila=ev.target.closest('[data-mc-categoria]');
-  const box=fila.querySelector('.mc-prov-nuevabox');
-  box.classList.remove('hidden');
-  box.querySelector('.mc-prov-nuevonom').focus();
+  const selProv=ev.target.closest('.mc-sel-proveedor');
+  if(selProv&&selProv.value==='__nuevo__'){
+    selProv.value='';
+    const fila=ev.target.closest('[data-mc-categoria]');
+    const box=fila.querySelector('.mc-prov-nuevabox');
+    box.classList.remove('hidden');
+    box.querySelector('.mc-prov-nuevonom').focus();
+    return;
+  }
+  const selSector=ev.target.closest('.mc-sel-sector');
+  if(selSector&&selSector.value==='__nuevo__'){
+    selSector.value='';
+    const fila=ev.target.closest('[data-mc-categoria]');
+    const box=fila.querySelector('.mc-sector-nuevabox');
+    box.classList.remove('hidden');
+    box.querySelector('.mc-sector-nuevonom').focus();
+  }
 });
 document.getElementById('mc-lista').addEventListener('click',async ev=>{
   const crearBtn=ev.target.closest('.mc-prov-crear');
@@ -4366,6 +4461,26 @@ document.getElementById('mc-lista').addEventListener('click',async ev=>{
     }catch(e){
       showToast('❌ '+e.message);
       crearBtn.disabled=false;crearBtn.textContent=txtOriginal;
+    }
+    return;
+  }
+  const crearSectorBtn=ev.target.closest('.mc-sector-crear');
+  if(crearSectorBtn){
+    const fila=ev.target.closest('[data-mc-categoria]');
+    const categoria=fila.dataset.mcCategoria;
+    const inp=fila.querySelector('.mc-sector-nuevonom');
+    const nombre=(inp.value||'').trim();
+    if(!nombre){showToast('Escribe el nombre del sector');return;}
+    crearSectorBtn.disabled=true;const txtOriginal=crearSectorBtn.textContent;crearSectorBtn.textContent='Creando…';
+    try{
+      const sector=await psCrearSectorInline(nombre);
+      showToast('✓ Sector creado: '+sector);
+      mcRender();
+      const filaNueva=document.querySelector(`#mc-lista [data-mc-categoria="${categoria.replace(/"/g,'\\"')}"]`);
+      if(filaNueva){const selNueva=filaNueva.querySelector('.mc-sel-sector');if(selNueva)selNueva.value=sector;}
+    }catch(e){
+      showToast('❌ '+e.message);
+      crearSectorBtn.disabled=false;crearSectorBtn.textContent=txtOriginal;
     }
     return;
   }
@@ -4411,6 +4526,7 @@ function cpAbrir(){
     psInitCombo('cp-sector','cp-sector-combo','cp-sector-input','cp-sector-menu','cp-sector','sector');
   });
   psWireNuevoProveedor('cp-prov-nueva','cp-prov-nuevabox','cp-prov-nuevonom','cp-prov-crear','cp-proveedor','cp-sector');
+  psWireNuevoSector('cp-sector-nueva','cp-sector-nuevabox','cp-sector-nuevonom','cp-sector-crear','cp-proveedor','cp-sector');
   const hint=document.getElementById('cp-ps-hint');if(hint)hint.classList.add('hidden');
 }
 document.getElementById('cp-ps-sugerir').onclick=()=>{
