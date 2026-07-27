@@ -684,6 +684,9 @@ html.modo-bliss .fila-pedir .qword{text-align:center;max-width:100px;font-size:9
 .b-sinstock{background:var(--azul-bg);color:var(--azul)}.b-sinstock .d{background:var(--azul)}
 .qcell{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
 .cambio-badge{font-size:10px;font-weight:700;color:var(--rojo);white-space:nowrap;line-height:1.3}
+/* Aviso "ya pedido a otro proveedor" — deliberadamente NEUTRO (borde punteado, sin relleno):
+   los 5 colores 🔴🟠⚪🟢🔵 están reservados para el estado de stock y no deben mezclarse con esto. */
+.pend-badge{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:700;color:var(--muted);border:1px dashed var(--line);border-radius:6px;padding:1px 6px;margin-top:2px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cambio-badge .sep{color:var(--muted);font-weight:400}
 .cambio-badge .pedir{color:var(--verde)}
 .cat-combo{position:relative;flex:1;min-width:0}
@@ -1365,6 +1368,7 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
             <div class="tot-compact"><span class="l">Total</span><span class="v mono" id="tot-cost">$0</span></div>
             <button class="oact-btn" id="btn-suggest" aria-label="Volver a sugerido" title="Volver a sugerido"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg></button>
             <button class="oact-btn oact-danger" id="btn-clear" aria-label="Vaciar carrito" title="Vaciar carrito"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg></button>
+            <button class="oact-btn" id="btn-marcar-presencial" aria-label="Marcar pedido como realizado (presencial)" title="Marcar como realizado (pedido hecho por teléfono o en persona, sin copiar a WhatsApp)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>
             <button class="btn btn-wa btn-wa-compact" id="btn-copy" title="Copiar pedido para WhatsApp"><span class="wa-ico">W</span>Copiar</button>
           </div>
         </div>
@@ -1888,7 +1892,7 @@ const SCALES={
 const SCALE_OF_PROV={'COCA COLA':['cc_15','cc_vidrio'],'CCU':['ccu_ret']};
 
 let DB=DEFAULT, INVMAP=null, SRC='datos de ejemplo';
-let state={prov:'COCA COLA',basis:7,unit:'sem',lead:3,cover:10,sort:'stock',dir:1,edits:{},search:'',allProv:false};
+let state={prov:'COCA COLA',basis:7,unit:'sem',lead:3,cover:10,sort:'stock',dir:1,edits:{},search:'',allProv:false,pendWarned:{}};
 
 // ===================== CSV + AGREGACIÓN =====================
 function parseCSV(text){
@@ -2134,7 +2138,14 @@ function qOf(it,a){return (it.ref in state.edits)?state.edits[it.ref]:a.sug;}
 function packsOf(it,u){return it.fmt>1?Math.round(u/it.fmt):u;}
 function plural(w,n){return w==='u'?'u':(n===1?w:w+'s');}
 function labelFor(it,b){return it.fmt>1?`${plural(it.word,b||2)} · ${(b||0)*it.fmt} u`:(multOf(it)>1?`de a ${multOf(it)} u`:'unidades');}
-function onQty(inp){const ref=inp.dataset.ref,fmt=+inp.dataset.fmt;let b=Math.max(0,parseInt(inp.value)||0);state.edits[ref]=b*fmt;const cell=inp.closest('.qcell');cell.querySelector('.qstep').classList.toggle('has',b>0);const it=DB.items.find(i=>i.ref===ref);const qw=cell.querySelector('.qword');if(qw&&it)qw.textContent=labelFor(it,b);renderOrder();renderScale();persistUI();}
+function onQty(inp){const ref=inp.dataset.ref,fmt=+inp.dataset.fmt;let b=Math.max(0,parseInt(inp.value)||0);state.edits[ref]=b*fmt;const cell=inp.closest('.qcell');cell.querySelector('.qstep').classList.toggle('has',b>0);const it=DB.items.find(i=>i.ref===ref);const qw=cell.querySelector('.qword');if(qw&&it)qw.textContent=labelFor(it,b);
+  // Aviso único por sesión: la primera vez que se toca la cantidad de un producto que ya
+  // tiene un pedido pendiente a otro proveedor, para no interrumpir en cada click de +/-.
+  if(it&&b>0&&!state.pendWarned[ref]){
+    const pend=pendienteDe(it);
+    if(pend){state.pendWarned[ref]=true;showToast('🕓 Ojo: ya se pidió a '+(pend.proveedor||'otro proveedor')+' el '+(pend.fecha||'')+' · '+(pend.cantidad||0)+' u — revisa antes de repetir');}
+  }
+  renderOrder();renderScale();persistUI();}
 function stepQty(btn){const cell=btn.closest('.qcell');const inp=cell.querySelector('.qty-in');const st=+inp.dataset.step||1;inp.value=Math.max(0,(parseInt(inp.value)||0)+(+btn.dataset.d)*st);onQty(inp);}
 function ccuMixedPacks(){let p=0;itemsFor('CCU').forEach(it=>{if(it.scale==='ccu_ret'){const a=analyze(it);p+=Math.ceil(qOf(it,a)/it.fmt);}});return p;}
 function ccuTierIdx(packs){const b=SCALES.ccu_ret.breaks;let idx=0;for(let i=0;i<b.length;i++)if(packs>=b[i])idx=i;return idx;}
@@ -2402,6 +2413,9 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
   const cambioLine=a.vencido>0
     ?`<div class="cambio-badge">Cambio: -${fmt.format(a.vencido)}${sug>0?` <span class="sep">|</span> <span class="pedir">Pedir: +${fmt.format(sug)}</span>`:''}</div>`
     :'';
+  // Aviso de "ya pedido a otro proveedor" — evita pedidos duplicados (ver marcarPedidoRealizado).
+  const pend=pendienteDe(it);
+  const pendBadge=pend?`<span class="pend-badge" title="Pedido a ${pend.proveedor||'otro proveedor'} el ${pend.fecha||''} · ${fmt.format(pend.cantidad||0)} u">🕓 Ya pedido a ${pend.proveedor||'?'}</span>`:'';
   if(document.documentElement.classList.contains('vista-filas')){
     // Pantallas grandes (BlissOS/monitor táctil): formato de fila tipo planilla — mismos
     // datos que la tarjeta (arriba), reutilizados tal cual, solo en otro maquetado.
@@ -2411,7 +2425,7 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
         `<div class="fila-thumb">${thumb}</div>`+
         `<div class="fila-nombre-col">`+
           `<span class="fila-nombre prod-name">${it.nombre}</span>`+
-          `<span class="fila-prov">${it.prov}</span>`+
+          `<span class="fila-prov">${it.prov}</span>`+pendBadge+
         `</div>`+
         `<div class="fila-precios"><span class="fila-venta">${precioVal}</span><span class="fila-costo">${costoVal}</span><span class="fila-margen ${mgCls}">${mgVal}</span></div>`+
         `<div class="fila-col"><span class="fila-lbl">ROT</span><span><span class="trend ${a.trend.k}">${a.trend.t}</span> ${fmt1(ventasPeriodo)}</span></div>`+
@@ -2426,7 +2440,7 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
       `<div class="card-thumb-wrap">${thumb}</div>`+
       `<div class="card-main">`+
         `<div class="prod-name-wrap"><span class="prod-name">${it.nombre}</span></div>`+
-        `<div class="prod-meta">${it.prov}</div>`+
+        `<div class="prod-meta">${it.prov}</div>`+pendBadge+
         priceLine+
         `<div class="card-stats">`+
           `<span class="cstat"><span class="trend ${a.trend.k}">${a.trend.t}</span><span class="cstat-label">VTA</span> ${fmt1(ventasPeriodo)}</span>`+
@@ -2699,10 +2713,20 @@ function lastSyncTime(){const t=localStorage.getItem('marin_last_sync');return t
 function setLastSync(t){localStorage.setItem('marin_last_sync',String(t));}
 
 // Convierte los datos del endpoint (items + ventas) al formato DB que usa el dashboard
-function buildDBfromCloud(items, ventas){
+function buildDBfromCloud(items, ventas, pendientes){
   const itemRows=(items&&items.rows)?items.rows:{};
   const ventaRows=(ventas&&ventas.rows)?ventas.rows:{};
   const hoyRows=(ventas&&ventas.hoy&&ventas.hoy.rows)?ventas.hoy.rows:{};
+  // Pedidos pendientes (evita pedidos duplicados entre proveedores distintos) — se indexan por
+  // sku y por código de barras: así se detecta que "es el mismo producto" tanto si se vuelve a
+  // buscar el mismo sku como si otro proveedor lo vende bajo un sku distinto con igual barcode.
+  const pendRows=(pendientes&&pendientes.rows)?pendientes.rows:[];
+  const pendBySku={},pendByBarcode={};
+  pendRows.forEach(p=>{
+    if(!p||!p.sku)return;
+    pendBySku[p.sku]=p;
+    if(p.barcode)pendByBarcode[p.barcode]=p;
+  });
 
   // Solo productos que EXISTEN en el catálogo actual (los eliminados en Loyverse no se muestran)
   const refs=new Set(Object.keys(itemRows));
@@ -2748,7 +2772,14 @@ function buildDBfromCloud(items, ventas){
   }).sort((a,b)=>b.u30-a.u30);
 
   const meta=ventas&&ventas.meta?ventas.meta:{min:'',max:'',ndays:0};
-  return {meta:{min:meta.min,max:meta.max,ndays:meta.ndays,nitems:items_arr.length,nprov:provs.length},items:items_arr,provs:provs};
+  return {meta:{min:meta.min,max:meta.max,ndays:meta.ndays,nitems:items_arr.length,nprov:provs.length},items:items_arr,provs:provs,pendBySku:pendBySku,pendByBarcode:pendByBarcode};
+}
+// Devuelve el registro de "pedido pendiente" de un producto (por sku, o por barcode si otro
+// proveedor lo vende bajo un sku distinto), o null si no tiene nada pedido en camino.
+function pendienteDe(it){
+  if(!DB||!it)return null;
+  const bySku=DB.pendBySku||{},byBarcode=DB.pendByBarcode||{};
+  return bySku[it.ref]||(it.barcode?byBarcode[it.barcode]:null)||null;
 }
 
 async function cloudSync(silent,live,full,origen){
@@ -2762,7 +2793,7 @@ async function cloudSync(silent,live,full,origen){
     try{j=await res.json();}
     catch(parseErr){throw new Error('Respuesta no es JSON válido (status '+res.status+') — posible corte de conexión');}
     if(j&&j.ok){
-      DB=buildDBfromCloud(j.items,j.ventas);
+      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes);
       INVMAP=invMapFromItems(DB.items);
       SRC='nube · '+new Date().toLocaleString('es-CL');
       state.edits={};
@@ -5774,7 +5805,7 @@ async function recargarHistorial(){
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=recargar_historial');
     const j=await res.json();
     if(j&&j.ok){
-      DB=buildDBfromCloud(j.items,j.ventas);
+      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes);
       INVMAP=invMapFromItems(DB.items);
       state.edits={};
       persist();render();
@@ -7123,6 +7154,29 @@ async function llIgnorar(filaIndex){
 document.getElementById('btn-llegadas').onclick=()=>{document.getElementById('ll-ov').classList.remove('hidden');llLoad();};
 document.getElementById('ll-cerrar').onclick=()=>document.getElementById('ll-ov').classList.add('hidden');
 
+// Marca cada línea del pedido como "pedido realizado" en D1 (evita duplicados con otro
+// proveedor — ver pendienteDe). No bloquea el flujo si falla: el pedido ya se copió/hizo
+// igual, solo no queda registrado el aviso hasta el próximo intento.
+async function marcarPedidoRealizado(lines,canal){
+  if(!lines||!lines.length)return;
+  const items=lines.map(l=>({sku:l.it.ref,barcode:l.it.barcode||'',nombre:l.it.nombre,proveedor:l.it.prov,cantidad:l.q}));
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'marcar_pedido_realizado',payload:{items:items,canal:canal}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      // Refleja el aviso al instante en la copia local (sin esperar al próximo sync) para
+      // que si se vuelve a buscar el producto ya aparezca "ya pedido".
+      const fechaHoy=new Date().toLocaleString('es-CL');
+      DB.pendBySku=DB.pendBySku||{};DB.pendByBarcode=DB.pendByBarcode||{};
+      items.forEach(x=>{
+        const rec={sku:x.sku,barcode:x.barcode,nombre:x.nombre,proveedor:x.proveedor,cantidad:x.cantidad,canal:canal,fecha:fechaHoy};
+        DB.pendBySku[x.sku]=rec;
+        if(x.barcode)DB.pendByBarcode[x.barcode]=rec;
+      });
+      render();
+    }
+  }catch(e){/* no crítico — ver comentario arriba */}
+}
 document.getElementById('btn-suggest').onclick=()=>{currentItems().forEach(it=>{delete state.edits[it.ref];});render();persistUI();showToast('↺ Volví a las cantidades sugeridas');};
 document.getElementById('btn-clear').onclick=()=>{currentItems().forEach(it=>{state.edits[it.ref]=0;});render();persistUI();showToast('✕ Pedido vaciado (todo en 0)');};
 document.getElementById('btn-copy').onclick=()=>{
@@ -7155,9 +7209,19 @@ document.getElementById('btn-copy').onclick=()=>{
     soloCambio.forEach(c=>{txt+=`• ${c.nombre}\n  🔄 Cambio: ${cambiosMap[c.it.ref]} unidades\n`;});
   }
   if(state.prov==='CCU'&&!state.search&&!state.allProv){const p=ccuMixedPacks();if(p>0)txt+=`\n(Retornables 2.5L: ${p} packs → -${SCALES.ccu_ret.dtoG[ccuTierIdx(p)]}%)`;}
+  if(lines.length)marcarPedidoRealizado(lines,'whatsapp');
   const ok=()=>{showToast('Pedido copiado ✓ Pégalo en WhatsApp');const b=document.getElementById('btn-copy');b.classList.add('copied');setTimeout(()=>b.classList.remove('copied'),1400);};
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok,()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();ok();});
   else{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();ok();}
+};
+document.getElementById('btn-marcar-presencial').onclick=async()=>{
+  const lines=currentOrder();
+  if(!lines.length){showToast('No hay productos en el pedido');return;}
+  const btn=document.getElementById('btn-marcar-presencial');
+  btn.disabled=true;
+  await marcarPedidoRealizado(lines,'presencial');
+  btn.disabled=false;
+  showToast('✅ Pedido marcado como realizado ('+lines.length+' producto'+(lines.length===1?'':'s')+')');
 };
 // (Carga manual de CSV eliminada — los datos llegan automáticamente del script)
 
