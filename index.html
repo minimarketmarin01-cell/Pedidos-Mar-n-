@@ -1126,6 +1126,7 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
           <div class="seg" id="vc-viewseg" style="display:flex;width:100%;margin:0 0 10px">
             <button type="button" data-view="lista" class="active" style="flex:1">📋 Lista</button>
             <button type="button" data-view="gondola" style="flex:1">🛒 Por góndola</button>
+            <button type="button" data-view="pendientes" style="flex:1">📦 Pendientes<span id="vc-pend-badge"></span></button>
           </div>
           <div id="vc-view-lista">
           <div class="mm-search" style="margin:0 0 10px">
@@ -1143,6 +1144,10 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
             </div>
             <div class="gon-progress"><div class="gon-bar"><div id="gon-bar-fill"></div></div><span id="gon-prog-lbl">0/0 revisados</span></div>
             <div id="gon-list"></div>
+          </div>
+          <div id="vc-view-pendientes" class="hidden">
+            <div class="vc-empty" id="vc-pend-intro" style="text-align:left;color:var(--muted);font-size:12px;margin-bottom:8px">Ya se retiraron de la góndola — esperando que el proveedor los cambie, o falta confirmar si son merma.</div>
+            <div id="vc-pend-list"></div>
           </div>
           </div>
         </div>
@@ -5902,7 +5907,7 @@ document.getElementById('prov-mic').onclick=ev=>{
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&_scanStream)closeScanner();});
 
 // ===================== REGISTRAR MERMA =====================
-const mmState={item:null,motivo:null,resp:null,origen:'manual',lote:''};
+const mmState={item:null,motivo:null,resp:null,origen:'manual',lote:'',vencFilaIndex:null};
 function mmFindItems(q){
   q=(q||'').toLowerCase().trim();
   if(!q)return [];
@@ -5959,7 +5964,7 @@ function mmValidar(){
   document.getElementById('mm-save').disabled=!ok;
 }
 function mmReset(){
-  mmState.item=null;mmState.motivo=null;mmState.resp=null;mmState.origen='manual';mmState.lote='';
+  mmState.item=null;mmState.motivo=null;mmState.resp=null;mmState.origen='manual';mmState.lote='';mmState.vencFilaIndex=null;
   document.getElementById('mm-search').value='';
   document.getElementById('mm-results').innerHTML='';
   document.getElementById('mm-picked').classList.remove('on');
@@ -5975,13 +5980,15 @@ function mmReset(){
 }
 function openMerma(skipReset){if(!skipReset){try{mmReset();}catch(e){}}abrirModal('mm-ov');}
 function closeMerma(){cerrarModal('mm-ov');}
-// Prellenar el modal de merma desde el panel de vencimientos ("Es merma")
-function mmPrefill(ref,cantidad,lote){
+// Prellenar el modal de merma desde el panel de vencimientos ("Es merma"). vencFilaIndex
+// permite que el backend enlace la merma real con el lote de vencimiento (merma_id) para
+// poder trazar el hilo completo Vencimiento → Retirado → Merma.
+function mmPrefill(ref,cantidad,lote,vencFilaIndex){
   mmReset();
   mmPick(ref);
   const cIn=document.getElementById('mm-cantidad');
   cIn.value=cantidad;mmCalcTotal();
-  mmState.origen='vencimiento';mmState.lote=lote||'';
+  mmState.origen='vencimiento';mmState.lote=lote||'';mmState.vencFilaIndex=vencFilaIndex||null;
   mmValidar();
 }
 
@@ -6022,7 +6029,7 @@ document.getElementById('mm-save').onclick=async()=>{
   try{
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'merma',payload:{
       sku:it.ref,cantidad:cantidad,costoManual:costoManual,motivo:mmState.motivo,responsable:mmState.resp,
-      origen:mmState.origen||'manual',lote:mmState.lote||'',
+      origen:mmState.origen||'manual',lote:mmState.lote||'',vencFilaIndex:mmState.vencFilaIndex||undefined,
       snap:{id:it.id,vid:it.vid,nombre:it.nombre,prov:it.prov,peso:it.peso,precio:it.precio,costo:it.coste,stock:it.stock,track:it.track,barcode:it.barcode}
     }})});
     const j=await res.json();
@@ -6110,12 +6117,36 @@ function vcSetView(v){
   document.querySelectorAll('#vc-viewseg button').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
   document.getElementById('vc-view-lista').classList.toggle('hidden',v!=='lista');
   document.getElementById('vc-view-gondola').classList.toggle('hidden',v!=='gondola');
+  document.getElementById('vc-view-pendientes').classList.toggle('hidden',v!=='pendientes');
   if(v==='gondola')gonIniciar();
+  else if(v==='pendientes')vcRenderPendientes();
   else vcAplicarFiltro();   // refresca la lista por si se retiró algo en góndola
 }
 document.querySelectorAll('#vc-viewseg button').forEach(b=>b.onclick=()=>vcSetView(b.dataset.view));
+// "Pendientes" = productos ya retirados de la góndola (estado 'Retirado') esperando que el
+// proveedor los cambie o que se confirme que son merma. Reutiliza vcRender (misma lógica de
+// botones por categoría cambio/normal) apuntando al contenedor propio de esta pestaña.
+function vcRenderPendientes(){
+  const pendientes=_vcTodos.filter(l=>l.estado==='Retirado');
+  vcRender(pendientes,'vc-pend-list');
+  vcUpdatePendBadge(pendientes.length);
+}
+function vcUpdatePendBadge(n){
+  const b=document.getElementById('vc-pend-badge');
+  if(!b)return;
+  b.textContent=n>0?(' '+(n>99?'99+':n)):'';
+}
+// Refresca la vista que esté activa en ese momento (Lista o Pendientes) después de resolver
+// un lote — antes siempre refrescaba Lista aunque la acción viniera de la pestaña Pendientes.
+function vcRefreshCurrentView(){
+  const activo=document.querySelector('#vc-viewseg button.active');
+  const v=activo?activo.dataset.view:'lista';
+  if(v==='pendientes')vcRenderPendientes();
+  else if(v!=='gondola')vcAplicarFiltro();
+  vcUpdatePendBadge(_vcTodos.filter(l=>l.estado==='Retirado').length);
+}
 function gonIniciar(){
-  const rev=_vcTodos.filter(l=>_gonBucket(_diasVenc(l.fechaVencimiento))!=null);
+  const rev=_vcTodos.filter(l=>l.estado!=='Retirado'&&l.estado!=='Revisado'&&_gonBucket(_diasVenc(l.fechaVencimiento))!=null);
   _gonTotalInicial=rev.length;_gonRevisados=0;
   const cats=[...new Set(rev.map(l=>l.categoria))].sort((a,b)=>String(a).localeCompare(String(b)));
   const sel=document.getElementById('gon-catfilter');const prev=sel.value;
@@ -6128,7 +6159,7 @@ document.getElementById('gon-catfilter').onchange=gonRender;
 function gonRender(){
   const box=document.getElementById('gon-list');
   const filtroCat=document.getElementById('gon-catfilter').value;
-  const rev=_vcTodos.map(l=>{const dv=_diasVenc(l.fechaVencimiento);const bk=_gonBucket(dv);return bk?Object.assign({_dias:dv,_bk:bk},l):null;}).filter(Boolean);
+  const rev=_vcTodos.filter(l=>l.estado!=='Retirado'&&l.estado!=='Revisado').map(l=>{const dv=_diasVenc(l.fechaVencimiento);const bk=_gonBucket(dv);return bk?Object.assign({_dias:dv,_bk:bk},l):null;}).filter(Boolean);
   const lista=filtroCat?rev.filter(l=>l.categoria===filtroCat):rev;
   const pct=_gonTotalInicial?Math.round(_gonRevisados/_gonTotalInicial*100):0;
   document.getElementById('gon-bar-fill').style.width=pct+'%';
@@ -6171,10 +6202,16 @@ async function gonRetirar(fi,nombre,btn){
     }})});
     const j=await res.json();
     if(j&&j.ok){
-      _vcTodos=_vcTodos.filter(l=>String(l.filaIndex)!==String(fi));
+      // Antes se borraba de _vcTodos — desaparecía de Góndola (bien) pero también de Lista
+      // y de la nueva pestaña Pendientes (mal, seguía "perdido" como Retirado en el server
+      // pero invisible en la app). Ahora solo se actualiza su estado; gonRender() ya lo
+      // excluye del recorrido por el filtro de estado.
+      const l=_vcTodos.find(x=>String(x.filaIndex)===String(fi));
+      if(l)l.estado='Retirado';
       _gonRevisados++;
-      showToast('✓ Retirado: '+nombre);
+      showToast('✓ Retirado: '+nombre+' · pasa a Pendientes');
       gonRender();
+      vcUpdatePendBadge(_vcTodos.filter(x=>x.estado==='Retirado').length);
     }else{showToast('Error: '+((j&&j.error)||'no se pudo marcar'));if(btn){btn.disabled=false;btn.textContent='Retirar';}}
   }catch(e){showToast('Error de conexión');if(btn){btn.disabled=false;btn.textContent='Retirar';}}
 }
@@ -6227,17 +6264,19 @@ async function vcLoad(){
   document.querySelectorAll('#vc-viewseg button').forEach(b=>b.classList.toggle('active',b.dataset.view==='lista'));
   document.getElementById('vc-view-lista').classList.remove('hidden');
   document.getElementById('vc-view-gondola').classList.add('hidden');
+  document.getElementById('vc-view-pendientes').classList.add('hidden');
   if(!CATEGORIAS_CAMBIO.length)await cargarConfigCambio();   // asegura tener la lista antes de decidir qué botones mostrar
   try{
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=vencimientos');
     const j=await res.json();
     _vcTodos=(j&&j.ok)?j.lotes:[];
     vcAplicarFiltro();   // pinta ya filtrado por lo que haya escrito en el buscador de la lista
+    vcUpdatePendBadge(_vcTodos.filter(l=>l.estado==='Retirado').length);
   }catch(e){box.innerHTML='<div class="vc-empty">Error al cargar. Intenta de nuevo.</div>';}
 }
-function vcRender(lotes){
-  const box=document.getElementById('vc-list');
-  if(!lotes.length){box.innerHTML='<div class="vc-empty">Sin lotes activos por vencer 🎉</div>';return;}
+function vcRender(lotes,containerId){
+  const box=document.getElementById(containerId||'vc-list');
+  if(!lotes.length){box.innerHTML='<div class="vc-empty">'+(containerId==='vc-pend-list'?'Sin productos pendientes de reposición 🎉':'Sin lotes activos por vencer 🎉')+'</div>';return;}
   box.innerHTML=lotes.map(l=>{
     const esCambio=esCategoriaCambio(l.categoria);
     let botones, notaExtra='';
@@ -6274,7 +6313,7 @@ function vcRender(lotes){
   box.querySelectorAll('[data-act="merma"]').forEach(b=>b.onclick=()=>{
     vcRevisar(b.dataset.i,'merma',false);   // marca revisado sin pedir responsable extra
     closeVenc();
-    mmPrefill(b.dataset.sku,b.dataset.cant,b.dataset.lote);
+    mmPrefill(b.dataset.sku,b.dataset.cant,b.dataset.lote,b.dataset.i);
     openMerma(true);
   });
   box.querySelectorAll('[data-actm="cambiado"]').forEach(b=>b.onclick=()=>vcMarcarCambiado(b.dataset.i,b.dataset.nom));
@@ -6352,7 +6391,14 @@ async function vcRevisar(filaIndex,resultado,recargar){
         // Ya no es un lote activo: se quita de la lista en memoria y se repinta,
         // sin volver a pedir toda la lista al servidor.
         _vcTodos=_vcTodos.filter(l=>String(l.filaIndex)!==String(filaIndex));
-        vcAplicarFiltro();
+        vcRefreshCurrentView();
+      }else{
+        // resultado='merma' con recargar=false (viene de "🗑️ Es merma"): el lote pasa a
+        // Revisado pero seguimos usando su cantidad/lote localmente para abrir el form de
+        // merma — igual actualizamos su estado en memoria para que no siga en "Pendientes".
+        const l=_vcTodos.find(x=>String(x.filaIndex)===String(filaIndex));
+        if(l)l.estado='Revisado';
+        vcUpdatePendBadge(_vcTodos.filter(x=>x.estado==='Retirado').length);
       }
     }
     else showToast('Error: '+((j&&j.error)||'no se pudo'));
