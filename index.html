@@ -3117,7 +3117,17 @@ async function cloudSync(silent,live,full,origen){
       DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra);
       INVMAP=invMapFromItems(DB.items);
       SRC='nube · '+new Date().toLocaleString('es-CL');
-      state.edits={};
+      // FIX: antes esto era "state.edits={}" incondicional, así que CUALQUIER sync
+      // (incluido el automático cada 15 min y el silencioso al abrir la app) vaciaba
+      // el carrito sin que el usuario tocara nada. Ahora solo se limpian, y solo en
+      // un sync "full" (♻️ Catálogo, el único que puede eliminar productos), las
+      // líneas del carrito que ya no corresponden a ningún producto existente.
+      if(full){
+        const refsValidos=new Set(DB.items.map(it=>it.ref));
+        Object.keys(state.edits).forEach(ref=>{
+          if(!refsValidos.has(ref))delete state.edits[ref];
+        });
+      }
       if(!DB.provs.some(p=>p.prov===state.prov))state.prov=DB.provs[0]?DB.provs[0].prov:'';
       setLastSync(Date.now());
       persist();render();renderProvDay();
@@ -7679,19 +7689,75 @@ async function marcarPedidoRealizado(lines,canal){
     }
   }catch(e){/* no crítico — ver comentario arriba */}
 }
+// ===================== Modal de confirmación genérico =====================
+// Reutiliza el patrón visual .mm-ov/.mm-card ya usado en toda la app. Un solo
+// nodo en el DOM, se repuebla en cada llamada. Bloquea doble clic deshabilitando
+// el botón de confirmar apenas se toca, y limpia listeners previos con
+// cloneNode para que llamadas sucesivas no acumulen handlers duplicados.
+function confirmarAccion({titulo,mensaje,textoConfirmar,textoCancelar,peligro,onConfirm,onCancel}){
+  let modal=document.getElementById('confirm-ov');
+  if(!modal){
+    modal=document.createElement('div');
+    modal.className='mm-ov hidden';
+    modal.id='confirm-ov';
+    modal.innerHTML=
+      '<div class="mm-card" style="max-width:340px">'+
+        '<div class="mm-head"><h3 id="confirm-titulo"></h3></div>'+
+        '<div class="mm-body">'+
+          '<p id="confirm-mensaje" style="font-size:13.5px;line-height:1.5;color:var(--ink2);margin:0 0 16px"></p>'+
+          '<button class="mm-save" id="confirm-btn-ok" style="width:100%"></button>'+
+          '<button class="loadbtn" id="confirm-btn-cancel" style="width:100%;margin-top:8px"></button>'+
+        '</div>'+
+      '</div>';
+    document.body.appendChild(modal);
+  }
+  document.getElementById('confirm-titulo').textContent=titulo;
+  document.getElementById('confirm-mensaje').textContent=mensaje;
+  let btnOk=document.getElementById('confirm-btn-ok');
+  let btnCancel=document.getElementById('confirm-btn-cancel');
+  btnOk.textContent=textoConfirmar||'Confirmar';
+  btnCancel.textContent=textoCancelar||'Cancelar';
+  btnOk.style.background=peligro?'var(--rojo)':'';
+  btnOk.disabled=false;
+
+  const nuevoOk=btnOk.cloneNode(true);btnOk.parentNode.replaceChild(nuevoOk,btnOk);btnOk=nuevoOk;
+  const nuevoCancel=btnCancel.cloneNode(true);btnCancel.parentNode.replaceChild(nuevoCancel,btnCancel);btnCancel=nuevoCancel;
+
+  btnOk.onclick=()=>{
+    btnOk.disabled=true; // evita doble ejecución si se toca dos veces seguidas
+    modal.classList.add('hidden');_sincronizarNav();
+    onConfirm&&onConfirm();
+  };
+  btnCancel.onclick=()=>{
+    modal.classList.add('hidden');_sincronizarNav();
+    onCancel&&onCancel();
+  };
+
+  modal.classList.remove('hidden');
+  void modal.offsetWidth;
+  _sincronizarNav();
+}
+
 // Antes: borraba las ediciones para volver a mostrar el sugerido (que igual se autocargaba
 // solo). Ahora que nada se autocarga, este botón es la única forma de meter los sugeridos
 // al carrito — agrega TODOS los sugeridos del proveedor/vista actual de una vez (sin
 // checkboxes previos), sin tocar lo que ya había de otros proveedores. Lo que no se quiera
 // se saca con el tacho de cada fila, como cualquier otro producto del carrito.
 document.getElementById('btn-suggest').onclick=()=>{
-  let agregados=0;
-  currentItems().forEach(it=>{
-    const a=analyze(it);
-    if(a.sug>0){state.edits[it.ref]=a.sug;agregados++;}
+  confirmarAccion({
+    titulo:'🔄 Agregar sugeridos',
+    mensaje:'Se agregarán al carrito las cantidades sugeridas de los productos que estás viendo. Si algún producto ya tenía una cantidad puesta a mano, se reemplaza por la sugerida.',
+    textoConfirmar:'Agregar sugeridos',
+    onConfirm:()=>{
+      let agregados=0;
+      currentItems().forEach(it=>{
+        const a=analyze(it);
+        if(a.sug>0){state.edits[it.ref]=a.sug;agregados++;}
+      });
+      render();persistUI();
+      showToast(agregados?('✓ '+agregados+' producto'+(agregados===1?'':'s')+' sugerido'+(agregados===1?'':'s')+' agregado'+(agregados===1?'':'s')+' al carrito'):'No hay sugeridos para agregar ahora mismo');
+    }
   });
-  render();persistUI();
-  showToast(agregados?('✓ '+agregados+' producto'+(agregados===1?'':'s')+' sugerido'+(agregados===1?'':'s')+' agregado'+(agregados===1?'':'s')+' al carrito'):'No hay sugeridos para agregar ahora mismo');
 };
 // Antes vaciaba solo currentItems() (el proveedor que se estaba viendo) — como el carrito
 // ahora es global entre proveedores (ver currentOrder), eso dejaba productos de OTROS
@@ -7700,10 +7766,18 @@ document.getElementById('btn-suggest').onclick=()=>{
 // resetear el objeto completo, no un subconjunto filtrado por proveedor.
 document.getElementById('btn-clear').onclick=()=>{
   const n=currentOrder().length;
-  if(!n){showToast('El carrito ya está vacío');return;}
-  state.edits={};
-  render();persistUI();
-  showToast('✕ Carrito vaciado ('+n+' producto'+(n===1?'':'s')+' · todo en 0)');
+  if(!n){showToast('El carrito ya está vacío');return;} // edge case: nada que confirmar
+  confirmarAccion({
+    titulo:'🗑️ Vaciar carrito',
+    mensaje:'Se eliminarán los '+n+' producto'+(n===1?'':'s')+' del carrito, de todos los proveedores. Esta acción no se puede deshacer.',
+    textoConfirmar:'Vaciar carrito',
+    peligro:true,
+    onConfirm:()=>{
+      state.edits={};
+      render();persistUI();
+      showToast('✕ Carrito vaciado ('+n+' producto'+(n===1?'':'s')+' · todo en 0)');
+    }
+  });
 };
 document.getElementById('btn-copy').onclick=()=>{
   // El carrito ahora puede acumular productos de varios proveedores a la vez (ver
@@ -7752,12 +7826,19 @@ document.getElementById('btn-marcar-presencial').onclick=async()=>{
   // que llamaste a TODOS los proveedores del carrito solo porque tocaste este botón una vez.
   const soloEsteProv=!state.search&&!state.allProv;
   const lines=soloEsteProv?currentOrder().filter(l=>l.it.prov===state.prov):currentOrder();
-  if(!lines.length){showToast('No hay productos en el pedido de este proveedor');return;}
-  const btn=document.getElementById('btn-marcar-presencial');
-  btn.disabled=true;
-  await marcarPedidoRealizado(lines,'presencial');
-  btn.disabled=false;
-  showToast('✅ Pedido marcado como realizado ('+lines.length+' producto'+(lines.length===1?'':'s')+')');
+  if(!lines.length){showToast('No hay productos en el pedido de este proveedor');return;} // edge case
+  confirmarAccion({
+    titulo:'✓ Marcar pedido como solicitado',
+    mensaje:'Confirma que ya llamaste o le pediste a '+(soloEsteProv?state.prov:'el proveedor')+'. Esto evita que el pedido se duplique si vuelves a mirar estos productos.',
+    textoConfirmar:'Sí, ya lo pedí',
+    onConfirm:async()=>{
+      const btn=document.getElementById('btn-marcar-presencial');
+      btn.disabled=true;
+      await marcarPedidoRealizado(lines,'presencial');
+      btn.disabled=false;
+      showToast('✅ Pedido marcado como realizado ('+lines.length+' producto'+(lines.length===1?'':'s')+')');
+    }
+  });
 };
 // (Carga manual de CSV eliminada — los datos llegan automáticamente del script)
 
