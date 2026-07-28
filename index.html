@@ -2135,7 +2135,7 @@ function analyze(it){const rate=rateOf(it),tracked=it.track&&it.stock!=null,esCa
     else if(cov>(lead+cover)*2.5){status='sobre';sug=0;}else{status='ok';sug=0;}}
   return{rate,cov,status,sug,tracked,trend:trendOf(it),vencido:paraCambioTotal};}
 const SO={urgente:0,pedir:1,sinstock:2,ok:3,sobre:4};const SL={urgente:'Urgente',pedir:'Pedir',ok:'OK',sobre:'Sobrestock',sinstock:'Ref.'};
-function itemsFor(p){return DB.items.filter(i=>i.prov===p);}
+function itemsFor(p){return DB.items.filter(i=>i.prov===p||(i.provsExtra&&i.provsExtra.includes(p)));}
 // Normaliza texto para comparar sin tildes/mayúsculas ("Pingüino"≈"pinguino")
 function normTxt(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
 function currentItems(){if(state.search){const words=normTxt(state.search).trim().split(/\s+/).filter(Boolean);return DB.items.filter(i=>{const hay=normTxt(i.nombre);const ref=String(i.ref||'');const bc=i.barcode?String(i.barcode):'';return words.every(w=>hay.includes(w)||ref.includes(w)||bc.includes(w));});}if(state.allProv)return DB.items;return itemsFor(state.prov);}
@@ -2234,7 +2234,20 @@ if(!window._provMenuPortalBound){
   }
 }
 function setProvInputValue(){const sel=document.getElementById('prov-all');if(!sel)return;if(document.activeElement===sel)return;/* el usuario está escribiendo ahí: no lo interrumpimos */if(state.search)return;const allMode=state.allProv&&!state.search;sel.value=allMode?'📋 Todos los proveedores':(DB.provs.some(p=>p.prov===state.prov)?state.prov:(DB.provs[0]?DB.provs[0].prov:''));}
-function pickProv(target){if(target==='__ALL__'){state.allProv=true;}else{state.allProv=false;state.prov=target;state.sort='rate';state.dir=-1;}state.search='';const sx=document.getElementById('prov-x');if(sx)sx.classList.remove('on');state.edits={};const menu=document.getElementById('prov-menu');if(menu)menu.classList.add('hidden');const sel=document.getElementById('prov-all');if(sel)sel.blur();setProvInputValue();render();persistUI();}
+// Antes de cambiar de proveedor: si ya había cantidades editadas a mano para el proveedor
+// de destino (de una sesión anterior armando su pedido), pregunta qué hacer en vez de
+// borrarlas en silencio como pasaba antes (state.edits={} en cada cambio de proveedor).
+// No aplica a "todos los proveedores" ni a una búsqueda — solo cuando se entra a un
+// proveedor puntual, que es el único caso donde currentOrder() muestra un solo carrito.
+function prepararCambioProveedor(nuevoProv){
+  if(!nuevoProv)return;
+  const refs=new Set(itemsFor(nuevoProv).map(it=>it.ref));
+  const editados=Object.keys(state.edits).filter(ref=>refs.has(ref));
+  if(!editados.length)return;   // nada editado para ese proveedor: no hay nada que preguntar
+  const usarSugeridos=confirm('Ya tenías cantidades editadas para "'+nuevoProv+'" de antes.\n\nAceptar = volver a las cantidades sugeridas\nCancelar = mantener esas cantidades en el carrito');
+  if(usarSugeridos)editados.forEach(ref=>{delete state.edits[ref];});
+}
+function pickProv(target){if(target!=='__ALL__')prepararCambioProveedor(target);if(target==='__ALL__'){state.allProv=true;}else{state.allProv=false;state.prov=target;state.sort='rate';state.dir=-1;}state.search='';const sx=document.getElementById('prov-x');if(sx)sx.classList.remove('on');const menu=document.getElementById('prov-menu');if(menu)menu.classList.add('hidden');const sel=document.getElementById('prov-all');if(sel)sel.blur();setProvInputValue();render();persistUI();}
 function commitProv(val){const key=(val||'').trim().toLowerCase();if(!key)return false;if(key.indexOf('todos')===0||key.indexOf('📋')===0){pickProv('__ALL__');return true;}let hit=DB.provs.find(p=>p.prov.toLowerCase()===key);if(!hit&&key.length>=2)hit=DB.provs.find(p=>p.prov.toLowerCase().indexOf(key)>-1);if(hit){pickProv(hit.prov);return true;}return false;}
 function updGlob(){let q=0;DB.items.forEach(it=>{if(it.track&&it.stock!=null&&it.stock<=0&&it.u30>0)q++;});document.getElementById('glob-quiebre').textContent='● '+q+' en quiebre';
   document.getElementById('updlabel').innerHTML=`Datos: <b>${DB.meta.min} → ${DB.meta.max}</b> · ${DB.meta.nitems} productos · ${SRC}`;}
@@ -2421,6 +2434,11 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
   // Aviso de "ya pedido a otro proveedor" — evita pedidos duplicados (ver marcarPedidoRealizado).
   const pend=pendienteDe(it);
   const pendBadge=pend?`<span class="pend-badge" title="Pedido a ${pend.proveedor||'otro proveedor'} el ${pend.fecha||''} · ${fmt.format(pend.cantidad||0)} u">🕓 Ya pedido a ${pend.proveedor||'?'}</span>`:'';
+  // Se está viendo bajo un proveedor "extra" (Opción A): el sku es único en Loyverse, pero
+  // aparece también acá aunque su categoría real sea otra. Aviso neutro, mismo estilo que
+  // pend-badge, para no confundirlo con los 5 colores de alerta de stock.
+  const viendoComoExtra=!state.allProv&&!state.search&&state.prov&&state.prov!==it.prov;
+  const extraProvBadge=viendoComoExtra?`<span class="pend-badge" title="Su proveedor principal en Loyverse es ${it.prov}">↳ normalmente ${it.prov}</span>`:'';
   if(document.documentElement.classList.contains('vista-filas')){
     // Pantallas grandes (BlissOS/monitor táctil): formato de fila tipo planilla — mismos
     // datos que la tarjeta (arriba), reutilizados tal cual, solo en otro maquetado.
@@ -2430,7 +2448,7 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
         `<div class="fila-thumb">${thumb}</div>`+
         `<div class="fila-nombre-col">`+
           `<span class="fila-nombre prod-name">${it.nombre}</span>`+
-          `<span class="fila-prov">${it.prov}</span>`+pendBadge+
+          `<span class="fila-prov">${it.prov}</span>`+pendBadge+extraProvBadge+
         `</div>`+
         `<div class="fila-precios"><span class="fila-venta">${precioVal}</span><span class="fila-costo">${costoVal}</span><span class="fila-margen ${mgCls}">${mgVal}</span></div>`+
         `<div class="fila-col"><span class="fila-lbl">ROT</span><span><span class="trend ${a.trend.k}">${a.trend.t}</span> ${fmt1(ventasPeriodo)}</span></div>`+
@@ -2445,7 +2463,7 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
       `<div class="card-thumb-wrap">${thumb}</div>`+
       `<div class="card-main">`+
         `<div class="prod-name-wrap"><span class="prod-name">${it.nombre}</span></div>`+
-        `<div class="prod-meta">${it.prov}</div>`+pendBadge+
+        `<div class="prod-meta">${it.prov}</div>`+pendBadge+extraProvBadge+
         priceLine+
         `<div class="card-stats">`+
           `<span class="cstat"><span class="trend ${a.trend.k}">${a.trend.t}</span><span class="cstat-label">VTA</span> ${fmt1(ventasPeriodo)}</span>`+
@@ -2718,7 +2736,7 @@ function lastSyncTime(){const t=localStorage.getItem('marin_last_sync');return t
 function setLastSync(t){localStorage.setItem('marin_last_sync',String(t));}
 
 // Convierte los datos del endpoint (items + ventas) al formato DB que usa el dashboard
-function buildDBfromCloud(items, ventas, pendientes){
+function buildDBfromCloud(items, ventas, pendientes, provsExtra){
   const itemRows=(items&&items.rows)?items.rows:{};
   const ventaRows=(ventas&&ventas.rows)?ventas.rows:{};
   const hoyRows=(ventas&&ventas.hoy&&ventas.hoy.rows)?ventas.hoy.rows:{};
@@ -2732,6 +2750,9 @@ function buildDBfromCloud(items, ventas, pendientes){
     pendBySku[p.sku]=p;
     if(p.barcode)pendByBarcode[p.barcode]=p;
   });
+  // Proveedores extra (Opción A) — sku único en Loyverse, pero visible también al filtrar por
+  // otro proveedor en Pedidos. Mapa sku → [proveedor,...].
+  const provsExtraObj=provsExtra||{};
 
   // Solo productos que EXISTEN en el catálogo actual (los eliminados en Loyverse no se muestran)
   const refs=new Set(Object.keys(itemRows));
@@ -2744,7 +2765,7 @@ function buildDBfromCloud(items, ventas, pendientes){
     const prov=inv.prov||v.prov||'SIN CATEGORÍA';
     const t=tag(nombre,prov);
     items_arr.push({
-      ref:ref, nombre:nombre, prov:prov,
+      ref:ref, nombre:nombre, prov:prov, provsExtra:provsExtraObj[ref]||[],
       id:inv.id||'', vid:inv.vid||'',
       u_all:(v.u_all||0)+hoyU,
       u7:(v.u7||0)+hoyU, u14:(v.u14||0)+hoyU,
@@ -2798,7 +2819,7 @@ async function cloudSync(silent,live,full,origen){
     try{j=await res.json();}
     catch(parseErr){throw new Error('Respuesta no es JSON válido (status '+res.status+') — posible corte de conexión');}
     if(j&&j.ok){
-      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes);
+      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra);
       INVMAP=invMapFromItems(DB.items);
       SRC='nube · '+new Date().toLocaleString('es-CL');
       state.edits={};
@@ -3264,6 +3285,20 @@ function fpPintar(f){
     fpRow('Seguir inventario',p.trackStock?'✅ Activado':'❌ Desactivado')+
     fpRow('Última modificación',p.ultimaModificacion||'Sin registros de cambios aún')+
     '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">'+
+      '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px">También se puede pedir a</div>'+
+      '<div id="fp-provextra-list">'+
+        ((p.proveedoresExtra&&p.proveedoresExtra.length)
+          ?p.proveedoresExtra.map(pr=>'<div class="fp-row"><span class="k">'+pr+'</span><span class="v"><button type="button" class="fp-provextra-quitar" data-prov="'+pr+'" style="border:none;background:none;color:var(--rojo);font-weight:700;font-size:12px;cursor:pointer">✕ Quitar</button></span></div>').join('')
+          :'<div style="font-size:12px;color:var(--muted)">Solo se pide bajo su proveedor principal ('+p.categoria+').</div>')+
+      '</div>'+
+      '<div style="display:flex;gap:8px;margin-top:8px">'+
+        '<select id="fp-provextra-select" style="flex:1;padding:9px 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px"><option value="">Elige un proveedor…</option>'+
+          (DB.provs||[]).filter(c=>c.prov!==p.categoria&&!(p.proveedoresExtra||[]).includes(c.prov)).map(c=>'<option value="'+c.prov+'">'+c.prov+'</option>').join('')+
+        '</select>'+
+        '<button class="loadbtn" id="fp-provextra-add" type="button" style="white-space:nowrap">➕ Agregar</button>'+
+      '</div>'+
+    '</div>'+
+    '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">'+
       '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px">Imagen</div>'+
       (p.imagen?'<img id="fp-img-actual" src="'+p.imagen+'" style="width:64px;height:64px;object-fit:cover;border-radius:9px;border:1px solid var(--line);margin-bottom:9px;display:block">':'<div style="font-size:12.5px;color:var(--muted);margin-bottom:9px">Este producto no tiene imagen en Loyverse.</div>')+
       '<div style="display:flex;gap:8px">'+
@@ -3281,6 +3316,40 @@ function fpPintar(f){
     '<button id="fp-eliminar-btn" style="width:100%;padding:10px;margin-top:14px;border-radius:10px;border:1.5px solid var(--rojo);background:#FCE9E7;color:var(--rojo);font-weight:700;font-size:13px;cursor:pointer">🗑️ Eliminar este producto de Loyverse</button>';
   document.getElementById('fp-editar-btn').onclick=()=>fpModoEdicion(f);
   document.getElementById('fp-eliminar-btn').onclick=()=>fpEliminarProducto(f);
+  const fpPEAdd=document.getElementById('fp-provextra-add');
+  if(fpPEAdd)fpPEAdd.onclick=async()=>{
+    const sel=document.getElementById('fp-provextra-select');
+    const prov=sel&&sel.value;
+    if(!prov){showToast('Elige un proveedor primero');return;}
+    fpPEAdd.disabled=true;
+    try{
+      const r=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'agregar_proveedor_extra',payload:{sku:p.sku,proveedor:prov}})});
+      const j=await r.json();
+      if(j&&j.ok){
+        p.proveedoresExtra=p.proveedoresExtra||[];p.proveedoresExtra.push(prov);
+        const itLocal=DB.items.find(x=>x.ref===p.sku);
+        if(itLocal){itLocal.provsExtra=itLocal.provsExtra||[];itLocal.provsExtra.push(prov);}
+        showToast('🔁 Ahora también se pide a '+prov);
+        fpPintar(f);render();
+      }else{showToast('⚠️ '+((j&&j.error)||'No se pudo agregar'));}
+    }catch(e){showToast('⚠️ Error de conexión');}
+    finally{fpPEAdd.disabled=false;}
+  };
+  document.querySelectorAll('.fp-provextra-quitar').forEach(b=>b.onclick=async()=>{
+    const prov=b.dataset.prov;
+    b.disabled=true;
+    try{
+      const r=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'quitar_proveedor_extra',payload:{sku:p.sku,proveedor:prov}})});
+      const j=await r.json();
+      if(j&&j.ok){
+        p.proveedoresExtra=(p.proveedoresExtra||[]).filter(x=>x!==prov);
+        const itLocal=DB.items.find(x=>x.ref===p.sku);
+        if(itLocal)itLocal.provsExtra=(itLocal.provsExtra||[]).filter(x=>x!==prov);
+        showToast('Quitado de '+prov);
+        fpPintar(f);render();
+      }else{showToast('⚠️ '+((j&&j.error)||'No se pudo quitar'));b.disabled=false;}
+    }catch(e){showToast('⚠️ Error de conexión');b.disabled=false;}
+  });
   document.getElementById('fp-img-buscar').onclick=()=>fpBuscarImagen(p);
   document.getElementById('fp-img-usar').onclick=()=>fpConfirmarImagen(p);
   document.getElementById('fp-img-cancelar').onclick=()=>fpCancelarImagenPreview();
@@ -5810,7 +5879,7 @@ async function recargarHistorial(){
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=recargar_historial');
     const j=await res.json();
     if(j&&j.ok){
-      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes);
+      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra);
       INVMAP=invMapFromItems(DB.items);
       state.edits={};
       persist();render();
