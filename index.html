@@ -686,6 +686,7 @@ html.modo-bliss .fila-pedir .qword{text-align:center;max-width:100px;font-size:9
 .b-sinstock{background:var(--azul-bg);color:var(--azul)}.b-sinstock .d{background:var(--azul)}
 .qcell{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
 .cambio-badge{font-size:10px;font-weight:700;color:var(--rojo);white-space:nowrap;line-height:1.3}
+.sug-hint{display:block;font-size:10.5px;font-weight:700;color:var(--muted);white-space:nowrap;line-height:1.3;margin-bottom:1px}
 /* Aviso "ya pedido a otro proveedor" — deliberadamente NEUTRO (borde punteado, sin relleno):
    los 5 colores 🔴🟠⚪🟢🔵 están reservados para el estado de stock y no deben mezclarse con esto. */
 .pend-badge{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:700;color:var(--muted);border:1px dashed var(--line);border-radius:6px;padding:1px 6px;margin-top:2px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -864,6 +865,7 @@ html:not(.vista-filas) .row-pedir .card-stats .cstat:last-child{background:#FCE8
 .wa-ico{width:20px;height:20px;background:var(--wa);border-radius:5px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:800;font-family:'Manrope'}
 .order-body{padding:12px 14px;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .oline{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px dashed var(--line2);font-size:13px}
+.oline-prov-tag{font-weight:800;font-size:10.5px;text-transform:uppercase;letter-spacing:.02em;margin-right:5px}
 .oline .on-wrap{flex:1;min-width:0}
 .oline .on{display:block;font-weight:700;font-size:14px;white-space:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 @media (min-width:700px){.oline .on{font-size:17px}}
@@ -1373,8 +1375,8 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
         <div class="order-foot">
           <div class="order-row-main">
             <div class="tot-compact"><span class="l">Total</span><span class="v mono" id="tot-cost">$0</span></div>
-            <button class="oact-btn" id="btn-suggest" aria-label="Volver a sugerido" title="Volver a sugerido"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg></button>
-            <button class="oact-btn oact-danger" id="btn-clear" aria-label="Vaciar carrito" title="Vaciar carrito"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg></button>
+            <button class="oact-btn" id="btn-suggest" aria-label="Agregar sugeridos al carrito" title="Agregar todos los productos sugeridos de este proveedor al carrito (no borra lo que ya tengas)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg></button>
+            <button class="oact-btn oact-danger" id="btn-clear" aria-label="Vaciar este proveedor" title="Vaciar lo de este proveedor/vista (el resto del carrito, de otros proveedores, no se toca)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg></button>
             <button class="oact-btn" id="btn-marcar-presencial" aria-label="Marcar pedido como realizado (presencial)" title="Marcar como realizado (pedido hecho por teléfono o en persona, sin copiar a WhatsApp)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>
             <button class="btn btn-wa btn-wa-compact" id="btn-copy" title="Copiar pedido para WhatsApp"><span class="wa-ico">W</span>Copiar</button>
           </div>
@@ -1443,11 +1445,12 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
           <li><b>📦 Recibir mercadería:</b> escanea el producto, suma el stock en Loyverse y crea el lote de vencimiento, todo en un solo paso.</li>
           <li><b>🔁 Cambio con proveedor:</b> las categorías configuradas como "cambio" (Ideal, Pan Castaño, etc.) se descuentan solas del stock apenas vencen, y avisan que hay que retirarlas de la góndola. Cuando el proveedor llega, marca "Cambiado" desde Vencimientos.</li>
           <li><b>📦 Proveedores de hoy:</b> el recuadro de arriba te dice a quién <b>pedir hoy</b> y qué <b>llega hoy</b>, según el calendario de cada proveedor.</li>
-          <li><b>Semáforo de pedido:</b> 🔴 Urgente · 🟡 Pedir · 🟢 OK · ⚫ Sobrestock · 🔵 Sin control. La columna <b>Pedir</b> ya trae la cantidad sugerida según rotación, días de entrega y cobertura objetivo.</li>
-          <li><b>Venta · Costo · Margen:</b> cada fila muestra el margen sobre venta del producto, con color (verde alto, dorado medio, rojo bajo).</li>
-          <li><b>Buscador:</b> escribe el nombre, REF o <b>código de barras</b> y busca en todos los proveedores a la vez. También puedes usar 🎤 para hablar o 📷 para escanear el código de barras con la cámara.</li>
+          <li><b>Semáforo de pedido:</b> 🔴 Urgente · 🟡 Pedir · 🟢 OK · ⚫ Sobrestock · 🔵 Sin control. Cada fila muestra la cantidad sugerida según rotación, días de entrega y cobertura objetivo — pero el carrito arranca en 0: toca <b>🔄 Agregar sugeridos</b> (arriba del carrito) para cargarlos todos de una, o escribe la cantidad a mano fila por fila.</li>
+          <li><b>El carrito acumula varios proveedores a la vez:</b> arma el pedido de un proveedor, cambia a otro sin miedo — nada se borra. En el carrito, cada color de franja a la izquierda es un proveedor distinto (solo aparece cuando hay más de uno mezclado). "Copiar" y "Marcar como realizado" solo mandan lo del proveedor que estás viendo; "Vaciar" también es solo de ese proveedor.</li>
           <li><b>Ver todos los proveedores:</b> en el selector elige "📋 Todos los proveedores" para armar pedidos con todo el inventario junto.</li>
           <li><b>Rotación día/semana/mes</b> y base 7/14/30/90 días: ajústalas según lo que quieras analizar (abre por defecto en 7 días · semana).</li>
+          <li><b>Venta · Costo · Margen:</b> cada fila muestra el margen sobre venta del producto, con color (verde alto, dorado medio, rojo bajo).</li>
+          <li><b>Buscador:</b> escribe el nombre, REF o <b>código de barras</b> y busca en todos los proveedores a la vez. También puedes usar 🎤 para hablar o 📷 para escanear el código de barras con la cámara.</li>
           <li><b>Soprole:</b> las cantidades suben por el mínimo de cada producto (de a 4, 6, 8, 12… según corresponda).</li>
           <li><b>Resumen proveedores:</b> gráfico de venta semanal por categoría y qué proveedores necesitan pedido, con su día de mayor venta.</li>
           <li><b>Escalas CCU/Coca-Cola</b> (⚡) integradas: el costo baja por volumen. Pedido listo para WhatsApp en un toque.</li>
@@ -2156,7 +2159,10 @@ function itemsFor(p){return DB.items.filter(i=>i.prov===p||(i.provsExtra&&i.prov
 // Normaliza texto para comparar sin tildes/mayúsculas ("Pingüino"≈"pinguino")
 function normTxt(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
 function currentItems(){if(state.search){const words=normTxt(state.search).trim().split(/\s+/).filter(Boolean);return DB.items.filter(i=>{const hay=normTxt(i.nombre);const ref=String(i.ref||'');const bc=i.barcode?String(i.barcode):'';return words.every(w=>hay.includes(w)||ref.includes(w)||bc.includes(w));});}if(state.allProv)return DB.items;return itemsFor(state.prov);}
-function qOf(it,a){return (it.ref in state.edits)?state.edits[it.ref]:a.sug;}
+// Antes: si no había edición manual, devolvía a.sug (la cantidad sugerida se autocargaba
+// en el carrito sin que el usuario hiciera nada). Ahora el carrito arranca en 0 siempre —
+// solo cuenta lo que el usuario escribió a mano o agregó con "🔄 Agregar sugeridos".
+function qOf(it,a){return (it.ref in state.edits)?state.edits[it.ref]:0;}
 function packsOf(it,u){return it.fmt>1?Math.round(u/it.fmt):u;}
 function plural(w,n){return w==='u'?'u':(n===1?w:w+'s');}
 function labelFor(it,b){return it.fmt>1?`${plural(it.word,b||2)} · ${(b||0)*it.fmt} u`:(multOf(it)>1?`de a ${multOf(it)} u`:'unidades');}
@@ -2264,29 +2270,14 @@ function pvAbrir(providerName,editedCount,onKeepSuggested,onKeepCurrent,onCancel
   document.getElementById('pv-cancelar').onclick=()=>{cerrar();onCancel&&onCancel();};
   ov.onclick=(ev)=>{if(ev.target===ov){cerrar();onCancel&&onCancel();}};
 }
-// Antes de cambiar de proveedor: si ya había cantidades editadas a mano para el proveedor
-// de destino (de una sesión anterior armando su pedido), pregunta qué hacer en vez de
-// borrarlas en silencio como pasaba antes (state.edits={} en cada cambio de proveedor).
-// No aplica a "todos los proveedores" ni a una búsqueda — solo cuando se entra a un
-// proveedor puntual, que es el único caso donde currentOrder() muestra un solo carrito.
-function prepararCambioProveedor(nuevoProv,onResuelto){
-  if(!nuevoProv)return onResuelto&&onResuelto();
-  const refs=new Set(itemsFor(nuevoProv).map(it=>it.ref));
-  const editados=Object.keys(state.edits).filter(ref=>refs.has(ref));
-  if(!editados.length)return onResuelto&&onResuelto();   // nada editado para ese proveedor: no hay nada que preguntar
-  pvAbrir(nuevoProv,editados.length,
-    ()=>{editados.forEach(ref=>{delete state.edits[ref];});onResuelto&&onResuelto();},   // usar sugeridos
-    ()=>{onResuelto&&onResuelto();},   // mantener mi pedido: no toca state.edits
-    ()=>{ /* cancelar: no se aplica el cambio de proveedor */ }
-  );
-}
+// El modal pv-ov (pvAbrir) queda como pieza reutilizable por si hace falta más adelante,
+// pero YA NO se dispara al cambiar de proveedor: ahora navegar el catálogo (state.prov) y
+// el carrito (state.edits, ver qOf/currentOrder) están completamente desacoplados — cambiar
+// de proveedor nunca vuelve a tocar ni una sola cantidad automáticamente, así que no hay
+// nada que "pisar" y por lo tanto nada que confirmar.
 function pickProv(target){
-  const aplicar=()=>{
-    if(target==='__ALL__'){state.allProv=true;}else{state.allProv=false;state.prov=target;state.sort='rate';state.dir=-1;}
-    state.search='';const sx=document.getElementById('prov-x');if(sx)sx.classList.remove('on');const menu=document.getElementById('prov-menu');if(menu)menu.classList.add('hidden');const sel=document.getElementById('prov-all');if(sel)sel.blur();setProvInputValue();render();persistUI();
-  };
-  if(target==='__ALL__')return aplicar();
-  prepararCambioProveedor(target,aplicar);
+  if(target==='__ALL__'){state.allProv=true;}else{state.allProv=false;state.prov=target;state.sort='rate';state.dir=-1;}
+  state.search='';const sx=document.getElementById('prov-x');if(sx)sx.classList.remove('on');const menu=document.getElementById('prov-menu');if(menu)menu.classList.add('hidden');const sel=document.getElementById('prov-all');if(sel)sel.blur();setProvInputValue();render();persistUI();
 }
 function commitProv(val){const key=(val||'').trim().toLowerCase();if(!key)return false;if(key.indexOf('todos')===0||key.indexOf('📋')===0){pickProv('__ALL__');return true;}let hit=DB.provs.find(p=>p.prov.toLowerCase()===key);if(!hit&&key.length>=2)hit=DB.provs.find(p=>p.prov.toLowerCase().indexOf(key)>-1);if(hit){pickProv(hit.prov);return true;}return false;}
 function updGlob(){let q=0;DB.items.forEach(it=>{if(it.track&&it.stock!=null&&it.stock<=0&&it.u30>0)q++;});document.getElementById('glob-quiebre').textContent='● '+q+' en quiebre';
@@ -2436,8 +2427,8 @@ function rowSortVal(it,a){switch(state.sort){case'nombre':return it.nombre.toLow
 function covColor(a){return a.status==='urgente'?'var(--rojo)':a.status==='pedir'?'var(--ambar)':a.status==='sobre'?'var(--gris)':a.status==='sinstock'?'var(--azul)':'var(--verde)';}
 // --- Render de tabla con carga incremental (lazy) para listas grandes ---
 const TABLE_PAGE=70;let _tbState=null,_tbIO=null;
-function rowHTML(it,a,f){const sug=qOf(it,a);
-  const bundles=it.fmt>1?Math.round(sug/it.fmt):sug;
+function rowHTML(it,a,f){const cant=qOf(it,a);
+  const bundles=it.fmt>1?Math.round(cant/it.fmt):cant;
   const covTxt=a.cov==null?'—':a.cov===Infinity?'∞':(a.cov>=100?'99+':fmt1(a.cov)+'d');
   const tooltip='#'+it.ref+(it.scale?' · escala ⚡':'')+' · '+SL[a.status];
   const precioVal=it.precio!=null?peso(it.precio):'—';
@@ -2469,11 +2460,14 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
   // Indicador "Cambio: -N | Pedir: +N" junto al selector de cantidad — aparece siempre que
   // haya unidades pendientes de cambio con proveedor, aunque lo que haya que pedir sea 0.
   const cambioLine=a.vencido>0
-    ?`<div class="cambio-badge">Cambio: -${fmt.format(a.vencido)}${sug>0?` <span class="sep">|</span> <span class="pedir">Pedir: +${fmt.format(sug)}</span>`:''}</div>`
+    ?`<div class="cambio-badge">Cambio: -${fmt.format(a.vencido)}${a.sug>0?` <span class="sep">|</span> <span class="pedir">Pedir: +${fmt.format(a.sug)}</span>`:''}</div>`
     :'';
   // Aviso de "ya pedido a otro proveedor" — evita pedidos duplicados (ver marcarPedidoRealizado).
   const pend=pendienteDe(it);
   const pendBadge=pend?`<span class="pend-badge" title="Pedido a ${pend.proveedor||'otro proveedor'} el ${pend.fecha||''} · ${fmt.format(pend.cantidad||0)} u">🕓 Ya pedido a ${pend.proveedor||'?'}</span>`:'';
+  // El carrito ya no se autocompleta con el sugerido (ver qOf) — este hint mantiene visible
+  // la recomendación aunque el stepper esté en 0, para no perder esa información de un vistazo.
+  const sugHint=(a.sug>0&&cant===0)?`<span class="sug-hint">Sugerido: ${fmt.format(a.sug)}</span>`:'';
   // Se está viendo bajo un proveedor "extra" (Opción A): el sku es único en Loyverse, pero
   // aparece también acá aunque su categoría real sea otra. Aviso neutro, mismo estilo que
   // pend-badge, para no confundirlo con los 5 colores de alerta de stock.
@@ -2482,7 +2476,7 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
   if(document.documentElement.classList.contains('vista-filas')){
     // Pantallas grandes (BlissOS/monitor táctil): formato de fila tipo planilla — mismos
     // datos que la tarjeta (arriba), reutilizados tal cual, solo en otro maquetado.
-    const stepper=`<div class="qcell">${cambioLine}<div class="qstep ${sug>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}" data-step="${inStep(it)}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${(it.fmt>1||multOf(it)>1)?'gold':''}">${labelFor(it,bundles)}</span></div>`;
+    const stepper=`<div class="qcell">${cambioLine}${sugHint}<div class="qstep ${cant>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}" data-step="${inStep(it)}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${(it.fmt>1||multOf(it)>1)?'gold':''}">${labelFor(it,bundles)}</span></div>`;
     return `<div data-ref="${it.ref}" class="card-cell ${a.status==='urgente'?'row-urgent':''}" title="${tooltip}">`+
       `<div class="fila-row">`+
         `<div class="fila-thumb">${thumb}</div>`+
@@ -2511,7 +2505,7 @@ function rowHTML(it,a,f){const sug=qOf(it,a);
           `<span class="cstat" style="color:${covColor(a)}"><span class="cstat-label" style="color:inherit">COB</span> ${covTxt}</span>`+
         `</div>`+
       `</div>`+
-      `<div class="card-stepper"><div class="qcell">${cambioLine}<div class="qstep ${sug>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}" data-step="${inStep(it)}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${(it.fmt>1||multOf(it)>1)?'gold':''}">${labelFor(it,bundles)}</span></div></div>`+
+      `<div class="card-stepper"><div class="qcell">${cambioLine}${sugHint}<div class="qstep ${cant>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}" data-step="${inStep(it)}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${(it.fmt>1||multOf(it)>1)?'gold':''}">${labelFor(it,bundles)}</span></div></div>`+
     `</div>`+
   `</div>`;
 }
@@ -2579,7 +2573,12 @@ function toggleAccordion(headEl,bodyEl,openState){
   const head=document.getElementById('scale-head');
   if(head)head.onclick=()=>{_scaleOpen=toggleAccordion(head,document.getElementById('scale-body'));};
 })();
-function currentOrder(){const lines=[];const base=(state.search||state.allProv)?currentItems():itemsFor(state.prov);base.forEach(it=>{const a=analyze(it);const q=qOf(it,a);if(q>0)lines.push({it,nombre:it.nombre,q,packs:packsOf(it,q),cost:tierCostUn(it)*q,word:it.word});});return lines;}
+// Antes filtraba por el proveedor que se estaba navegando (itemsFor(state.prov)), así que
+// cambiar de proveedor "vaciaba" visualmente el carrito aunque los datos siguieran en
+// memoria. Ahora recorre TODO el catálogo — seguro porque qOf() ya no autocompleta con el
+// sugerido, así que solo entran acá los productos que el usuario realmente puso en el
+// carrito (a mano o con "Agregar sugeridos"), sin importar qué proveedor estés viendo.
+function currentOrder(){const lines=[];DB.items.forEach(it=>{const a=analyze(it);const q=qOf(it,a);if(q>0)lines.push({it,nombre:it.nombre,q,packs:packsOf(it,q),cost:tierCostUn(it)*q,word:it.word});});return lines;}
 // Productos con unidades pendientes de "cambio con proveedor" (a.vencido, ya usado en la
 // columna STK), separado de currentOrder() a propósito: un producto puede necesitar cambio
 // aunque no tenga nada que pedir (q=0), y currentOrder() solo lista lo que hay que pedir.
@@ -2630,6 +2629,16 @@ function cartApplyQty(ref,newPacks){
   persistUI();
   renderScale();
 }
+// Color distintivo por proveedor, SOLO para agrupar visualmente el carrito cuando tiene
+// ítems de varios proveedores mezclados — paleta deliberadamente separada de los 5 colores
+// de alerta de stock (🔴🟠⚪🟢🔵), determinística por nombre (mismo proveedor = mismo color
+// siempre, sin guardar nada extra).
+const CART_PROV_PALETTE=['#7E57C2','#00897B','#5C6BC0','#8D6E63','#AB47BC','#00695C','#6D4C41','#546E7A','#7B1FA2','#00838F'];
+function colorForProv(prov){
+  let h=0;const s=String(prov||'');
+  for(let i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))>>>0;}
+  return CART_PROV_PALETTE[h%CART_PROV_PALETTE.length];
+}
 function renderOrder(){
   const lines=currentOrder();
   const body=document.getElementById('order-body');
@@ -2644,12 +2653,19 @@ function renderOrder(){
     .map(ref=>{const it=DB.items.find(i=>i.ref===ref);return it?{it,nombre:it.nombre}:null;})
     .filter(Boolean);
   if(!lines.length&&!soloCambio.length){body.innerHTML='<div class="order-empty">Sin productos sugeridos con los parámetros actuales.</div>';cartUpdateTotals();return;}
+  // Ítems de varios proveedores mezclados en el mismo carrito (ver currentOrder): recién ahí
+  // vale la pena mostrar el color/nombre de proveedor por fila — con un solo proveedor sería
+  // ruido repetido sin aportar nada.
+  const provsEnCarrito=new Set(lines.map(l=>l.it.prov));
+  const mostrarProv=provsEnCarrito.size>1;
   let html=lines.map(l=>{
     const cambio=cambiosMap[l.it.ref]||0;
-    return `<div class="oline" data-ref="${l.it.ref}">
+    const color=mostrarProv?colorForProv(l.it.prov):null;
+    const provTag=mostrarProv?`<span class="oline-prov-tag" style="color:${color}">${l.it.prov}</span>`:'';
+    return `<div class="oline" data-ref="${l.it.ref}"${color?` style="border-left:4px solid ${color};padding-left:8px"`:''}>
       <div class="on-wrap">
         <span class="on">${l.nombre}</span>
-        <span class="oline-sub">${peso(l.cost)}${l.it.fmt>1?' · '+(l.q)+' u':''}</span>
+        <span class="oline-sub">${provTag}${peso(l.cost)}${l.it.fmt>1?' · '+(l.q)+' u':''}</span>
         ${cambio>0?`<span class="oline-cambio">🔄 Cambio: ${fmt.format(cambio)} u</span>`:''}
       </div>
       <div class="qcell">
@@ -2709,13 +2725,9 @@ function renderOverview(){
   const tb=document.getElementById('ovbody');tb.innerHTML='';
   rows.forEach(r=>{const tr=document.createElement('tr');tr.innerHTML=`<td class="l"><span class="ov-prov" data-p="${r.prov}">${r.prov}</span></td><td class="num">${r.n}</td><td class="num">${fmt1(r.u30/30)}</td><td class="num">${r.dow?DIAS[r.peak]:'—'}</td><td class="num" style="color:${r.urg>0?'var(--rojo)':'var(--muted)'};font-weight:700">${r.urg||'—'}</td><td class="num" style="color:${r.ped>0?'var(--ambar)':'var(--muted)'};font-weight:700">${r.ped||'—'}</td><td class="num">${r.cost>0?peso(r.cost):'—'}</td><td class="num">${peso(r.prof)}</td>`;tb.appendChild(tr);});
   tb.querySelectorAll('.ov-prov').forEach(el=>el.onclick=()=>{
-    const destino=el.dataset.p;
-    const aplicar=()=>{
-      state.prov=destino;state.allProv=false;state.search='';state.sort='rate';state.dir=-1;
-      const pa=document.getElementById('prov-all');if(pa)pa.value='';
-      document.querySelector('.tab[data-tab="pedido"]').click();setProvInputValue();render();persistUI();
-    };
-    prepararCambioProveedor(destino,aplicar);
+    state.prov=el.dataset.p;state.allProv=false;state.search='';state.sort='rate';state.dir=-1;
+    const pa=document.getElementById('prov-all');if(pa)pa.value='';
+    document.querySelector('.tab[data-tab="pedido"]').click();setProvInputValue();render();persistUI();
   });
   renderInsumosChart();
 }
@@ -7400,10 +7412,29 @@ async function marcarPedidoRealizado(lines,canal){
     }
   }catch(e){/* no crítico — ver comentario arriba */}
 }
-document.getElementById('btn-suggest').onclick=()=>{currentItems().forEach(it=>{delete state.edits[it.ref];});render();persistUI();showToast('↺ Volví a las cantidades sugeridas');};
+// Antes: borraba las ediciones para volver a mostrar el sugerido (que igual se autocargaba
+// solo). Ahora que nada se autocarga, este botón es la única forma de meter los sugeridos
+// al carrito — agrega TODOS los sugeridos del proveedor/vista actual de una vez (sin
+// checkboxes previos), sin tocar lo que ya había de otros proveedores. Lo que no se quiera
+// se saca con el tacho de cada fila, como cualquier otro producto del carrito.
+document.getElementById('btn-suggest').onclick=()=>{
+  let agregados=0;
+  currentItems().forEach(it=>{
+    const a=analyze(it);
+    if(a.sug>0){state.edits[it.ref]=a.sug;agregados++;}
+  });
+  render();persistUI();
+  showToast(agregados?('✓ '+agregados+' producto'+(agregados===1?'':'s')+' sugerido'+(agregados===1?'':'s')+' agregado'+(agregados===1?'':'s')+' al carrito'):'No hay sugeridos para agregar ahora mismo');
+};
 document.getElementById('btn-clear').onclick=()=>{currentItems().forEach(it=>{state.edits[it.ref]=0;});render();persistUI();showToast('✕ Pedido vaciado (todo en 0)');};
 document.getElementById('btn-copy').onclick=()=>{
-  const lines=currentOrder();
+  // El carrito ahora puede acumular productos de varios proveedores a la vez (ver
+  // currentOrder). Para WhatsApp eso no sirve — cada proveedor tiene su propio número y
+  // necesita su propio mensaje — así que acá se filtra solo lo del proveedor que se está
+  // viendo. En "todos los proveedores" o con búsqueda activa se manda todo junto, igual que
+  // ya funcionaba antes (ahí "(varios)" ya era el comportamiento esperado).
+  const soloEsteProv=!state.search&&!state.allProv;
+  const lines=soloEsteProv?currentOrder().filter(l=>l.it.prov===state.prov):currentOrder();
   const cambiosMap={};
   currentCambios().forEach(c=>{cambiosMap[c.it.ref]=c.cambio;});
   const refsConPedido=new Set(lines.map(l=>l.it.ref));
@@ -7438,8 +7469,12 @@ document.getElementById('btn-copy').onclick=()=>{
   else{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();ok();}
 };
 document.getElementById('btn-marcar-presencial').onclick=async()=>{
-  const lines=currentOrder();
-  if(!lines.length){showToast('No hay productos en el pedido');return;}
+  // Mismo criterio que btn-copy: si el carrito tiene varios proveedores mezclados, "marcar
+  // como realizado" acá solo cierra el del proveedor que se está viendo — no se puede asumir
+  // que llamaste a TODOS los proveedores del carrito solo porque tocaste este botón una vez.
+  const soloEsteProv=!state.search&&!state.allProv;
+  const lines=soloEsteProv?currentOrder().filter(l=>l.it.prov===state.prov):currentOrder();
+  if(!lines.length){showToast('No hay productos en el pedido de este proveedor');return;}
   const btn=document.getElementById('btn-marcar-presencial');
   btn.disabled=true;
   await marcarPedidoRealizado(lines,'presencial');
