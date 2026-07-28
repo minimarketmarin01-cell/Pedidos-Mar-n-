@@ -5058,6 +5058,10 @@ function fcRenderResultados(){
       </div>
       <div class="fc-row-margin-real">Margen real con este precio: <b>${margenReal.toFixed(1)}%</b></div>
       <div class="fc-row-meta">${meta.join(' · ')}</div>
+      <div class="fc-field" style="margin-top:8px">
+        <label>📦 Cantidad recibida (opcional — suma el stock en Loyverse al guardar)</label>
+        <input inputmode="numeric" placeholder="Ej: 12" data-f="cantidad_recibida">
+      </div>
       <div class="fc-link">
         <button class="fc-link-btn" type="button">🔗 Asociar a producto existente</button>
         <div class="fc-link-body hidden"></div>
@@ -5192,6 +5196,22 @@ document.getElementById('fc-guardar').onclick=async()=>{
     if(row.dataset.sincronizadoRef){item.sincronizado=true;item.sincronizadoRef=row.dataset.sincronizadoRef;item.sincronizadoNombre=row.dataset.sincronizadoNombre;}
     return item;
   }).filter(it=>it.producto);
+  // Cantidad recibida (opcional, por fila) — solo tiene efecto en filas ya vinculadas a un
+  // producto real (con sku), porque sumar stock necesita saber a cuál producto de Loyverse.
+  // Reutiliza directo la acción 'lote_nuevo' (la misma de Recepción) — nada nuevo en el backend.
+  const recepciones=[];
+  const filasSinVincularConCantidad=[];
+  Array.from(rows).forEach(row=>{
+    const cantInp=row.querySelector('[data-f="cantidad_recibida"]');
+    const cantidad=cantInp?(+cantInp.value||0):0;
+    if(cantidad<=0)return;
+    if(row.dataset.sincronizadoRef){
+      const g=f=>row.querySelector(`[data-f="${f}"]`).value;
+      recepciones.push({sku:row.dataset.sincronizadoRef,nombre:row.dataset.sincronizadoNombre||g('producto'),cantidad,costo:+g('costo')||undefined,precio:+g('psico')||undefined});
+    }else{
+      filasSinVincularConCantidad.push(row.querySelector('[data-f="producto"]').value.trim());
+    }
+  });
   const editandoIdx=_fcEditandoIdx;
   const facturaIdExistente=(editandoIdx!=null&&_fcHistorial[editandoIdx])?_fcHistorial[editandoIdx].facturaId:null;
   const btn=document.getElementById('fc-guardar');btn.disabled=true;
@@ -5210,6 +5230,19 @@ document.getElementById('fc-guardar').onclick=async()=>{
       }else{
         showToast('✓ Guardado: '+j.guardados+' producto(s)');
         fcAgregarAlHistorial(j.factura_id,items);
+      }
+      if(filasSinVincularConCantidad.length)showToast('⚠️ No se sumó stock de: '+filasSinVincularConCantidad.join(', ')+' — vincúlalos primero a un producto');
+      if(recepciones.length){
+        let sumadas=0,fallidas=[];
+        for(const r of recepciones){
+          try{
+            const rr=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'lote_nuevo',payload:{sku:r.sku,cantidad:r.cantidad,costo:r.costo,precio:r.precio}})});
+            const rj=await rr.json();
+            if(rj&&rj.ok)sumadas++;else fallidas.push(r.nombre);
+          }catch(e){fallidas.push(r.nombre);}
+        }
+        if(sumadas)showToast('📦 Stock sumado en '+sumadas+' producto(s)');
+        if(fallidas.length)showToast('⚠️ No se pudo sumar stock de: '+fallidas.join(', '));
       }
       // Ya no se cierra el modal al guardar: solo se reinicia a la pantalla de "Tomar
       // foto / Subir de Galería", lista para escanear el siguiente documento sin que el
