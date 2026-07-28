@@ -508,6 +508,13 @@ input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .price-mg.mg-hi{color:var(--verde)}
 .price-mg.mg-md{color:var(--gold)}
 .price-mg.mg-lo{color:var(--rojo)}
+/* Badge ABC — paleta neutra (gris/plata/bronce), deliberadamente distinta de los 5
+   colores de alerta de stock (🔴🟠⚪🟢🔵) para no romper esa asociación aprendida. */
+.abc-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;margin-left:6px;border-radius:5px;font-size:10.5px;font-weight:800;font-family:'JetBrains Mono',monospace;cursor:pointer;line-height:1;vertical-align:middle}
+.abc-badge.abc-a{background:#3C6FB0;color:#fff}
+.abc-badge.abc-b{background:#8A8F98;color:#fff}
+.abc-badge.abc-c{background:#C9A15A;color:#fff}
+.fila-precios .abc-badge{margin-left:4px}
 .catchart{padding:11px 13px}
 .cbar-row{display:flex;align-items:center;gap:9px;padding:5px 0}
 .cbar-lbl{flex:0 0 36%;font-size:11.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1120,6 +1127,48 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
         </div>
       </div>
     </div>
+    <div class="mm-ov hidden" id="abc-ov">
+      <div class="mm-card">
+        <div class="mm-head"><h3>🏷️ Precio sugerido (ABC)</h3></div>
+        <div class="mm-body">
+
+        <div class="mm-field">
+          <div id="abc-nombre" style="font-weight:700;font-size:14px;margin-bottom:2px">—</div>
+          <div id="abc-clase-line" style="color:var(--muted);font-size:12px">—</div>
+        </div>
+
+        <div class="mm-field">
+          <label>Margen deseado (sobre venta)</label>
+          <div class="mm-qty">
+            <button class="qbtn" id="abc-margen-menos" type="button">−</button>
+            <input id="abc-margen" inputmode="numeric" placeholder="30">
+            <span class="unidad">%</span>
+            <button class="qbtn" id="abc-margen-mas" type="button">+</button>
+          </div>
+          <div id="abc-rango-hint" style="color:var(--muted);font-size:11px;margin-top:4px">—</div>
+        </div>
+
+        <div class="mm-field">
+          <div class="mm-total" style="display:flex;flex-direction:column;gap:4px;align-items:flex-start">
+            <span>Costo actual <b id="abc-costo">$0</b></span>
+            <span>Precio actual <b id="abc-precio-actual">$0</b></span>
+            <span>Precio calculado <b id="abc-precio-calc">$0</b></span>
+            <span>Precio psicológico <b id="abc-precio-psi" style="color:var(--gold)">$0</b></span>
+          </div>
+        </div>
+
+        <div class="mm-field">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="abc-usar-psi" checked style="width:16px;height:16px">
+            Usar precio psicológico (.90/.50)
+          </label>
+        </div>
+
+        <button class="mm-save" id="abc-aplicar" disabled>Aplicar precio y sincronizar con Loyverse</button>
+        <button class="loadbtn" id="abc-cancelar" style="width:100%;margin-top:8px">Cancelar</button>
+        </div>
+      </div>
+    </div>
     <div class="mm-ov hidden" id="vc-ov">
       <div class="mm-card">
         <div class="mm-head"><h3>📅 Vencimientos</h3></div>
@@ -1435,6 +1484,7 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
         <button id="mas-q-categorias"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg><br>Mapeo de categorías</button>
         <button id="mas-q-recargar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="20" x2="5" y2="11"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="19" y1="20" x2="19" y2="14"/></svg><br>Recargar historial</button>
         <button id="mas-q-factura"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="10" y2="12"/><line x1="13" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="10" y2="16"/><line x1="13" y1="16" x2="16" y2="16"/></svg><br>Calculadora de precios</button>
+        <button id="mas-q-abc"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg><br>Clasificación ABC</button>
       </div>
       <div class="method" style="margin:0;padding:16px 18px">
         <div class="scale-head" id="ayuda-head" style="background:linear-gradient(100deg,#2a2118,#3a2c1a);margin:-16px -18px 0;padding:12px 18px;border-radius:var(--radius-card) var(--radius-card) 0 0"><div><div class="t">ℹ️ Cómo funciona tu app</div></div><svg class="accordion-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
@@ -1464,6 +1514,22 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
   </div>
 </div>
 
+<div class="mm-ov hidden" id="abcr-ov">
+  <div class="mm-card">
+    <div class="mm-head"><h3>📊 Clasificación ABC</h3></div>
+    <div class="mm-topbar" style="display:flex;gap:6px">
+      <button class="loadbtn acc" id="abcr-recalcular" style="flex:1">♻️ Recalcular (30 días)</button>
+      <button class="loadbtn" id="abcr-cerrar" style="flex:1">Cerrar</button>
+    </div>
+    <div class="mm-body">
+      <div class="hm-summary"><span class="lbl" id="abcr-lbl">—</span><span class="val" id="abcr-val"></span></div>
+      <div class="mm-search" style="margin:0 0 10px">
+        <input id="abcr-search" placeholder="Buscar producto…" autocomplete="off">
+      </div>
+      <div id="abcr-list"><div style="text-align:center;color:var(--muted);padding:20px">Toca "Recalcular" para generar la clasificación.</div></div>
+    </div>
+  </div>
+</div>
 <div class="mm-ov hidden" id="sm-ov">
   <div class="mm-card">
     <div class="mm-head"><h3>🧹 Sin movimiento (90 días)</h3></div>
@@ -2437,7 +2503,14 @@ function rowHTML(it,a,f){const cant=qOf(it,a);
   const mgCls=mg==null?'':(mg>=35?'mg-hi':(mg<20?'mg-lo':''));
   const mgVal=mg!=null?mg+'%':'—';
   const showProv=(state.search||state.allProv);
-  const priceLine=`<div class="prod-prices"><span class="pp-v" title="Venta">${precioVal}</span><span class="pp-sep">·</span><span class="pp-c" title="Costo">C ${costoVal}</span><span class="pp-sep">·</span><span class="price-mg ${mgCls}" title="Margen">${mgVal}</span></div>`;
+  // Badge ABC — chip neutro (gris/oro/plata), a propósito distinto de los 5 colores de
+  // alerta de stock (🔴🟠⚪🟢🔵) para no romper esa asociación. Clickeable: abre el modal
+  // de precio sugerido según margen recomendado por clase (ver abrirModalPrecioABC).
+  const abcCls=it.abc?('abc-'+it.abc.clase.toLowerCase()):'';
+  const abcBadge=it.abc
+    ?`<span class="abc-badge ${abcCls}" title="Clase ${it.abc.clase} · ${(it.abc.pct*100).toFixed(1)}% de venta" onclick="event.stopPropagation();abrirModalPrecioABC('${it.ref}')">${it.abc.clase}</span>`
+    :'';
+  const priceLine=`<div class="prod-prices"><span class="pp-v" title="Venta">${precioVal}</span><span class="pp-sep">·</span><span class="pp-c" title="Costo">C ${costoVal}</span><span class="pp-sep">·</span><span class="price-mg ${mgCls}" title="Margen">${mgVal}</span>${abcBadge}</div>`;
   const ventasPeriodo=state.basis===7?it.u7:state.basis===14?it.u14:state.basis===90?it.u90:it.u30;
   const thumb=it.imagen
     ?`<img class="card-thumb" src="${it.imagen}" loading="lazy" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'card-thumb-empty',textContent:'📦'}))">`
@@ -2484,7 +2557,7 @@ function rowHTML(it,a,f){const cant=qOf(it,a);
           `<span class="fila-nombre prod-name">${it.nombre}</span>`+
           `<span class="fila-prov">${it.prov}</span>`+pendBadge+extraProvBadge+
         `</div>`+
-        `<div class="fila-precios"><span class="fila-venta">${precioVal}</span><span class="fila-costo">${costoVal}</span><span class="fila-margen ${mgCls}">${mgVal}</span></div>`+
+        `<div class="fila-precios"><span class="fila-venta">${precioVal}</span><span class="fila-costo">${costoVal}</span><span class="fila-margen ${mgCls}">${mgVal}</span>${abcBadge}</div>`+
         `<div class="fila-col"><span class="fila-lbl">ROT</span><span><span class="trend ${a.trend.k}">${a.trend.t}</span> ${fmt1(ventasPeriodo)}</span></div>`+
         `<div class="fila-col"><span class="fila-lbl">STK</span><span>${statStock}</span></div>`+
         `<div class="fila-col" style="color:${covColor(a)}"><span class="fila-lbl">COB</span><span>${covTxt}</span></div>`+
@@ -2799,6 +2872,164 @@ const SYNC_MAX_AGE=3600000; // 1 hora en ms
 function lastSyncTime(){const t=localStorage.getItem('marin_last_sync');return t?+t:0;}
 function setLastSync(t){localStorage.setItem('marin_last_sync',String(t));}
 
+// ===================== ABC (clasificación 80/95/100) =====================
+// Mapa sku -> {clase, pct_participacion, venta_total} — se carga aparte del
+// dashboard principal (no bloquea el render si falla) y se combina en
+// buildDBfromCloud() para que cada item tenga it.abc disponible.
+let ABC_BY_SKU={};
+async function cargarABC(){
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=abc');
+    const j=await res.json();
+    if(j&&j.ok&&Array.isArray(j.abc)){
+      const map={};
+      j.abc.forEach(r=>{map[r.sku]={clase:r.clase,pct:r.pct_participacion,venta:r.venta_total};});
+      ABC_BY_SKU=map;
+      if(DB&&DB.items){DB.items.forEach(it=>{it.abc=ABC_BY_SKU[it.ref]||null;});render();}
+    }
+  }catch(e){console.warn('No se pudo cargar ABC:',e);}
+}
+// Dispara el recálculo en el servidor (agrupa ventas_diarias, corta 80/95/100)
+// y recarga el mapa local. periodoDias por defecto 30.
+async function recalcularABC(periodoDias){
+  try{
+    showToast('📊 Calculando clasificación ABC…');
+    const url=SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=abc_calcular&periodo='+(periodoDias||30);
+    const res=await fetch(url);
+    const j=await res.json();
+    if(j&&j.ok){showToast('✓ ABC recalculado · '+(j.clasificados||0)+' productos');await cargarABC();}
+    else{showToast('No se pudo recalcular el ABC');}
+  }catch(e){showToast('Error al recalcular ABC: '+(e&&e.message?e.message:e));}
+}
+
+// ===================== Modal: precio sugerido por clase ABC =====================
+let _abcRef=null, _abcUltimaSugerencia=null;
+function abrirModalPrecioABC(ref){
+  const it=DB.items.find(i=>i.ref===ref);
+  if(!it){showToast('Producto no encontrado');return;}
+  _abcRef=ref;
+  document.getElementById('abc-nombre').textContent=it.nombre;
+  const clase=it.abc?it.abc.clase:null;
+  const pct=it.abc?(it.abc.pct*100).toFixed(1)+'% de la venta':'sin datos de venta en el período';
+  document.getElementById('abc-clase-line').textContent=clase?('Clase '+clase+' · '+pct):'Sin clasificar aún — corre "Recalcular ABC" primero';
+  const rangos={A:[25,35],B:[30,40],C:[40,50]};
+  const r=clase?rangos[clase]:[25,35];
+  document.getElementById('abc-rango-hint').textContent='Sugerido para clase '+(clase||'—')+': '+r[0]+'%–'+r[1]+'%';
+  const margenInicial=Math.round((r[0]+r[1])/2);
+  document.getElementById('abc-margen').value=margenInicial;
+  document.getElementById('abc-usar-psi').checked=true;
+  document.getElementById('abc-costo').textContent=it.coste!=null?peso(it.coste):'—';
+  document.getElementById('abc-precio-actual').textContent=it.precio!=null?peso(it.precio):'—';
+  _abcRecalcularPreview();
+  abrirModal('abc-ov');
+}
+// Recalcula el preview localmente (rápido, sin llamar al servidor) usando la misma
+// fórmula que el backend (Precio = Costo / (1 - Margen)) + redondeo psicológico local,
+// para que el usuario vea el número al instante mientras mueve el margen. La llamada
+// real al servidor (accionAplicarPrecioABC) solo se hace al confirmar.
+function _redondeoPsicologicoLocal(precio){
+  if(!precio||precio<=0)return 0;
+  const base=Math.floor(precio/100)*100;
+  const candidatos=[base-100+90,base-100+50,base+90,base+50,base+100+90];
+  return candidatos.find(c=>c>=precio) ?? (Math.ceil(precio/10)*10+90);
+}
+function _abcRecalcularPreview(){
+  const it=DB.items.find(i=>i.ref===_abcRef);
+  if(!it)return;
+  const margenPct=Math.max(1,Math.min(90,parseInt(document.getElementById('abc-margen').value)||30));
+  const margen=margenPct/100;
+  const costo=Number(it.coste||0);
+  const precioCalc=costo>0?costo/(1-margen):0;
+  const precioPsi=_redondeoPsicologicoLocal(precioCalc);
+  document.getElementById('abc-precio-calc').textContent=peso(Math.round(precioCalc));
+  document.getElementById('abc-precio-psi').textContent=peso(precioPsi);
+  _abcUltimaSugerencia={margen,precioCalc:Math.round(precioCalc),precioPsi};
+  document.getElementById('abc-aplicar').disabled=costo<=0;
+}
+async function aplicarPrecioABC(){
+  if(!_abcRef||!_abcUltimaSugerencia)return;
+  const btn=document.getElementById('abc-aplicar');
+  btn.disabled=true;btn.textContent='Aplicando…';
+  const usarPsi=document.getElementById('abc-usar-psi').checked;
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'aplicar_precio_abc',payload:{
+        sku:_abcRef,
+        margen:_abcUltimaSugerencia.margen,
+        usar_psicologico:usarPsi,
+        responsable:'ABC'
+      }})});
+    const j=await res.json();
+    if(j&&j.ok){
+      showToast('✓ Precio actualizado y sincronizado con Loyverse');
+      const it=DB.items.find(i=>i.ref===_abcRef);
+      if(it&&j.precio!=null)it.precio=j.precio;
+      cerrarModal('abc-ov');
+      render();
+    }else{
+      showToast('No se pudo aplicar: '+(j&&j.error?j.error:'error desconocido'));
+    }
+  }catch(e){showToast('Error al aplicar precio: '+(e&&e.message?e.message:e));}
+  finally{btn.disabled=false;btn.textContent='Aplicar precio y sincronizar con Loyverse';}
+}
+// ===================== Panel resumen ABC (menú Más) =====================
+function _abcListaFiltrada(){
+  const q=normTxt(document.getElementById('abcr-search').value||'').trim();
+  const conClase=(DB.items||[]).filter(it=>it.abc);
+  const filtrada=q?conClase.filter(it=>normTxt(it.nombre).includes(q)):conClase;
+  return filtrada.sort((a,b)=>(b.abc.pct||0)-(a.abc.pct||0));
+}
+function renderABCResumen(){
+  const items=_abcListaFiltrada();
+  const total=(DB.items||[]).filter(it=>it.abc).length;
+  const porClase={A:0,B:0,C:0};
+  (DB.items||[]).forEach(it=>{if(it.abc)porClase[it.abc.clase]=(porClase[it.abc.clase]||0)+1;});
+  document.getElementById('abcr-lbl').textContent=total?('Clase A: '+porClase.A+' · B: '+porClase.B+' · C: '+porClase.C):'Sin clasificar';
+  document.getElementById('abcr-val').textContent=total?total+' productos':'';
+  const list=document.getElementById('abcr-list');
+  if(!items.length){
+    list.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px">'+(total?'Sin resultados para tu búsqueda.':'Toca "Recalcular" para generar la clasificación.')+'</div>';
+    return;
+  }
+  list.innerHTML=items.slice(0,200).map(it=>{
+    const cls='abc-'+it.abc.clase.toLowerCase();
+    return `<div class="oline" style="cursor:pointer" onclick="cerrarModal('abcr-ov');abrirModalPrecioABC('${it.ref}')">`+
+      `<div class="on-wrap"><span class="abc-badge ${cls}" style="margin-left:0;margin-right:8px">${it.abc.clase}</span>`+
+      `<span class="on">${it.nombre}</span>`+
+      `<span class="oline-sub">${(it.abc.pct*100).toFixed(1)}% de venta · ${peso(it.abc.venta)}</span></div>`+
+    `</div>`;
+  }).join('');
+}
+(function(){
+  const btn=document.getElementById('mas-q-abc');
+  if(btn)btn.onclick=()=>{cerrarModal('mas-ov');abrirModal('abcr-ov');renderABCResumen();};
+  const cerrar=document.getElementById('abcr-cerrar');
+  if(cerrar)cerrar.onclick=()=>cerrarModal('abcr-ov');
+  const recalc=document.getElementById('abcr-recalcular');
+  if(recalc)recalc.onclick=async()=>{
+    recalc.disabled=true;recalc.textContent='Calculando…';
+    await recalcularABC(30);
+    renderABCResumen();
+    recalc.disabled=false;recalc.textContent='♻️ Recalcular (30 días)';
+  };
+  const search=document.getElementById('abcr-search');
+  if(search)search.addEventListener('input',renderABCResumen);
+})();
+
+(function(){
+  const mIn=document.getElementById('abc-margen');
+  if(mIn)mIn.addEventListener('input',_abcRecalcularPreview);
+  const menos=document.getElementById('abc-margen-menos'),mas=document.getElementById('abc-margen-mas');
+  if(menos)menos.onclick=()=>{mIn.value=Math.max(1,(parseInt(mIn.value)||30)-1);_abcRecalcularPreview();};
+  if(mas)mas.onclick=()=>{mIn.value=Math.min(90,(parseInt(mIn.value)||30)+1);_abcRecalcularPreview();};
+  const psi=document.getElementById('abc-usar-psi');
+  if(psi)psi.addEventListener('change',_abcRecalcularPreview);
+  const cancelar=document.getElementById('abc-cancelar');
+  if(cancelar)cancelar.onclick=()=>cerrarModal('abc-ov');
+  const aplicar=document.getElementById('abc-aplicar');
+  if(aplicar)aplicar.onclick=aplicarPrecioABC;
+})();
+
 // Convierte los datos del endpoint (items + ventas) al formato DB que usa el dashboard
 function buildDBfromCloud(items, ventas, pendientes, provsExtra){
   const itemRows=(items&&items.rows)?items.rows:{};
@@ -2841,7 +3072,7 @@ function buildDBfromCloud(items, ventas, pendientes, provsExtra){
       coste:inv.costo!=null?inv.costo:null,
       track:!!inv.track, barcode:inv.barcode||'', peso:!!inv.peso, creado:inv.creado||null, imagen:inv.imagen||'',
       fmt:t.fmt, min:t.min, scale:t.scale, role:t.role, word:t.word,
-      hoyU:hoyU
+      hoyU:hoyU, abc:ABC_BY_SKU[ref]||null
     });
   });
   items_arr.sort((a,b)=>b.u_all-a.u_all);
@@ -2892,6 +3123,7 @@ async function cloudSync(silent,live,full,origen){
       persist();render();renderProvDay();
       llCheckBadge();
       cargarVencidoParaCambio();
+      cargarABC();
       flashUpdated();
       if(!silent){
         if((full||live)&&j.version!=='v2'){showToast('⚠️ El endpoint sigue en versión vieja. Vuelve a desplegar el Apps Script (Administrar implementaciones → editar → Versión nueva).');}
