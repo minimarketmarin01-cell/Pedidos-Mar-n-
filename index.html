@@ -1433,7 +1433,8 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
         <button id="mas-q-factura"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="10" y2="12"/><line x1="13" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="10" y2="16"/><line x1="13" y1="16" x2="16" y2="16"/></svg><br>Calculadora de precios</button>
       </div>
       <div class="method" style="margin:0;padding:16px 18px">
-        <h3>ℹ️ Cómo funciona tu app</h3>
+        <div class="scale-head" id="ayuda-head" style="background:linear-gradient(100deg,#2a2118,#3a2c1a);margin:-16px -18px 0;padding:12px 18px;border-radius:var(--radius-card) var(--radius-card) 0 0"><div><div class="t">ℹ️ Cómo funciona tu app</div></div><svg class="accordion-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+        <div class="scale-body accordion-body collapsed" id="ayuda-body" style="padding-left:0;padding-right:0">
         <ul>
           <li><b>🔄 Sincronizar:</b> rápido — trae stock y ventas de hoy en vivo. Se actualiza solo cada hora.</li>
           <li><b>♻️ Catálogo:</b> úsalo cuando crees, elimines o cambies precio/costo de un producto en Loyverse, para verlo reflejado al instante (nuevos, eliminados, precios y costos). También se actualiza solo cada hora.</li>
@@ -1449,8 +1450,10 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
           <li><b>Resumen proveedores:</b> gráfico de venta semanal por categoría y qué proveedores necesitan pedido, con su día de mayor venta.</li>
           <li><b>Escalas CCU/Coca-Cola</b> (⚡) integradas: el costo baja por volumen. Pedido listo para WhatsApp en un toque.</li>
           <li><b>📅 Vencimientos:</b> registra un lote con fecha de vencimiento y el sistema te dice qué hacer cada día (reubicar, rebajar %, gestionar cambio con proveedor, liquidar) según su categoría y si el stock alcanza a rotar. Se recalcula solo cada madrugada.</li>
+          <li><b>🔁 Mismo producto, otro proveedor:</b> en la Ficha del producto puedes agregarle proveedores extra (2 o más) sin duplicarlo en Loyverse — aparecerá también al filtrar por esos proveedores en Pedidos, con el mismo sku y stock.</li>
           <li><b>Instalar como app:</b> en Chrome → menú ⋮ → "Añadir a pantalla de inicio". Ícono propio, pantalla completa.</li>
         </ul>
+        </div>
       </div>
     </div>
   </div>
@@ -1515,6 +1518,18 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
         <button class="rk-hcol" data-s="stock">Sistema <span class="ar">▲▼</span></button>
       </div>
       <div id="rk-list"></div>
+    </div>
+  </div>
+</div>
+
+<div class="mm-ov hidden" id="pv-ov" style="z-index:260">
+  <div class="mm-card" style="max-width:420px">
+    <div class="mm-head"><h3 id="pv-titulo">¿Actualizar el pedido?</h3></div>
+    <div class="mm-body">
+      <div id="pv-cuerpo" style="font-size:13.5px;color:var(--ink2);line-height:1.5;margin-bottom:16px"></div>
+      <button class="mm-save" id="pv-sugeridos" style="margin-bottom:8px">🔄 Usar sugeridos</button>
+      <button class="loadbtn" id="pv-mantener" style="width:100%;margin-bottom:8px">✋ Mantener mi pedido</button>
+      <button type="button" id="pv-cancelar" style="width:100%;background:none;border:none;color:var(--muted);font-size:12.5px;text-decoration:underline;cursor:pointer;padding:6px">Cancelar</button>
     </div>
   </div>
 </div>
@@ -2234,20 +2249,43 @@ if(!window._provMenuPortalBound){
   }
 }
 function setProvInputValue(){const sel=document.getElementById('prov-all');if(!sel)return;if(document.activeElement===sel)return;/* el usuario está escribiendo ahí: no lo interrumpimos */if(state.search)return;const allMode=state.allProv&&!state.search;sel.value=allMode?'📋 Todos los proveedores':(DB.provs.some(p=>p.prov===state.prov)?state.prov:(DB.provs[0]?DB.provs[0].prov:''));}
+// Modal de cambio de proveedor (reemplaza el confirm() nativo que se usaba antes). Controlado
+// 100% por callbacks — quien lo abre decide qué pasa en cada opción, este solo muestra/oculta.
+function pvAbrir(providerName,editedCount,onKeepSuggested,onKeepCurrent,onCancel){
+  document.getElementById('pv-titulo').textContent='¿Actualizar el pedido de "'+providerName+'"?';
+  document.getElementById('pv-cuerpo').textContent='Ya tenías '+editedCount+' producto'+(editedCount===1?'':'s')+' con cantidades editadas a mano para este proveedor.';
+  const ov=document.getElementById('pv-ov');
+  ov.classList.remove('hidden');
+  const cerrar=()=>ov.classList.add('hidden');
+  document.getElementById('pv-sugeridos').onclick=()=>{cerrar();onKeepSuggested&&onKeepSuggested();};
+  document.getElementById('pv-mantener').onclick=()=>{cerrar();onKeepCurrent&&onKeepCurrent();};
+  document.getElementById('pv-cancelar').onclick=()=>{cerrar();onCancel&&onCancel();};
+  ov.onclick=(ev)=>{if(ev.target===ov){cerrar();onCancel&&onCancel();}};
+}
 // Antes de cambiar de proveedor: si ya había cantidades editadas a mano para el proveedor
 // de destino (de una sesión anterior armando su pedido), pregunta qué hacer en vez de
 // borrarlas en silencio como pasaba antes (state.edits={} en cada cambio de proveedor).
 // No aplica a "todos los proveedores" ni a una búsqueda — solo cuando se entra a un
 // proveedor puntual, que es el único caso donde currentOrder() muestra un solo carrito.
-function prepararCambioProveedor(nuevoProv){
-  if(!nuevoProv)return;
+function prepararCambioProveedor(nuevoProv,onResuelto){
+  if(!nuevoProv)return onResuelto&&onResuelto();
   const refs=new Set(itemsFor(nuevoProv).map(it=>it.ref));
   const editados=Object.keys(state.edits).filter(ref=>refs.has(ref));
-  if(!editados.length)return;   // nada editado para ese proveedor: no hay nada que preguntar
-  const usarSugeridos=confirm('Ya tenías cantidades editadas para "'+nuevoProv+'" de antes.\n\nAceptar = volver a las cantidades sugeridas\nCancelar = mantener esas cantidades en el carrito');
-  if(usarSugeridos)editados.forEach(ref=>{delete state.edits[ref];});
+  if(!editados.length)return onResuelto&&onResuelto();   // nada editado para ese proveedor: no hay nada que preguntar
+  pvAbrir(nuevoProv,editados.length,
+    ()=>{editados.forEach(ref=>{delete state.edits[ref];});onResuelto&&onResuelto();},   // usar sugeridos
+    ()=>{onResuelto&&onResuelto();},   // mantener mi pedido: no toca state.edits
+    ()=>{ /* cancelar: no se aplica el cambio de proveedor */ }
+  );
 }
-function pickProv(target){if(target!=='__ALL__')prepararCambioProveedor(target);if(target==='__ALL__'){state.allProv=true;}else{state.allProv=false;state.prov=target;state.sort='rate';state.dir=-1;}state.search='';const sx=document.getElementById('prov-x');if(sx)sx.classList.remove('on');const menu=document.getElementById('prov-menu');if(menu)menu.classList.add('hidden');const sel=document.getElementById('prov-all');if(sel)sel.blur();setProvInputValue();render();persistUI();}
+function pickProv(target){
+  const aplicar=()=>{
+    if(target==='__ALL__'){state.allProv=true;}else{state.allProv=false;state.prov=target;state.sort='rate';state.dir=-1;}
+    state.search='';const sx=document.getElementById('prov-x');if(sx)sx.classList.remove('on');const menu=document.getElementById('prov-menu');if(menu)menu.classList.add('hidden');const sel=document.getElementById('prov-all');if(sel)sel.blur();setProvInputValue();render();persistUI();
+  };
+  if(target==='__ALL__')return aplicar();
+  prepararCambioProveedor(target,aplicar);
+}
 function commitProv(val){const key=(val||'').trim().toLowerCase();if(!key)return false;if(key.indexOf('todos')===0||key.indexOf('📋')===0){pickProv('__ALL__');return true;}let hit=DB.provs.find(p=>p.prov.toLowerCase()===key);if(!hit&&key.length>=2)hit=DB.provs.find(p=>p.prov.toLowerCase().indexOf(key)>-1);if(hit){pickProv(hit.prov);return true;}return false;}
 function updGlob(){let q=0;DB.items.forEach(it=>{if(it.track&&it.stock!=null&&it.stock<=0&&it.u30>0)q++;});document.getElementById('glob-quiebre').textContent='● '+q+' en quiebre';
   document.getElementById('updlabel').innerHTML=`Datos: <b>${DB.meta.min} → ${DB.meta.max}</b> · ${DB.meta.nitems} productos · ${SRC}`;}
@@ -2532,6 +2570,10 @@ function toggleAccordion(headEl,bodyEl,openState){
   return open;
 }
 (function(){
+  const head=document.getElementById('ayuda-head');
+  if(head)head.onclick=()=>toggleAccordion(head,document.getElementById('ayuda-body'));
+})();
+(function(){
   const head=document.getElementById('scale-head');
   if(head)head.onclick=()=>{_scaleOpen=toggleAccordion(head,document.getElementById('scale-body'));};
 })();
@@ -2664,7 +2706,15 @@ function renderOverview(){
   const rows=DB.provs.map(p=>{const items=itemsFor(p.prov);let urg=0,ped=0,cost=0;items.forEach(it=>{const a=analyze(it);if(a.status==='urgente')urg++;if(a.status==='pedir')ped++;if(a.sug>0)cost+=(it.coste||0)*a.sug;});return{...p,urg,ped,cost,need:urg+ped};}).filter(r=>r.n>0).sort((a,b)=>b.urg-a.urg||b.need-a.need||b.cost-a.cost);
   const tb=document.getElementById('ovbody');tb.innerHTML='';
   rows.forEach(r=>{const tr=document.createElement('tr');tr.innerHTML=`<td class="l"><span class="ov-prov" data-p="${r.prov}">${r.prov}</span></td><td class="num">${r.n}</td><td class="num">${fmt1(r.u30/30)}</td><td class="num">${r.dow?DIAS[r.peak]:'—'}</td><td class="num" style="color:${r.urg>0?'var(--rojo)':'var(--muted)'};font-weight:700">${r.urg||'—'}</td><td class="num" style="color:${r.ped>0?'var(--ambar)':'var(--muted)'};font-weight:700">${r.ped||'—'}</td><td class="num">${r.cost>0?peso(r.cost):'—'}</td><td class="num">${peso(r.prof)}</td>`;tb.appendChild(tr);});
-  tb.querySelectorAll('.ov-prov').forEach(el=>el.onclick=()=>{state.prov=el.dataset.p;state.allProv=false;state.search='';state.sort='rate';state.dir=-1;const pa=document.getElementById('prov-all');if(pa)pa.value='';state.edits={};document.querySelector('.tab[data-tab="pedido"]').click();setProvInputValue();render();persistUI();});
+  tb.querySelectorAll('.ov-prov').forEach(el=>el.onclick=()=>{
+    const destino=el.dataset.p;
+    const aplicar=()=>{
+      state.prov=destino;state.allProv=false;state.search='';state.sort='rate';state.dir=-1;
+      const pa=document.getElementById('prov-all');if(pa)pa.value='';
+      document.querySelector('.tab[data-tab="pedido"]').click();setProvInputValue();render();persistUI();
+    };
+    prepararCambioProveedor(destino,aplicar);
+  });
   renderInsumosChart();
 }
 async function renderInsumosChart(){
