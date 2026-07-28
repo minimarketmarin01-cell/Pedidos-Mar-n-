@@ -285,11 +285,13 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .btn-ok.loadbtn{background:var(--brand-grad);border-color:transparent}
 .vc-row .btn-merma{background:var(--rojo);color:#fff;border-color:var(--rojo)}
 .vc-row .btn-cambio{background:var(--azul);color:#fff;border-color:var(--azul)}
+.vc-row .btn-descuento{background:var(--gold);color:#fff;border-color:var(--gold)}
 /* Estas dos necesitan más especificidad que ".vc-row .btns button" (que ya trae su propio
    background) para que el color de fondo realmente se aplique — si no, quedan con texto
    blanco sobre fondo blanco (invisibles, aunque siguen siendo clickeables). */
 .vc-row .btns button.btn-merma{background:var(--rojo)}
 .vc-row .btns button.btn-cambio{background:var(--azul)}
+.vc-row .btns button.btn-descuento{background:var(--gold)}
 .vc-empty{padding:20px;text-align:center;color:var(--muted);font-size:13px}
 .vc-toprow{display:flex;gap:8px;margin-bottom:12px}
 .vc-toprow button{flex:1}
@@ -6433,7 +6435,8 @@ function vcRender(lotes,containerId){
     const esCambio=esCategoriaCambio(l.categoria);
     let botones, notaExtra='';
     if(esCambio && l.estado==='Retirado'){
-      botones=`<button class="btn-cambio" data-actm="cambiado" data-i="${l.filaIndex}" data-nom="${l.nombre.replace(/"/g,'&quot;')}">✓ Marcar como cambiado</button>`;
+      botones=`<button class="btn-cambio" data-actm="cambiado" data-i="${l.filaIndex}" data-nom="${l.nombre.replace(/"/g,'&quot;')}">✓ Marcar como cambiado</button>
+         <button class="btn-descuento" data-actm="descuento" data-i="${l.filaIndex}" data-nom="${l.nombre.replace(/"/g,'&quot;')}">💰 Descuento en factura</button>`;
       notaExtra='<div class="cat" style="color:var(--azul);font-weight:700">📤 Ya se retiró y se descontó del stock — esperando al proveedor</div>';
     }else if(esCambio){
       botones='';   // aún no vence: se resuelve solo (se descuenta y avisa apenas venza, de un día para otro)
@@ -6469,6 +6472,7 @@ function vcRender(lotes,containerId){
     openMerma(true);
   });
   box.querySelectorAll('[data-actm="cambiado"]').forEach(b=>b.onclick=()=>vcMarcarCambiado(b.dataset.i,b.dataset.nom));
+  box.querySelectorAll('[data-actm="descuento"]').forEach(b=>b.onclick=()=>vcMarcarDescuento(b.dataset.i,b.dataset.nom));
   box.querySelectorAll('[data-elim]').forEach(b=>b.onclick=()=>vcEliminarLote(b.dataset.elim,b.dataset.sku,b.dataset.cant,b.dataset.nom));
   // Editar fecha: abre el mini-formulario con la fecha actual precargada en los 3 campos
   box.querySelectorAll('[data-editf]').forEach(b=>b.onclick=()=>{
@@ -6529,6 +6533,27 @@ async function vcMarcarCambiado(filaIndex,nombre){
       showToast('Error: '+((j&&j.error)||'no se pudo confirmar el cambio'));
     }
   }catch(e){showToast('Error de conexión al confirmar el cambio');}
+}
+// Alternativa a "Marcar como cambiado": el proveedor NO repuso el producto físico, pero
+// aplicó un descuento/nota de crédito en la próxima factura por lo vencido. Cierra el lote
+// igual (ya no aparece en Pendientes) pero queda registrado con un motivo distinto, para
+// poder diferenciarlo de un cambio real en reportes futuros.
+async function vcMarcarDescuento(filaIndex,nombre){
+  let montoTxt=prompt('¿Cuánto fue el descuento en la factura para "'+(nombre||'este producto')+'"? (déjalo vacío si no lo sabes todavía)');
+  if(montoTxt===null)return;   // canceló el prompt: no cierra el lote
+  montoTxt=montoTxt.trim().replace(/[^\d.]/g,'');
+  const monto=montoTxt?Number(montoTxt):null;
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'marcar_descuento_factura',payload:{filaIndex:filaIndex,revisadoPor:'',montoDescuento:monto}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      showToast('💰 Descuento registrado: '+(nombre||j.fila.nombre)+(monto?' · '+peso(monto):''));
+      _vcTodos=_vcTodos.filter(l=>String(l.filaIndex)!==String(filaIndex));
+      vcRefreshCurrentView();
+    }else{
+      showToast('Error: '+((j&&j.error)||'no se pudo registrar el descuento'));
+    }
+  }catch(e){showToast('Error de conexión al registrar el descuento');}
 }
 async function vcRevisar(filaIndex,resultado,recargar){
   if(recargar===undefined)recargar=true;
