@@ -4427,7 +4427,7 @@ function rvRender(){
   const visibles=_rvFiltrados.slice(0,_rvMostrados);
   cont.innerHTML=visibles.map(p=>{
     const e=rvEstado(p);
-    const opcionesProv='<option value="">Sin proveedor</option>'+_psProveedores.map(pr=>`<option value="${pr.id}"${String(pr.id)===String(p.proveedor_id)?' selected':''}>${pr.nombre}</option>`).join('');
+    const opcionesProv='<option value="">Sin proveedor</option><option value="__nuevo__">➕ Crear proveedor nuevo…</option>'+_psProveedores.map(pr=>`<option value="${pr.id}"${String(pr.id)===String(p.proveedor_id)?' selected':''}>${pr.nombre}</option>`).join('');
     const opcionesSector='<option value="">Sin sector</option><option value="__nuevo__">➕ Crear sector nuevo…</option>'+_psSectores.map(s=>`<option value="${s}"${s===p.sector?' selected':''}>${s}</option>`).join('');
     return `<div class="fp-row" style="flex-direction:column;align-items:stretch;gap:8px;padding:12px 0" data-rv-sku="${p.sku}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
@@ -4441,6 +4441,10 @@ function rvRender(){
         <select class="rv-sel-proveedor" style="flex:1;min-width:0;padding:9px 8px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff">${opcionesProv}</select>
         <select class="rv-sel-sector" style="flex:1;min-width:0;padding:9px 8px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff">${opcionesSector}</select>
       </div>
+      <div class="rv-proveedor-nuevabox hidden" style="display:flex;gap:8px">
+        <input class="rv-proveedor-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px">
+        <button class="btn-ok loadbtn rv-proveedor-crear" type="button" style="white-space:nowrap;padding:8px 10px">Crear</button>
+      </div>
       <div class="rv-sector-nuevabox hidden" style="display:flex;gap:8px">
         <input class="rv-sector-nuevonom" placeholder="Nombre del sector nuevo" autocomplete="off" style="flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px">
         <button class="btn-ok loadbtn rv-sector-crear" type="button" style="white-space:nowrap;padding:8px 10px">Crear</button>
@@ -4453,6 +4457,15 @@ function rvRender(){
   else masBtn.classList.add('hidden');
 }
 document.getElementById('rv-lista').addEventListener('change',ev=>{
+  const selProv=ev.target.closest('.rv-sel-proveedor');
+  if(selProv&&selProv.value==='__nuevo__'){
+    selProv.value='';
+    const fila=ev.target.closest('[data-rv-sku]');
+    const box=fila.querySelector('.rv-proveedor-nuevabox');
+    box.classList.remove('hidden');
+    box.querySelector('.rv-proveedor-nuevonom').focus();
+    return;
+  }
   const sel=ev.target.closest('.rv-sel-sector');
   if(!sel||sel.value!=='__nuevo__')return;
   sel.value='';
@@ -4462,6 +4475,28 @@ document.getElementById('rv-lista').addEventListener('change',ev=>{
   box.querySelector('.rv-sector-nuevonom').focus();
 });
 document.getElementById('rv-lista').addEventListener('click',async ev=>{
+  const crearProvBtn=ev.target.closest('.rv-proveedor-crear');
+  if(crearProvBtn){
+    const fila=ev.target.closest('[data-rv-sku]');
+    const inp=fila.querySelector('.rv-proveedor-nuevonom');
+    const nombre=(inp.value||'').trim();
+    if(!nombre){showToast('Escribe el nombre del proveedor');return;}
+    crearProvBtn.disabled=true;const txtOriginal=crearProvBtn.textContent;crearProvBtn.textContent='Creando…';
+    try{
+      const prov=await psCrearProveedorInline(nombre);   // ya valida duplicados por nombre normalizado
+      showToast('✓ Proveedor: '+prov.nombre);
+      fila.querySelector('.rv-proveedor-nuevabox').classList.add('hidden');
+      inp.value='';
+      const selProv=fila.querySelector('.rv-sel-proveedor');
+      if(!selProv.querySelector(`option[value="${prov.id}"]`)){
+        const opt=document.createElement('option');opt.value=prov.id;opt.textContent=prov.nombre;
+        selProv.appendChild(opt);
+      }
+      selProv.value=prov.id;
+    }catch(e){showToast('❌ '+e.message);}
+    finally{crearProvBtn.disabled=false;crearProvBtn.textContent=txtOriginal;}
+    return;
+  }
   const crearBtn=ev.target.closest('.rv-sector-crear');
   if(crearBtn){
     const fila=ev.target.closest('[data-rv-sku]');
