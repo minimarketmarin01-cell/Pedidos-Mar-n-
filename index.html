@@ -732,6 +732,10 @@ html.modo-bliss .fila-pedir .qword{text-align:center;max-width:100px;font-size:9
 .fc-ps-nuevabox input{flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px}
 .fc-ps-nuevabox.hidden{display:none}
 .fc-ps-todos{width:100%;margin-bottom:10px;font-size:12px}
+.fc-track-warn{margin-top:7px;padding:9px 10px;border-radius:9px;background:#FFF4E5;border:1.5px solid var(--gold);font-size:11.5px;line-height:1.45;color:var(--ink2)}
+.fc-track-warn.hidden{display:none}
+.fc-track-warn button{width:100%;margin-top:7px;min-height:40px;font-size:12px}
+.fc-row .fecha-wrap{margin-top:2px}
 .fc-caja-row{display:flex;align-items:center;gap:8px;margin:6px 0}
 .fc-caja-row label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2);cursor:pointer}
 .fc-caja-row input[type=checkbox]{width:16px;height:16px}
@@ -5516,11 +5520,24 @@ function fcRenderResultados(){
       <div class="fc-row-meta">${meta.join(' · ')}</div>
       <div class="fc-field" style="margin-top:8px">
         <label>📅 Fecha de vencimiento (opcional)</label>
-        <input type="date" data-f="fecha_vencimiento" value="${it.fecha_vencimiento||''}">
+        <div class="fecha-wrap">
+          <input id="fcf-dd-${it.id}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="DD" autocomplete="off">
+          <span class="fecha-sep">/</span>
+          <input id="fcf-mm-${it.id}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="off">
+          <span class="fecha-sep">/</span>
+          <input id="fcf-yy-${it.id}" class="fecha-seg fecha-seg-y" inputmode="numeric" maxlength="4" placeholder="AAAA" autocomplete="off">
+          <button type="button" class="fecha-cal-btn" id="fcf-cal-${it.id}" aria-label="Elegir en calendario">📅</button>
+          <input type="date" id="fcf-${it.id}" class="fecha-date-hidden" tabindex="-1" data-f="fecha_vencimiento" value="${it.fecha_vencimiento||''}">
+        </div>
+        <div class="fecha-hint">Escribe día, mes y año, o toca 📅 para elegir en el calendario</div>
       </div>
       <div class="fc-field" style="margin-top:8px">
         <label>📦 Cantidad recibida (opcional — suma el stock en Loyverse al guardar)</label>
         <input inputmode="numeric" placeholder="Ej: 12" data-f="cantidad_recibida">
+        <div class="fc-track-warn hidden" data-track-warn>
+          ⚠️ Este producto tiene el seguimiento de inventario <b>desactivado</b> en Loyverse: la cantidad recibida no sumará stock hasta activarlo.
+          <button type="button" class="loadbtn" data-track-on>🔓 Activar inventario</button>
+        </div>
       </div>
       <div class="fc-link">
         <button class="fc-link-btn" type="button">🔗 Asociar a producto existente</button>
@@ -5538,6 +5555,10 @@ function fcRenderResultados(){
 }
 function fcWirePS(){
   _fcItems.forEach(it=>{
+    // Fecha de vencimiento: mismo componente segmentado (DD/MM/AAAA + 📅) que ya usan
+    // Recepción, Vencimientos, Crear producto y Llegadas. El input oculto type="date"
+    // conserva data-f="fecha_vencimiento", así el guardado no cambia en nada.
+    wireFechaSegmentada('fcf-dd-'+it.id,'fcf-mm-'+it.id,'fcf-yy-'+it.id,'fcf-'+it.id,'fcf-cal-'+it.id);
     const P='fcprov-'+it.id, S='fcsect-'+it.id;
     if(!document.getElementById(P))return;
     psLlenarSelects(P,S,it.proveedor_id||null,it.sector||null);
@@ -5668,7 +5689,46 @@ function fcAsociarProducto(row,producto){
     ok.classList.remove('hidden');
     row.dataset.sincronizadoRef=producto.ref;
     row.dataset.sincronizadoNombre=producto.nombre;
+    fcActualizarAvisoTrack(row,producto.ref);
   });
+}
+// Muestra el aviso + botón "Activar inventario" solo si el producto vinculado tiene el
+// seguimiento apagado en Loyverse. Sin seguimiento, lote_nuevo no puede sumar stock, así
+// que la cantidad recibida se perdería en silencio — este aviso lo hace explícito antes
+// de guardar, en vez de que el usuario lo descubra después.
+function fcActualizarAvisoTrack(row,ref){
+  const warn=row.querySelector('[data-track-warn]');
+  if(!warn)return;
+  const prod=DB.items&&DB.items.find(x=>x.ref===ref);
+  const sinTrack=!!prod&&prod.track===false;
+  warn.classList.toggle('hidden',!sinTrack);
+  const btn=warn.querySelector('[data-track-on]');
+  if(btn){btn.disabled=false;btn.textContent='🔓 Activar inventario';btn.dataset.trackOn=ref;}
+}
+// Reutiliza la misma acción del backend que usan Recepción y Reconteo — no duplica lógica
+// ni asume que funcionó: el Worker verifica el resultado real contra Loyverse.
+async function fcActivarInventario(btn){
+  const ref=btn.dataset.trackOn;
+  const row=btn.closest('.fc-row');
+  btn.disabled=true;btn.textContent='Activando…';
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'habilitar_track_stock',payload:{sku:ref}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      const it=DB.items.find(x=>x.ref===ref);
+      if(it){it.track=true;if(it.stock==null)it.stock=0;}
+      persist();
+      row.querySelector('[data-track-warn]').classList.add('hidden');
+      showToast(j.yaEstaba?'✅ El inventario ya estaba activado':'🔓 Seguimiento activado · ahora la cantidad recibida sumará stock');
+      render();
+    }else{
+      showToast('❌ '+((j&&j.error)||'No se pudo activar en Loyverse'));
+      btn.disabled=false;btn.textContent='🔓 Activar inventario';
+    }
+  }catch(e){
+    showToast('❌ Error de conexión al activar');
+    btn.disabled=false;btn.textContent='🔓 Activar inventario';
+  }
 }
 document.getElementById('fc-list').addEventListener('click',ev=>{
   const linkBtn=ev.target.closest('.fc-link-btn:not([data-crear])');
@@ -5683,6 +5743,8 @@ document.getElementById('fc-list').addEventListener('click',ev=>{
     fcAbrirPanelCrear(row);
     return;
   }
+  const trackBtn=ev.target.closest('[data-track-on]');
+  if(trackBtn){fcActivarInventario(trackBtn);return;}
   const manualBtn=ev.target.closest('.fc-manual-btn');
   if(manualBtn){
     const row=manualBtn.closest('.fc-row');
@@ -5706,6 +5768,7 @@ document.getElementById('fc-list').addEventListener('click',ev=>{
     const row=quitar.closest('.fc-row');
     row.querySelector('.fc-link-ok').classList.add('hidden');
     row.querySelector('.fc-link-btn').classList.remove('hidden');
+    const w=row.querySelector('[data-track-warn]');if(w)w.classList.add('hidden');
     delete row.dataset.sincronizadoRef;delete row.dataset.sincronizadoNombre;
     return;
   }
@@ -5781,11 +5844,19 @@ document.getElementById('fc-guardar').onclick=async()=>{
   // Reutiliza directo la acción 'lote_nuevo' (la misma de Recepción) — nada nuevo en el backend.
   const recepciones=[];
   const filasSinVincularConCantidad=[];
+  const filasSinTrackConCantidad=[];
   Array.from(rows).forEach(row=>{
     const cantInp=row.querySelector('[data-f="cantidad_recibida"]');
     const cantidad=cantInp?(+cantInp.value||0):0;
     if(cantidad<=0)return;
     if(row.dataset.sincronizadoRef){
+      const prod=DB.items&&DB.items.find(x=>x.ref===row.dataset.sincronizadoRef);
+      if(prod&&prod.track===false){
+        // Sin seguimiento de inventario, Loyverse no puede recibir stock: se avisa en vez
+        // de mandar una petición que fallaría o quedaría a medias.
+        filasSinTrackConCantidad.push(prod.nombre);
+        return;
+      }
       const g=f=>row.querySelector(`[data-f="${f}"]`).value;
       const fechaVencInput=row.querySelector('[data-f="fecha_vencimiento"]').value; // "YYYY-MM-DD" del <input type=date>
       const fechaVenc=fechaVencInput?fmtDateInputToDDMMAAAA(fechaVencInput):null; // -> "DD/MM/AAAA", formato que espera accionLoteNuevo
@@ -5814,6 +5885,7 @@ document.getElementById('fc-guardar').onclick=async()=>{
         fcAgregarAlHistorial(j.factura_id,items);
       }
       if(filasSinVincularConCantidad.length)showToast('⚠️ No se sumó stock de: '+filasSinVincularConCantidad.join(', ')+' — vincúlalos primero a un producto');
+      if(filasSinTrackConCantidad.length)showToast('⚠️ Sin seguimiento de inventario, no se sumó stock de: '+filasSinTrackConCantidad.join(', ')+' — toca "🔓 Activar inventario" en esa fila');
       if(recepciones.length){
         let sumadas=0,fallidas=[];
         for(const r of recepciones){
