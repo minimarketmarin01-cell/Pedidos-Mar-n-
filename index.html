@@ -728,6 +728,7 @@ html.modo-bliss .fila-pedir .qword{text-align:center;max-width:100px;font-size:9
 .fc-ps-line{display:flex;gap:6px;align-items:stretch}
 .fc-ps-line .cat-combo{flex:1;min-width:0}
 .fc-ps-line .loadbtn{white-space:nowrap;padding:0 12px;font-size:12px;min-height:40px}
+.fc-ps-line .loadbtn[id$="-limpiar"]{padding:0 11px;flex:none;color:var(--muted)}
 .fc-ps-nuevabox{display:flex;gap:6px;margin-top:6px}
 .fc-ps-nuevabox input{flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px}
 .fc-ps-nuevabox.hidden{display:none}
@@ -4712,9 +4713,9 @@ function rvRender(){
   const visibles=_rvFiltrados.slice(0,_rvMostrados);
   cont.innerHTML=visibles.map(p=>{
     const e=rvEstado(p);
-    const opcionesProv='<option value="">Sin proveedor</option><option value="__nuevo__">➕ Crear proveedor nuevo…</option>'+_psProveedores.map(pr=>`<option value="${pr.id}"${String(pr.id)===String(p.proveedor_id)?' selected':''}>${pr.nombre}</option>`).join('');
-    const opcionesSector='<option value="">Sin sector</option><option value="__nuevo__">➕ Crear sector nuevo…</option>'+_psSectores.map(s=>`<option value="${s}"${s===p.sector?' selected':''}>${s}</option>`).join('');
-    return `<div class="fp-row" style="flex-direction:column;align-items:stretch;gap:8px;padding:12px 0" data-rv-sku="${p.sku}">
+    const id='rv'+String(p.sku).replace(/[^a-zA-Z0-9]/g,'');
+    const provNombre=p.proveedor_nombre||'';
+    return `<div class="fp-row" style="flex-direction:column;align-items:stretch;gap:8px;padding:12px 0" data-rv-sku="${p.sku}" data-rv-id="${id}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
         <div>
           <div style="font-weight:700;font-size:13.5px">${p.nombre}</div>
@@ -4722,17 +4723,37 @@ function rvRender(){
         </div>
         <span style="font-size:10.5px;font-weight:700;color:${e.color};background:${e.bg};padding:3px 8px;border-radius:20px;white-space:nowrap" class="rv-estado-badge">${e.texto}</span>
       </div>
-      <div style="display:flex;gap:8px">
-        <select class="rv-sel-proveedor" style="flex:1;min-width:0;padding:9px 8px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff">${opcionesProv}</select>
-        <select class="rv-sel-sector" style="flex:1;min-width:0;padding:9px 8px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff">${opcionesSector}</select>
-      </div>
-      <div class="rv-proveedor-nuevabox hidden" style="display:flex;gap:8px">
-        <input class="rv-proveedor-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px">
-        <button class="btn-ok loadbtn rv-proveedor-crear" type="button" style="white-space:nowrap;padding:8px 10px">Crear</button>
-      </div>
-      <div class="rv-sector-nuevabox hidden" style="display:flex;gap:8px">
-        <input class="rv-sector-nuevonom" placeholder="Nombre del sector nuevo" autocomplete="off" style="flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px">
-        <button class="btn-ok loadbtn rv-sector-crear" type="button" style="white-space:nowrap;padding:8px 10px">Crear</button>
+      <div class="fc-ps-grid" style="margin-bottom:0">
+        <div class="fc-ps-field">
+          <label>Proveedor</label>
+          <div class="fc-ps-line">
+            <div class="cat-combo" id="${id}prov-combo">
+              <input id="${id}prov-input" class="cat-combo-input" placeholder="Buscar proveedor…" autocomplete="off" value="${provNombre.replace(/"/g,'&quot;')}" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+              <select id="${id}prov" style="display:none"><option value="">Sin proveedor</option></select>
+              <div class="cat-combo-menu hidden" id="${id}prov-menu" role="listbox"></div>
+            </div>
+            <button class="loadbtn" id="${id}prov-limpiar" type="button" title="Quitar proveedor">✕</button>
+          </div>
+          <div class="fc-ps-nuevabox hidden" id="${id}prov-nuevabox">
+            <input id="${id}prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off">
+            <button class="btn-ok loadbtn" id="${id}prov-crear" type="button">Crear</button>
+          </div>
+        </div>
+        <div class="fc-ps-field">
+          <label>Sector</label>
+          <div class="fc-ps-line">
+            <div class="cat-combo" id="${id}sect-combo">
+              <input id="${id}sect-input" class="cat-combo-input" placeholder="Buscar sector…" autocomplete="off" value="${(p.sector||'').replace(/"/g,'&quot;')}" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+              <select id="${id}sect" style="display:none"><option value="">Sin sector</option></select>
+              <div class="cat-combo-menu hidden" id="${id}sect-menu" role="listbox"></div>
+            </div>
+            <button class="loadbtn" id="${id}sect-limpiar" type="button" title="Quitar sector">✕</button>
+          </div>
+          <div class="fc-ps-nuevabox hidden" id="${id}sect-nuevabox">
+            <input id="${id}sect-nuevonom" placeholder="Nombre del sector nuevo" autocomplete="off">
+            <button class="btn-ok loadbtn" id="${id}sect-crear" type="button">Crear</button>
+          </div>
+        </div>
       </div>
       <button class="btn-ok loadbtn rv-guardar" type="button" style="width:100%;padding:8px">Guardar</button>
     </div>`;
@@ -4740,74 +4761,47 @@ function rvRender(){
   const masBtn=document.getElementById('rv-cargar-mas');
   if(_rvMostrados<total){masBtn.classList.remove('hidden');masBtn.textContent='Cargar más ('+(total-_rvMostrados)+' restantes)';}
   else masBtn.classList.add('hidden');
+  // Buscador + "➕ Nuevo" en cada tarjeta: mismo componente que usan Crear producto y la
+  // Calculadora de precios (psInitCombo/psLlenarSelects) — cero lógica duplicada. Se
+  // preselecciona lo que el producto ya tenía, y el botón ✕ deja el campo en "Sin
+  // proveedor/sector" siempre disponible sin depender de borrar el texto a mano.
+  visibles.forEach(p=>{
+    const id='rv'+String(p.sku).replace(/[^a-zA-Z0-9]/g,'');
+    psLlenarSelects(id+'prov',id+'sect',p.proveedor_id||null,p.sector||null);
+    psInitCombo(id+'prov',id+'prov-combo',id+'prov-input',id+'prov-menu',id+'prov','proveedor',texto=>{
+      const box=document.getElementById(id+'prov-nuevabox');box.classList.remove('hidden');
+      const inp=document.getElementById(id+'prov-nuevonom');inp.value=texto;inp.focus();
+    });
+    psInitCombo(id+'sect',id+'sect-combo',id+'sect-input',id+'sect-menu',id+'sect','sector',texto=>{
+      const box=document.getElementById(id+'sect-nuevabox');box.classList.remove('hidden');
+      const inp=document.getElementById(id+'sect-nuevonom');inp.value=texto;inp.focus();
+    });
+    psWireNuevoProveedor(id+'prov-nueva',id+'prov-nuevabox',id+'prov-nuevonom',id+'prov-crear',id+'prov',id+'sect');
+    psWireNuevoSector(id+'sect-nueva',id+'sect-nuevabox',id+'sect-nuevonom',id+'sect-crear',id+'prov',id+'sect');
+    const limpiarProv=document.getElementById(id+'prov-limpiar');
+    if(limpiarProv)limpiarProv.onclick=()=>{
+      document.getElementById(id+'prov').value='';
+      document.getElementById(id+'prov-input').value='';
+    };
+    const limpiarSect=document.getElementById(id+'sect-limpiar');
+    if(limpiarSect)limpiarSect.onclick=()=>{
+      document.getElementById(id+'sect').value='';
+      document.getElementById(id+'sect-input').value='';
+    };
+  });
 }
-document.getElementById('rv-lista').addEventListener('change',ev=>{
-  const selProv=ev.target.closest('.rv-sel-proveedor');
-  if(selProv&&selProv.value==='__nuevo__'){
-    selProv.value='';
-    const fila=ev.target.closest('[data-rv-sku]');
-    const box=fila.querySelector('.rv-proveedor-nuevabox');
-    box.classList.remove('hidden');
-    box.querySelector('.rv-proveedor-nuevonom').focus();
-    return;
-  }
-  const sel=ev.target.closest('.rv-sel-sector');
-  if(!sel||sel.value!=='__nuevo__')return;
-  sel.value='';
-  const fila=ev.target.closest('[data-rv-sku]');
-  const box=fila.querySelector('.rv-sector-nuevabox');
-  box.classList.remove('hidden');
-  box.querySelector('.rv-sector-nuevonom').focus();
-});
 document.getElementById('rv-lista').addEventListener('click',async ev=>{
-  const crearProvBtn=ev.target.closest('.rv-proveedor-crear');
-  if(crearProvBtn){
-    const fila=ev.target.closest('[data-rv-sku]');
-    const inp=fila.querySelector('.rv-proveedor-nuevonom');
-    const nombre=(inp.value||'').trim();
-    if(!nombre){showToast('Escribe el nombre del proveedor');return;}
-    crearProvBtn.disabled=true;const txtOriginal=crearProvBtn.textContent;crearProvBtn.textContent='Creando…';
-    try{
-      const prov=await psCrearProveedorInline(nombre);   // ya valida duplicados por nombre normalizado
-      showToast('✓ Proveedor: '+prov.nombre);
-      fila.querySelector('.rv-proveedor-nuevabox').classList.add('hidden');
-      inp.value='';
-      const selProv=fila.querySelector('.rv-sel-proveedor');
-      if(!selProv.querySelector(`option[value="${prov.id}"]`)){
-        const opt=document.createElement('option');opt.value=prov.id;opt.textContent=prov.nombre;
-        selProv.appendChild(opt);
-      }
-      selProv.value=prov.id;
-    }catch(e){showToast('❌ '+e.message);}
-    finally{crearProvBtn.disabled=false;crearProvBtn.textContent=txtOriginal;}
-    return;
-  }
-  const crearBtn=ev.target.closest('.rv-sector-crear');
-  if(crearBtn){
-    const fila=ev.target.closest('[data-rv-sku]');
-    const inp=fila.querySelector('.rv-sector-nuevonom');
-    const nombre=(inp.value||'').trim();
-    if(!nombre){showToast('Escribe el nombre del sector');return;}
-    crearBtn.disabled=true;const txtOriginal=crearBtn.textContent;crearBtn.textContent='Creando…';
-    try{
-      const sector=await psCrearSectorInline(nombre);
-      showToast('✓ Sector creado: '+sector);
-      fila.querySelector('.rv-sector-nuevabox').classList.add('hidden');
-      inp.value='';
-      const selSector=fila.querySelector('.rv-sel-sector');
-      const opt=document.createElement('option');opt.value=sector;opt.textContent=sector;
-      selSector.appendChild(opt);selSector.value=sector;
-    }catch(e){showToast('❌ '+e.message);}
-    finally{crearBtn.disabled=false;crearBtn.textContent=txtOriginal;}
-    return;
-  }
+  const crearProvBtn=ev.target.closest('[id$="prov-crear"]');
+  const crearSectBtn=ev.target.closest('[id$="sect-crear"]');
+  if(crearProvBtn||crearSectBtn)return; // ya manejado por psWireNuevoProveedor/psWireNuevoSector
   const btn=ev.target.closest('.rv-guardar');
   if(!btn)return;
   const fila=ev.target.closest('[data-rv-sku]');
   const sku=fila.dataset.rvSku;
+  const id=fila.dataset.rvId;
   const pOriginal=_rvProductos.find(x=>x.sku===sku);
-  const provId=fila.querySelector('.rv-sel-proveedor').value||null;
-  const sectorVal=fila.querySelector('.rv-sel-sector').value||null;
+  const provId=document.getElementById(id+'prov').value||null;
+  const sectorVal=document.getElementById(id+'sect').value||null;
   btn.disabled=true;const txtOriginal=btn.textContent;btn.textContent='Guardando…';
   try{
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_producto',payload:{sku,proveedor_id:provId,sector:sectorVal,responsable:''}})});
