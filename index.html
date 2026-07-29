@@ -4778,6 +4778,13 @@ function rvRender(){
     });
     psWireNuevoProveedor(id+'prov-nueva',id+'prov-nuevabox',id+'prov-nuevonom',id+'prov-crear',id+'prov',id+'sect');
     psWireNuevoSector(id+'sect-nueva',id+'sect-nuevabox',id+'sect-nuevonom',id+'sect-crear',id+'prov',id+'sect');
+    // Al crear proveedor/sector nuevo DESDE esta tarjeta, además de asignarlo (que ya hace
+    // psWireNuevoProveedor/psWireNuevoSector vía psLlenarSelects), se guarda el producto de
+    // inmediato — así "crear" y "guardar" quedan en un solo toque en vez de dos.
+    const crearProvBtn=document.getElementById(id+'prov-crear');
+    if(crearProvBtn)crearProvBtn.addEventListener('click',()=>setTimeout(()=>rvGuardarFila(document.querySelector(`[data-rv-id="${id}"]`)),50));
+    const crearSectBtn=document.getElementById(id+'sect-crear');
+    if(crearSectBtn)crearSectBtn.addEventListener('click',()=>setTimeout(()=>rvGuardarFila(document.querySelector(`[data-rv-id="${id}"]`)),50));
     const limpiarProv=document.getElementById(id+'prov-limpiar');
     if(limpiarProv)limpiarProv.onclick=()=>{
       document.getElementById(id+'prov').value='';
@@ -4790,25 +4797,31 @@ function rvRender(){
     };
   });
 }
-document.getElementById('rv-lista').addEventListener('click',async ev=>{
-  const crearProvBtn=ev.target.closest('[id$="prov-crear"]');
-  const crearSectBtn=ev.target.closest('[id$="sect-crear"]');
-  if(crearProvBtn||crearSectBtn)return; // ya manejado por psWireNuevoProveedor/psWireNuevoSector
-  const btn=ev.target.closest('.rv-guardar');
-  if(!btn)return;
-  const fila=ev.target.closest('[data-rv-sku]');
-  const sku=fila.dataset.rvSku;
+// Guarda proveedor/sector de una fila de Revisión de productos. Se usa desde el botón
+// "Guardar" y también automáticamente al crear un proveedor/sector nuevo desde la misma
+// tarjeta — así "crear" y "asignar al producto" quedan en un solo paso, sin que el usuario
+// tenga que tocar Guardar por separado después de crear.
+async function rvGuardarFila(fila){
+  if(!fila)return;
   const id=fila.dataset.rvId;
+  // Si el usuario crea proveedor y sector casi a la vez en la misma tarjeta, evita disparar
+  // dos guardados pisados — el segundo intento en el mismo ciclo se descarta silenciosamente,
+  // ya el primero guarda con los valores más recientes de ambos campos.
+  if(fila.dataset.rvGuardando==='1')return;
+  fila.dataset.rvGuardando='1';
+  const sku=fila.dataset.rvSku;
+  const btn=fila.querySelector('.rv-guardar');
   const pOriginal=_rvProductos.find(x=>x.sku===sku);
   const provId=document.getElementById(id+'prov').value||null;
   const sectorVal=document.getElementById(id+'sect').value||null;
-  btn.disabled=true;const txtOriginal=btn.textContent;btn.textContent='Guardando…';
+  if(btn){btn.disabled=true;}
+  const txtOriginal=btn?btn.textContent:'';
+  if(btn)btn.textContent='Guardando…';
   try{
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_producto',payload:{sku,proveedor_id:provId,sector:sectorVal,responsable:''}})});
     const j=await res.json();
     if(!j||!j.ok)throw new Error((j&&j.error)||'No se pudo guardar');
     if(sectorVal&&pOriginal)psGuardarAprendizaje(pOriginal.nombre.toUpperCase(),provId,sectorVal);
-    // Si quedó completo (ambos campos), sale de la lista de revisión; si no, se actualiza el estado.
     const idx=_rvProductos.findIndex(p=>p.sku===sku);
     if(provId&&sectorVal){
       if(idx>-1)_rvProductos.splice(idx,1);
@@ -4822,8 +4835,18 @@ document.getElementById('rv-lista').addEventListener('click',async ev=>{
     }
   }catch(e){
     showToast('❌ '+e.message);
-    btn.disabled=false;btn.textContent=txtOriginal;
+    if(btn){btn.disabled=false;btn.textContent=txtOriginal;}
   }
+  fila.dataset.rvGuardando='0';
+}
+document.getElementById('rv-lista').addEventListener('click',async ev=>{
+  const crearProvBtn=ev.target.closest('[id$="prov-crear"]');
+  const crearSectBtn=ev.target.closest('[id$="sect-crear"]');
+  if(crearProvBtn||crearSectBtn)return; // ya manejado por psWireNuevoProveedor/psWireNuevoSector + autoguardado
+  const btn=ev.target.closest('.rv-guardar');
+  if(!btn)return;
+  const fila=ev.target.closest('[data-rv-sku]');
+  await rvGuardarFila(fila);
 });
 
 // ===================== MAPEO DE CATEGORÍAS =====================
