@@ -737,6 +737,12 @@ html.modo-bliss .fila-pedir .qword{text-align:center;max-width:100px;font-size:9
 .fc-ps-nuevabox input{flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px}
 .fc-ps-nuevabox.hidden{display:none}
 .fc-ps-todos{width:100%;margin-bottom:10px;font-size:12px}
+.mc-detalle{border-top:1px dashed var(--line);padding-top:10px;margin-top:2px}
+.mc-detalle-row{display:flex;align-items:center;gap:8px;padding:6px 2px;border-bottom:1px solid var(--paper);font-size:12px}
+.mc-detalle-row:last-child{border-bottom:none}
+.mc-detalle-row input[type=checkbox]{width:17px;height:17px;flex:none}
+.mc-detalle-row .mc-dr-nom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mc-detalle-row .mc-dr-actual{font-size:10px;color:var(--muted);white-space:nowrap}
 .fc-track-warn{margin-top:7px;padding:9px 10px;border-radius:9px;background:#FFF4E5;border:1.5px solid var(--gold);font-size:11.5px;line-height:1.45;color:var(--ink2)}
 .fc-track-warn.hidden{display:none}
 .fc-track-warn button{width:100%;margin-top:7px;min-height:40px;font-size:12px}
@@ -4927,13 +4933,74 @@ function mcRender(){
         <button class="btn-ok loadbtn mc-sector-crear" type="button" style="white-space:nowrap;padding:8px 10px">Crear</button>
       </div>
       <button class="btn-ok loadbtn mc-aplicar" type="button" style="width:100%;padding:8px">Aplicar a los ${c.total} productos</button>
+      <button class="mc-ver-productos" type="button" style="width:100%;background:none;border:none;color:var(--wa-d);font-size:11.5px;font-weight:700;padding:6px 0;cursor:pointer">Ver los ${c.total} productos → (para elegir solo algunos)</button>
+      <div class="mc-detalle hidden" data-cargado="0">
+        <div class="mc-detalle-toolbar" style="display:flex;gap:6px;margin-bottom:8px">
+          <input class="mc-detalle-buscar" placeholder="Filtrar dentro de esta categoría…" autocomplete="off" style="flex:1;min-width:0;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12px">
+          <button class="loadbtn mc-marcar-todos" type="button" style="white-space:nowrap;font-size:11px;padding:0 10px">Todos</button>
+          <button class="loadbtn mc-desmarcar-todos" type="button" style="white-space:nowrap;font-size:11px;padding:0 10px">Ninguno</button>
+        </div>
+        <div class="mc-detalle-lista" style="max-height:260px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;padding:4px 8px"></div>
+        <button class="btn-ok loadbtn mc-aplicar-seleccion" type="button" style="width:100%;padding:8px;margin-top:8px">Aplicar a los seleccionados (0)</button>
+      </div>
     </div>`;
   }).join('');
   const masBtn=document.getElementById('mc-cargar-mas');
   if(_mcMostradas<total){masBtn.classList.remove('hidden');masBtn.textContent='Cargar más ('+(total-_mcMostradas)+' restantes)';}
   else masBtn.classList.add('hidden');
 }
+// ===================== Modo detalle: seleccionar productos dentro de una categoría =====================
+// Carga la lista completa de una categoría UNA vez (queda cacheada en el DOM vía data-cargado);
+// "forzar=true" la recarga igual (se usa después de aplicar, para reflejar el estado real).
+async function mcCargarDetalle(fila,forzar){
+  const det=fila.querySelector('.mc-detalle');
+  if(det.dataset.cargado==='1'&&!forzar)return;
+  const cont=det.querySelector('.mc-detalle-lista');
+  cont.innerHTML='<div style="padding:10px;color:var(--muted);font-size:11.5px">Cargando…</div>';
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=categoria_productos&categoria='+encodeURIComponent(fila.dataset.mcCategoria));
+    const j=await res.json();
+    if(!j||!j.ok)throw new Error((j&&j.error)||'error al cargar');
+    det._productos=j.productos||[];
+    det.dataset.cargado='1';
+    mcRenderDetalleLista(det,'');
+  }catch(e){
+    cont.innerHTML='<div style="padding:10px;color:var(--rojo);font-size:11.5px">❌ '+e.message+'</div>';
+  }
+}
+function mcRenderDetalleLista(det,filtro){
+  const cont=det.querySelector('.mc-detalle-lista');
+  const productos=det._productos||[];
+  const nf=normTxt(filtro||'');
+  const visibles=nf?productos.filter(p=>normTxt(p.nombre).indexOf(nf)>-1):productos;
+  if(!visibles.length){cont.innerHTML='<div style="padding:10px;color:var(--muted);font-size:11.5px">Sin resultados.</div>';return;}
+  cont.innerHTML=visibles.map(p=>{
+    const actual=[p.proveedor_nombre,p.sector].filter(Boolean).join(' · ');
+    return `<label class="mc-detalle-row" data-sku="${p.sku}">
+      <input type="checkbox" data-sku="${p.sku}">
+      <span class="mc-dr-nom">${p.nombre}</span>
+      <span class="mc-dr-actual">${actual||'sin clasificar'}</span>
+    </label>`;
+  }).join('');
+  mcActualizarContadorSeleccion(det);
+}
+function mcActualizarContadorSeleccion(det){
+  const n=det.querySelectorAll('input[type=checkbox]:checked').length;
+  const btn=det.querySelector('.mc-aplicar-seleccion');
+  if(btn)btn.textContent='Aplicar a los seleccionados ('+n+')';
+}
+document.getElementById('mc-lista').addEventListener('input',ev=>{
+  const buscador=ev.target.closest('.mc-detalle-buscar');
+  if(!buscador)return;
+  const det=ev.target.closest('.mc-detalle');
+  mcRenderDetalleLista(det,buscador.value);
+});
 document.getElementById('mc-lista').addEventListener('change',ev=>{
+  const chk=ev.target.closest('.mc-detalle-row input[type=checkbox]');
+  if(chk){
+    mcActualizarContadorSeleccion(ev.target.closest('.mc-detalle'));
+    return;
+  }
   const selProv=ev.target.closest('.mc-sel-proveedor');
   if(selProv&&selProv.value==='__nuevo__'){
     selProv.value='';
@@ -4991,6 +5058,54 @@ document.getElementById('mc-lista').addEventListener('click',async ev=>{
       showToast('❌ '+e.message);
       crearSectorBtn.disabled=false;crearSectorBtn.textContent=txtOriginal;
     }
+    return;
+  }
+  const verBtn=ev.target.closest('.mc-ver-productos');
+  if(verBtn){
+    const fila=ev.target.closest('[data-mc-categoria]');
+    const det=fila.querySelector('.mc-detalle');
+    const abriendo=det.classList.contains('hidden');
+    det.classList.toggle('hidden');
+    verBtn.textContent=(abriendo?'Ocultar productos ↑':'Ver los '+fila.dataset.mcCategoria+' productos → (para elegir solo algunos)');
+    if(abriendo&&det.dataset.cargado==='0')mcCargarDetalle(fila);
+    return;
+  }
+  const marcarTodos=ev.target.closest('.mc-marcar-todos');
+  if(marcarTodos){
+    const det=ev.target.closest('.mc-detalle');
+    det.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=true);
+    mcActualizarContadorSeleccion(det);
+    return;
+  }
+  const desmarcarTodos=ev.target.closest('.mc-desmarcar-todos');
+  if(desmarcarTodos){
+    const det=ev.target.closest('.mc-detalle');
+    det.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=false);
+    mcActualizarContadorSeleccion(det);
+    return;
+  }
+  const aplicarSel=ev.target.closest('.mc-aplicar-seleccion');
+  if(aplicarSel){
+    const fila=ev.target.closest('[data-mc-categoria]');
+    const categoria=fila.dataset.mcCategoria;
+    const det=fila.querySelector('.mc-detalle');
+    const provId=fila.querySelector('.mc-sel-proveedor').value||null;
+    const sectorVal=fila.querySelector('.mc-sel-sector').value||null;
+    if(!provId&&!sectorVal){showToast('Elegí al menos un proveedor o un sector arriba');return;}
+    const skus=[...det.querySelectorAll('input[type=checkbox]:checked')].map(c=>c.dataset.sku);
+    if(!skus.length){showToast('Marca al menos un producto de la lista');return;}
+    aplicarSel.disabled=true;const txtOriginal=aplicarSel.textContent;aplicarSel.textContent='Aplicando…';
+    try{
+      const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'mapear_categoria',payload:{categoria,proveedor_id:provId,sector:sectorVal,skus}})});
+      const j=await res.json();
+      if(!j||!j.ok)throw new Error((j&&j.error)||'No se pudo aplicar');
+      showToast('✓ '+skus.length+' producto(s) actualizados');
+      mcCargarDetalle(fila,true); // recarga la lista de detalle con el estado real actualizado
+      mcCargar(); // refresca los contadores "sin proveedor/sin sector" de todas las tarjetas
+    }catch(e){
+      showToast('❌ '+e.message);
+    }
+    aplicarSel.disabled=false;aplicarSel.textContent=txtOriginal;
     return;
   }
   const btn=ev.target.closest('.mc-aplicar');
