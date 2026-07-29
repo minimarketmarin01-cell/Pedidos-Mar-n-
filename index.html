@@ -723,6 +723,20 @@ html.modo-bliss .fila-pedir .qword{text-align:center;max-width:100px;font-size:9
 .fc-row-meta{font-size:10.5px;color:var(--muted);margin-top:6px}
 .fc-row-margin-real{font-size:11px;color:var(--ink2);margin-top:7px;font-weight:600}
 .fc-row-margin-real b{color:var(--wa-d)}
+.fc-chips-row{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.fc-chip{display:inline-flex;align-items:center;gap:4px;border:1.5px solid var(--line);border-radius:20px;padding:4px 10px;font-size:11px;color:var(--ink2);background:var(--paper);cursor:pointer;white-space:nowrap}
+.fc-chip b{color:var(--ink);font-weight:700}
+.fc-chip select{border:none;background:transparent;font-size:11px;font-weight:700;color:var(--ink);max-width:120px}
+.fc-caja-row{display:flex;align-items:center;gap:8px;margin:6px 0}
+.fc-caja-row label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2);cursor:pointer}
+.fc-caja-row input[type=checkbox]{width:16px;height:16px}
+.fc-manual-btn{border:1.5px dashed var(--line);background:var(--paper);color:var(--muted);font-size:11px;font-weight:700;padding:6px 10px;border-radius:8px;cursor:pointer;margin-top:6px}
+.fc-manual-btn:active{background:var(--line)}
+.fc-field input.fc-manual-edit{border-color:var(--gold);background:#FFF9EC}
+.fc-iva-banner{border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12px;line-height:1.5}
+.fc-iva-banner.ok{background:#E8F3EC;color:var(--verde)}
+.fc-iva-banner.conflicto{background:#FCE9E7;color:var(--rojo)}
+.fc-iva-banner input{margin-top:6px;width:100%;box-sizing:border-box;border:1.5px solid var(--line);border-radius:8px;padding:8px;font-size:12.5px;font-family:'JetBrains Mono'}
 .fc-tabs{display:flex;gap:6px;margin-bottom:12px;background:var(--paper);border-radius:10px;padding:4px}
 .fc-tab-btn{flex:1;min-height:38px;border:none;border-radius:8px;background:transparent;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .fc-tab-btn.active{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
@@ -1889,6 +1903,7 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
       </div>
       <div id="fc-resultados" class="hidden">
         <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">Revisa y corrige cada fila antes de guardar — nada se guarda automáticamente.</div>
+        <div id="fc-iva-banner" class="fc-iva-banner hidden"></div>
         <div class="fc-round-wrap">
           <label for="fc-round-mode">Redondeo del precio de venta</label>
           <select id="fc-round-mode">
@@ -5361,56 +5376,164 @@ function fcCostoConIva(costoRaw,incluyeIva){
   return incluyeIva?costoRaw:costoRaw*(1+FC_IVA);
 }
 // ---- Excepción de empaque: Chocman/Chopman ----
-// CAMBIO: se elimina el parser genérico anterior que intentaba deducir un multiplicador de
-// CUALQUIER nombre de producto (ej. "1X24X85") y lo multiplicaba por la cantidad — esa
-// heurística resultó incorrecta para la mayoría de los productos (dividía por cientos de
-// "unidades" inexistentes y arrojaba costos absurdamente bajos). Ahora, por defecto, se usa
-// el precio unitario de la factura TAL CUAL. Solo Chocman/Chopman es una excepción
-// confirmada: la factura imprime el precio de la CAJA de 32 unidades, así que se divide por
-// 32 para obtener el costo real por unidad individual.
+// Se mantiene como detección automática (checkbox "viene por caja" pre-marcado y con
+// unidades prellenadas en 32) — el usuario puede desmarcarla o corregir el número si
+// la factura trae otra presentación. Ya no es un caso especial invisible: ahora es la
+// misma mecánica de "viene por caja" que aplica a cualquier producto.
 const FC_DIVISOR_CHOCMAN=32;
 function fcEsChocman(nombre){
   return /\bcho[cp]man\b/i.test(String(nombre||''));
+}
+// ---- Feature 6: producto por caja — costo unitario real = costo de la caja / unidades ----
+function fcCostoUnitarioReal(costoCaja,vienePorCaja,unidadesPorCaja){
+  costoCaja=Number(costoCaja)||0;
+  if(!vienePorCaja)return costoCaja;
+  const u=Number(unidadesPorCaja)||0;
+  if(u<=0)return costoCaja; // sin unidades válidas: no se divide a ciegas, se usa el valor tal cual
+  return costoCaja/u;
+}
+// ---- Feature 5: validación de IVA por total de factura ----
+// Compara la suma de costos leídos (tal cual, y también asumiendo que falta sumarles IVA)
+// contra el total de la factura, para confirmar/objetar el incluye_iva que puso la IA por
+// fila. Tolerancia 2% (alta confianza) / 5% (confianza media) para absorber redondeos.
+function fcValidarIva(items,totalFactura){
+  const sumaLeida=items.reduce((s,it)=>{
+    const costoBase=fcCostoUnitarioReal(it.costo_unitario,it.viene_por_caja,it.unidades_por_caja);
+    return s+costoBase*(Number(it.cantidad)||1);
+  },0);
+  if(!totalFactura||totalFactura<=0)return {estado:'sin_total',sumaLeida};
+  const diffSinIva=Math.abs(sumaLeida-totalFactura)/totalFactura;
+  const sumaConIva=sumaLeida*(1+FC_IVA);
+  const diffConIva=Math.abs(sumaConIva-totalFactura)/totalFactura;
+  if(diffSinIva<0.02)return {estado:'detectado',incluye_iva:true,confianza:'alta',sumaLeida,totalFactura};
+  if(diffConIva<0.02)return {estado:'detectado',incluye_iva:false,confianza:'alta',sumaLeida,sumaConIva,totalFactura};
+  if(diffSinIva<0.05||diffConIva<0.05){
+    return {estado:'detectado',incluye_iva:diffSinIva<diffConIva,confianza:'media',sumaLeida,sumaConIva,totalFactura};
+  }
+  return {estado:'conflicto',sumaLeida,sumaConIva,totalFactura};
+}
+function fcRenderIvaBanner(){
+  const el=document.getElementById('fc-iva-banner');
+  const totalInp=document.getElementById('fc-total-factura');
+  const totalFactura=totalInp?(+totalInp.value||0):0;
+  const r=fcValidarIva(_fcItems,totalFactura);
+  if(r.estado==='sin_total'){
+    el.className='fc-iva-banner';el.classList.remove('hidden');
+    el.innerHTML='⚠️ No se detectó el total de la factura. Ingrésalo para validar automáticamente si los costos incluyen IVA:<br>'+
+      '<input id="fc-total-factura" inputmode="numeric" placeholder="Ej: 45000" value="'+(totalFactura||'')+'">';
+    document.getElementById('fc-total-factura').addEventListener('change',fcRenderIvaBanner);
+    return;
+  }
+  if(r.estado==='conflicto'){
+    el.className='fc-iva-banner conflicto';el.classList.remove('hidden');
+    el.innerHTML='⚠️ Los costos leídos ('+peso(Math.round(r.sumaLeida))+' sin IVA / '+peso(Math.round(r.sumaConIva))+' con IVA) no calzan con el total de la factura ('+peso(totalFactura)+'). Revisa el toggle de IVA fila por fila.';
+    return;
+  }
+  el.className='fc-iva-banner ok';el.classList.remove('hidden');
+  el.innerHTML='✓ IVA '+(r.incluye_iva?'incluido':'NO incluido')+' en los costos leídos (confianza '+r.confianza+') — aplicado a todas las filas.';
+  _fcItems.forEach(it=>{ if(it.margen==null) it.incluye_iva=r.incluye_iva; }); // no pisa filas ya editadas a mano
 }
 function fcRenderResultados(){
   document.getElementById('fc-paso-foto').classList.add('hidden');
   const wrap=document.getElementById('fc-resultados');wrap.classList.remove('hidden');
   const list=document.getElementById('fc-list');
+  // Detección Chocman: preinicializa el toggle "viene por caja" (32 u) una sola vez, el
+  // usuario puede desmarcarlo o corregir el número — deja de ser una excepción invisible.
+  _fcItems.forEach(it=>{
+    if(it.viene_por_caja===undefined){
+      const esChocman=it.margen==null&&fcEsChocman(it.producto);
+      it.viene_por_caja=esChocman;
+      it.unidades_por_caja=esChocman?FC_DIVISOR_CHOCMAN:(it.unidades_por_caja||'');
+    }
+  });
   list.innerHTML=_fcItems.map(it=>{
     const esEdicion=it.margen!=null;
     const margen=esEdicion?it.margen:(FC_MARGEN_POR_CATEGORIA[it.categoria_sugerida]||FC_MARGEN_POR_CATEGORIA.otro);
-    const costoBruto=esEdicion?it.costo_unitario:fcCostoConIva(it.costo_unitario,it.incluye_iva);
-    const esChocman=!esEdicion&&fcEsChocman(it.producto);
-    const costoFinal=esChocman?(costoBruto/FC_DIVISOR_CHOCMAN):costoBruto;
+    const costoConIva=esEdicion?it.costo_unitario:fcCostoConIva(it.costo_unitario,it.incluye_iva);
+    const costoFinal=fcCostoUnitarioReal(costoConIva,it.viene_por_caja,it.unidades_por_caja);
     const venta=fcVenta(costoFinal,margen);
     const {precioFinal,margenReal}=fcCalcularPrecioFinal(costoFinal,margen);
     const meta=esEdicion?['Editando cálculo guardado — vuelve a guardar para actualizarlo']:[
       it.incluye_iva?'costo ya incluía IVA':'+19% IVA aplicado',
-      esChocman?(peso(costoBruto)+' ÷ 32 u (caja Chocman) = '+peso(costoFinal)+'/u'):null,
+      it.viene_por_caja&&it.unidades_por_caja?(peso(costoConIva)+' ÷ '+it.unidades_por_caja+' u = '+peso(Math.round(costoFinal))+'/u'):null,
       'categoría sugerida: '+it.categoria_sugerida
     ].filter(Boolean);
+    const proveedores=Array.from(new Set((DB&&DB.items?DB.items.map(p=>p.prov):[]).filter(Boolean))).sort();
+    const sectores=Array.from(new Set((DB&&DB.items?DB.items.map(p=>p.categoria||p.sector).filter(Boolean):[])));
     return `<div class="fc-row" data-id="${it.id}">
       <input class="fc-row-name" value="${String(it.producto).replace(/"/g,'&quot;')}" data-f="producto">
+      <div class="fc-chips-row">
+        <span class="fc-chip">Prov: <select data-f="proveedor">
+          <option value="">— sin proveedor —</option>
+          ${proveedores.map(p=>`<option value="${p}"${it.proveedor===p?' selected':''}>${p}</option>`).join('')}
+        </select></span>
+        <span class="fc-chip">Sector: <select data-f="sector">
+          <option value="">— sin sector —</option>
+          ${sectores.map(s=>`<option value="${s}"${it.sector===s?' selected':''}>${s}</option>`).join('')}
+        </select></span>
+      </div>
+      <div class="fc-caja-row">
+        <label><input type="checkbox" data-f="viene_por_caja"${it.viene_por_caja?' checked':''}> 📦 Viene por caja</label>
+      </div>
+      <div class="fc-field${it.viene_por_caja?'':' hidden'}" data-caja-wrap style="margin-bottom:8px">
+        <label>Unidades por caja</label>
+        <input inputmode="numeric" value="${it.unidades_por_caja||''}" data-f="unidades_por_caja" placeholder="Ej: 24">
+      </div>
       <div class="fc-grid">
         <div class="fc-field"><label>Costo unitario</label><input inputmode="numeric" value="${Math.round(costoFinal)}" data-f="costo"></div>
         <div class="fc-field"><label>Margen % objetivo</label><input inputmode="numeric" value="${margen}" data-f="margen"></div>
-        <div class="fc-field fc-out"><label>Precio venta exacto</label><input inputmode="numeric" value="${Math.round(venta)}" data-f="venta"></div>
+        <div class="fc-field fc-out"><label>Precio venta exacto</label><input inputmode="numeric" value="${Math.round(venta)}" data-f="venta" readonly></div>
         <div class="fc-field fc-out fc-psico"><label>Precio final</label><input inputmode="numeric" value="${precioFinal}" data-f="psico"></div>
       </div>
+      <button class="fc-manual-btn" type="button">✎ Corregir manualmente (costo/margen leídos por la IA)</button>
       <div class="fc-row-margin-real">Margen real con este precio: <b>${margenReal.toFixed(1)}%</b></div>
       <div class="fc-row-meta">${meta.join(' · ')}</div>
+      <div class="fc-field" style="margin-top:8px">
+        <label>📅 Fecha de vencimiento (opcional)</label>
+        <input type="date" data-f="fecha_vencimiento" value="${it.fecha_vencimiento||''}">
+      </div>
       <div class="fc-field" style="margin-top:8px">
         <label>📦 Cantidad recibida (opcional — suma el stock en Loyverse al guardar)</label>
         <input inputmode="numeric" placeholder="Ej: 12" data-f="cantidad_recibida">
       </div>
       <div class="fc-link">
         <button class="fc-link-btn" type="button">🔗 Asociar a producto existente</button>
+        <button class="fc-link-btn" type="button" data-crear="1" style="margin-top:6px">➕ Crear producto nuevo con estos datos</button>
         <div class="fc-link-body hidden"></div>
+        <div class="fc-crear-body hidden"></div>
       </div>
     </div>`;
   }).join('');
+  fcRenderIvaBanner();
 }
-// ---- Asociar producto del catálogo a una línea de factura (feature 2) ----
+// ---- Feature 3: crear producto nuevo desde la factura, sin salir de la vista ----
+// No duplica la lógica de creación en Loyverse (categorías reales, impuestos, etc.) —
+// reutiliza el modal "Crear producto" (cp-ov) ya existente y probado, solo lo prellena
+// con lo que ya se calculó en la fila. Al guardar ahí, el usuario vuelve solo a la
+// factura (cp-ov se cierra) y puede seguir revisando el resto de las líneas.
+function fcAbrirPanelCrear(row){
+  const g=f=>{const el=row.querySelector(`[data-f="${f}"]`);return el?el.value:'';};
+  const nombre=g('producto').trim();
+  const costo=+g('costo')||0;
+  const precio=+g('psico')||+g('venta')||0;
+  cpAbrir();
+  setTimeout(()=>{ // cpAbrir() carga catálogo/categorías async — se rellena en el siguiente tick
+    const nombreInp=document.getElementById('cp-nombre');if(nombreInp)nombreInp.value=nombre;
+    const costoInp=document.getElementById('cp-costo');if(costoInp)costoInp.value=costo||'';
+    const precioInp=document.getElementById('cp-precio');if(precioInp)precioInp.value=precio||'';
+    const provSel=document.getElementById('cp-proveedor');
+    const provVal=row.querySelector('[data-f="proveedor"]').value;
+    if(provSel&&provVal)provSel.value=provVal;
+    const sectorSel=document.getElementById('cp-sector');
+    const sectorVal=row.querySelector('[data-f="sector"]').value;
+    if(sectorSel&&sectorVal)sectorSel.value=sectorVal;
+    const fechaVal=row.querySelector('[data-f="fecha_vencimiento"]').value;
+    const fechaInp=document.getElementById('cp-fecha');
+    if(fechaInp&&fechaVal)fechaInp.value=fechaVal;
+    try{cpValidar();}catch(e){}
+    showToast('Datos de la factura precargados — revisa la categoría y guarda');
+  },150);
+}
 // Reusa DB.items (ya cargado) y la acción editar_precio (ya existente) — no toca el OCR
 // ni ninguna lógica de base de datos nueva. Coincidencia simple por palabras en común
 // (suficiente para sugerir, el usuario siempre confirma tocando o buscando a mano).
@@ -5480,10 +5603,27 @@ function fcAsociarProducto(row,producto){
   });
 }
 document.getElementById('fc-list').addEventListener('click',ev=>{
-  const linkBtn=ev.target.closest('.fc-link-btn');
+  const linkBtn=ev.target.closest('.fc-link-btn:not([data-crear])');
   if(linkBtn){
     const row=linkBtn.closest('.fc-row');
     fcAbrirPanelLink(row.querySelector('.fc-link-body'),row.querySelector('[data-f="producto"]').value);
+    return;
+  }
+  const crearBtn=ev.target.closest('.fc-link-btn[data-crear]');
+  if(crearBtn){
+    const row=crearBtn.closest('.fc-row');
+    fcAbrirPanelCrear(row);
+    return;
+  }
+  const manualBtn=ev.target.closest('.fc-manual-btn');
+  if(manualBtn){
+    const row=manualBtn.closest('.fc-row');
+    ['costo','margen'].forEach(f=>{
+      const inp=row.querySelector(`[data-f="${f}"]`);
+      inp.readOnly=false;inp.classList.add('fc-manual-edit');
+    });
+    row.querySelector('[data-f="costo"]').focus();
+    manualBtn.disabled=true;manualBtn.textContent='✓ Edición manual activada — corrige costo/margen arriba';
     return;
   }
   const sugItem=ev.target.closest('.fc-link-sug-item');
@@ -5502,11 +5642,41 @@ document.getElementById('fc-list').addEventListener('click',ev=>{
     return;
   }
 });
+document.getElementById('fc-list').addEventListener('change',ev=>{
+  const chk=ev.target.closest('[data-f="viene_por_caja"]');
+  if(chk){
+    const row=chk.closest('.fc-row');
+    const wrap=row.querySelector('[data-caja-wrap]');
+    wrap.classList.toggle('hidden',!chk.checked);
+    fcRecalcularFila(row);
+    return;
+  }
+  if(ev.target.dataset.f==='unidades_por_caja'){
+    fcRecalcularFila(ev.target.closest('.fc-row'));
+    return;
+  }
+});
 document.getElementById('fc-list').addEventListener('input',ev=>{
   if(!ev.target.classList.contains('fc-link-search'))return;
   fcActualizarMenuBusqueda(ev.target);
 });
+// Recalcula costo/venta/precio/margen de una fila considerando: costo base, caja→unidad
+// (feature 6) y el margen objetivo — usada por edición manual, toggle de caja y cambios de
+// costo/margen. No recalcula el costo si el usuario ya activó edición manual sobre él (ese
+// input pasa a ser la fuente de verdad, no se le vuelve a aplicar la conversión de caja).
 function fcRecalcularFila(row){
+  const cajaChk=row.querySelector('[data-f="viene_por_caja"]');
+  const costoInp=row.querySelector('[data-f="costo"]');
+  if(cajaChk&&!costoInp.classList.contains('fc-manual-edit')){
+    const idx=_fcItems.findIndex(x=>x.id===row.dataset.id);
+    if(idx>-1){
+      const it=_fcItems[idx];
+      it.viene_por_caja=cajaChk.checked;
+      it.unidades_por_caja=+row.querySelector('[data-f="unidades_por_caja"]').value||0;
+      const costoConIva=it.margen!=null?it.costo_unitario:fcCostoConIva(it.costo_unitario,it.incluye_iva);
+      costoInp.value=Math.round(fcCostoUnitarioReal(costoConIva,it.viene_por_caja,it.unidades_por_caja));
+    }
+  }
   const costo=+row.querySelector('[data-f="costo"]').value||0;
   const margen=+row.querySelector('[data-f="margen"]').value||0;
   const {ventaExacta,precioFinal,margenReal}=fcCalcularPrecioFinal(costo,margen);
@@ -5548,7 +5718,9 @@ document.getElementById('fc-guardar').onclick=async()=>{
     if(cantidad<=0)return;
     if(row.dataset.sincronizadoRef){
       const g=f=>row.querySelector(`[data-f="${f}"]`).value;
-      recepciones.push({sku:row.dataset.sincronizadoRef,nombre:row.dataset.sincronizadoNombre||g('producto'),cantidad,costo:+g('costo')||undefined,precio:+g('psico')||undefined});
+      const fechaVencInput=row.querySelector('[data-f="fecha_vencimiento"]').value; // "YYYY-MM-DD" del <input type=date>
+      const fechaVenc=fechaVencInput?fmtDateInputToDDMMAAAA(fechaVencInput):null; // -> "DD/MM/AAAA", formato que espera accionLoteNuevo
+      recepciones.push({sku:row.dataset.sincronizadoRef,nombre:row.dataset.sincronizadoNombre||g('producto'),cantidad,costo:+g('costo')||undefined,precio:+g('psico')||undefined,fechaVencimiento:fechaVenc});
     }else{
       filasSinVincularConCantidad.push(row.querySelector('[data-f="producto"]').value.trim());
     }
@@ -5577,13 +5749,21 @@ document.getElementById('fc-guardar').onclick=async()=>{
         let sumadas=0,fallidas=[];
         for(const r of recepciones){
           try{
-            const rr=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'lote_nuevo',payload:{sku:r.sku,cantidad:r.cantidad,costo:r.costo,precio:r.precio}})});
+            const rr=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'lote_nuevo',payload:{sku:r.sku,cantidad:r.cantidad,costo:r.costo,precio:r.precio,fechaVencimiento:r.fechaVencimiento}})});
             const rj=await rr.json();
-            if(rj&&rj.ok)sumadas++;else fallidas.push(r.nombre);
+            if(rj&&rj.ok){
+              sumadas++;
+              // Feature 2: la mercadería ya llegó — quita el aviso "ya pedido" para que no
+              // siga apareciendo como pendiente al buscar este producto.
+              if(DB.pendBySku)delete DB.pendBySku[r.sku];
+              const prodDB=DB.items&&DB.items.find(it=>it.ref===r.sku);
+              if(prodDB&&prodDB.barcode&&DB.pendByBarcode)delete DB.pendByBarcode[prodDB.barcode];
+            }else fallidas.push(r.nombre);
           }catch(e){fallidas.push(r.nombre);}
         }
         if(sumadas)showToast('📦 Stock sumado en '+sumadas+' producto(s)');
         if(fallidas.length)showToast('⚠️ No se pudo sumar stock de: '+fallidas.join(', '));
+        if(sumadas)render();
       }
       // Ya no se cierra el modal al guardar: solo se reinicia a la pantalla de "Tomar
       // foto / Subir de Galería", lista para escanear el siguiente documento sin que el
