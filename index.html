@@ -5073,8 +5073,12 @@ document.getElementById('mcg-aplicar-seleccion').onclick=async()=>{
     const j=await res.json();
     if(!j||!j.ok)throw new Error((j&&j.error)||'No se pudo aplicar');
     const extra=j.agregadosComoAdicional?(' · '+j.agregadosComoAdicional+' ya tenían otro proveedor: se sumó como adicional'):'';
-    showToast('✓ '+skus.length+' producto(s) actualizados'+extra);
-    mcRefrescarChipActivo(provId?skus.length:0,sectorVal?skus.length:0);
+    // Usa el conteo REAL que devuelve el backend (filas que de verdad cambiaron), no
+    // skus.length (lo marcado) — antes decía "actualizados" aunque el UPDATE no tocara nada.
+    const realProv=j.actualizadosProveedor||0, realSect=j.actualizadosSector||0;
+    const totalReal=provId&&sectorVal?Math.max(realProv,realSect):(provId?realProv:realSect);
+    showToast('✓ '+totalReal+' producto(s) actualizados'+extra);
+    mcRefrescarChipActivo(realProv,realSect);
     await mcSeleccionarCategoria(_mcCategoriaActiva); // recarga la lista con el estado real
   }catch(e){
     showToast('❌ '+e.message);
