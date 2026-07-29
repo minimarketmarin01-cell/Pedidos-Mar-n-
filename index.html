@@ -743,6 +743,16 @@ html.modo-bliss .fila-pedir .qword{text-align:center;max-width:100px;font-size:9
 .mc-detalle-row input[type=checkbox]{width:17px;height:17px;flex:none}
 .mc-detalle-row .mc-dr-nom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mc-detalle-row .mc-dr-actual{font-size:10px;color:var(--muted);white-space:nowrap}
+/* Requisito 2: color por estado — un punto lateral + tinte muy sutil de fondo, sin tocar el
+   tamaño/contraste del checkbox ni del nombre (que siguen en var(--ink) normal). */
+.mc-dr-dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--line)}
+.mc-dr-vacio .mc-dr-dot{background:var(--muted)}
+.mc-dr-soloprov{background:var(--azul-bg,#EAF2FD)}
+.mc-dr-soloprov .mc-dr-dot{background:var(--azul,#3C6FB0)}
+.mc-dr-solosect{background:var(--gold-bg,#FDF3E3)}
+.mc-dr-solosect .mc-dr-dot{background:var(--gold,#C9A15A)}
+.mc-dr-completo{background:var(--wa-bg,#E8F7EE)}
+.mc-dr-completo .mc-dr-dot{background:var(--wa-d,#2E9B5C)}
 .fc-track-warn{margin-top:7px;padding:9px 10px;border-radius:9px;background:#FFF4E5;border:1.5px solid var(--gold);font-size:11.5px;line-height:1.45;color:var(--ink2)}
 .fc-track-warn.hidden{display:none}
 .fc-track-warn button{width:100%;margin-top:7px;min-height:40px;font-size:12px}
@@ -4909,10 +4919,9 @@ function mcRender(){
   if(!total){cont.innerHTML='<div class="vc-empty">Sin resultados.</div>';document.getElementById('mc-cargar-mas').classList.add('hidden');return;}
   const visibles=_mcFiltradas.slice(0,_mcMostradas);
   cont.innerHTML=visibles.map(c=>{
-    const opcionesProv='<option value="">— No es proveedor —</option><option value="__nuevo__">➕ Crear proveedor nuevo…</option>'+_psProveedores.map(pr=>`<option value="${pr.id}">${pr.nombre}</option>`).join('');
-    const opcionesSector='<option value="">— Sin sector —</option><option value="__nuevo__">➕ Crear sector nuevo…</option>'+_psSectores.map(s=>`<option value="${s}">${s}</option>`).join('');
     const completo=(c.sin_proveedor|0)===0&&(c.sin_sector|0)===0;
-    return `<div class="fp-row" style="flex-direction:column;align-items:stretch;gap:8px;padding:12px 0" data-mc-categoria="${c.categoria.replace(/"/g,'&quot;')}">
+    const mid='mc'+c.categoria.replace(/[^a-zA-Z0-9]/g,'');
+    return `<div class="fp-row" style="flex-direction:column;align-items:stretch;gap:8px;padding:12px 0" data-mc-categoria="${c.categoria.replace(/"/g,'&quot;')}" data-mc-id="${mid}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
         <div>
           <div style="font-weight:700;font-size:13.5px">${c.categoria}</div>
@@ -4920,9 +4929,27 @@ function mcRender(){
         </div>
         <span style="font-size:10.5px;font-weight:700;color:${completo?'var(--wa-d)':'var(--muted)'};background:${completo?'var(--wa-bg,#e8f7ee)':'var(--paper)'};padding:3px 8px;border-radius:20px;white-space:nowrap">${c.total} prod${completo?' · completo':' · '+(c.sin_proveedor||0)+' sin prov / '+(c.sin_sector||0)+' sin sect'}</span>
       </div>
-      <div style="display:flex;gap:8px">
-        <select class="mc-sel-proveedor" style="flex:1;min-width:0;padding:9px 8px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff">${opcionesProv}</select>
-        <select class="mc-sel-sector" style="flex:1;min-width:0;padding:9px 8px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff">${opcionesSector}</select>
+      <div class="fc-ps-grid" style="margin-bottom:0">
+        <div class="fc-ps-field">
+          <label>Proveedor</label>
+          <div class="fc-ps-line">
+            <div class="cat-combo" id="${mid}prov-combo">
+              <input id="${mid}prov-input" class="cat-combo-input" placeholder="Buscar proveedor…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+              <select id="${mid}prov" class="mc-sel-proveedor" style="display:none"><option value="">No es proveedor</option></select>
+              <div class="cat-combo-menu hidden" id="${mid}prov-menu" role="listbox"></div>
+            </div>
+          </div>
+        </div>
+        <div class="fc-ps-field">
+          <label>Sector</label>
+          <div class="fc-ps-line">
+            <div class="cat-combo" id="${mid}sect-combo">
+              <input id="${mid}sect-input" class="cat-combo-input" placeholder="Buscar sector…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+              <select id="${mid}sect" class="mc-sel-sector" style="display:none"><option value="">Sin sector</option></select>
+              <div class="cat-combo-menu hidden" id="${mid}sect-menu" role="listbox"></div>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="mc-prov-nuevabox hidden" style="display:flex;gap:8px">
         <input class="mc-prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px">
@@ -4948,6 +4975,25 @@ function mcRender(){
   const masBtn=document.getElementById('mc-cargar-mas');
   if(_mcMostradas<total){masBtn.classList.remove('hidden');masBtn.textContent='Cargar más ('+(total-_mcMostradas)+' restantes)';}
   else masBtn.classList.add('hidden');
+  // Requisito 1: combos con buscador + "➕ Nuevo" propio de cada categoría, mismo componente
+  // que ya usan Revisión de productos y la Calculadora de precios.
+  visibles.forEach(c=>{
+    const mid='mc'+c.categoria.replace(/[^a-zA-Z0-9]/g,'');
+    if(!document.getElementById(mid+'prov'))return;
+    psLlenarSelects(mid+'prov',mid+'sect',null,null);
+    psInitCombo(mid+'prov',mid+'prov-combo',mid+'prov-input',mid+'prov-menu',mid+'prov','proveedor',texto=>{
+      const fila=document.querySelector(`[data-mc-id="${mid}"]`);
+      const box=fila.querySelector('.mc-prov-nuevabox');
+      box.classList.remove('hidden');
+      const inp=box.querySelector('.mc-prov-nuevonom');inp.value=texto;inp.focus();
+    });
+    psInitCombo(mid+'sect',mid+'sect-combo',mid+'sect-input',mid+'sect-menu',mid+'sect','sector',texto=>{
+      const fila=document.querySelector(`[data-mc-id="${mid}"]`);
+      const box=fila.querySelector('.mc-sector-nuevabox');
+      box.classList.remove('hidden');
+      const inp=box.querySelector('.mc-sector-nuevonom');inp.value=texto;inp.focus();
+    });
+  });
 }
 // ===================== Modo detalle: seleccionar productos dentro de una categoría =====================
 // Carga la lista completa de una categoría UNA vez (queda cacheada en el DOM vía data-cargado);
@@ -4975,9 +5021,19 @@ function mcRenderDetalleLista(det,filtro){
   const visibles=nf?productos.filter(p=>normTxt(p.nombre).indexOf(nf)>-1):productos;
   if(!visibles.length){cont.innerHTML='<div style="padding:10px;color:var(--muted);font-size:11.5px">Sin resultados.</div>';return;}
   cont.innerHTML=visibles.map(p=>{
-    const actual=[p.proveedor_nombre,p.sector].filter(Boolean).join(' · ');
-    return `<label class="mc-detalle-row" data-sku="${p.sku}">
+    const tieneProv=!!p.proveedor_nombre,tieneSect=!!p.sector;
+    // 4 estados (requisito 2): sin clasificar / solo proveedor / solo sector / ambos.
+    // Colores tomados de las variables ya usadas en la app (mismos que "sin proveedor" /
+    // "sin sector" / "completo" del resumen de arriba) — no se inventa paleta nueva.
+    let estadoCls='mc-dr-vacio';
+    if(tieneProv&&tieneSect)estadoCls='mc-dr-completo';
+    else if(tieneProv)estadoCls='mc-dr-soloprov';
+    else if(tieneSect)estadoCls='mc-dr-solosect';
+    const extra=(p.proveedores_adicionales&&p.proveedores_adicionales.length)?(' +'+p.proveedores_adicionales.length):'';
+    const actual=[p.proveedor_nombre?(p.proveedor_nombre+extra):null,p.sector].filter(Boolean).join(' · ');
+    return `<label class="mc-detalle-row ${estadoCls}" data-sku="${p.sku}">
       <input type="checkbox" data-sku="${p.sku}">
+      <span class="mc-dr-dot"></span>
       <span class="mc-dr-nom">${p.nombre}</span>
       <span class="mc-dr-actual">${actual||'sin clasificar'}</span>
     </label>`;
@@ -5099,7 +5155,8 @@ document.getElementById('mc-lista').addEventListener('click',async ev=>{
       const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'mapear_categoria',payload:{categoria,proveedor_id:provId,sector:sectorVal,skus}})});
       const j=await res.json();
       if(!j||!j.ok)throw new Error((j&&j.error)||'No se pudo aplicar');
-      showToast('✓ '+skus.length+' producto(s) actualizados');
+      const extra=j.agregadosComoAdicional?(' · '+j.agregadosComoAdicional+' ya tenían otro proveedor: se sumó como adicional'):'';
+      showToast('✓ '+skus.length+' producto(s) actualizados'+extra);
       mcCargarDetalle(fila,true); // recarga la lista de detalle con el estado real actualizado
       mcCargar(); // refresca los contadores "sin proveedor/sin sector" de todas las tarjetas
     }catch(e){
@@ -5120,7 +5177,8 @@ document.getElementById('mc-lista').addEventListener('click',async ev=>{
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'mapear_categoria',payload:{categoria,proveedor_id:provId,sector:sectorVal}})});
     const j=await res.json();
     if(!j||!j.ok)throw new Error((j&&j.error)||'No se pudo aplicar');
-    showToast('✓ '+categoria+': '+Math.max(j.actualizadosProveedor||0,j.actualizadosSector||0)+' producto(s) actualizados');
+    const extra=j.agregadosComoAdicional?(' · '+j.agregadosComoAdicional+' ya tenían otro proveedor: se sumó como adicional'):'';
+    showToast('✓ '+categoria+': '+Math.max(j.actualizadosProveedor||0,j.actualizadosSector||0)+' producto(s) actualizados'+extra);
     const idx=_mcCategorias.findIndex(c=>c.categoria===categoria);
     if(idx>-1){
       if(provId)_mcCategorias[idx].sin_proveedor=0;
