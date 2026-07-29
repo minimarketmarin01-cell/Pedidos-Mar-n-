@@ -723,10 +723,15 @@ html.modo-bliss .fila-pedir .qword{text-align:center;max-width:100px;font-size:9
 .fc-row-meta{font-size:10.5px;color:var(--muted);margin-top:6px}
 .fc-row-margin-real{font-size:11px;color:var(--ink2);margin-top:7px;font-weight:600}
 .fc-row-margin-real b{color:var(--wa-d)}
-.fc-chips-row{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
-.fc-chip{display:inline-flex;align-items:center;gap:4px;border:1.5px solid var(--line);border-radius:20px;padding:4px 10px;font-size:11px;color:var(--ink2);background:var(--paper);cursor:pointer;white-space:nowrap}
-.fc-chip b{color:var(--ink);font-weight:700}
-.fc-chip select{border:none;background:transparent;font-size:11px;font-weight:700;color:var(--ink);max-width:120px}
+.fc-ps-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:9px}
+.fc-ps-field label{font-size:9.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.03em;display:block;margin-bottom:3px}
+.fc-ps-line{display:flex;gap:6px;align-items:stretch}
+.fc-ps-line .cat-combo{flex:1;min-width:0}
+.fc-ps-line .loadbtn{white-space:nowrap;padding:0 12px;font-size:12px;min-height:40px}
+.fc-ps-nuevabox{display:flex;gap:6px;margin-top:6px}
+.fc-ps-nuevabox input{flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px}
+.fc-ps-nuevabox.hidden{display:none}
+.fc-ps-todos{width:100%;margin-bottom:10px;font-size:12px}
 .fc-caja-row{display:flex;align-items:center;gap:8px;margin:6px 0}
 .fc-caja-row label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2);cursor:pointer}
 .fc-caja-row input[type=checkbox]{width:16px;height:16px}
@@ -1915,6 +1920,7 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
           </select>
         </div>
         <div id="fc-list"></div>
+        <button class="loadbtn fc-ps-todos" id="fc-ps-todos" type="button">📋 Aplicar proveedor/sector de la 1ª fila a todas</button>
         <button class="mm-save" id="fc-guardar" style="margin-top:6px">Guardar cálculos</button>
         <button class="loadbtn" id="fc-otra" style="width:100%;margin-top:8px">Escanear otra factura</button>
       </div>
@@ -5458,19 +5464,39 @@ function fcRenderResultados(){
       it.viene_por_caja&&it.unidades_por_caja?(peso(costoConIva)+' ÷ '+it.unidades_por_caja+' u = '+peso(Math.round(costoFinal))+'/u'):null,
       'categoría sugerida: '+it.categoria_sugerida
     ].filter(Boolean);
-    const proveedores=Array.from(new Set((DB&&DB.items?DB.items.map(p=>p.prov):[]).filter(Boolean))).sort();
-    const sectores=Array.from(new Set((DB&&DB.items?DB.items.map(p=>p.categoria||p.sector).filter(Boolean):[])));
     return `<div class="fc-row" data-id="${it.id}">
       <input class="fc-row-name" value="${String(it.producto).replace(/"/g,'&quot;')}" data-f="producto">
-      <div class="fc-chips-row">
-        <span class="fc-chip">Prov: <select data-f="proveedor">
-          <option value="">— sin proveedor —</option>
-          ${proveedores.map(p=>`<option value="${p}"${it.proveedor===p?' selected':''}>${p}</option>`).join('')}
-        </select></span>
-        <span class="fc-chip">Sector: <select data-f="sector">
-          <option value="">— sin sector —</option>
-          ${sectores.map(s=>`<option value="${s}"${it.sector===s?' selected':''}>${s}</option>`).join('')}
-        </select></span>
+      <div class="fc-ps-grid">
+        <div class="fc-ps-field">
+          <label>Proveedor</label>
+          <div class="fc-ps-line">
+            <div class="cat-combo" id="fcprov-${it.id}-combo">
+              <input id="fcprov-${it.id}-input" class="cat-combo-input" placeholder="Buscar proveedor…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+              <select id="fcprov-${it.id}" style="display:none"><option value="">Sin proveedor</option></select>
+              <div class="cat-combo-menu hidden" id="fcprov-${it.id}-menu" role="listbox"></div>
+            </div>
+            <button class="loadbtn" id="fcprov-${it.id}-nueva" type="button">➕ Nuevo</button>
+          </div>
+          <div class="fc-ps-nuevabox hidden" id="fcprov-${it.id}-nuevabox">
+            <input id="fcprov-${it.id}-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off">
+            <button class="btn-ok loadbtn" id="fcprov-${it.id}-crear" type="button">Crear</button>
+          </div>
+        </div>
+        <div class="fc-ps-field">
+          <label>Sector</label>
+          <div class="fc-ps-line">
+            <div class="cat-combo" id="fcsect-${it.id}-combo">
+              <input id="fcsect-${it.id}-input" class="cat-combo-input" placeholder="Buscar sector…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+              <select id="fcsect-${it.id}" style="display:none"><option value="">Sin sector</option></select>
+              <div class="cat-combo-menu hidden" id="fcsect-${it.id}-menu" role="listbox"></div>
+            </div>
+            <button class="loadbtn" id="fcsect-${it.id}-nueva" type="button">➕ Nuevo</button>
+          </div>
+          <div class="fc-ps-nuevabox hidden" id="fcsect-${it.id}-nuevabox">
+            <input id="fcsect-${it.id}-nuevonom" placeholder="Nombre del sector nuevo" autocomplete="off">
+            <button class="btn-ok loadbtn" id="fcsect-${it.id}-crear" type="button">Crear</button>
+          </div>
+        </div>
       </div>
       <div class="fc-caja-row">
         <label><input type="checkbox" data-f="viene_por_caja"${it.viene_por_caja?' checked':''}> 📦 Viene por caja</label>
@@ -5505,6 +5531,46 @@ function fcRenderResultados(){
     </div>`;
   }).join('');
   fcRenderIvaBanner();
+  // Proveedor/Sector por fila: mismos combos buscables + "➕ Nuevo" que usa Crear producto.
+  // Se reutilizan psLlenarSelects/psInitCombo/psWireNuevoProveedor/psWireNuevoSector tal cual
+  // (cero lógica duplicada); solo cambian los IDs, que acá son únicos por fila (fcprov-<id>).
+  psCargarListas().then(fcWirePS);
+}
+function fcWirePS(){
+  _fcItems.forEach(it=>{
+    const P='fcprov-'+it.id, S='fcsect-'+it.id;
+    if(!document.getElementById(P))return;
+    psLlenarSelects(P,S,it.proveedor_id||null,it.sector||null);
+    psInitCombo(P,P+'-combo',P+'-input',P+'-menu',P,'proveedor',texto=>{
+      const box=document.getElementById(P+'-nuevabox');box.classList.remove('hidden');
+      const inp=document.getElementById(P+'-nuevonom');inp.value=texto;inp.focus();
+    });
+    psInitCombo(S,S+'-combo',S+'-input',S+'-menu',S,'sector',texto=>{
+      const box=document.getElementById(S+'-nuevabox');box.classList.remove('hidden');
+      const inp=document.getElementById(S+'-nuevonom');inp.value=texto;inp.focus();
+    });
+    psWireNuevoProveedor(P+'-nueva',P+'-nuevabox',P+'-nuevonom',P+'-crear',P,S);
+    psWireNuevoSector(S+'-nueva',S+'-nuevabox',S+'-nuevonom',S+'-crear',P,S);
+    // Persiste la elección en _fcItems para que sobreviva a un re-render de la lista
+    // (cambio de redondeo, toggle de caja, etc.) y para precargarla al crear el producto.
+    const pSel=document.getElementById(P),sSel=document.getElementById(S);
+    if(pSel)pSel.addEventListener('change',()=>{it.proveedor_id=pSel.value||null;});
+    if(sSel)sSel.addEventListener('change',()=>{it.sector=sSel.value||null;});
+  });
+}
+// Una factura casi siempre viene de UN proveedor: copia proveedor/sector de la 1ª fila
+// al resto, en vez de obligar a elegir lo mismo 15 veces.
+function fcAplicarPSaTodas(){
+  const primera=_fcItems[0];
+  if(!primera){showToast('No hay filas');return;}
+  const P0=document.getElementById('fcprov-'+primera.id),S0=document.getElementById('fcsect-'+primera.id);
+  const provId=P0?P0.value:'',sector=S0?S0.value:'';
+  if(!provId&&!sector){showToast('Elige proveedor o sector en la primera fila');return;}
+  _fcItems.forEach(it=>{
+    it.proveedor_id=provId||null;it.sector=sector||null;
+    psLlenarSelects('fcprov-'+it.id,'fcsect-'+it.id,provId||null,sector||null);
+  });
+  showToast('✓ Proveedor/sector aplicado a '+_fcItems.length+' fila(s)');
 }
 // ---- Feature 3: crear producto nuevo desde la factura, sin salir de la vista ----
 // No duplica la lógica de creación en Loyverse (categorías reales, impuestos, etc.) —
@@ -5513,26 +5579,28 @@ function fcRenderResultados(){
 // factura (cp-ov se cierra) y puede seguir revisando el resto de las líneas.
 function fcAbrirPanelCrear(row){
   const g=f=>{const el=row.querySelector(`[data-f="${f}"]`);return el?el.value:'';};
+  const id=row.dataset.id;
   const nombre=g('producto').trim();
   const costo=+g('costo')||0;
   const precio=+g('psico')||+g('venta')||0;
+  const provSel=document.getElementById('fcprov-'+id);
+  const sectSel=document.getElementById('fcsect-'+id);
+  const provId=provSel?provSel.value:'';
+  const sector=sectSel?sectSel.value:'';
+  const fechaVal=g('fecha_vencimiento');
   cpAbrir();
-  setTimeout(()=>{ // cpAbrir() carga catálogo/categorías async — se rellena en el siguiente tick
+  setTimeout(()=>{ // cpAbrir() carga catálogo/proveedores async — se rellena en el siguiente tick
     const nombreInp=document.getElementById('cp-nombre');if(nombreInp)nombreInp.value=nombre;
     const costoInp=document.getElementById('cp-costo');if(costoInp)costoInp.value=costo||'';
     const precioInp=document.getElementById('cp-precio');if(precioInp)precioInp.value=precio||'';
-    const provSel=document.getElementById('cp-proveedor');
-    const provVal=row.querySelector('[data-f="proveedor"]').value;
-    if(provSel&&provVal)provSel.value=provVal;
-    const sectorSel=document.getElementById('cp-sector');
-    const sectorVal=row.querySelector('[data-f="sector"]').value;
-    if(sectorSel&&sectorVal)sectorSel.value=sectorVal;
-    const fechaVal=row.querySelector('[data-f="fecha_vencimiento"]').value;
+    // Usa el mismo helper que Crear producto para que el combo visible (input) y el select
+    // oculto queden sincronizados — setear .value del select solo no actualiza lo que se ve.
+    if(provId||sector)psLlenarSelects('cp-proveedor','cp-sector',provId||null,sector||null);
     const fechaInp=document.getElementById('cp-fecha');
     if(fechaInp&&fechaVal)fechaInp.value=fechaVal;
     try{cpValidar();}catch(e){}
     showToast('Datos de la factura precargados — revisa la categoría y guarda');
-  },150);
+  },250);
 }
 // Reusa DB.items (ya cargado) y la acción editar_precio (ya existente) — no toca el OCR
 // ni ninguna lógica de base de datos nueva. Coincidencia simple por palabras en común
@@ -5691,6 +5759,7 @@ document.getElementById('fc-list').addEventListener('input',ev=>{
   const row=inp.closest('.fc-row');if(!row)return;
   fcRecalcularFila(row);
 });
+document.getElementById('fc-ps-todos').onclick=fcAplicarPSaTodas;
 document.getElementById('fc-round-mode').addEventListener('change',ev=>{
   _fcRoundMode=ev.target.value;
   // "recalcular inmediatamente todos los precios de la factura"
@@ -5764,6 +5833,31 @@ document.getElementById('fc-guardar').onclick=async()=>{
         if(sumadas)showToast('📦 Stock sumado en '+sumadas+' producto(s)');
         if(fallidas.length)showToast('⚠️ No se pudo sumar stock de: '+fallidas.join(', '));
         if(sumadas)render();
+      }
+      // Proveedor/Sector (solo-D1) de las filas ya vinculadas a un producto real. Se manda
+      // con editar_producto, el mismo endpoint que usa la Ficha — no hay lógica nueva en el
+      // backend. Las filas sin vincular no se tocan: sus valores quedan como borrador y se
+      // precargan si el usuario crea el producto desde la propia factura.
+      const clasificaciones=[];
+      Array.from(rows).forEach(row=>{
+        if(!row.dataset.sincronizadoRef)return;
+        const id=row.dataset.id;
+        const pSel=document.getElementById('fcprov-'+id),sSel=document.getElementById('fcsect-'+id);
+        const provId=pSel?pSel.value:'',sector=sSel?sSel.value:'';
+        if(!provId&&!sector)return;
+        clasificaciones.push({sku:row.dataset.sincronizadoRef,proveedor_id:provId||null,sector:sector||null});
+      });
+      if(clasificaciones.length){
+        let okPS=0,failPS=0;
+        for(const c of clasificaciones){
+          try{
+            const rp=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_producto',payload:c})});
+            const jp=await rp.json();
+            if(jp&&jp.ok)okPS++;else failPS++;
+          }catch(e){failPS++;}
+        }
+        if(okPS)showToast('🏷️ Proveedor/sector guardado en '+okPS+' producto(s)');
+        if(failPS)showToast('⚠️ No se pudo guardar proveedor/sector en '+failPS+' producto(s)');
       }
       // Ya no se cierra el modal al guardar: solo se reinicia a la pantalla de "Tomar
       // foto / Subir de Galería", lista para escanear el siguiente documento sin que el
