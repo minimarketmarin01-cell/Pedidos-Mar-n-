@@ -738,6 +738,15 @@ html.modo-bliss .fila-pedir .qword{text-align:center;max-width:100px;font-size:9
 .fc-ps-nuevabox.hidden{display:none}
 .fc-ps-todos{width:100%;margin-bottom:10px;font-size:12px}
 .mc-detalle{border-top:1px dashed var(--line);padding-top:10px;margin-top:2px}
+/* Chips de categoría (rediseño sticky) — reemplazan el scroll entre bloques repetidos.
+   scrollbar-width:none / ::-webkit-scrollbar oculta la barra mientras conserva el gesto de
+   deslizar, mismo patrón que .shc-row ya usa en Pedidos. */
+.mc-chip{flex:none;display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:20px;border:1.5px solid var(--line);background:var(--paper);font-size:12px;font-weight:600;color:var(--ink2);white-space:nowrap;cursor:pointer}
+.mc-chip.activo{background:var(--ink);border-color:var(--ink);color:#fff}
+.mc-chip-n{font-size:10px;color:var(--muted);font-weight:700}
+.mc-chip.activo .mc-chip-n{color:rgba(255,255,255,.65)}
+.mc-chip-pend{background:var(--gold);color:#fff;font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:10px}
+#mc-chips::-webkit-scrollbar{display:none}
 .mc-detalle-row{display:flex;align-items:center;gap:8px;padding:6px 2px;border-bottom:1px solid var(--paper);font-size:12px}
 .mc-detalle-row:last-child{border-bottom:none}
 .mc-detalle-row input[type=checkbox]{width:17px;height:17px;flex:none}
@@ -1901,21 +1910,62 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
 </div>
 
 <div class="mm-ov hidden" id="mc-ov">
-  <div class="mm-card">
+  <div class="mm-card" style="display:flex;flex-direction:column;max-height:88vh">
     <div class="mm-head"><h3>🗂️ Mapeo de categorías</h3></div>
-    <div class="mm-body" style="padding-bottom:0">
-      <p style="font-size:12.5px;color:var(--muted);margin:0 0 10px;line-height:1.5">Estas son las categorías reales de Loyverse en tu catálogo. Para las que en realidad son un proveedor, elegí el proveedor y el sector — se aplica a todos sus productos de una vez (sin pisar los que ya tengan algo asignado).</p>
-      <div id="mc-desglose" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
-      <input id="mc-buscar" placeholder="Buscar categoría…" autocomplete="off" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;margin-bottom:10px">
-      <div id="mc-contador" style="font-size:11.5px;color:var(--muted);margin-bottom:8px"></div>
+
+    <!-- HEADER STICKY: proveedor + sector + acciones. Se define UNA vez para todas las
+         categorías — ya no se repite por categoría, que era el problema a resolver. -->
+    <div id="mc-sticky" style="position:sticky;top:0;z-index:5;background:var(--card);padding:0 16px 10px;border-bottom:1px solid var(--line)">
+      <div id="mc-desglose" style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0"></div>
+      <div class="fc-ps-grid" style="margin-bottom:8px">
+        <div class="fc-ps-field">
+          <label>Proveedor</label>
+          <div class="cat-combo" id="mcg-prov-combo">
+            <input id="mcg-prov-input" class="cat-combo-input" placeholder="Buscar proveedor…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+            <select id="mcg-prov" style="display:none"><option value="">No es proveedor</option></select>
+            <div class="cat-combo-menu hidden" id="mcg-prov-menu" role="listbox"></div>
+          </div>
+        </div>
+        <div class="fc-ps-field">
+          <label>Sector</label>
+          <div class="cat-combo" id="mcg-sect-combo">
+            <input id="mcg-sect-input" class="cat-combo-input" placeholder="Buscar sector…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+            <select id="mcg-sect" style="display:none"><option value="">Sin sector</option></select>
+            <div class="cat-combo-menu hidden" id="mcg-sect-menu" role="listbox"></div>
+          </div>
+        </div>
+      </div>
+      <div class="mc-prov-nuevabox hidden" id="mcg-prov-nuevabox" style="display:flex;gap:8px;margin-bottom:8px">
+        <input id="mcg-prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px">
+        <button class="btn-ok loadbtn" id="mcg-prov-crear" type="button" style="white-space:nowrap;padding:8px 10px">Crear</button>
+      </div>
+      <div class="mc-sector-nuevabox hidden" id="mcg-sect-nuevabox" style="display:flex;gap:8px;margin-bottom:8px">
+        <input id="mcg-sect-nuevonom" placeholder="Nombre del sector nuevo" autocomplete="off" style="flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px">
+        <button class="btn-ok loadbtn" id="mcg-sect-crear" type="button" style="white-space:nowrap;padding:8px 10px">Crear</button>
+      </div>
+      <button class="btn-ok loadbtn" id="mcg-aplicar-seleccion" type="button" style="width:100%;padding:9px;font-size:13px">Aplicar a seleccionados (0)</button>
+      <button class="loadbtn" id="mcg-aplicar-categoria" type="button" style="width:100%;padding:8px;margin-top:6px;font-size:11.5px">Aplicar a TODA la categoría actual</button>
+
+      <!-- Chips de categoría — reemplazan el scroll entre bloques repetidos: uno por
+           categoría, con contador de pendientes; tocar uno cambia qué ve la lista de abajo. -->
+      <div id="mc-chips" style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:10px 0 2px"></div>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <input id="mc-detalle-buscar" placeholder="Filtrar dentro de la categoría…" autocomplete="off" style="flex:1;min-width:0;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12px">
+        <button class="loadbtn" id="mc-marcar-todos" type="button" style="white-space:nowrap;font-size:11px;padding:0 10px">Todos</button>
+        <button class="loadbtn" id="mc-desmarcar-todos" type="button" style="white-space:nowrap;font-size:11px;padding:0 10px">Ninguno</button>
+      </div>
     </div>
-    <div class="mm-body" style="padding-top:0;max-height:56vh;overflow-y:auto" id="mc-lista"><div class="vc-empty">Cargando…</div></div>
-    <div class="mm-body" style="padding-top:0">
+
+    <!-- LISTA: scroll propio, independiente del header sticky de arriba. -->
+    <div id="mc-lista" style="flex:1;min-height:0;overflow-y:auto;padding:8px 16px"><div class="vc-empty">Cargando…</div></div>
+
+    <div class="mm-body" style="padding-top:8px;flex:none">
       <button class="loadbtn hidden" id="mc-cargar-mas" style="width:100%;margin-bottom:8px"></button>
       <button class="loadbtn" id="mc-cerrar" style="width:100%">Cerrar</button>
     </div>
   </div>
 </div>
+
 
 <div class="mm-ov hidden" id="fc-ov">
   <div class="mm-card">
@@ -4869,36 +4919,51 @@ document.getElementById('rv-lista').addEventListener('click',async ev=>{
   await rvGuardarFila(fila);
 });
 
-// ===================== MAPEO DE CATEGORÍAS =====================
-let _mcCategorias=[],_mcFiltradas=[],_mcMostradas=0;
-const MC_TAM_PAGINA=40;
+// ===================== MAPEO DE CATEGORÍAS (rediseño: header sticky global) =====================
+// Antes: cada categoría repetía su propio bloque completo (proveedor+sector+botones+lista),
+// forzando scroll entre bloques para trabajar varias categorías seguidas. Ahora: un solo
+// selector de proveedor/sector arriba (sticky) sirve para TODAS las categorías — cambiar de
+// categoría (chip) solo cambia qué productos ve la lista de abajo, sin perder la selección
+// de proveedor/sector ni recargar el header.
+let _mcCategorias=[],_mcCategoriaActiva=null,_mcProductos=[],_mcCargando=false;
 document.getElementById('mas-q-categorias').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');mcAbrir();};
 document.getElementById('mc-cerrar').onclick=()=>cerrarModal('mc-ov');
-document.getElementById('mc-buscar').addEventListener('input',ev=>mcFiltrar(ev.target.value));
-document.getElementById('mc-cargar-mas').onclick=()=>{_mcMostradas+=MC_TAM_PAGINA;mcRender();};
+document.getElementById('mc-cargar-mas').onclick=()=>{}; // placeholder: los chips no paginan (ver mcRenderChips)
+
 function mcAbrir(){
-  document.getElementById('mc-buscar').value='';
   abrirModal('mc-ov');
-  mcCargar();
+  mcCargarCategorias();
+  psCargarListas().then(()=>{
+    psLlenarSelects('mcg-prov','mcg-sect',null,null);
+    psInitCombo('mcg-prov','mcg-prov-combo','mcg-prov-input','mcg-prov-menu','mcg-prov','proveedor',texto=>{
+      document.getElementById('mcg-prov-nuevabox').classList.remove('hidden');
+      const inp=document.getElementById('mcg-prov-nuevonom');inp.value=texto;inp.focus();
+    });
+    psInitCombo('mcg-sect','mcg-sect-combo','mcg-sect-input','mcg-sect-menu','mcg-sect','sector',texto=>{
+      document.getElementById('mcg-sect-nuevabox').classList.remove('hidden');
+      const inp=document.getElementById('mcg-sect-nuevonom');inp.value=texto;inp.focus();
+    });
+  });
+  psWireNuevoProveedor('mcg-prov-nueva','mcg-prov-nuevabox','mcg-prov-nuevonom','mcg-prov-crear','mcg-prov','mcg-sect');
+  psWireNuevoSector('mcg-sect-nueva','mcg-sect-nuevabox','mcg-sect-nuevonom','mcg-sect-crear','mcg-prov','mcg-sect');
 }
-async function mcCargar(){
+async function mcCargarCategorias(){
   document.getElementById('mc-lista').innerHTML='<div class="vc-empty">Cargando…</div>';
-  document.getElementById('mc-contador').textContent='';
+  document.getElementById('mc-chips').innerHTML='';
   try{
-    await psCargarListas();
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=categorias_resumen');
     const j=await res.json();
     if(!j||!j.ok)throw new Error((j&&j.error)||'respuesta inválida');
     _mcCategorias=j.categorias||[];
     mcPintarDesglose(j.desglose||{});
-    mcFiltrar(document.getElementById('mc-buscar').value);
+    mcRenderChips();
+    if(_mcCategorias.length)mcSeleccionarCategoria(_mcCategorias[0].categoria);
   }catch(e){
     document.getElementById('mc-lista').innerHTML='<div class="vc-empty">❌ Error al cargar: '+e.message+'</div>';
   }
 }
 function mcPintarDesglose(d){
   const cont=document.getElementById('mc-desglose');
-  if(!cont)return;
   const chip=(n,label,color,bg)=>`<span style="font-size:11px;font-weight:700;color:${color};background:${bg};padding:4px 9px;border-radius:20px;white-space:nowrap">${n||0} ${label}</span>`;
   cont.innerHTML=
     chip(d.sin_categoria,'sin categoría','var(--rojo)','var(--rojo-bg)')+
@@ -4906,125 +4971,46 @@ function mcPintarDesglose(d){
     chip(d.sin_proveedor,'sin proveedor','var(--azul)','var(--azul-bg)')+
     chip(d.total,'productos en total','var(--muted)','var(--paper)');
 }
-function mcFiltrar(texto){
-  const q=normTxt(texto||'');
-  _mcFiltradas=q?_mcCategorias.filter(c=>normTxt(c.categoria).indexOf(q)>-1):_mcCategorias;
-  _mcMostradas=MC_TAM_PAGINA;
-  mcRender();
-}
-function mcRender(){
-  const cont=document.getElementById('mc-lista');
-  const total=_mcFiltradas.length;
-  document.getElementById('mc-contador').textContent=total+' categoría'+(total===1?'':'s')+(total!==_mcCategorias.length?' (de '+_mcCategorias.length+' en total)':'');
-  if(!total){cont.innerHTML='<div class="vc-empty">Sin resultados.</div>';document.getElementById('mc-cargar-mas').classList.add('hidden');return;}
-  const visibles=_mcFiltradas.slice(0,_mcMostradas);
-  cont.innerHTML=visibles.map(c=>{
-    const completo=(c.sin_proveedor|0)===0&&(c.sin_sector|0)===0;
-    const mid='mc'+c.categoria.replace(/[^a-zA-Z0-9]/g,'');
-    return `<div class="fp-row" style="flex-direction:column;align-items:stretch;gap:8px;padding:12px 0" data-mc-categoria="${c.categoria.replace(/"/g,'&quot;')}" data-mc-id="${mid}">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-        <div>
-          <div style="font-weight:700;font-size:13.5px">${c.categoria}</div>
-          <div style="font-size:11px;color:var(--muted)">ej: ${c.ejemplo||'—'}</div>
-        </div>
-        <span style="font-size:10.5px;font-weight:700;color:${completo?'var(--wa-d)':'var(--muted)'};background:${completo?'var(--wa-bg,#e8f7ee)':'var(--paper)'};padding:3px 8px;border-radius:20px;white-space:nowrap">${c.total} prod${completo?' · completo':' · '+(c.sin_proveedor||0)+' sin prov / '+(c.sin_sector||0)+' sin sect'}</span>
-      </div>
-      <div class="fc-ps-grid" style="margin-bottom:0">
-        <div class="fc-ps-field">
-          <label>Proveedor</label>
-          <div class="fc-ps-line">
-            <div class="cat-combo" id="${mid}prov-combo">
-              <input id="${mid}prov-input" class="cat-combo-input" placeholder="Buscar proveedor…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
-              <select id="${mid}prov" class="mc-sel-proveedor" style="display:none"><option value="">No es proveedor</option></select>
-              <div class="cat-combo-menu hidden" id="${mid}prov-menu" role="listbox"></div>
-            </div>
-          </div>
-        </div>
-        <div class="fc-ps-field">
-          <label>Sector</label>
-          <div class="fc-ps-line">
-            <div class="cat-combo" id="${mid}sect-combo">
-              <input id="${mid}sect-input" class="cat-combo-input" placeholder="Buscar sector…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
-              <select id="${mid}sect" class="mc-sel-sector" style="display:none"><option value="">Sin sector</option></select>
-              <div class="cat-combo-menu hidden" id="${mid}sect-menu" role="listbox"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="mc-prov-nuevabox hidden" style="display:flex;gap:8px">
-        <input class="mc-prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px">
-        <button class="btn-ok loadbtn mc-prov-crear" type="button" style="white-space:nowrap;padding:8px 10px">Crear</button>
-      </div>
-      <div class="mc-sector-nuevabox hidden" style="display:flex;gap:8px">
-        <input class="mc-sector-nuevonom" placeholder="Nombre del sector nuevo" autocomplete="off" style="flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px">
-        <button class="btn-ok loadbtn mc-sector-crear" type="button" style="white-space:nowrap;padding:8px 10px">Crear</button>
-      </div>
-      <button class="btn-ok loadbtn mc-aplicar" type="button" style="width:100%;padding:8px">Aplicar a los ${c.total} productos</button>
-      <button class="mc-ver-productos" type="button" style="width:100%;background:none;border:none;color:var(--wa-d);font-size:11.5px;font-weight:700;padding:6px 0;cursor:pointer">Ver los ${c.total} productos → (para elegir solo algunos)</button>
-      <div class="mc-detalle hidden" data-cargado="0">
-        <div class="mc-detalle-toolbar" style="display:flex;gap:6px;margin-bottom:8px">
-          <input class="mc-detalle-buscar" placeholder="Filtrar dentro de esta categoría…" autocomplete="off" style="flex:1;min-width:0;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12px">
-          <button class="loadbtn mc-marcar-todos" type="button" style="white-space:nowrap;font-size:11px;padding:0 10px">Todos</button>
-          <button class="loadbtn mc-desmarcar-todos" type="button" style="white-space:nowrap;font-size:11px;padding:0 10px">Ninguno</button>
-        </div>
-        <div class="mc-detalle-lista" style="max-height:260px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;padding:4px 8px"></div>
-        <button class="btn-ok loadbtn mc-aplicar-seleccion" type="button" style="width:100%;padding:8px;margin-top:8px">Aplicar a los seleccionados (0)</button>
-      </div>
-    </div>`;
+// Chips de categoría: uno por categoría real de Loyverse, con contador de pendientes.
+// El chip activo queda resaltado; tocar otro cambia la lista de abajo sin tocar el header.
+function mcRenderChips(){
+  const cont=document.getElementById('mc-chips');
+  cont.innerHTML=_mcCategorias.map(c=>{
+    const pend=(c.sin_proveedor|0)+(c.sin_sector|0);
+    const activo=c.categoria===_mcCategoriaActiva;
+    return `<button type="button" class="mc-chip${activo?' activo':''}" data-cat="${c.categoria.replace(/"/g,'&quot;')}">`+
+      `${c.categoria} <span class="mc-chip-n">${c.total}</span>${pend?`<span class="mc-chip-pend">${pend}</span>`:''}`+
+    `</button>`;
   }).join('');
-  const masBtn=document.getElementById('mc-cargar-mas');
-  if(_mcMostradas<total){masBtn.classList.remove('hidden');masBtn.textContent='Cargar más ('+(total-_mcMostradas)+' restantes)';}
-  else masBtn.classList.add('hidden');
-  // Requisito 1: combos con buscador + "➕ Nuevo" propio de cada categoría, mismo componente
-  // que ya usan Revisión de productos y la Calculadora de precios.
-  visibles.forEach(c=>{
-    const mid='mc'+c.categoria.replace(/[^a-zA-Z0-9]/g,'');
-    if(!document.getElementById(mid+'prov'))return;
-    psLlenarSelects(mid+'prov',mid+'sect',null,null);
-    psInitCombo(mid+'prov',mid+'prov-combo',mid+'prov-input',mid+'prov-menu',mid+'prov','proveedor',texto=>{
-      const fila=document.querySelector(`[data-mc-id="${mid}"]`);
-      const box=fila.querySelector('.mc-prov-nuevabox');
-      box.classList.remove('hidden');
-      const inp=box.querySelector('.mc-prov-nuevonom');inp.value=texto;inp.focus();
-    });
-    psInitCombo(mid+'sect',mid+'sect-combo',mid+'sect-input',mid+'sect-menu',mid+'sect','sector',texto=>{
-      const fila=document.querySelector(`[data-mc-id="${mid}"]`);
-      const box=fila.querySelector('.mc-sector-nuevabox');
-      box.classList.remove('hidden');
-      const inp=box.querySelector('.mc-sector-nuevonom');inp.value=texto;inp.focus();
-    });
-  });
 }
-// ===================== Modo detalle: seleccionar productos dentro de una categoría =====================
-// Carga la lista completa de una categoría UNA vez (queda cacheada en el DOM vía data-cargado);
-// "forzar=true" la recarga igual (se usa después de aplicar, para reflejar el estado real).
-async function mcCargarDetalle(fila,forzar){
-  const det=fila.querySelector('.mc-detalle');
-  if(det.dataset.cargado==='1'&&!forzar)return;
-  const cont=det.querySelector('.mc-detalle-lista');
-  cont.innerHTML='<div style="padding:10px;color:var(--muted);font-size:11.5px">Cargando…</div>';
+async function mcSeleccionarCategoria(categoria){
+  if(_mcCargando)return;
+  _mcCargando=true;
+  _mcCategoriaActiva=categoria;
+  mcRenderChips();
+  document.getElementById('mcg-aplicar-categoria').textContent='Aplicar a TODA la categoría actual';
+  const cont=document.getElementById('mc-lista');
+  cont.innerHTML='<div class="vc-empty">Cargando productos…</div>';
   try{
-    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=categoria_productos&categoria='+encodeURIComponent(fila.dataset.mcCategoria));
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=categoria_productos&categoria='+encodeURIComponent(categoria));
     const j=await res.json();
     if(!j||!j.ok)throw new Error((j&&j.error)||'error al cargar');
-    det._productos=j.productos||[];
-    det.dataset.cargado='1';
-    mcRenderDetalleLista(det,'');
+    _mcProductos=j.productos||[];
+    mcRenderLista(document.getElementById('mc-detalle-buscar').value);
   }catch(e){
-    cont.innerHTML='<div style="padding:10px;color:var(--rojo);font-size:11.5px">❌ '+e.message+'</div>';
+    cont.innerHTML='<div class="vc-empty">❌ '+e.message+'</div>';
   }
+  _mcCargando=false;
 }
-function mcRenderDetalleLista(det,filtro){
-  const cont=det.querySelector('.mc-detalle-lista');
-  const productos=det._productos||[];
+// Requisito de color por estado (mantenido del rediseño anterior): sin clasificar / solo
+// proveedor / solo sector / ambos — un punto lateral, sin tocar tamaño/contraste del texto.
+function mcRenderLista(filtro){
+  const cont=document.getElementById('mc-lista');
   const nf=normTxt(filtro||'');
-  const visibles=nf?productos.filter(p=>normTxt(p.nombre).indexOf(nf)>-1):productos;
-  if(!visibles.length){cont.innerHTML='<div style="padding:10px;color:var(--muted);font-size:11.5px">Sin resultados.</div>';return;}
+  const visibles=nf?_mcProductos.filter(p=>normTxt(p.nombre).indexOf(nf)>-1):_mcProductos;
+  if(!visibles.length){cont.innerHTML='<div class="vc-empty">Sin resultados.</div>';return;}
   cont.innerHTML=visibles.map(p=>{
     const tieneProv=!!p.proveedor_nombre,tieneSect=!!p.sector;
-    // 4 estados (requisito 2): sin clasificar / solo proveedor / solo sector / ambos.
-    // Colores tomados de las variables ya usadas en la app (mismos que "sin proveedor" /
-    // "sin sector" / "completo" del resumen de arriba) — no se inventa paleta nueva.
     let estadoCls='mc-dr-vacio';
     if(tieneProv&&tieneSect)estadoCls='mc-dr-completo';
     else if(tieneProv)estadoCls='mc-dr-soloprov';
@@ -5038,140 +5024,72 @@ function mcRenderDetalleLista(det,filtro){
       <span class="mc-dr-actual">${actual||'sin clasificar'}</span>
     </label>`;
   }).join('');
-  mcActualizarContadorSeleccion(det);
+  mcActualizarContadorSeleccion();
 }
-function mcActualizarContadorSeleccion(det){
-  const n=det.querySelectorAll('input[type=checkbox]:checked').length;
-  const btn=det.querySelector('.mc-aplicar-seleccion');
-  if(btn)btn.textContent='Aplicar a los seleccionados ('+n+')';
+function mcActualizarContadorSeleccion(){
+  const n=document.querySelectorAll('#mc-lista input[type=checkbox]:checked').length;
+  document.getElementById('mcg-aplicar-seleccion').textContent='Aplicar a seleccionados ('+n+')';
 }
-document.getElementById('mc-lista').addEventListener('input',ev=>{
-  const buscador=ev.target.closest('.mc-detalle-buscar');
-  if(!buscador)return;
-  const det=ev.target.closest('.mc-detalle');
-  mcRenderDetalleLista(det,buscador.value);
+document.getElementById('mc-chips').addEventListener('click',ev=>{
+  const chip=ev.target.closest('.mc-chip');
+  if(chip)mcSeleccionarCategoria(chip.dataset.cat);
 });
+document.getElementById('mc-detalle-buscar').addEventListener('input',ev=>mcRenderLista(ev.target.value));
+document.getElementById('mc-marcar-todos').onclick=()=>{
+  document.querySelectorAll('#mc-lista input[type=checkbox]').forEach(c=>c.checked=true);
+  mcActualizarContadorSeleccion();
+};
+document.getElementById('mc-desmarcar-todos').onclick=()=>{
+  document.querySelectorAll('#mc-lista input[type=checkbox]').forEach(c=>c.checked=false);
+  mcActualizarContadorSeleccion();
+};
 document.getElementById('mc-lista').addEventListener('change',ev=>{
-  const chk=ev.target.closest('.mc-detalle-row input[type=checkbox]');
-  if(chk){
-    mcActualizarContadorSeleccion(ev.target.closest('.mc-detalle'));
-    return;
-  }
-  const selProv=ev.target.closest('.mc-sel-proveedor');
-  if(selProv&&selProv.value==='__nuevo__'){
-    selProv.value='';
-    const fila=ev.target.closest('[data-mc-categoria]');
-    const box=fila.querySelector('.mc-prov-nuevabox');
-    box.classList.remove('hidden');
-    box.querySelector('.mc-prov-nuevonom').focus();
-    return;
-  }
-  const selSector=ev.target.closest('.mc-sel-sector');
-  if(selSector&&selSector.value==='__nuevo__'){
-    selSector.value='';
-    const fila=ev.target.closest('[data-mc-categoria]');
-    const box=fila.querySelector('.mc-sector-nuevabox');
-    box.classList.remove('hidden');
-    box.querySelector('.mc-sector-nuevonom').focus();
-  }
+  if(ev.target.matches('input[type=checkbox]'))mcActualizarContadorSeleccion();
 });
-document.getElementById('mc-lista').addEventListener('click',async ev=>{
-  const crearBtn=ev.target.closest('.mc-prov-crear');
-  if(crearBtn){
-    const fila=ev.target.closest('[data-mc-categoria]');
-    const categoria=fila.dataset.mcCategoria;
-    const inp=fila.querySelector('.mc-prov-nuevonom');
-    const nombre=(inp.value||'').trim();
-    if(!nombre){showToast('Escribe el nombre del proveedor');return;}
-    crearBtn.disabled=true;const txtOriginal=crearBtn.textContent;crearBtn.textContent='Creando…';
-    try{
-      const prov=await psCrearProveedorInline(nombre);
-      showToast('✓ Proveedor creado: '+prov.nombre);
-      mcRender(); // reconstruye la lista con el proveedor nuevo ya disponible en todos los selects
-      const filaNueva=document.querySelector(`#mc-lista [data-mc-categoria="${categoria.replace(/"/g,'\\"')}"]`);
-      if(filaNueva){const selNueva=filaNueva.querySelector('.mc-sel-proveedor');if(selNueva)selNueva.value=prov.id;}
-    }catch(e){
-      showToast('❌ '+e.message);
-      crearBtn.disabled=false;crearBtn.textContent=txtOriginal;
-    }
-    return;
+// Refresca solo el chip de la categoría activa (contador de pendientes) sin recargar toda
+// la barra ni perder la posición de scroll de la lista.
+function mcRefrescarChipActivo(deltaProv,deltaSect){
+  const idx=_mcCategorias.findIndex(c=>c.categoria===_mcCategoriaActiva);
+  if(idx>-1){
+    _mcCategorias[idx].sin_proveedor=Math.max(0,(_mcCategorias[idx].sin_proveedor||0)-deltaProv);
+    _mcCategorias[idx].sin_sector=Math.max(0,(_mcCategorias[idx].sin_sector||0)-deltaSect);
   }
-  const crearSectorBtn=ev.target.closest('.mc-sector-crear');
-  if(crearSectorBtn){
-    const fila=ev.target.closest('[data-mc-categoria]');
-    const categoria=fila.dataset.mcCategoria;
-    const inp=fila.querySelector('.mc-sector-nuevonom');
-    const nombre=(inp.value||'').trim();
-    if(!nombre){showToast('Escribe el nombre del sector');return;}
-    crearSectorBtn.disabled=true;const txtOriginal=crearSectorBtn.textContent;crearSectorBtn.textContent='Creando…';
-    try{
-      const sector=await psCrearSectorInline(nombre);
-      showToast('✓ Sector creado: '+sector);
-      mcRender();
-      const filaNueva=document.querySelector(`#mc-lista [data-mc-categoria="${categoria.replace(/"/g,'\\"')}"]`);
-      if(filaNueva){const selNueva=filaNueva.querySelector('.mc-sel-sector');if(selNueva)selNueva.value=sector;}
-    }catch(e){
-      showToast('❌ '+e.message);
-      crearSectorBtn.disabled=false;crearSectorBtn.textContent=txtOriginal;
-    }
-    return;
+  mcRenderChips();
+}
+// "Aplicar a seleccionados": el header sticky (proveedor/sector) es el mismo para todas las
+// categorías — no hay que re-elegirlo al cambiar de chip. Tras aplicar, limpia la selección
+// de checkboxes pero CONSERVA el proveedor/sector elegido, para seguir aplicando el mismo
+// a la categoría siguiente sin repetir el paso (pedido explícito del rediseño).
+document.getElementById('mcg-aplicar-seleccion').onclick=async()=>{
+  const provId=document.getElementById('mcg-prov').value||null;
+  const sectorVal=document.getElementById('mcg-sect').value||null;
+  if(!provId&&!sectorVal){showToast('Elegí al menos un proveedor o un sector arriba');return;}
+  const skus=[...document.querySelectorAll('#mc-lista input[type=checkbox]:checked')].map(c=>c.dataset.sku);
+  if(!skus.length){showToast('Marca al menos un producto de la lista');return;}
+  const btn=document.getElementById('mcg-aplicar-seleccion');
+  btn.disabled=true;const txtOriginal=btn.textContent;btn.textContent='Aplicando…';
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'mapear_categoria',payload:{categoria:_mcCategoriaActiva,proveedor_id:provId,sector:sectorVal,skus}})});
+    const j=await res.json();
+    if(!j||!j.ok)throw new Error((j&&j.error)||'No se pudo aplicar');
+    const extra=j.agregadosComoAdicional?(' · '+j.agregadosComoAdicional+' ya tenían otro proveedor: se sumó como adicional'):'';
+    showToast('✓ '+skus.length+' producto(s) actualizados'+extra);
+    mcRefrescarChipActivo(provId?skus.length:0,sectorVal?skus.length:0);
+    await mcSeleccionarCategoria(_mcCategoriaActiva); // recarga la lista con el estado real
+  }catch(e){
+    showToast('❌ '+e.message);
   }
-  const verBtn=ev.target.closest('.mc-ver-productos');
-  if(verBtn){
-    const fila=ev.target.closest('[data-mc-categoria]');
-    const det=fila.querySelector('.mc-detalle');
-    const abriendo=det.classList.contains('hidden');
-    det.classList.toggle('hidden');
-    verBtn.textContent=(abriendo?'Ocultar productos ↑':'Ver los '+fila.dataset.mcCategoria+' productos → (para elegir solo algunos)');
-    if(abriendo&&det.dataset.cargado==='0')mcCargarDetalle(fila);
-    return;
-  }
-  const marcarTodos=ev.target.closest('.mc-marcar-todos');
-  if(marcarTodos){
-    const det=ev.target.closest('.mc-detalle');
-    det.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=true);
-    mcActualizarContadorSeleccion(det);
-    return;
-  }
-  const desmarcarTodos=ev.target.closest('.mc-desmarcar-todos');
-  if(desmarcarTodos){
-    const det=ev.target.closest('.mc-detalle');
-    det.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=false);
-    mcActualizarContadorSeleccion(det);
-    return;
-  }
-  const aplicarSel=ev.target.closest('.mc-aplicar-seleccion');
-  if(aplicarSel){
-    const fila=ev.target.closest('[data-mc-categoria]');
-    const categoria=fila.dataset.mcCategoria;
-    const det=fila.querySelector('.mc-detalle');
-    const provId=fila.querySelector('.mc-sel-proveedor').value||null;
-    const sectorVal=fila.querySelector('.mc-sel-sector').value||null;
-    if(!provId&&!sectorVal){showToast('Elegí al menos un proveedor o un sector arriba');return;}
-    const skus=[...det.querySelectorAll('input[type=checkbox]:checked')].map(c=>c.dataset.sku);
-    if(!skus.length){showToast('Marca al menos un producto de la lista');return;}
-    aplicarSel.disabled=true;const txtOriginal=aplicarSel.textContent;aplicarSel.textContent='Aplicando…';
-    try{
-      const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'mapear_categoria',payload:{categoria,proveedor_id:provId,sector:sectorVal,skus}})});
-      const j=await res.json();
-      if(!j||!j.ok)throw new Error((j&&j.error)||'No se pudo aplicar');
-      const extra=j.agregadosComoAdicional?(' · '+j.agregadosComoAdicional+' ya tenían otro proveedor: se sumó como adicional'):'';
-      showToast('✓ '+skus.length+' producto(s) actualizados'+extra);
-      mcCargarDetalle(fila,true); // recarga la lista de detalle con el estado real actualizado
-      mcCargar(); // refresca los contadores "sin proveedor/sin sector" de todas las tarjetas
-    }catch(e){
-      showToast('❌ '+e.message);
-    }
-    aplicarSel.disabled=false;aplicarSel.textContent=txtOriginal;
-    return;
-  }
-  const btn=ev.target.closest('.mc-aplicar');
-  if(!btn)return;
-  const fila=ev.target.closest('[data-mc-categoria]');
-  const categoria=fila.dataset.mcCategoria;
-  const provId=fila.querySelector('.mc-sel-proveedor').value||null;
-  const sectorVal=fila.querySelector('.mc-sel-sector').value||null;
-  if(!provId&&!sectorVal){showToast('Elegí al menos un proveedor o un sector');return;}
+  btn.disabled=false;btn.textContent=txtOriginal;
+};
+// "Aplicar a TODA la categoría actual": equivalente al botón grande del diseño anterior,
+// integrado en el mismo header en vez de repetirse por categoría.
+document.getElementById('mcg-aplicar-categoria').onclick=async()=>{
+  const categoria=_mcCategoriaActiva;
+  if(!categoria){showToast('Elegí una categoría primero');return;}
+  const provId=document.getElementById('mcg-prov').value||null;
+  const sectorVal=document.getElementById('mcg-sect').value||null;
+  if(!provId&&!sectorVal){showToast('Elegí al menos un proveedor o un sector arriba');return;}
+  const btn=document.getElementById('mcg-aplicar-categoria');
   btn.disabled=true;const txtOriginal=btn.textContent;btn.textContent='Aplicando…';
   try{
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'mapear_categoria',payload:{categoria,proveedor_id:provId,sector:sectorVal}})});
@@ -5180,16 +5098,14 @@ document.getElementById('mc-lista').addEventListener('click',async ev=>{
     const extra=j.agregadosComoAdicional?(' · '+j.agregadosComoAdicional+' ya tenían otro proveedor: se sumó como adicional'):'';
     showToast('✓ '+categoria+': '+Math.max(j.actualizadosProveedor||0,j.actualizadosSector||0)+' producto(s) actualizados'+extra);
     const idx=_mcCategorias.findIndex(c=>c.categoria===categoria);
-    if(idx>-1){
-      if(provId)_mcCategorias[idx].sin_proveedor=0;
-      if(sectorVal)_mcCategorias[idx].sin_sector=0;
-    }
-    mcFiltrar(document.getElementById('mc-buscar').value);
+    if(idx>-1){if(provId)_mcCategorias[idx].sin_proveedor=0;if(sectorVal)_mcCategorias[idx].sin_sector=0;}
+    mcRenderChips();
+    await mcSeleccionarCategoria(categoria);
   }catch(e){
     showToast('❌ '+e.message);
-    btn.disabled=false;btn.textContent=txtOriginal;
   }
-});
+  btn.disabled=false;btn.textContent=txtOriginal;
+};
 
 // ===================== CREAR PRODUCTO =====================
 let _cpCats=[], _cpImpuestos=[], _cpVenta='u', _cpCargado=false;
