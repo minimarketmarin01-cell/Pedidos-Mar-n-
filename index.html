@@ -736,6 +736,22 @@ html.modo-bliss .fila-pedir .qword{text-align:center;max-width:100px;font-size:9
 .fc-track-warn.hidden{display:none}
 .fc-track-warn button{width:100%;margin-top:7px;min-height:40px;font-size:12px}
 .fc-row .fecha-wrap{margin-top:2px}
+/* FIX layout fecha: ".fc-field input{width:100%}" (especificidad 0,1,1) le ganaba a
+   ".fecha-seg{width:46px}" (0,1,0), así que DD se estiraba a todo el ancho y MM/AAAA
+   quedaban fuera de pantalla. Estas reglas devuelven los anchos fijos con más peso. */
+.fc-field .fecha-wrap{flex-wrap:nowrap;align-items:center;min-width:0}
+.fc-field .fecha-wrap input.fecha-seg{width:46px;flex:none;padding:11px 2px;font-size:17px;text-align:center}
+.fc-field .fecha-wrap input.fecha-seg-y{width:66px}
+.fc-field .fecha-wrap input.fecha-date-hidden{width:1px;padding:0;border:none;min-width:0}
+.fc-field .fecha-wrap .fecha-cal-btn{flex:none;width:46px}
+/* Datos reales del producto vinculado */
+.fc-link-datos{margin-top:8px;padding:9px 10px;border-radius:9px;background:var(--paper);border:1px solid var(--line2);font-size:11.5px;line-height:1.6;color:var(--ink2)}
+.fc-link-datos b{color:var(--ink)}
+.fc-link-datos button{margin-top:7px;width:100%;min-height:38px;font-size:11.5px}
+.fc-link-search-row{display:flex;gap:6px;align-items:stretch}
+.fc-link-search-row .fc-link-search-wrap{flex:1;min-width:0}
+.fc-link-scan{flex:none;width:46px;border:1.5px solid var(--line);border-radius:8px;background:var(--paper);font-size:17px;cursor:pointer}
+.fc-link-scan:active{background:var(--line)}
 .fc-caja-row{display:flex;align-items:center;gap:8px;margin:6px 0}
 .fc-caja-row label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2);cursor:pointer}
 .fc-caja-row input[type=checkbox]{width:16px;height:16px}
@@ -5640,7 +5656,13 @@ function fcBuscarCoincidencias(nombre,limite){
 function fcBuscarProductosTexto(q){
   const nq=normTxt(q).trim();
   if(!nq||!DB||!DB.items)return [];
-  return DB.items.filter(it=>normTxt(it.nombre).indexOf(nq)>-1).slice(0,8);
+  // Busca por nombre O por código de barras (el escáner escribe el código acá directo).
+  const soloDigitos=/^\d{6,}$/.test(nq);
+  if(soloDigitos){
+    const porCodigo=DB.items.filter(it=>String(it.barcode||'')===nq);
+    if(porCodigo.length)return porCodigo;
+  }
+  return DB.items.filter(it=>normTxt(it.nombre).indexOf(nq)>-1||String(it.barcode||'').indexOf(nq)>-1).slice(0,8);
 }
 // Cada sugerencia muestra su costo/precio ACTUALES del catálogo (fallback "$0" si faltan)
 // para que el usuario compare antes de sobreescribirlos.
@@ -5654,7 +5676,7 @@ function fcAbrirPanelLink(body,nombreProducto){
   if(!body.classList.contains('hidden')){body.classList.add('hidden');return false;}
   const sugeridos=fcBuscarCoincidencias(nombreProducto,3);
   body.innerHTML=(sugeridos.length?`<div class="fc-link-sug-title">Sugeridos</div><div class="fc-link-sug">${sugeridos.map(fcLinkChip).join('')}</div>`:'')+
-    `<div class="fc-link-search-wrap"><input class="fc-link-search" placeholder="Buscar otro producto…" autocomplete="off"><button type="button" class="search-x hidden" aria-label="Borrar">✕</button></div><div class="fc-link-menu hidden"></div>`;
+    `<div class="fc-link-search-row"><div class="fc-link-search-wrap"><input class="fc-link-search" placeholder="Buscar por nombre o código…" autocomplete="off"><button type="button" class="search-x hidden" aria-label="Borrar">✕</button></div><button type="button" class="fc-link-scan" aria-label="Escanear código de barras">📷</button></div><div class="fc-link-menu hidden"></div>`;
   body.classList.remove('hidden');
   return true;
 }
@@ -5692,7 +5714,57 @@ function fcAsociarProducto(row,producto){
     row.dataset.sincronizadoRef=producto.ref;
     row.dataset.sincronizadoNombre=producto.nombre;
     fcActualizarAvisoTrack(row,producto.ref);
+    fcAutocompletarDesdeProducto(row,producto.ref);
   });
+}
+// Trae los datos REALES del producto vinculado y los vuelca en la fila: proveedor, sector,
+// stock y fecha del lote más próximo. Costo y precio NO se sobrescriben (son el resultado
+// del cálculo de la factura, que es justamente lo que se quiere aplicar) — se muestran como
+// referencia con un botón para copiarlos si el usuario prefiere los actuales.
+async function fcAutocompletarDesdeProducto(row,ref){
+  const cont=row.querySelector('.fc-link');
+  let caja=row.querySelector('.fc-link-datos');
+  if(!caja){caja=document.createElement('div');caja.className='fc-link-datos';cont.appendChild(caja);}
+  caja.textContent='Cargando datos del producto…';
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=ficha_producto&sku='+encodeURIComponent(ref));
+    const j=await res.json();
+    if(!j||!j.ok||!j.ficha||!j.ficha.producto)throw new Error('sin datos');
+    const p=j.ficha.producto;
+    const lotesFicha=j.ficha.lotes||[];
+    const id=row.dataset.id;
+    const it=_fcItems.find(x=>x.id===id);
+
+    // Proveedor y sector: se cargan en los combos de la fila con el mismo helper de siempre.
+    if(p.proveedorId||p.sector){
+      if(it){it.proveedor_id=p.proveedorId||null;it.sector=p.sector||null;}
+      psLlenarSelects('fcprov-'+id,'fcsect-'+id,p.proveedorId||null,p.sector||null);
+    }
+    // Fecha de vencimiento: el lote activo más próximo, si tiene.
+    const lote=lotesFicha.length?lotesFicha[0]:null;
+    if(lote&&lote.fechaVencimiento){
+      const partes=String(lote.fechaVencimiento).split('/'); // DD/MM/AAAA
+      if(partes.length===3){
+        const dd=document.getElementById('fcf-dd-'+id),mm=document.getElementById('fcf-mm-'+id),
+              yy=document.getElementById('fcf-yy-'+id),hid=document.getElementById('fcf-'+id);
+        if(dd&&mm&&yy&&hid){
+          dd.value=partes[0];mm.value=partes[1];yy.value=partes[2];
+          hid.value=partes[2]+'-'+partes[1]+'-'+partes[0];
+        }
+      }
+    }
+    const stockTxt=p.trackStock?(p.stock!=null?p.stock:0)+' u':'sin control de stock';
+    const costoActual=p.costo||0,precioActual=p.precio||0;
+    caja.innerHTML=
+      '📊 <b>Stock:</b> '+stockTxt+
+      ' · <b>Proveedor:</b> '+(p.proveedor||'—')+
+      ' · <b>Sector:</b> '+(p.sector||'—')+
+      (lote&&lote.fechaVencimiento?' · <b>Vence:</b> '+lote.fechaVencimiento:'')+
+      '<br>💲 <b>Actual en Loyverse:</b> costo '+peso(costoActual)+' · precio '+peso(precioActual)+
+      (costoActual>0||precioActual>0?'<button type="button" class="loadbtn" data-usar-actuales="'+id+'">Usar costo/precio actuales en vez de los calculados</button>':'');
+  }catch(e){
+    caja.textContent='⚠️ No se pudieron cargar los datos del producto (se vinculó igual).';
+  }
 }
 // Muestra el aviso + botón "Activar inventario" solo si el producto vinculado tiene el
 // seguimiento apagado en Loyverse. Sin seguimiento, lote_nuevo no puede sumar stock, así
@@ -5743,6 +5815,45 @@ document.getElementById('fc-list').addEventListener('click',ev=>{
   if(crearBtn){
     const row=crearBtn.closest('.fc-row');
     fcAbrirPanelCrear(row);
+    return;
+  }
+  const usarAct=ev.target.closest('[data-usar-actuales]');
+  if(usarAct){
+    const row=usarAct.closest('.fc-row');
+    const ref=row.dataset.sincronizadoRef;
+    const prod=DB.items&&DB.items.find(x=>x.ref===ref);
+    if(prod){
+      const costoInp=row.querySelector('[data-f="costo"]');
+      if(prod.coste!=null)costoInp.value=Math.round(prod.coste);
+      costoInp.classList.add('fc-manual-edit'); // evita que la conversión de caja lo vuelva a pisar
+      if(prod.precio!=null){
+        const pr=Math.round(prod.precio);
+        row.querySelector('[data-f="psico"]').value=pr;
+        row.querySelector('[data-f="venta"]').value=pr;
+        // El margen se deriva de costo/precio reales (sentido inverso) — no se recalcula el
+        // precio, que es justo lo que el usuario pidió traer tal cual.
+        const costo=+costoInp.value||0;
+        const margenReal=pr>0?((pr-costo)/pr*100):0;
+        row.querySelector('[data-f="margen"]').value=margenReal.toFixed(1);
+        const margEl=row.querySelector('.fc-row-margin-real b');
+        if(margEl)margEl.textContent=margenReal.toFixed(1)+'%';
+      }
+      showToast('✓ Costo y precio actuales copiados a esta fila');
+    }
+    return;
+  }
+  const scanBtn=ev.target.closest('.fc-link-scan');
+  if(scanBtn){
+    const body=scanBtn.closest('.fc-link-body');
+    const inp=body.querySelector('.fc-link-search');
+    const ov=document.getElementById('fc-ov');
+    const reabrir=()=>{ov.classList.remove('hidden');_sincronizarNav();};
+    ov.classList.add('hidden');
+    openScanner(code=>{
+      reabrir();
+      inp.value=code;
+      inp.dispatchEvent(new Event('input',{bubbles:true}));
+    },reabrir);
     return;
   }
   const trackBtn=ev.target.closest('[data-track-on]');
@@ -6426,6 +6537,49 @@ document.getElementById('cp-cat-x').addEventListener('click',()=>{
 // fc-link-search se crea dinámicamente (factura en revisión e historial) — se delega en los
 // contenedores que YA tienen listeners propios ('fc-list' y 'fc-hist-body'), sin agregar
 // listeners nuevos al documento.
+// ===================== ✕ limpiar en todos los buscadores =====================
+// En vez de editar uno por uno los ~15 buscadores de la app (y perderse los que se crean
+// dinámicamente), el botón se inyecta solo la primera vez que se enfoca cualquier input de
+// búsqueda. Los que YA traían su propio ✕ en el HTML se detectan y se dejan intactos.
+function _esInputBusqueda(el){
+  if(!el||el.tagName!=='INPUT')return false;
+  const t=(el.type||'text').toLowerCase();
+  if(['checkbox','radio','date','file','range','submit','button'].indexOf(t)>-1)return false;
+  if(el.classList.contains('fecha-seg'))return false;
+  if(el.classList.contains('fc-link-search'))return false; // ya tiene su ✕ propio
+  const ph=(el.getAttribute('placeholder')||'').toLowerCase();
+  return ph.indexOf('buscar')>-1||el.classList.contains('cat-combo-input');
+}
+function wireClearX(inp){
+  if(!inp||inp.dataset.xWired)return;
+  inp.dataset.xWired='1';
+  // Si ya hay un ✕ hermano puesto a mano en el HTML, no se duplica.
+  const hermano=inp.nextElementSibling;
+  if(hermano&&hermano.classList&&hermano.classList.contains('search-x'))return;
+  const cont=inp.parentElement;
+  if(!cont)return;
+  if(getComputedStyle(cont).position==='static')cont.style.position='relative';
+  const x=document.createElement('button');
+  x.type='button';x.className='search-x hidden';x.setAttribute('aria-label','Borrar');x.textContent='✕';
+  inp.insertAdjacentElement('afterend',x);
+  // Deja espacio a la derecha para que el ✕ no tape el texto escrito.
+  const padDer=parseFloat(getComputedStyle(inp).paddingRight)||0;
+  if(padDer<30)inp.style.paddingRight='32px';
+  const sync=()=>x.classList.toggle('hidden',!inp.value);
+  inp.addEventListener('input',sync);
+  sync();
+  x.addEventListener('click',ev=>{
+    ev.preventDefault();ev.stopPropagation();
+    inp.value='';
+    inp.dispatchEvent(new Event('input',{bubbles:true}));
+    inp.dispatchEvent(new Event('change',{bubbles:true}));
+    inp.focus();
+    x.classList.add('hidden');
+  });
+}
+document.addEventListener('focusin',ev=>{
+  if(_esInputBusqueda(ev.target))wireClearX(ev.target);
+});
 function fcWireLinkSearchX(container){
   container.addEventListener('input',ev=>{
     if(!ev.target.classList.contains('fc-link-search'))return;
@@ -7038,6 +7192,12 @@ function wireFechaSegmentada(ddId,mmId,yyId,hiddenId,calId){
       if(e.key==='Backspace'&&!inp.value){
         if(inp===mm)dd.focus();else if(inp===yy)mm.focus();
       }
+    });
+    // Con el teclado numérico abierto, el campo puede quedar tapado (pasa sobre todo en
+    // celulares con teclado alto). Al enfocar, se centra en pantalla — así las 3 casillas
+    // DD/MM/AAAA quedan siempre visibles mientras se escribe.
+    inp.addEventListener('focus',()=>{
+      setTimeout(()=>{try{inp.scrollIntoView({block:'center',behavior:'smooth'});}catch(e){}},260);
     });
   });
   if(cal)cal.onclick=()=>{if(hidden.showPicker){try{hidden.showPicker();return;}catch(e){}}hidden.click();};
