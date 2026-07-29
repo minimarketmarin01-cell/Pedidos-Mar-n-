@@ -382,12 +382,16 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 select,input[type=number]{font-family:'Inter';font-size:13px;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;background:#fff;color:var(--text)}
 input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .prov-combo{position:relative;flex:1;min-width:160px}
-.shc-row .prov-combo{position:sticky;left:0;z-index:3;background:var(--card);flex-shrink:0;width:172px}
+.shc-row .prov-combo{position:sticky;left:0;z-index:3;background:var(--card);flex-shrink:0;width:min(60vw,260px)}
 .prov-icon{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;pointer-events:none;z-index:2}
-.prov-all{width:100%;min-width:0;font-weight:600;padding-right:112px;padding-left:24px;font-size:12.5px}
+/* BUG 3: el texto escrito no se veía. El input tenía 24px de padding izq + 112px der para
+   los 3 botones, dentro de una caja de ancho fijo 172px → quedaban 36px reales de texto.
+   Se acercó el micrófono (right:52 en vez de 76) y se bajó el padding a 78px, y la caja
+   ahora es más ancha (ver .shc-row .prov-combo) — pasa de ~36px a ~150px de texto visible. */
+.prov-all{width:100%;min-width:0;font-weight:600;padding-right:78px;padding-left:24px;font-size:12.5px;text-overflow:ellipsis}
 .prov-x{position:absolute;top:50%;right:4px;transform:translateY(-50%);width:24px;height:24px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
 .prov-x:active{background:var(--line);color:var(--ink)}
-.prov-mic{position:absolute;top:50%;right:76px;transform:translateY(-50%);width:19px;height:19px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:10.5px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
+.prov-mic{position:absolute;top:50%;right:52px;transform:translateY(-50%);width:19px;height:19px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:10.5px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
 .prov-mic:active{background:var(--line);color:var(--ink)}
 .prov-mic.listening{background:var(--rojo);color:#fff;animation:micpulse 1s infinite}
 .prov-scan{position:absolute;top:50%;right:30px;transform:translateY(-50%);width:19px;height:19px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:10.5px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
@@ -6046,8 +6050,17 @@ document.getElementById('fc-guardar').onclick=async()=>{
         const id=row.dataset.id;
         const pSel=document.getElementById('fcprov-'+id),sSel=document.getElementById('fcsect-'+id);
         const provId=pSel?pSel.value:'',sector=sSel?sSel.value:'';
-        if(!provId&&!sector)return;
-        clasificaciones.push({sku:row.dataset.sincronizadoRef,proveedor_id:provId||null,sector:sector||null});
+        // BUG 4: el nombre de la fila era editable pero nunca se aplicaba al producto. Si el
+        // usuario lo cambió respecto al del producto vinculado, se manda en el MISMO
+        // editar_producto que ya lleva proveedor/sector (una sola llamada por fila).
+        const nombreEditado=(row.querySelector('[data-f="producto"]').value||'').trim();
+        const prodVinc=DB.items&&DB.items.find(x=>x.ref===row.dataset.sincronizadoRef);
+        const renombrar=nombreEditado&&prodVinc&&nombreEditado!==prodVinc.nombre;
+        if(!provId&&!sector&&!renombrar)return;
+        const payload={sku:row.dataset.sincronizadoRef};
+        if(provId||sector){payload.proveedor_id=provId||null;payload.sector=sector||null;}
+        if(renombrar)payload.nombre=nombreEditado;
+        clasificaciones.push(payload);
       });
       if(clasificaciones.length){
         let okPS=0,failPS=0;
@@ -6055,11 +6068,14 @@ document.getElementById('fc-guardar').onclick=async()=>{
           try{
             const rp=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_producto',payload:c})});
             const jp=await rp.json();
-            if(jp&&jp.ok)okPS++;else failPS++;
+            if(jp&&jp.ok){
+              okPS++;
+              if(c.nombre){const itm=DB.items.find(x=>x.ref===c.sku);if(itm)itm.nombre=c.nombre;}
+            }else failPS++;
           }catch(e){failPS++;}
         }
-        if(okPS)showToast('🏷️ Proveedor/sector guardado en '+okPS+' producto(s)');
-        if(failPS)showToast('⚠️ No se pudo guardar proveedor/sector en '+failPS+' producto(s)');
+        if(okPS)showToast('🏷️ Datos guardados en '+okPS+' producto(s)');
+        if(failPS)showToast('⚠️ No se pudo guardar en '+failPS+' producto(s)');
       }
       // Ya no se cierra el modal al guardar: solo se reinicia a la pantalla de "Tomar
       // foto / Subir de Galería", lista para escanear el siguiente documento sin que el
@@ -6657,6 +6673,19 @@ document.getElementById('fp-aplicar').addEventListener('click',async()=>{
     if(j&&j.ok){
       const it=DB.items.find(x=>x.ref===ref);
       if(it){it.coste=costo;it.precio=precioFinal;} // refresca en memoria, sin recargar la app
+      // BUG 4: el campo de nombre era editable pero no se aplicaba a ningún lado. Si el
+      // usuario lo cambió, se renombra el producto en Loyverse con editar_producto (el mismo
+      // endpoint que usa la Ficha) — se hace después del precio para no perder ese cambio si
+      // el renombrado falla.
+      const nombreNuevo=(document.getElementById('fp-r-nombre').value||'').trim();
+      if(nombreNuevo&&it&&nombreNuevo!==it.nombre){
+        try{
+          const rn=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_producto',payload:{sku:ref,nombre:nombreNuevo}})});
+          const jn=await rn.json();
+          if(jn&&jn.ok){it.nombre=nombreNuevo;showToast('✏️ Nombre actualizado: '+nombreNuevo);render();}
+          else showToast('⚠️ Precio aplicado, pero no se pudo renombrar: '+((jn&&jn.error)||'error'));
+        }catch(e){showToast('⚠️ Precio aplicado, pero falló el renombrado');}
+      }
       fpActualizarInfoProducto();
       showToast('✓ Costo y precio actualizados en Loyverse');
       btn.textContent='✓ Aplicado';
