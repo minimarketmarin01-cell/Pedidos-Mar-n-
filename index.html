@@ -733,6 +733,7 @@ html.modo-bliss .fila-pedir .qword{text-align:center;max-width:100px;font-size:9
 .fc-ps-line .cat-combo{flex:1;min-width:0}
 .fc-ps-line .loadbtn{white-space:nowrap;padding:0 12px;font-size:12px;min-height:40px}
 .fc-ps-line .loadbtn[id$="-limpiar"]{padding:0 11px;flex:none;color:var(--muted)}
+.fc-ps-line .loadbtn[id$="-renombrar"]{padding:0 11px;flex:none;color:var(--wa-d)}
 .fc-ps-nuevabox{display:flex;gap:6px;margin-top:6px}
 .fc-ps-nuevabox input{flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px}
 .fc-ps-nuevabox.hidden{display:none}
@@ -1920,18 +1921,24 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
       <div class="fc-ps-grid" style="margin-bottom:8px">
         <div class="fc-ps-field">
           <label>Proveedor</label>
-          <div class="cat-combo" id="mcg-prov-combo">
-            <input id="mcg-prov-input" class="cat-combo-input" placeholder="Buscar proveedor…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
-            <select id="mcg-prov" style="display:none"><option value="">No es proveedor</option></select>
-            <div class="cat-combo-menu hidden" id="mcg-prov-menu" role="listbox"></div>
+          <div class="fc-ps-line">
+            <div class="cat-combo" id="mcg-prov-combo">
+              <input id="mcg-prov-input" class="cat-combo-input" placeholder="Buscar proveedor…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+              <select id="mcg-prov" style="display:none"><option value="">No es proveedor</option></select>
+              <div class="cat-combo-menu hidden" id="mcg-prov-menu" role="listbox"></div>
+            </div>
+            <button class="loadbtn" id="mcg-prov-renombrar" type="button" title="Renombrar este proveedor">✎</button>
           </div>
         </div>
         <div class="fc-ps-field">
           <label>Sector</label>
-          <div class="cat-combo" id="mcg-sect-combo">
-            <input id="mcg-sect-input" class="cat-combo-input" placeholder="Buscar sector…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
-            <select id="mcg-sect" style="display:none"><option value="">Sin sector</option></select>
-            <div class="cat-combo-menu hidden" id="mcg-sect-menu" role="listbox"></div>
+          <div class="fc-ps-line">
+            <div class="cat-combo" id="mcg-sect-combo">
+              <input id="mcg-sect-input" class="cat-combo-input" placeholder="Buscar sector…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+              <select id="mcg-sect" style="display:none"><option value="">Sin sector</option></select>
+              <div class="cat-combo-menu hidden" id="mcg-sect-menu" role="listbox"></div>
+            </div>
+            <button class="loadbtn" id="mcg-sect-renombrar" type="button" title="Renombrar este sector">✎</button>
           </div>
         </div>
       </div>
@@ -1962,6 +1969,22 @@ html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before
     <div class="mm-body" style="padding-top:8px;flex:none">
       <button class="loadbtn hidden" id="mc-cargar-mas" style="width:100%;margin-bottom:8px"></button>
       <button class="loadbtn" id="mc-cerrar" style="width:100%">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="mm-ov hidden" id="rn-ov">
+  <div class="mm-card" style="max-width:340px">
+    <div class="mm-head"><h3 id="rn-titulo">✏️ Renombrar</h3></div>
+    <div class="mm-body">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Nombre actual: <b id="rn-actual" style="color:var(--ink)"></b></div>
+      <div class="fc-ps-field">
+        <label>Nuevo nombre</label>
+        <input id="rn-nuevo" placeholder="Nuevo nombre" autocomplete="off" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;box-sizing:border-box">
+      </div>
+      <div id="rn-error" class="hidden" style="color:var(--rojo);font-size:11.5px;margin-top:6px"></div>
+      <button class="mm-save" id="rn-guardar" style="width:100%;margin-top:12px">Guardar</button>
+      <button class="loadbtn" id="rn-cancelar" style="width:100%;margin-top:8px">Cancelar</button>
     </div>
   </div>
 </div>
@@ -4401,6 +4424,61 @@ function psInitCombo(key,wrapId,inputId,menuId,selectId,tipo,onCreateNueva){
   });
   if(inst)_psCombosVivos[key]=inst;
 }
+// ===================== Renombrar proveedor / sector =====================
+// Modal único y genérico, reutilizado desde cualquier combo de proveedor/sector que tenga el
+// botón ✎ junto a él. No toca crearComboBuscable/psInitCombo — vive aparte para no arriesgar
+// los 4+ módulos que ya usan esos componentes compartidos.
+let _renombrarCtx=null; // {tipo:'proveedor'|'sector', id, nombreActual, onRenombrado}
+function abrirModalRenombrar(tipo,id,nombreActual,onRenombrado){
+  _renombrarCtx={tipo,id,nombreActual,onRenombrado};
+  document.getElementById('rn-titulo').textContent=tipo==='proveedor'?'✏️ Renombrar proveedor':'✏️ Renombrar sector';
+  document.getElementById('rn-actual').textContent=nombreActual;
+  document.getElementById('rn-nuevo').value=nombreActual;
+  document.getElementById('rn-error').classList.add('hidden');
+  abrirModal('rn-ov');
+  setTimeout(()=>{const inp=document.getElementById('rn-nuevo');inp.focus();inp.select();},150);
+}
+async function ejecutarRenombrar(){
+  if(!_renombrarCtx)return;
+  const nuevo=(document.getElementById('rn-nuevo').value||'').trim();
+  const errEl=document.getElementById('rn-error');
+  errEl.classList.add('hidden');
+  if(!nuevo){errEl.textContent='Escribe un nombre';errEl.classList.remove('hidden');return;}
+  const btn=document.getElementById('rn-guardar');
+  btn.disabled=true;const txtOriginal=btn.textContent;btn.textContent='Guardando…';
+  try{
+    if(_renombrarCtx.tipo==='proveedor'){
+      const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'renombrar_proveedor',payload:{id:_renombrarCtx.id,nombre:nuevo}})});
+      const j=await res.json();
+      if(!j||!j.ok)throw new Error((j&&j.error)||'No se pudo renombrar');
+      const idx=_psProveedores.findIndex(p=>p.id===_renombrarCtx.id);
+      if(idx>-1)_psProveedores[idx].nombre=j.proveedor.nombre;
+      _psProveedores.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+      showToast('✓ Proveedor renombrado a "'+j.proveedor.nombre+'"');
+      cerrarModal('rn-ov');
+      if(_renombrarCtx.onRenombrado)_renombrarCtx.onRenombrado(j.proveedor.nombre);
+    }else{
+      const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'renombrar_sector',payload:{actual:_renombrarCtx.nombreActual,nuevo}})});
+      const j=await res.json();
+      if(!j||!j.ok)throw new Error((j&&j.error)||'No se pudo renombrar');
+      const nuevoUpper=nuevo.trim().toUpperCase();
+      const idxViejo=_psSectores.indexOf(_renombrarCtx.nombreActual);
+      if(idxViejo>-1)_psSectores.splice(idxViejo,1);
+      if(!_psSectores.includes(nuevoUpper))_psSectores.push(nuevoUpper);
+      _psSectores.sort((a,b)=>a.localeCompare(b,'es'));
+      const msg=j.fusionado?('✓ Fusionado con el sector existente · '+j.productosActualizados+' producto(s)'):('✓ Sector renombrado · '+j.productosActualizados+' producto(s) actualizados');
+      showToast(msg);
+      cerrarModal('rn-ov');
+      if(_renombrarCtx.onRenombrado)_renombrarCtx.onRenombrado(nuevoUpper);
+    }
+  }catch(e){
+    errEl.textContent=e.message;errEl.classList.remove('hidden');
+  }
+  btn.disabled=false;btn.textContent=txtOriginal;
+}
+document.getElementById('rn-cancelar').onclick=()=>cerrarModal('rn-ov');
+document.getElementById('rn-guardar').onclick=ejecutarRenombrar;
+document.getElementById('rn-nuevo').addEventListener('keydown',ev=>{if(ev.key==='Enter')ejecutarRenombrar();});
 async function psCrearProveedorInline(nombre){
   const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'crear_proveedor',payload:{nombre}})});
   const j=await res.json();
@@ -5109,6 +5187,27 @@ document.getElementById('mcg-aplicar-categoria').onclick=async()=>{
     showToast('❌ '+e.message);
   }
   btn.disabled=false;btn.textContent=txtOriginal;
+};
+document.getElementById('mcg-prov-renombrar').onclick=()=>{
+  const sel=document.getElementById('mcg-prov');
+  const id=sel.value?Number(sel.value):null;
+  if(!id){showToast('Elegí un proveedor arriba primero');return;}
+  const prov=_psProveedores.find(p=>p.id===id);
+  if(!prov)return;
+  abrirModalRenombrar('proveedor',id,prov.nombre,nombreNuevo=>{
+    document.getElementById('mcg-prov-input').value=nombreNuevo;
+    mcRenderChips(); // por si la categoría activa mostraba el nombre viejo en algún lado
+  });
+};
+document.getElementById('mcg-sect-renombrar').onclick=()=>{
+  const sel=document.getElementById('mcg-sect');
+  const nombreActual=sel.value;
+  if(!nombreActual){showToast('Elegí un sector arriba primero');return;}
+  abrirModalRenombrar('sector',null,nombreActual,nombreNuevo=>{
+    document.getElementById('mcg-sect-input').value=nombreNuevo;
+    document.getElementById('mcg-sect').value=nombreNuevo;
+    mcSeleccionarCategoria(_mcCategoriaActiva); // refresca la lista: el sector visible cambió
+  });
 };
 
 // ===================== CREAR PRODUCTO =====================
