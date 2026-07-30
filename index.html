@@ -753,6 +753,8 @@ html.modo-bliss .fila-pedir .qword{text-align:center;max-width:100px;font-size:9
 .mc-detalle-row input[type=checkbox]{width:17px;height:17px;flex:none}
 .mc-detalle-row .mc-dr-nom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mc-detalle-row .mc-dr-actual{font-size:10px;color:var(--muted);white-space:nowrap}
+.mc-dr-eliminar{flex:none;border:none;background:transparent;font-size:14px;padding:4px 2px;cursor:pointer;opacity:.55;line-height:1}
+.mc-dr-eliminar:active{opacity:1}
 /* Requisito 2: color por estado — un punto lateral + tinte muy sutil de fondo, sin tocar el
    tamaño/contraste del checkbox ni del nombre (que siguen en var(--ink) normal). */
 .mc-dr-dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--line)}
@@ -5095,11 +5097,12 @@ function mcRenderLista(filtro){
     else if(tieneSect)estadoCls='mc-dr-solosect';
     const extra=(p.proveedores_adicionales&&p.proveedores_adicionales.length)?(' +'+p.proveedores_adicionales.length):'';
     const actual=[p.proveedor_nombre?(p.proveedor_nombre+extra):null,p.sector].filter(Boolean).join(' · ');
-    return `<label class="mc-detalle-row ${estadoCls}" data-sku="${p.sku}">
+    return `<label class="mc-detalle-row ${estadoCls}" data-sku="${p.sku}" data-id-loyverse="${p.id_loyverse||''}" data-nombre="${String(p.nombre).replace(/"/g,'&quot;')}">
       <input type="checkbox" data-sku="${p.sku}">
       <span class="mc-dr-dot"></span>
       <span class="mc-dr-nom">${p.nombre}</span>
       <span class="mc-dr-actual">${actual||'sin clasificar'}</span>
+      <button type="button" class="mc-dr-eliminar" data-sku="${p.sku}" title="Eliminar producto">🗑️</button>
     </label>`;
   }).join('');
   mcActualizarContadorSeleccion();
@@ -5124,6 +5127,54 @@ document.getElementById('mc-desmarcar-todos').onclick=()=>{
 document.getElementById('mc-lista').addEventListener('change',ev=>{
   if(ev.target.matches('input[type=checkbox]'))mcActualizarContadorSeleccion();
 });
+document.getElementById('mc-lista').addEventListener('click',ev=>{
+  const btn=ev.target.closest('.mc-dr-eliminar');
+  if(!btn)return;
+  ev.preventDefault();ev.stopPropagation(); // no debe togglear el checkbox de la fila (label)
+  const fila=btn.closest('.mc-detalle-row');
+  const sku=fila.dataset.sku,nombre=fila.dataset.nombre,idLoyverse=fila.dataset.idLoyverse;
+  confirmarAccion({
+    titulo:'🗑️ Eliminar producto',
+    mensaje:'Se eliminará "'+nombre+'" de Loyverse y de la webapp de forma permanente. Esta acción no se puede deshacer.',
+    textoConfirmar:'Eliminar definitivamente',
+    peligro:true,
+    onConfirm:()=>mcEliminarProducto(sku,idLoyverse,nombre,fila)
+  });
+});
+async function mcEliminarProducto(sku,idLoyverse,nombre,fila){
+  if(!idLoyverse){showToast('❌ Este producto no tiene id de Loyverse — sincroniza con ♻️ Catálogo antes de eliminarlo');return;}
+  if(fila)fila.style.opacity='.5';
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'eliminar_productos',payload:{items:[{sku,id:idLoyverse,nombre}]}})});
+    const j=await res.json();
+    const r=j&&j.resultados&&j.resultados[0];
+    if(!j||!j.ok||!r||!r.ok)throw new Error((r&&r.error)||(j&&j.error)||'No se pudo eliminar');
+    showToast('✓ "'+nombre+'" eliminado de Loyverse y de la webapp');
+    // Quita la fila de la lista en memoria y de los contadores (categoría activa + desglose
+    // general) sin recargar toda la vista ni perder qué categoría estaba abierta.
+    _mcProductos=_mcProductos.filter(p=>p.sku!==sku);
+    mcRenderLista(document.getElementById('mc-detalle-buscar').value);
+    const idx=_mcCategorias.findIndex(c=>c.categoria===_mcCategoriaActiva);
+    if(idx>-1){
+      _mcCategorias[idx].total=Math.max(0,(_mcCategorias[idx].total||1)-1);
+      if(_mcCategorias[idx].total===0)_mcCategorias.splice(idx,1); // categoría quedó vacía
+    }
+    mcRenderChips();
+    mcRefrescarDesgloseGeneral();
+  }catch(e){
+    showToast('❌ '+e.message);
+    if(fila)fila.style.opacity='';
+  }
+}
+// Refresca solo los contadores generales de arriba ("N sin sector", "N sin proveedor", "N
+// productos en total") sin recargar categorías ni tocar la selección/scroll actual.
+async function mcRefrescarDesgloseGeneral(){
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=categorias_resumen');
+    const j=await res.json();
+    if(j&&j.ok)mcPintarDesglose(j.desglose||{});
+  }catch(e){/* no crítico: los chips ya se actualizaron localmente */}
+}
 // Refresca solo el chip de la categoría activa (contador de pendientes) sin recargar toda
 // la barra ni perder la posición de scroll de la lista.
 function mcRefrescarChipActivo(deltaProv,deltaSect){
