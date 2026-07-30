@@ -916,6 +916,24 @@ html:not(.vista-filas) .row-urgent .card-stats .cstat:last-child,
 html:not(.vista-filas) .row-pedir .card-stats .cstat:last-child{font-weight:800;padding:1px 6px;border-radius:5px}
 html:not(.vista-filas) .row-urgent .card-stats .cstat:last-child{background:#FBD8D3}
 html:not(.vista-filas) .row-pedir .card-stats .cstat:last-child{background:#FCE8C2}
+/* Tablet/BlissOS (vista-filas): mismo principio que en celular — color de fondo en toda la
+   fila + badge de texto corto ("URGENTE"/"A PEDIR"), no solo un punto de color, para que se
+   identifique igual de rápido en el layout de tabla más compacto. El badge es más chico que
+   en celular (no hay "— reponer ya", solo "URGENTE") porque acá compite por espacio con
+   VTA/STK/COB/precio/margen/ABC en la misma fila — el texto completo se conserva en el
+   tooltip (title=) que la fila ya trae. */
+html.vista-filas .row-urgent{background:#FCEBEA}
+html.vista-filas .row-pedir{background:#FFF6E8}
+html.vista-filas .fila-badge{display:none;font-size:8.5px;font-weight:800;color:#fff;padding:1px 6px;border-radius:5px;width:fit-content;margin-bottom:2px;letter-spacing:.02em}
+html.vista-filas .row-urgent .fila-badge{display:block;background:var(--rojo)}
+html.vista-filas .row-pedir .fila-badge{display:block;background:var(--ambar)}
+html.modo-bliss .fila-badge{font-size:11px;padding:2px 8px;margin-bottom:3px}
+/* FIX: antes .row-pedir nunca se aplicaba en la fila de tablet (rowHTML solo ponía
+   row-urgent) — el estado "a pedir" en tablet era indistinguible de un producto normal.
+   Ya corregido arriba en JS (rowHTML); estas reglas de fondo ya no dependen de :has(). */
+html.modo-bliss .row-urgent .fila-row{border-left-color:var(--rojo);background:#FCEBEA}
+html.modo-bliss .row-pedir .fila-row{border-left-color:var(--ambar);background:#FFF6E8}
+html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar)}
 .rcol{display:flex;flex-direction:column;gap:13px;position:sticky;top:16px}
 @media(max-width:1080px){.rcol{position:static}}
 .scalecard,.order{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
@@ -1062,10 +1080,10 @@ html:not(.vista-filas) .row-pedir .card-stats .cstat:last-child{background:#FCE8
    html.vista-filas (arriba) — no hace falta redefinirlo acá. Lo único propio de BlissOS
    es el indicador de prioridad (borde + punto de color) en el nombre del producto. */
 html.modo-bliss .fila-row{border-left:4px solid transparent;padding-left:4px}
-html.modo-bliss .row-urgent .fila-row{border-left-color:var(--rojo);background:#FCEBEA}
+html.modo-bliss .row-urgent .fila-row{border-left-color:var(--rojo)}
 html.modo-bliss .row-urgent .fila-nombre::before{content:'● ';color:var(--rojo)}
-html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-row{border-left-color:var(--ambar);background:#FFF6E8}
-html.modo-bliss .card-cell:has(.qstep.has):not(.row-urgent) .fila-nombre::before{content:'● ';color:var(--ambar)}
+html.modo-bliss .row-pedir .fila-row{border-left-color:var(--ambar)}
+html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar)}
 /* ==== Modo diagnóstico visual (?debug=1) — un color por contenedor ==== */
 .debug-outline #tab-pedido{outline:3px solid #9b59b6!important}
 .debug-outline #tab-pedido>.wrap{outline:3px solid #e67e22!important}
@@ -2689,10 +2707,11 @@ function rowHTML(it,a,f){const cant=qOf(it,a);
     // Pantallas grandes (BlissOS/monitor táctil): formato de fila tipo planilla — mismos
     // datos que la tarjeta (arriba), reutilizados tal cual, solo en otro maquetado.
     const stepper=`<div class="qcell">${cambioLine}${sugHint}<div class="qstep ${cant>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}" data-step="${inStep(it)}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${(it.fmt>1||multOf(it)>1)?'gold':''}">${labelFor(it,bundles)}</span></div>`;
-    return `<div data-ref="${it.ref}" class="card-cell ${a.status==='urgente'?'row-urgent':''}" title="${tooltip}">`+
+    return `<div data-ref="${it.ref}" class="card-cell ${a.status==='urgente'?'row-urgent':a.status==='pedir'?'row-pedir':''}" title="${tooltip}">`+
       `<div class="fila-row">`+
         `<div class="fila-thumb">${thumb}</div>`+
         `<div class="fila-nombre-col">`+
+          `<span class="fila-badge">${a.status==='urgente'?'🔴 URGENTE':a.status==='pedir'?'🟠 A PEDIR':''}</span>`+
           `<span class="fila-nombre prod-name">${it.nombre}</span>`+
           `<span class="fila-prov">${it.prov}</span>`+pendBadge+extraProvBadge+
         `</div>`+
@@ -7001,6 +7020,7 @@ document.getElementById('cp-guardar').onclick=async()=>{
       if(j.producto.confirmado===false)m+=' ⚠️ NO verificado en Loyverse';
       else if(j.producto.enEstaTienda===false)m+=' ⚠️ no asignado a tu tienda';
       else m+=' ✓ verificado en Loyverse';
+      if(j.advertencia)m+=' — '+j.advertencia;
       showToast(m);
       if(_cpImagenUrl||_cpImagenBase64){
         const payloadImg=_cpImagenBase64?{sku:j.producto.ref,image_base64:_cpImagenBase64}:{sku:j.producto.ref,image_url:_cpImagenUrl};
