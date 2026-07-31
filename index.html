@@ -1517,7 +1517,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <div style="margin-top:8px">
             <div style="font-size:10.5px;color:var(--muted);font-weight:700;margin-bottom:3px">MARGEN % OBJETIVO</div>
             <input id="rc-margen-obj" inputmode="numeric" placeholder="Ej: 30" style="width:100%;padding:9px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'JetBrains Mono';box-sizing:border-box">
-            <div style="font-size:10.5px;color:var(--muted);margin-top:4px;line-height:1.35">El margen siempre se calcula sobre el costo neto, ya que el IVA no forma parte del costo del producto.</div>
+            <div style="font-size:10.5px;color:var(--muted);margin-top:4px;line-height:1.35">El precio de venta se calcula sobre el costo tal cual lo ingresas arriba (con IVA incluido si elegiste esa opción). El costo neto se calcula aparte solo para guardarlo en Loyverse.</div>
           </div>
           <div id="rc-resumen" class="cat" style="margin-top:10px;padding:10px;background:var(--paper);border-radius:10px;line-height:1.7"></div>
         </div>
@@ -8432,8 +8432,8 @@ document.getElementById('rc-iva-sin').onclick=()=>rcSetIva('sin');
 function rcRenderExplicaCosto(){
   const el=document.getElementById('rc-costo-explica');
   el.textContent=rcState.ivaModo==='con'
-    ?'Se convertirá automáticamente a costo neto para guardar.'
-    :'El valor ingresado ya corresponde al costo neto.';
+    ?'El precio de venta se calculará sobre este valor (con IVA). Para guardar, se convertirá aparte a costo neto.'
+    :'El precio de venta se calculará directo sobre este valor. Se guardará tal cual, como costo neto.';
 }
 
 function rcSetModo(modo){
@@ -8476,11 +8476,17 @@ function rcCostoNeto(){
 // margen o modo de compra. Si el usuario edita el precio a mano, deja de recalcularse hasta
 // que vuelva a tocar costo/margen (mismo patrón de "no pisar lo que el usuario ya escribió"
 // que ya usa el resto de la app).
+// El precio de venta se calcula sobre el costo BRUTO (tal cual se escribió, con IVA incluido
+// si el modo es "con IVA") — NO sobre el neto. El costo neto (rcCostoNeto) sigue existiendo
+// como el valor que se GUARDA en Loyverse/D1, pero deja de ser la base del cálculo de precio.
+function rcBaseParaPrecio(){
+  return rcCostoUnitarioBruto();
+}
 function rcRecalcularPrecioAuto(){
   const margenPct=Number(document.getElementById('rc-margen-obj').value);
-  const costoNeto=rcCostoNeto();
-  if(!costoNeto||!margenPct||margenPct<=0||margenPct>=100)return;
-  const precioCalc=Math.round(costoNeto/(1-margenPct/100));
+  const base=rcBaseParaPrecio();
+  if(!base||!margenPct||margenPct<=0||margenPct>=100)return;
+  const precioCalc=Math.round(base/(1-margenPct/100));
   document.getElementById('rc-precio').value=precioCalc;
   rcState.precioTocado=false; // fue el sistema quien lo puso, no el usuario
 }
@@ -8506,9 +8512,10 @@ function rcRenderResumen(){
   const costoIngresado=Number(document.getElementById('rc-costo').value)||0;
   const costoUnitBruto=rcCostoUnitarioBruto();
   const costoNeto=rcCostoNeto();
+  const base=rcBaseParaPrecio(); // el precio se calcula sobre esto — el bruto, con IVA si aplica
   const margenPct=Number(document.getElementById('rc-margen-obj').value)||0;
   const precio=Number(document.getElementById('rc-precio').value)||0;
-  const margenReal=precio>0?((precio-costoNeto)/precio)*100:null;
+  const margenReal=precio>0?((precio-base)/precio)*100:null;
   const cant=Number(document.getElementById('rc-cantidad').value)||0;
   const uCaja=Number(document.getElementById('rc-unidades-caja').value)||0;
 
@@ -8521,8 +8528,8 @@ function rcRenderResumen(){
   }else{
     filas.push('Costo ingresado ('+(rcState.ivaModo==='con'?'con IVA':'neto')+'): <b>'+peso(costoIngresado)+'</b>');
   }
-  filas.push('Costo neto guardado: <b>'+(costoNeto?peso(Math.round(costoNeto)):'—')+'</b>');
-  filas.push('Base usada para calcular el precio: <b>'+(costoNeto?peso(Math.round(costoNeto))+' (neto)':'—')+'</b>');
+  filas.push('Base usada para calcular el precio: <b>'+(base?peso(Math.round(base)):'—')+(rcState.ivaModo==='con'?' (con IVA)':' (neto)')+'</b>');
+  filas.push('Costo neto guardado en Loyverse: <b>'+(costoNeto?peso(Math.round(costoNeto)):'—')+'</b>');
   if(margenPct)filas.push('Margen objetivo: <b>'+margenPct.toFixed(1)+'%</b>');
   if(margenReal!=null)filas.push('Margen real'+(rcState.precioTocado?' (precio editado a mano)':'')+': <b>'+margenReal.toFixed(1)+'%</b>');
   filas.push('Precio de venta final: <b>'+(precio?peso(precio):'—')+'</b>');
