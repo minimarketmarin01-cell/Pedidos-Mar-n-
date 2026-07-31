@@ -1499,23 +1499,25 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
 
         <div class="mm-field">
           <label>¿Cambió el costo o el precio? <span style="font-weight:400;color:var(--muted);text-transform:none">(opcional)</span></label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);font-weight:600;margin-bottom:6px;cursor:pointer">
-            <input type="checkbox" id="rc-costo-con-iva" style="width:15px;height:15px">
-            El costo que voy a escribir incluye IVA (19%)
-          </label>
+          <div style="display:flex;gap:6px;margin-bottom:8px">
+            <button type="button" class="rc-iva-btn active" id="rc-iva-con" data-iva="con" style="flex:1;padding:8px;border-radius:10px;border:1.5px solid var(--wa-d);background:var(--wa-bg,var(--verde-bg));color:var(--wa-d);font-weight:700;font-size:12.5px;cursor:pointer">Costo con IVA</button>
+            <button type="button" class="rc-iva-btn" id="rc-iva-sin" data-iva="sin" style="flex:1;padding:8px;border-radius:10px;border:1.5px solid var(--line);background:#fff;color:var(--muted);font-weight:700;font-size:12.5px;cursor:pointer">Costo sin IVA</button>
+          </div>
           <div style="display:flex;gap:8px">
             <div style="flex:1">
               <div style="font-size:10.5px;color:var(--muted);font-weight:700;margin-bottom:3px" id="rc-costo-label">COSTO</div>
-              <input id="rc-costo" inputmode="numeric" placeholder="$" style="width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'JetBrains Mono'">
+              <input id="rc-costo" inputmode="numeric" placeholder="$" style="width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'JetBrains Mono';box-sizing:border-box">
+              <div id="rc-costo-explica" style="font-size:10.5px;color:var(--muted);margin-top:4px;line-height:1.35"></div>
             </div>
             <div style="flex:1">
               <div style="font-size:10.5px;color:var(--muted);font-weight:700;margin-bottom:3px">PRECIO DE VENTA</div>
-              <input id="rc-precio" inputmode="numeric" placeholder="$" style="width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'JetBrains Mono'">
+              <input id="rc-precio" inputmode="numeric" placeholder="$" style="width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'JetBrains Mono';box-sizing:border-box">
             </div>
           </div>
           <div style="margin-top:8px">
             <div style="font-size:10.5px;color:var(--muted);font-weight:700;margin-bottom:3px">MARGEN % OBJETIVO</div>
             <input id="rc-margen-obj" inputmode="numeric" placeholder="Ej: 30" style="width:100%;padding:9px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'JetBrains Mono';box-sizing:border-box">
+            <div style="font-size:10.5px;color:var(--muted);margin-top:4px;line-height:1.35">El margen siempre se calcula sobre el costo neto, ya que el IVA no forma parte del costo del producto.</div>
           </div>
           <div id="rc-resumen" class="cat" style="margin-top:10px;padding:10px;background:var(--paper);border-radius:10px;line-height:1.7"></div>
         </div>
@@ -8214,7 +8216,7 @@ document.getElementById('in-guardar').onclick=async()=>{
 };
 
 // ===================== RECIBIR MERCADERÍA =====================
-const rcState={item:null,costoOriginal:0,precioOriginal:0,precioTocado:false,modo:'unidad'};
+const rcState={item:null,costoOriginal:0,precioOriginal:0,precioTocado:false,modo:'unidad',ivaModo:'con'};
 let _rcPrecioSugerido=null; // precio sugerido al variar el costo — solo se aplica si el usuario toca "Usar este precio"
 function redondeoPsicologicoJS(p){
   const base=Math.floor(p/100)*100;
@@ -8238,7 +8240,10 @@ function rcShowPicked(it){
   rcState.precioTocado=false;
   document.getElementById('rc-costo').value=rcState.costoOriginal||'';
   document.getElementById('rc-precio').value=rcState.precioOriginal||'';
-  document.getElementById('rc-costo-con-iva').checked=false;
+  // El costo prellenado (it.coste) es el que ya está guardado en Loyverse, y eso SIEMPRE es
+  // neto — por eso el toggle arranca en "sin IVA". Si el usuario borra y escribe un costo
+  // nuevo tomado de una factura (que trae IVA), ahí sí cambia a "Costo con IVA".
+  rcSetIva('sin');
   document.getElementById('rc-margen-obj').value='';
   document.getElementById('rc-unidades-caja').value='';
   rcSetModo('unidad');
@@ -8320,7 +8325,7 @@ function rcReset(){
   document.getElementById('rc-fecha-aaaa').value='';
   document.getElementById('rc-costo').value='';
   document.getElementById('rc-precio').value='';
-  document.getElementById('rc-costo-con-iva').checked=false;
+  rcSetIva('sin');
   document.getElementById('rc-margen-obj').value='';
   document.getElementById('rc-unidades-caja').value='';
   rcSetModo('unidad');
@@ -8405,6 +8410,32 @@ document.getElementById('rc-cantidad').oninput=()=>{rcValidar();rcRenderResumen(
 document.getElementById('rc-fecha').oninput=rcValidar;
 
 // ---- Selector Unidad / Caja ----
+// Toggle claro Con IVA / Sin IVA — reemplaza el checkbox anterior, que dejaba ambigüedad
+// sobre qué significa "activado". Con botones explícitos no hay que interpretar nada.
+function rcSetIva(modo){
+  rcState.ivaModo=modo;
+  const btnCon=document.getElementById('rc-iva-con'),btnSin=document.getElementById('rc-iva-sin');
+  btnCon.style.background=modo==='con'?'var(--wa-bg,var(--verde-bg))':'#fff';
+  btnCon.style.color=modo==='con'?'var(--wa-d)':'var(--muted)';
+  btnCon.style.borderColor=modo==='con'?'var(--wa-d)':'var(--line)';
+  btnSin.style.background=modo==='sin'?'var(--wa-bg,var(--verde-bg))':'#fff';
+  btnSin.style.color=modo==='sin'?'var(--wa-d)':'var(--muted)';
+  btnSin.style.borderColor=modo==='sin'?'var(--wa-d)':'var(--line)';
+  if(!rcState.precioTocado)rcRecalcularPrecioAuto();
+  rcRenderExplicaCosto();
+  rcRenderResumen();
+}
+document.getElementById('rc-iva-con').onclick=()=>rcSetIva('con');
+document.getElementById('rc-iva-sin').onclick=()=>rcSetIva('sin');
+// Texto dinámico bajo el campo de costo: dice explícitamente qué va a pasar con el número
+// que el usuario está tecleando, ANTES de que aparezca cualquier resultado calculado.
+function rcRenderExplicaCosto(){
+  const el=document.getElementById('rc-costo-explica');
+  el.textContent=rcState.ivaModo==='con'
+    ?'Se convertirá automáticamente a costo neto para guardar.'
+    :'El valor ingresado ya corresponde al costo neto.';
+}
+
 function rcSetModo(modo){
   rcState.modo=modo;
   document.getElementById('rc-modo-unidad').classList.toggle('active',modo==='unidad');
@@ -8433,13 +8464,13 @@ function rcCostoUnitarioBruto(){
   const uCaja=Number(document.getElementById('rc-unidades-caja').value)||0;
   return uCaja>0?(costoIngresado/uCaja):0;
 }
-// Requisito 1: costo neto (con IVA descontado si corresponde) — SIEMPRE el que se guarda y
-// el que se usa para calcular el precio, sea la compra por unidad o por caja.
+// Costo neto: SIEMPRE el que se guarda y el que se usa para calcular el precio. El margen
+// se calcula sobre este valor porque el IVA no es parte del costo real del producto (es un
+// impuesto que se traspasa) — esto se explica también en la interfaz, no solo en el código.
 const IVA_RC=0.19;
 function rcCostoNeto(){
   const bruto=rcCostoUnitarioBruto();
-  const conIva=document.getElementById('rc-costo-con-iva').checked;
-  return conIva?(bruto/(1+IVA_RC)):bruto;
+  return rcState.ivaModo==='con'?(bruto/(1+IVA_RC)):bruto;
 }
 // Requisito 2: el precio se recalcula SOLO — sin botón — cada vez que cambia costo, IVA,
 // margen o modo de compra. Si el usuario edita el precio a mano, deja de recalcularse hasta
@@ -8457,46 +8488,47 @@ document.getElementById('rc-precio').oninput=()=>{
   rcState.precioTocado=true; // desde acá, el usuario manda — no se vuelve a autocompletar
   rcRenderResumen();
 };
-document.getElementById('rc-costo-con-iva').addEventListener('change',()=>{
-  if(!rcState.precioTocado)rcRecalcularPrecioAuto();
-  rcRenderResumen();
-});
 document.getElementById('rc-costo').oninput=()=>{
   if(!rcState.precioTocado)rcRecalcularPrecioAuto();
+  rcRenderExplicaCosto();
   rcRenderResumen();
 };
 document.getElementById('rc-margen-obj').oninput=()=>{
   if(!rcState.precioTocado)rcRecalcularPrecioAuto();
   rcRenderResumen();
 };
-// Resumen dinámico único (requisito 5): costo de caja, costo por unidad, costo neto, costo
-// con IVA, margen objetivo, margen real, precio calculado, y stock total a sumar — todo en
-// un solo bloque que se actualiza en cada tecla, sin pasos intermedios.
+// Resumen dinámico: muestra SIEMPRE (no solo cuando hay IVA) las 4 líneas clave, en el orden
+// en que ocurre el cálculo: lo que escribiste → lo que se guarda → sobre qué se calculó el
+// precio → el resultado. Así queda explícito que el margen se aplicó sobre el neto, sin que
+// el usuario tenga que inferirlo.
 function rcRenderResumen(){
   const cont=document.getElementById('rc-resumen');
   const costoIngresado=Number(document.getElementById('rc-costo').value)||0;
   const costoUnitBruto=rcCostoUnitarioBruto();
   const costoNeto=rcCostoNeto();
-  const conIva=document.getElementById('rc-costo-con-iva').checked;
   const margenPct=Number(document.getElementById('rc-margen-obj').value)||0;
   const precio=Number(document.getElementById('rc-precio').value)||0;
   const margenReal=precio>0?((precio-costoNeto)/precio)*100:null;
   const cant=Number(document.getElementById('rc-cantidad').value)||0;
   const uCaja=Number(document.getElementById('rc-unidades-caja').value)||0;
 
+  if(!costoIngresado){cont.innerHTML='';document.getElementById('rc-stock-total-hint').textContent='';return;}
+
   const filas=[];
   if(rcState.modo==='caja'){
-    filas.push('Costo de la caja: <b>'+(costoIngresado?peso(costoIngresado):'—')+'</b>');
+    filas.push('Costo de la caja: <b>'+peso(costoIngresado)+'</b>');
     filas.push('Costo por unidad: <b>'+(costoUnitBruto?peso(Math.round(costoUnitBruto)):'—')+'</b>');
+  }else{
+    filas.push('Costo ingresado ('+(rcState.ivaModo==='con'?'con IVA':'neto')+'): <b>'+peso(costoIngresado)+'</b>');
   }
-  if(conIva)filas.push('Costo con IVA: <b>'+(costoUnitBruto?peso(Math.round(costoUnitBruto)):'—')+'</b>');
-  filas.push('Costo neto (el que se guarda): <b>'+(costoNeto?peso(Math.round(costoNeto)):'—')+'</b>');
+  filas.push('Costo neto guardado: <b>'+(costoNeto?peso(Math.round(costoNeto)):'—')+'</b>');
+  filas.push('Base usada para calcular el precio: <b>'+(costoNeto?peso(Math.round(costoNeto))+' (neto)':'—')+'</b>');
   if(margenPct)filas.push('Margen objetivo: <b>'+margenPct.toFixed(1)+'%</b>');
   if(margenReal!=null)filas.push('Margen real'+(rcState.precioTocado?' (precio editado a mano)':'')+': <b>'+margenReal.toFixed(1)+'%</b>');
-  if(precio)filas.push('Precio de venta: <b>'+peso(precio)+'</b>');
+  filas.push('Precio de venta final: <b>'+(precio?peso(precio):'—')+'</b>');
   if(rcState.modo==='caja'&&cant>0&&uCaja>0)filas.push('Stock a sumar: <b>'+cant+' caja'+(cant===1?'':'s')+' × '+uCaja+' u = '+(cant*uCaja)+' u</b>');
 
-  cont.innerHTML=filas.length?filas.join('<br>'):'';
+  cont.innerHTML=filas.join('<br>');
 
   const stockHint=document.getElementById('rc-stock-total-hint');
   if(rcState.modo==='caja'&&cant>0&&uCaja>0){
