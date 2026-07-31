@@ -19,18 +19,24 @@
   --rojo:#D23B2A;--rojo-bg:#FBE9E6;--ambar:#D98A12;--ambar-bg:#FBF1DD;
   --verde:#2C9469;--verde-bg:#E5F2EC;--gris:#8A8F98;--gris-bg:#EFEFEC;
   --azul:#3C6FB0;--azul-bg:#E8F0F8;--wa:#1FA855;--wa-d:#178a45;--gold:#C68A1B;--gold-bg:#FBF3E1;
-  /* Marca "Marín Pedidos" — curvas fluidas y gradiente verde-turquesa, inspirado en el moodboard */
-  --brand-1:#34D399;--brand-2:#0D9488;--brand-3:#0B7A78;--brand-solid:#1B9E60;
+  /* Marca "Marín Pedidos" — paleta pastel (madejas de lana): ciruela + oliva a 25-30% de
+     saturación. Reemplaza el gradiente verde-turquesa anterior. Los 5 colores semánticos de
+     arriba (rojo/ámbar/verde/gris/azul) NO se tocan — siguen siendo los únicos que comunican
+     estado de stock, y --wa/--gold tampoco, porque otros módulos ya los usan como acento. */
+  --brand-1:#8D9573;--brand-2:#7B8362;--brand-3:#5F6650;--brand-solid:#7B8362;
   --brand-grad:linear-gradient(120deg,var(--brand-1),var(--brand-2));
   --brand-grad-deep:linear-gradient(120deg,var(--brand-2),var(--brand-3));
-  --radius-card:22px;--radius-btn:13px;--shadow-brand:0 8px 24px rgba(11,122,120,.28);
+  --radius-card:22px;--radius-btn:13px;--shadow-brand:0 8px 24px rgba(107,71,97,.22);
+  --ciruela:#7A5570;--ciruela-hi:#8C6883;--ciruela-tint:#F3EEF2;
+  --oliva:#7B8362;--oliva-hi:#8D9573;--oliva-tint:#EFF1E7;
+  --magenta:#9C6B93;--focus-ring:0 0 0 3px rgba(156,107,147,.35);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%;width:100%;overflow-x:hidden}
 body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--text);font-size:14px;line-height:1.4;-webkit-tap-highlight-color:transparent;width:100%;max-width:100%;padding-bottom:calc(78px + env(safe-area-inset-bottom))}
 .mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
 h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
-.top{background:linear-gradient(120deg,#0B2230 0%,#0D3B3A 45%,var(--brand-3) 100%);color:#fff;width:100%;padding:9px 16px;padding-top:max(9px,env(safe-area-inset-top));padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;position:relative}
+.top{background:linear-gradient(120deg,#333A26 0%,#454C33 45%,var(--brand-3) 100%);color:#fff;width:100%;padding:9px 16px;padding-top:max(9px,env(safe-area-inset-top));padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;position:relative}
 .top::after{content:'';position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--brand-grad);opacity:.9}
 .brand{display:flex;align-items:center;gap:9px;min-width:0}
 .brand-mark{width:30px;height:30px;border-radius:9px;flex:none;box-shadow:0 3px 8px rgba(0,0,0,.25)}
@@ -57,10 +63,10 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
 .shc-inner{max-width:1520px;margin:0 auto}
 .shc-row{display:flex;gap:6px;align-items:center;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:1px}
 .shc-row::-webkit-scrollbar{display:none}
-.shc-mini{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted);font-weight:600;flex-shrink:0}
-.shc-mini input{width:36px;padding:4px 5px;border:1.5px solid var(--line);border-radius:6px;font-family:'JetBrains Mono';font-size:11.5px;text-align:center}
-.seg.sm{flex-shrink:0}
-.seg.sm button{padding:4px 7px;font-size:10.5px}
+.shc-mini{display:flex;align-items:center;gap:3px;font-size:9px;color:var(--muted);font-weight:600;flex-shrink:0;height:36px;padding:0 5px;box-sizing:border-box}
+.shc-mini input{width:26px;height:24px;padding:0 2px;border:1.5px solid var(--line);border-radius:6px;font-family:'JetBrains Mono';font-size:11.5px;text-align:center;box-sizing:border-box}
+.seg.sm{flex-shrink:0;height:36px}
+.seg.sm button{padding:0 10px;font-size:11px;height:100%;box-sizing:border-box}
 .legend.sm{gap:8px;margin-top:5px;font-size:10px}
 .legend.sm .ldot{width:6px;height:6px}
 .row-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;flex:none}
@@ -189,6 +195,15 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .mm-field label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:5px}
 .mm-search{position:relative}
 .mm-search input,.prov-all{border:1.5px solid var(--line);border-radius:10px;font-size:15px;padding-top:11px;padding-bottom:11px;background:#fff;color:var(--text);font-family:'Inter'}
+/* Ajuste header de filtros de Pedidos: el buscador (44px de alto real por el padding de
+   arriba) no coincidía con la altura de los chips 7d/14d/30d/90d (~26px). Se define una
+   altura común de 36px para los tres tipos de control de la fila — ni tan chico como los
+   chips originales (quedaban apretados) ni tan alto como el buscador original. */
+.shc-row .prov-all{padding-top:0;padding-bottom:0;height:36px;padding-left:10px;padding-right:64px;font-size:12.5px}
+.shc-row .prov-icon{display:none}
+.shc-row .prov-x{right:2px;width:20px;height:20px}
+.shc-row .prov-mic{right:44px;width:17px;height:17px}
+.shc-row .prov-scan{right:24px;width:17px;height:17px}
 .mm-search input{width:100%;padding-left:14px;padding-right:104px}
 .mm-search .mm-mic,.mm-search .mm-scan{position:absolute;top:50%;transform:translateY(-50%);width:24px;height:24px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2}
 .mm-x{position:absolute;top:50%;transform:translateY(-50%);width:32px;height:32px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2}
@@ -382,7 +397,7 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 select,input[type=number]{font-family:'Inter';font-size:13px;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;background:#fff;color:var(--text)}
 input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .prov-combo{position:relative;flex:1;min-width:160px}
-.shc-row .prov-combo{position:sticky;left:0;z-index:3;background:var(--card);flex-shrink:0;width:min(60vw,260px)}
+.shc-row .prov-combo{position:sticky;left:0;z-index:3;background:var(--card);flex-shrink:0;width:min(76vw,310px)}
 .prov-icon{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;pointer-events:none;z-index:2}
 /* BUG 3: el texto escrito no se veía. El input tenía 24px de padding izq + 112px der para
    los 3 botones, dentro de una caja de ancho fijo 172px → quedaban 36px reales de texto.
@@ -1047,7 +1062,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
 .bottom-nav.bn-hide{transform:translateY(100%)}
 .bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:#9aa1ac;font-family:'Manrope';font-weight:700;font-size:10.5px;padding:7px 2px;min-height:54px;cursor:pointer;position:relative;border-radius:14px;transition:color .18s ease,background .18s ease;-webkit-tap-highlight-color:transparent}
 .bn-item .ic{font-size:22px;line-height:1;transition:transform .15s ease;position:relative;z-index:1}
-.bn-item.active{color:#fff;background:linear-gradient(120deg,rgba(52,211,153,.30),rgba(13,148,136,.22))}
+.bn-item.active{color:#fff;background:linear-gradient(120deg,rgba(141,149,115,.32),rgba(123,131,98,.22))}
 .bn-item.active .ic{transform:translateY(-1px) scale(1.06)}
 .bn-item:active{background:rgba(255,255,255,.16)}
 .bn-item:active .ic{transform:scale(.9)}
@@ -1131,8 +1146,8 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
     <div class="shc-row shc-wrap">
       <div class="prov-combo" id="prov-combo"><span class="prov-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13.5 13.5 20a1.5 1.5 0 0 1-2.1 0L4 12.6V4h8.6l7.4 7.4a1.5 1.5 0 0 1 0 2.1Z"/><circle cx="8.3" cy="8.3" r="1.3"/></svg></span><input class="prov-all" id="prov-all" placeholder="Proveedor o producto… escribe o toca" autocomplete="off" inputmode="text"><button class="prov-mic" id="prov-mic" type="button" tabindex="-1" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button><button class="prov-scan cam-btn" id="prov-scan" type="button" tabindex="-1" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button><button class="prov-x" id="prov-x" type="button" tabindex="-1" aria-label="Borrar">✕</button></div>
       <div class="seg sm" id="seg-basis"><button data-b="7" class="active">7d</button><button data-b="14">14d</button><button data-b="30">30d</button><button data-b="90">90d</button></div>
-      <div class="shc-mini"><label>Entrega</label><input type="number" id="lead" value="3" min="0" max="30"></div>
-      <div class="shc-mini"><label>Cobertura</label><input type="number" id="cover" value="10" min="1" max="60"></div>
+      <div class="shc-mini"><label>Ent.</label><input type="number" id="lead" value="3" min="0" max="30"></div>
+      <div class="shc-mini"><label>Cob.</label><input type="number" id="cover" value="10" min="1" max="60"></div>
     </div>
     <div class="prov-menu hidden" id="prov-menu"></div>
   </div>
@@ -1448,6 +1463,10 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
 
         <div class="mm-field">
           <label>¿Cambió el costo o el precio? <span style="font-weight:400;color:var(--muted);text-transform:none">(opcional)</span></label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);font-weight:600;margin-bottom:6px;cursor:pointer">
+            <input type="checkbox" id="rc-costo-con-iva" style="width:15px;height:15px">
+            El costo que voy a escribir incluye IVA (19%)
+          </label>
           <div style="display:flex;gap:8px">
             <div style="flex:1">
               <div style="font-size:10.5px;color:var(--muted);font-weight:700;margin-bottom:3px">COSTO</div>
@@ -1458,7 +1477,16 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
               <input id="rc-precio" inputmode="numeric" placeholder="$" style="width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'JetBrains Mono'">
             </div>
           </div>
+          <div class="cat" id="rc-iva-hint" style="margin-top:6px"></div>
           <div class="cat" id="rc-precio-hint" style="margin-top:6px"></div>
+          <div style="display:flex;gap:8px;align-items:flex-end;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)">
+            <div style="flex:1">
+              <div style="font-size:10.5px;color:var(--muted);font-weight:700;margin-bottom:3px">MARGEN % OBJETIVO</div>
+              <input id="rc-margen-obj" inputmode="numeric" placeholder="Ej: 30" style="width:100%;padding:9px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'JetBrains Mono'">
+            </div>
+            <button type="button" class="rc-precio-usar" id="rc-margen-aplicar" style="height:38px;padding:0 14px;font-size:12px">Aplicar margen</button>
+          </div>
+          <div class="cat" id="rc-margen-hint" style="margin-top:6px"></div>
         </div>
 
         <div class="mm-field">
@@ -8181,6 +8209,10 @@ function rcShowPicked(it){
   document.getElementById('rc-costo').value=rcState.costoOriginal||'';
   document.getElementById('rc-precio').value=rcState.precioOriginal||'';
   document.getElementById('rc-precio-hint').textContent='';
+  document.getElementById('rc-costo-con-iva').checked=false;
+  document.getElementById('rc-iva-hint').textContent='';
+  document.getElementById('rc-margen-obj').value='';
+  document.getElementById('rc-margen-hint').textContent='';
 }
 function rcPick(ref){
   const it=(DB.items||[]).find(i=>i.ref===ref);
@@ -8260,6 +8292,10 @@ function rcReset(){
   document.getElementById('rc-costo').value='';
   document.getElementById('rc-precio').value='';
   document.getElementById('rc-precio-hint').textContent='';
+  document.getElementById('rc-costo-con-iva').checked=false;
+  document.getElementById('rc-iva-hint').textContent='';
+  document.getElementById('rc-margen-obj').value='';
+  document.getElementById('rc-margen-hint').textContent='';
   document.getElementById('rc-guardar').disabled=true;
 }
 function openRecibir(){try{rcReset();}catch(e){}abrirModal('rc-ov');}
@@ -8340,9 +8376,30 @@ document.getElementById('rc-qty-mas').onclick=()=>{const i=document.getElementBy
 document.getElementById('rc-cantidad').oninput=rcValidar;
 document.getElementById('rc-fecha').oninput=rcValidar;
 document.getElementById('rc-precio').oninput=()=>{document.getElementById('rc-precio-hint').textContent='';_rcPrecioSugerido=null;};
+// Requisito 1: el campo #rc-costo SIEMPRE contiene lo que el usuario escribió tal cual (con o
+// sin IVA según el toggle) — es literalmente lo que dice la factura, no se reescribe solo. El
+// costo NETO (el que se usa para margen y el que se guarda) se calcula aparte con esta función,
+// y solo se sustituye en el campo si el usuario toca "Usar costo neto" explícitamente.
+const IVA_RC=0.19;
+function rcCostoNeto(){
+  const bruto=Number(document.getElementById('rc-costo').value)||0;
+  const conIva=document.getElementById('rc-costo-con-iva').checked;
+  return conIva?(bruto/(1+IVA_RC)):bruto;
+}
+function rcRenderIvaHint(){
+  const hint=document.getElementById('rc-iva-hint');
+  const bruto=Number(document.getElementById('rc-costo').value)||0;
+  const conIva=document.getElementById('rc-costo-con-iva').checked;
+  if(!bruto||!conIva){hint.textContent='';return;}
+  const neto=rcCostoNeto();
+  hint.innerHTML='Costo con IVA: <b>'+peso(bruto)+'</b> · Costo neto (el que se guarda): <b>'+peso(Math.round(neto))+'</b>';
+}
+document.getElementById('rc-costo-con-iva').addEventListener('change',()=>{rcRenderIvaHint();rcActualizarMargenReal();});
 document.getElementById('rc-costo').oninput=()=>{
   const nuevoCosto=Number(document.getElementById('rc-costo').value)||0;
   const hint=document.getElementById('rc-precio-hint');
+  rcRenderIvaHint();
+  rcActualizarMargenReal();
   // FIX: antes esto escribía directo en #rc-precio (rcState.precioTocado solo lo evitaba si
   // el usuario ya había tocado precio ANTES en esta sesión — si tecleaba costo primero, igual
   // se sobrescribía). Ahora el costo NUNCA toca el campo de precio: solo se muestra un texto
@@ -8358,12 +8415,41 @@ document.getElementById('rc-precio-hint').addEventListener('click',ev=>{
   document.getElementById('rc-precio').value=_rcPrecioSugerido; // única vía: acción explícita del usuario, nunca automática
   document.getElementById('rc-precio-hint').textContent='✓ Precio aplicado — puedes seguir ajustándolo.';
 });
+// Requisito 2: margen % objetivo. "Aplicar" calcula el precio con margen sobre venta
+// (Precio = Costo / (1 - Margen%)) usando el costo NETO (con IVA descontado si corresponde)
+// y lo escribe en #rc-precio — desde ahí el campo sigue 100% editable a mano, como cualquier
+// otro valor de este formulario; no hay bloqueo ni de solo-lectura.
+document.getElementById('rc-margen-aplicar').onclick=()=>{
+  const margenPct=Number(document.getElementById('rc-margen-obj').value);
+  const hint=document.getElementById('rc-margen-hint');
+  const costoNeto=rcCostoNeto();
+  if(!costoNeto){hint.innerHTML='<span style="color:var(--rojo)">Escribe primero el costo.</span>';return;}
+  if(!margenPct||margenPct<=0||margenPct>=100){hint.innerHTML='<span style="color:var(--rojo)">Escribe un margen entre 1 y 99.</span>';return;}
+  const precioCalc=Math.round(costoNeto/(1-margenPct/100));
+  document.getElementById('rc-precio').value=precioCalc;
+  hint.innerHTML='✓ Precio aplicado: <b>'+peso(precioCalc)+'</b> · Margen real: <b>'+margenPct.toFixed(1)+'%</b> — puedes seguir ajustándolo.';
+};
+// Recalcula el margen real cada vez que costo o precio cambian, para que el hint del margen
+// no quede desactualizado si el usuario edita el precio a mano después de aplicar.
+function rcActualizarMargenReal(){
+  const hint=document.getElementById('rc-margen-hint');
+  const costoNeto=rcCostoNeto();
+  const precio=Number(document.getElementById('rc-precio').value)||0;
+  if(!costoNeto||!precio){return;}
+  const margenReal=((precio-costoNeto)/precio)*100;
+  hint.innerHTML='Margen real con los valores actuales: <b>'+margenReal.toFixed(1)+'%</b>';
+}
+document.getElementById('rc-precio').addEventListener('input',rcActualizarMargenReal);
 document.getElementById('rc-guardar').onclick=async()=>{
   const btn=document.getElementById('rc-guardar');
   const it=rcState.item;if(!it)return;
   const cantidad=Number(document.getElementById('rc-cantidad').value)||0;
   const fecha=fmtDateInputToDDMMAAAA(document.getElementById('rc-fecha').value);
-  const nuevoCosto=Number(document.getElementById('rc-costo').value)||0;
+  // Requisito 1: lo que se guarda siempre es el costo NETO — si el toggle "con IVA" está
+  // activo, rcCostoNeto() ya descuenta el 19% antes de que esto llegue al backend. El resto
+  // del sistema (márgenes, Calculadora de precios, ABC) asume costo neto en todos lados, así
+  // que este es el único punto donde se resuelve la conversión.
+  const nuevoCosto=Math.round(rcCostoNeto());
   const nuevoPrecio=Number(document.getElementById('rc-precio').value)||0;
   const costoCambio=nuevoCosto>0&&nuevoCosto!==rcState.costoOriginal;
   const precioCambio=nuevoPrecio>0&&nuevoPrecio!==rcState.precioOriginal;
