@@ -1475,12 +1475,23 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
 
         <div class="mm-field" id="rc-cantidad-field">
           <label>Cantidad recibida</label>
+          <div style="display:flex;gap:6px;margin-bottom:8px">
+            <button type="button" class="rc-modo-btn active" id="rc-modo-unidad" data-modo="unidad" style="flex:1;padding:8px;border-radius:10px;border:1.5px solid var(--wa-d);background:var(--wa-bg,var(--verde-bg));color:var(--wa-d);font-weight:700;font-size:12.5px;cursor:pointer">Por unidad</button>
+            <button type="button" class="rc-modo-btn" id="rc-modo-caja" data-modo="caja" style="flex:1;padding:8px;border-radius:10px;border:1.5px solid var(--line);background:#fff;color:var(--muted);font-weight:700;font-size:12.5px;cursor:pointer">Por caja</button>
+          </div>
           <div class="mm-qty">
             <button class="qbtn" id="rc-qty-menos" type="button">−</button>
             <input id="rc-cantidad" inputmode="decimal" placeholder="0" disabled>
             <span class="unidad" id="rc-unidad">u</span>
             <button class="qbtn" id="rc-qty-mas" type="button">+</button>
           </div>
+          <div id="rc-caja-campos" class="hidden" style="display:flex;gap:8px;margin-top:8px">
+            <div style="flex:1">
+              <div style="font-size:10.5px;color:var(--muted);font-weight:700;margin-bottom:3px">UNIDADES POR CAJA</div>
+              <input id="rc-unidades-caja" inputmode="numeric" placeholder="Ej: 24" style="width:100%;padding:9px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'JetBrains Mono';box-sizing:border-box">
+            </div>
+          </div>
+          <div class="cat" id="rc-stock-total-hint" style="margin-top:6px"></div>
         </div>
         <div class="mm-field hidden" id="rc-sin-track-msg">
           <div style="background:var(--azul-bg);border-radius:10px;padding:12px;color:var(--azul);font-size:13px;font-weight:600;line-height:1.4">Para registrar una recepción, primero activa "Seguir inventario".</div>
@@ -1494,7 +1505,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           </label>
           <div style="display:flex;gap:8px">
             <div style="flex:1">
-              <div style="font-size:10.5px;color:var(--muted);font-weight:700;margin-bottom:3px">COSTO</div>
+              <div style="font-size:10.5px;color:var(--muted);font-weight:700;margin-bottom:3px" id="rc-costo-label">COSTO</div>
               <input id="rc-costo" inputmode="numeric" placeholder="$" style="width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'JetBrains Mono'">
             </div>
             <div style="flex:1">
@@ -1502,16 +1513,11 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
               <input id="rc-precio" inputmode="numeric" placeholder="$" style="width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'JetBrains Mono'">
             </div>
           </div>
-          <div class="cat" id="rc-iva-hint" style="margin-top:6px"></div>
-          <div class="cat" id="rc-precio-hint" style="margin-top:6px"></div>
-          <div style="display:flex;gap:8px;align-items:flex-end;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)">
-            <div style="flex:1">
-              <div style="font-size:10.5px;color:var(--muted);font-weight:700;margin-bottom:3px">MARGEN % OBJETIVO</div>
-              <input id="rc-margen-obj" inputmode="numeric" placeholder="Ej: 30" style="width:100%;padding:9px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'JetBrains Mono'">
-            </div>
-            <button type="button" class="rc-precio-usar" id="rc-margen-aplicar" style="height:38px;padding:0 14px;font-size:12px">Aplicar margen</button>
+          <div style="margin-top:8px">
+            <div style="font-size:10.5px;color:var(--muted);font-weight:700;margin-bottom:3px">MARGEN % OBJETIVO</div>
+            <input id="rc-margen-obj" inputmode="numeric" placeholder="Ej: 30" style="width:100%;padding:9px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'JetBrains Mono';box-sizing:border-box">
           </div>
-          <div class="cat" id="rc-margen-hint" style="margin-top:6px"></div>
+          <div id="rc-resumen" class="cat" style="margin-top:10px;padding:10px;background:var(--paper);border-radius:10px;line-height:1.7"></div>
         </div>
 
         <div class="mm-field">
@@ -8208,7 +8214,7 @@ document.getElementById('in-guardar').onclick=async()=>{
 };
 
 // ===================== RECIBIR MERCADERÍA =====================
-const rcState={item:null,costoOriginal:0,precioOriginal:0,precioTocado:false};
+const rcState={item:null,costoOriginal:0,precioOriginal:0,precioTocado:false,modo:'unidad'};
 let _rcPrecioSugerido=null; // precio sugerido al variar el costo — solo se aplica si el usuario toca "Usar este precio"
 function redondeoPsicologicoJS(p){
   const base=Math.floor(p/100)*100;
@@ -8230,14 +8236,13 @@ function rcShowPicked(it){
   rcState.costoOriginal=it.coste||0;
   rcState.precioOriginal=it.precio||0;
   rcState.precioTocado=false;
-  _rcPrecioSugerido=null;
   document.getElementById('rc-costo').value=rcState.costoOriginal||'';
   document.getElementById('rc-precio').value=rcState.precioOriginal||'';
-  document.getElementById('rc-precio-hint').textContent='';
   document.getElementById('rc-costo-con-iva').checked=false;
-  document.getElementById('rc-iva-hint').textContent='';
   document.getElementById('rc-margen-obj').value='';
-  document.getElementById('rc-margen-hint').textContent='';
+  document.getElementById('rc-unidades-caja').value='';
+  rcSetModo('unidad');
+  rcRenderResumen();
 }
 function rcPick(ref){
   const it=(DB.items||[]).find(i=>i.ref===ref);
@@ -8301,7 +8306,6 @@ function rcValidar(){
 }
 function rcReset(){
   rcState.item=null;rcState.costoOriginal=0;rcState.precioOriginal=0;rcState.precioTocado=false;
-  _rcPrecioSugerido=null;
   document.getElementById('rc-search').value='';
   document.getElementById('rc-results').innerHTML='';
   document.getElementById('rc-picked').classList.remove('on');
@@ -8316,11 +8320,10 @@ function rcReset(){
   document.getElementById('rc-fecha-aaaa').value='';
   document.getElementById('rc-costo').value='';
   document.getElementById('rc-precio').value='';
-  document.getElementById('rc-precio-hint').textContent='';
   document.getElementById('rc-costo-con-iva').checked=false;
-  document.getElementById('rc-iva-hint').textContent='';
   document.getElementById('rc-margen-obj').value='';
-  document.getElementById('rc-margen-hint').textContent='';
+  document.getElementById('rc-unidades-caja').value='';
+  rcSetModo('unidad');
   document.getElementById('rc-guardar').disabled=true;
 }
 function openRecibir(){try{rcReset();}catch(e){}abrirModal('rc-ov');}
@@ -8396,84 +8399,127 @@ document.getElementById('rc-mic').onclick=()=>voiceSearch(document.getElementByI
   document.getElementById('rc-search').value=text;
   document.getElementById('rc-search').dispatchEvent(new Event('input',{bubbles:true}));
 });
-document.getElementById('rc-qty-menos').onclick=()=>{const i=document.getElementById('rc-cantidad');const st=rcState.item&&rcState.item.peso?0.05:1;i.value=Math.max(0,(Number(i.value)||0)-st).toFixed(rcState.item&&rcState.item.peso?3:0);rcValidar();};
-document.getElementById('rc-qty-mas').onclick=()=>{const i=document.getElementById('rc-cantidad');const st=rcState.item&&rcState.item.peso?0.05:1;i.value=((Number(i.value)||0)+st).toFixed(rcState.item&&rcState.item.peso?3:0);rcValidar();};
-document.getElementById('rc-cantidad').oninput=rcValidar;
+document.getElementById('rc-qty-menos').onclick=()=>{const i=document.getElementById('rc-cantidad');const st=rcState.item&&rcState.item.peso?0.05:1;i.value=Math.max(0,(Number(i.value)||0)-st).toFixed(rcState.item&&rcState.item.peso?3:0);rcValidar();rcRenderResumen();};
+document.getElementById('rc-qty-mas').onclick=()=>{const i=document.getElementById('rc-cantidad');const st=rcState.item&&rcState.item.peso?0.05:1;i.value=((Number(i.value)||0)+st).toFixed(rcState.item&&rcState.item.peso?3:0);rcValidar();rcRenderResumen();};
+document.getElementById('rc-cantidad').oninput=()=>{rcValidar();rcRenderResumen();};
 document.getElementById('rc-fecha').oninput=rcValidar;
-document.getElementById('rc-precio').oninput=()=>{document.getElementById('rc-precio-hint').textContent='';_rcPrecioSugerido=null;};
-// Requisito 1: el campo #rc-costo SIEMPRE contiene lo que el usuario escribió tal cual (con o
-// sin IVA según el toggle) — es literalmente lo que dice la factura, no se reescribe solo. El
-// costo NETO (el que se usa para margen y el que se guarda) se calcula aparte con esta función,
-// y solo se sustituye en el campo si el usuario toca "Usar costo neto" explícitamente.
+
+// ---- Selector Unidad / Caja ----
+function rcSetModo(modo){
+  rcState.modo=modo;
+  document.getElementById('rc-modo-unidad').classList.toggle('active',modo==='unidad');
+  document.getElementById('rc-modo-caja').classList.toggle('active',modo==='caja');
+  const btnU=document.getElementById('rc-modo-unidad'),btnC=document.getElementById('rc-modo-caja');
+  btnU.style.background=modo==='unidad'?'var(--wa-bg,var(--verde-bg))':'#fff';
+  btnU.style.color=modo==='unidad'?'var(--wa-d)':'var(--muted)';
+  btnU.style.borderColor=modo==='unidad'?'var(--wa-d)':'var(--line)';
+  btnC.style.background=modo==='caja'?'var(--wa-bg,var(--verde-bg))':'#fff';
+  btnC.style.color=modo==='caja'?'var(--wa-d)':'var(--muted)';
+  btnC.style.borderColor=modo==='caja'?'var(--wa-d)':'var(--line)';
+  document.getElementById('rc-caja-campos').classList.toggle('hidden',modo!=='caja');
+  document.getElementById('rc-costo-label').textContent=modo==='caja'?'COSTO DE LA CAJA':'COSTO';
+  const esPeso=rcState.item&&rcState.item.peso;
+  document.getElementById('rc-unidad').textContent=modo==='caja'?'cajas':(esPeso?'kg':'u');
+  rcRenderResumen();
+}
+document.getElementById('rc-modo-unidad').onclick=()=>rcSetModo('unidad');
+document.getElementById('rc-modo-caja').onclick=()=>rcSetModo('caja');
+document.getElementById('rc-unidades-caja').oninput=rcRenderResumen;
+
+// Requisito 3: costo por unidad real cuando la compra es por caja.
+function rcCostoUnitarioBruto(){
+  const costoIngresado=Number(document.getElementById('rc-costo').value)||0;
+  if(rcState.modo!=='caja')return costoIngresado;
+  const uCaja=Number(document.getElementById('rc-unidades-caja').value)||0;
+  return uCaja>0?(costoIngresado/uCaja):0;
+}
+// Requisito 1: costo neto (con IVA descontado si corresponde) — SIEMPRE el que se guarda y
+// el que se usa para calcular el precio, sea la compra por unidad o por caja.
 const IVA_RC=0.19;
 function rcCostoNeto(){
-  const bruto=Number(document.getElementById('rc-costo').value)||0;
+  const bruto=rcCostoUnitarioBruto();
   const conIva=document.getElementById('rc-costo-con-iva').checked;
   return conIva?(bruto/(1+IVA_RC)):bruto;
 }
-function rcRenderIvaHint(){
-  const hint=document.getElementById('rc-iva-hint');
-  const bruto=Number(document.getElementById('rc-costo').value)||0;
-  const conIva=document.getElementById('rc-costo-con-iva').checked;
-  if(!bruto||!conIva){hint.textContent='';return;}
-  const neto=rcCostoNeto();
-  hint.innerHTML='Costo con IVA: <b>'+peso(bruto)+'</b> · Costo neto (el que se guarda): <b>'+peso(Math.round(neto))+'</b>';
-}
-document.getElementById('rc-costo-con-iva').addEventListener('change',()=>{rcRenderIvaHint();rcActualizarMargenReal();});
-document.getElementById('rc-costo').oninput=()=>{
-  const nuevoCosto=Number(document.getElementById('rc-costo').value)||0;
-  const hint=document.getElementById('rc-precio-hint');
-  rcRenderIvaHint();
-  rcActualizarMargenReal();
-  // FIX: antes esto escribía directo en #rc-precio (rcState.precioTocado solo lo evitaba si
-  // el usuario ya había tocado precio ANTES en esta sesión — si tecleaba costo primero, igual
-  // se sobrescribía). Ahora el costo NUNCA toca el campo de precio: solo se muestra un texto
-  // con el precio sugerido; el usuario decide si lo copia con el botón "Usar este precio".
-  if(!nuevoCosto||!rcState.precioOriginal||!rcState.costoOriginal){hint.textContent='';_rcPrecioSugerido=null;return;}
-  const margenActual=(rcState.precioOriginal-rcState.costoOriginal)/rcState.precioOriginal;
-  if(margenActual<=0||margenActual>=1){hint.textContent='';_rcPrecioSugerido=null;return;}
-  _rcPrecioSugerido=redondeoPsicologicoJS(Math.round(nuevoCosto/(1-margenActual)));
-  hint.innerHTML='Precio sugerido para mantener el margen actual ('+Math.round(margenActual*100)+'%): <b>'+peso(_rcPrecioSugerido)+'</b> <button type="button" class="rc-precio-usar" id="rc-precio-usar">Usar este precio</button>';
-};
-document.getElementById('rc-precio-hint').addEventListener('click',ev=>{
-  if(!ev.target.closest('#rc-precio-usar')||_rcPrecioSugerido==null)return;
-  document.getElementById('rc-precio').value=_rcPrecioSugerido; // única vía: acción explícita del usuario, nunca automática
-  document.getElementById('rc-precio-hint').textContent='✓ Precio aplicado — puedes seguir ajustándolo.';
-});
-// Requisito 2: margen % objetivo. "Aplicar" calcula el precio con margen sobre venta
-// (Precio = Costo / (1 - Margen%)) usando el costo NETO (con IVA descontado si corresponde)
-// y lo escribe en #rc-precio — desde ahí el campo sigue 100% editable a mano, como cualquier
-// otro valor de este formulario; no hay bloqueo ni de solo-lectura.
-document.getElementById('rc-margen-aplicar').onclick=()=>{
+// Requisito 2: el precio se recalcula SOLO — sin botón — cada vez que cambia costo, IVA,
+// margen o modo de compra. Si el usuario edita el precio a mano, deja de recalcularse hasta
+// que vuelva a tocar costo/margen (mismo patrón de "no pisar lo que el usuario ya escribió"
+// que ya usa el resto de la app).
+function rcRecalcularPrecioAuto(){
   const margenPct=Number(document.getElementById('rc-margen-obj').value);
-  const hint=document.getElementById('rc-margen-hint');
   const costoNeto=rcCostoNeto();
-  if(!costoNeto){hint.innerHTML='<span style="color:var(--rojo)">Escribe primero el costo.</span>';return;}
-  if(!margenPct||margenPct<=0||margenPct>=100){hint.innerHTML='<span style="color:var(--rojo)">Escribe un margen entre 1 y 99.</span>';return;}
+  if(!costoNeto||!margenPct||margenPct<=0||margenPct>=100)return;
   const precioCalc=Math.round(costoNeto/(1-margenPct/100));
   document.getElementById('rc-precio').value=precioCalc;
-  hint.innerHTML='✓ Precio aplicado: <b>'+peso(precioCalc)+'</b> · Margen real: <b>'+margenPct.toFixed(1)+'%</b> — puedes seguir ajustándolo.';
-};
-// Recalcula el margen real cada vez que costo o precio cambian, para que el hint del margen
-// no quede desactualizado si el usuario edita el precio a mano después de aplicar.
-function rcActualizarMargenReal(){
-  const hint=document.getElementById('rc-margen-hint');
-  const costoNeto=rcCostoNeto();
-  const precio=Number(document.getElementById('rc-precio').value)||0;
-  if(!costoNeto||!precio){return;}
-  const margenReal=((precio-costoNeto)/precio)*100;
-  hint.innerHTML='Margen real con los valores actuales: <b>'+margenReal.toFixed(1)+'%</b>';
+  rcState.precioTocado=false; // fue el sistema quien lo puso, no el usuario
 }
-document.getElementById('rc-precio').addEventListener('input',rcActualizarMargenReal);
+document.getElementById('rc-precio').oninput=()=>{
+  rcState.precioTocado=true; // desde acá, el usuario manda — no se vuelve a autocompletar
+  rcRenderResumen();
+};
+document.getElementById('rc-costo-con-iva').addEventListener('change',()=>{
+  if(!rcState.precioTocado)rcRecalcularPrecioAuto();
+  rcRenderResumen();
+});
+document.getElementById('rc-costo').oninput=()=>{
+  if(!rcState.precioTocado)rcRecalcularPrecioAuto();
+  rcRenderResumen();
+};
+document.getElementById('rc-margen-obj').oninput=()=>{
+  if(!rcState.precioTocado)rcRecalcularPrecioAuto();
+  rcRenderResumen();
+};
+// Resumen dinámico único (requisito 5): costo de caja, costo por unidad, costo neto, costo
+// con IVA, margen objetivo, margen real, precio calculado, y stock total a sumar — todo en
+// un solo bloque que se actualiza en cada tecla, sin pasos intermedios.
+function rcRenderResumen(){
+  const cont=document.getElementById('rc-resumen');
+  const costoIngresado=Number(document.getElementById('rc-costo').value)||0;
+  const costoUnitBruto=rcCostoUnitarioBruto();
+  const costoNeto=rcCostoNeto();
+  const conIva=document.getElementById('rc-costo-con-iva').checked;
+  const margenPct=Number(document.getElementById('rc-margen-obj').value)||0;
+  const precio=Number(document.getElementById('rc-precio').value)||0;
+  const margenReal=precio>0?((precio-costoNeto)/precio)*100:null;
+  const cant=Number(document.getElementById('rc-cantidad').value)||0;
+  const uCaja=Number(document.getElementById('rc-unidades-caja').value)||0;
+
+  const filas=[];
+  if(rcState.modo==='caja'){
+    filas.push('Costo de la caja: <b>'+(costoIngresado?peso(costoIngresado):'—')+'</b>');
+    filas.push('Costo por unidad: <b>'+(costoUnitBruto?peso(Math.round(costoUnitBruto)):'—')+'</b>');
+  }
+  if(conIva)filas.push('Costo con IVA: <b>'+(costoUnitBruto?peso(Math.round(costoUnitBruto)):'—')+'</b>');
+  filas.push('Costo neto (el que se guarda): <b>'+(costoNeto?peso(Math.round(costoNeto)):'—')+'</b>');
+  if(margenPct)filas.push('Margen objetivo: <b>'+margenPct.toFixed(1)+'%</b>');
+  if(margenReal!=null)filas.push('Margen real'+(rcState.precioTocado?' (precio editado a mano)':'')+': <b>'+margenReal.toFixed(1)+'%</b>');
+  if(precio)filas.push('Precio de venta: <b>'+peso(precio)+'</b>');
+  if(rcState.modo==='caja'&&cant>0&&uCaja>0)filas.push('Stock a sumar: <b>'+cant+' caja'+(cant===1?'':'s')+' × '+uCaja+' u = '+(cant*uCaja)+' u</b>');
+
+  cont.innerHTML=filas.length?filas.join('<br>'):'';
+
+  const stockHint=document.getElementById('rc-stock-total-hint');
+  if(rcState.modo==='caja'&&cant>0&&uCaja>0){
+    stockHint.innerHTML='📦 '+cant+' caja'+(cant===1?'':'s')+' × '+uCaja+' u/caja = <b>'+(cant*uCaja)+' unidades</b> se sumarán al stock.';
+  }else if(rcState.modo==='caja'&&cant>0&&!uCaja){
+    stockHint.innerHTML='<span style="color:var(--rojo)">Escribe las unidades por caja para calcular el stock total.</span>';
+  }else{
+    stockHint.textContent='';
+  }
+}
 document.getElementById('rc-guardar').onclick=async()=>{
   const btn=document.getElementById('rc-guardar');
   const it=rcState.item;if(!it)return;
-  const cantidad=Number(document.getElementById('rc-cantidad').value)||0;
+  const cantIngresada=Number(document.getElementById('rc-cantidad').value)||0;
+  // Requisito 4: si la compra fue por caja, el stock real a sumar es cajas × unidades/caja.
+  // Por unidad, se mantiene el comportamiento de siempre (sin cambios).
+  const uCaja=Number(document.getElementById('rc-unidades-caja').value)||0;
+  const cantidad=(rcState.modo==='caja'&&uCaja>0)?(cantIngresada*uCaja):cantIngresada;
   const fecha=fmtDateInputToDDMMAAAA(document.getElementById('rc-fecha').value);
-  // Requisito 1: lo que se guarda siempre es el costo NETO — si el toggle "con IVA" está
-  // activo, rcCostoNeto() ya descuenta el 19% antes de que esto llegue al backend. El resto
-  // del sistema (márgenes, Calculadora de precios, ABC) asume costo neto en todos lados, así
-  // que este es el único punto donde se resuelve la conversión.
+  // Requisito 1: lo que se guarda siempre es el costo NETO por unidad — si el toggle "con IVA"
+  // está activo, rcCostoNeto() ya descuenta el 19%; si la compra fue por caja, ya está dividido
+  // por las unidades. El resto del sistema (márgenes, Calculadora de precios, ABC) asume costo
+  // neto unitario en todos lados, así que este es el único punto donde se resuelve todo eso.
   const nuevoCosto=Math.round(rcCostoNeto());
   const nuevoPrecio=Number(document.getElementById('rc-precio').value)||0;
   const costoCambio=nuevoCosto>0&&nuevoCosto!==rcState.costoOriginal;
