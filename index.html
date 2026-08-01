@@ -625,16 +625,16 @@ html.vista-filas .fila-margen::before{content:'M ';opacity:.7}
 html.vista-filas .fila-margen.mg-hi{color:var(--verde)}
 html.vista-filas .fila-margen.mg-lo{color:var(--rojo)}
 html.vista-filas .fila-col{min-width:0;display:flex;flex-direction:column;align-items:center;gap:0;font-family:'JetBrains Mono';font-weight:700;font-size:11px;color:var(--ink);white-space:nowrap;overflow:hidden}
-/* Solo Tablet (vista-filas SIN modo-bliss): centrar horizontal y verticalmente las columnas
-   Cobertura/Stock/Venta/Pedir, en filas y en el encabezado. No afecta a BlissOS ni Celular. */
-html.vista-filas:not(.modo-bliss) .ptable-head>*:nth-child(2),
-html.vista-filas:not(.modo-bliss) .ptable-head>*:nth-child(3),
-html.vista-filas:not(.modo-bliss) .ptable-head>*:nth-child(4),
-html.vista-filas:not(.modo-bliss) .ptable-head>*:nth-child(5){
+/* BlissOS (único modo que usa vista-filas hoy — Tablet ya no existe como modo separado):
+   centrar horizontal y verticalmente las columnas Cobertura/Stock/Venta/Pedir, en filas
+   y en el encabezado. */
+html.vista-filas .ptable-head>*:nth-child(2),
+html.vista-filas .ptable-head>*:nth-child(3),
+html.vista-filas .ptable-head>*:nth-child(4),
+html.vista-filas .ptable-head>*:nth-child(5){
   display:flex;align-items:center;justify-content:center;text-align:center;
 }
-html.vista-filas:not(.modo-bliss) .fila-col{align-items:center;justify-content:center;text-align:center}
-html.vista-filas:not(.modo-bliss) .fila-pedir{align-items:center;justify-content:center;text-align:center}
+html.vista-filas .fila-col{align-items:center;justify-content:center;text-align:center}
 /* Selector de cantidad compacto + indicador de "Unidades Display" restaurado debajo
    (antes se ocultaba con display:none — ahora se muestra en una línea aparte, chica,
    sin romper la altura de fila porque el nombre+V/C/M ya ocupan 2 líneas arriba). */
@@ -971,10 +971,10 @@ html:not(.vista-filas) .row-urgent .prod-name::before{content:'● ';color:var(-
 html:not(.vista-filas) .row-pedir .prod-name::before{content:'● ';color:var(--salvia-2)}
 html:not(.vista-filas) .row-urgent .card-main::before{content:'URGENTE — reponer ya';display:block;font-size:9.5px;font-weight:800;letter-spacing:.03em;color:var(--rojo);background:var(--rojo-bg);border:1px solid #F0DADA;padding:2px 8px;border-radius:20px;margin-bottom:5px;width:fit-content}
 html:not(.vista-filas) .row-pedir .card-main::before{content:'A PEDIR';display:block;font-size:9.5px;font-weight:800;letter-spacing:.03em;color:var(--ambar);background:var(--salvia-tint);border:1px solid #D8E5D0;padding:2px 8px;border-radius:20px;margin-bottom:5px;width:fit-content}
-html:not(.vista-filas) .row-urgent .card-stats .cstat:last-child,
-html:not(.vista-filas) .row-pedir .card-stats .cstat:last-child{font-weight:800;padding:1px 7px;border-radius:20px}
-html:not(.vista-filas) .row-urgent .card-stats .cstat:last-child{background:var(--rojo-bg);color:var(--rojo)}
-html:not(.vista-filas) .row-pedir .card-stats .cstat:last-child{background:var(--salvia-tint);color:var(--ambar)}
+html:not(.vista-filas) .row-urgent .card-stats .cstat:first-child,
+html:not(.vista-filas) .row-pedir .card-stats .cstat:first-child{font-weight:800;padding:1px 7px;border-radius:20px}
+html:not(.vista-filas) .row-urgent .card-stats .cstat:first-child{background:var(--rojo-bg);color:var(--rojo)}
+html:not(.vista-filas) .row-pedir .card-stats .cstat:first-child{background:var(--salvia-tint);color:var(--ambar)}
 /* Tablet/BlissOS (vista-filas): mismo principio que en celular — color de fondo en toda la
    fila + badge de texto corto ("URGENTE"/"A PEDIR"), no solo un punto de color, para que se
    identifique igual de rápido en el layout de tabla más compacto. El badge es más chico que
@@ -2833,9 +2833,9 @@ function rowHTML(it,a,f){const cant=qOf(it,a);
         `<div class="prod-meta">${it.prov}</div>`+pendBadge+extraProvBadge+
         priceLine+
         `<div class="card-stats">`+
-          `<span class="cstat"><span class="trend ${a.trend.k}">${a.trend.t}</span><span class="cstat-label">VTA</span> ${fmt1(ventasPeriodo)}</span>`+
-          `<span class="cstat cstat-stock"><span class="cstat-label">STK</span> ${statStock}</span>`+
           `<span class="cstat" style="color:${covColor(a)}"><span class="cstat-label" style="color:inherit">COB</span> ${covTxt}</span>`+
+          `<span class="cstat cstat-stock"><span class="cstat-label">STK</span> ${statStock}</span>`+
+          `<span class="cstat"><span class="trend ${a.trend.k}">${a.trend.t}</span><span class="cstat-label">VTA</span> ${fmt1(ventasPeriodo)}</span>`+
         `</div>`+
       `</div>`+
       `<div class="card-stepper"><div class="qcell">${cambioLine}${sugHint}<div class="qstep ${cant>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}" data-step="${inStep(it)}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${(it.fmt>1||multOf(it)>1)?'gold':''}">${labelFor(it,bundles)}</span></div></div>`+
