@@ -586,8 +586,8 @@ thead th.sorted .ar{opacity:.8}
 .ptable-head>*.sorted{color:var(--ink2);background:var(--paper)}
 .ptable-head>*.sorted .ar{opacity:.8}
 thead th.l{text-align:left}
-.ptable-head{display:flex;width:100%;box-sizing:border-box}
-.ptable-head>*{background:var(--card);text-align:center;font-size:9.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:7px 4px;white-space:nowrap;cursor:pointer;user-select:none;position:sticky;top:0;z-index:6;border-bottom:1px solid var(--line2)}
+.ptable-head{display:flex;width:100%;box-sizing:border-box;position:-webkit-sticky;position:sticky;top:0;z-index:6}
+.ptable-head>*{background:var(--card);text-align:center;font-size:9.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:7px 4px;white-space:nowrap;cursor:pointer;user-select:none;position:-webkit-sticky;position:sticky;top:0;z-index:6;border-bottom:1px solid var(--line2)}
 .ptable-head>*:first-child{text-align:left;padding-left:12px;font-size:10.5px;letter-spacing:.01em}
 tbody td{padding:6px 9px;border-bottom:1px solid var(--line2);text-align:right;white-space:nowrap;font-size:13px}
 tbody td.num,tbody td.tdc{overflow:visible}
@@ -625,6 +625,16 @@ html.vista-filas .fila-margen::before{content:'M ';opacity:.7}
 html.vista-filas .fila-margen.mg-hi{color:var(--verde)}
 html.vista-filas .fila-margen.mg-lo{color:var(--rojo)}
 html.vista-filas .fila-col{min-width:0;display:flex;flex-direction:column;align-items:center;gap:0;font-family:'JetBrains Mono';font-weight:700;font-size:11px;color:var(--ink);white-space:nowrap;overflow:hidden}
+/* Solo Tablet (vista-filas SIN modo-bliss): centrar horizontal y verticalmente las columnas
+   Cobertura/Stock/Venta/Pedir, en filas y en el encabezado. No afecta a BlissOS ni Celular. */
+html.vista-filas:not(.modo-bliss) .ptable-head>*:nth-child(2),
+html.vista-filas:not(.modo-bliss) .ptable-head>*:nth-child(3),
+html.vista-filas:not(.modo-bliss) .ptable-head>*:nth-child(4),
+html.vista-filas:not(.modo-bliss) .ptable-head>*:nth-child(5){
+  display:flex;align-items:center;justify-content:center;text-align:center;
+}
+html.vista-filas:not(.modo-bliss) .fila-col{align-items:center;justify-content:center;text-align:center}
+html.vista-filas:not(.modo-bliss) .fila-pedir{align-items:center;justify-content:center;text-align:center}
 /* Selector de cantidad compacto + indicador de "Unidades Display" restaurado debajo
    (antes se ocultaba con display:none — ahora se muestra en una línea aparte, chica,
    sin romper la altura de fila porque el nombre+V/C/M ya ocupan 2 líneas arriba). */
@@ -633,7 +643,7 @@ html.vista-filas .fila-pedir .qstep{flex-direction:row;align-items:center;gap:3p
 html.vista-filas .qbtn{width:18px;height:25px;font-size:13px}
 html.vista-filas .qty-in{width:20px;padding:3px 1px;font-size:12px}
 html.vista-filas .fila-pedir .qword{display:block;font-size:7.5px;max-width:80px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
-html.vista-filas .ptable-head{display:flex;width:100%;box-sizing:border-box;align-items:stretch;text-align:right;white-space:nowrap;font-size:10.5px;background:var(--paper);position:sticky;top:0;z-index:2;border-bottom:1px solid var(--line2)}
+html.vista-filas .ptable-head{display:flex;width:100%;box-sizing:border-box;align-items:stretch;text-align:right;white-space:nowrap;font-size:10.5px;background:var(--paper);position:-webkit-sticky;position:sticky;top:0;z-index:2;border-bottom:1px solid var(--line2)}
 html.vista-filas .ptable-head>*{flex:0 0 auto;box-sizing:border-box;padding:6px 4px;overflow:visible;cursor:pointer}
 html.vista-filas .ptable-head>*:first-child{flex:1 1 auto;min-width:0;text-align:left}
 
@@ -8247,7 +8257,7 @@ document.getElementById('in-guardar').onclick=async()=>{
 };
 
 // ===================== RECIBIR MERCADERÍA =====================
-const rcState={item:null,costoOriginal:0,precioOriginal:0,precioTocado:false,modo:'unidad',ivaModo:'con'};
+const rcState={item:null,costoOriginal:0,precioOriginal:0,precioTocado:false,margenTocado:false,modo:'unidad',ivaModo:'con'};
 let _rcPrecioSugerido=null; // precio sugerido al variar el costo — solo se aplica si el usuario toca "Usar este precio"
 function redondeoPsicologicoJS(p){
   const base=Math.floor(p/100)*100;
@@ -8275,7 +8285,8 @@ function rcShowPicked(it){
   // neto — por eso el toggle arranca en "sin IVA". Si el usuario borra y escribe un costo
   // nuevo tomado de una factura (que trae IVA), ahí sí cambia a "Costo con IVA".
   rcSetIva('sin');
-  document.getElementById('rc-margen-obj').value='';
+  rcState.margenTocado=false;
+  document.getElementById('rc-margen-obj').value='30';
   document.getElementById('rc-unidades-caja').value='';
   rcSetModo('unidad');
   rcRenderResumen();
@@ -8341,7 +8352,7 @@ function rcValidar(){
   document.getElementById('rc-guardar').disabled=!(rcState.item&&cant>0);
 }
 function rcReset(){
-  rcState.item=null;rcState.costoOriginal=0;rcState.precioOriginal=0;rcState.precioTocado=false;
+  rcState.item=null;rcState.costoOriginal=0;rcState.precioOriginal=0;rcState.precioTocado=false;rcState.margenTocado=false;
   document.getElementById('rc-search').value='';
   document.getElementById('rc-results').innerHTML='';
   document.getElementById('rc-picked').classList.remove('on');
@@ -8357,7 +8368,7 @@ function rcReset(){
   document.getElementById('rc-costo').value='';
   document.getElementById('rc-precio').value='';
   rcSetIva('sin');
-  document.getElementById('rc-margen-obj').value='';
+  document.getElementById('rc-margen-obj').value='30';
   document.getElementById('rc-unidades-caja').value='';
   rcSetModo('unidad');
   document.getElementById('rc-guardar').disabled=true;
@@ -8555,6 +8566,7 @@ document.getElementById('rc-costo').oninput=()=>{
   rcRenderResumen();
 };
 document.getElementById('rc-margen-obj').oninput=()=>{
+  rcState.margenTocado=true; // el usuario lo modificó — no se debe volver a sobrescribir con el 30% por defecto
   if(!rcState.precioTocado)rcRecalcularPrecioAuto();
   rcRenderResumen();
 };
