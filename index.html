@@ -1491,6 +1491,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
             <div class="cat" id="rc-stock" style="font-weight:700;color:var(--ink);margin-top:3px">Stock actual: —</div>
             <div class="cat" id="rc-costo-actual" style="margin-top:2px">Costo actual: —</div>
             <div class="cat" id="rc-precio-actual" style="margin-top:2px">Precio actual: —</div>
+            <div class="cat" id="rc-margen-actual" style="margin-top:2px">Margen actual: —</div>
           </div>
           <div id="rc-results"></div>
           <button id="rc-activar-inv" class="hidden" type="button" style="width:100%;margin:8px 0 0;padding:8px 10px;border-radius:9px;border:1.5px solid var(--azul);background:var(--azul-bg);color:var(--azul);font-weight:700;font-size:12.5px;cursor:pointer">🔓 Activar inventario</button>
@@ -8276,6 +8277,8 @@ function rcShowPicked(it){
   document.getElementById('rc-stock').textContent='Stock actual: '+stockTxt;
   document.getElementById('rc-costo-actual').textContent='Costo actual: '+(it.coste!=null?peso(it.coste):'—');
   document.getElementById('rc-precio-actual').textContent='Precio actual: '+(it.precio!=null?peso(it.precio):'—');
+  const _margenActual=(it.precio>0)?((it.precio-(it.coste||0))/it.precio*100):null;
+  document.getElementById('rc-margen-actual').textContent='Margen actual: '+(_margenActual!=null?_margenActual.toFixed(1)+'%':'—');
   const esPeso=!!it.peso;
   document.getElementById('rc-unidad').textContent=esPeso?'kg':'u';
   const cIn=document.getElementById('rc-cantidad');
@@ -8366,6 +8369,7 @@ function rcReset(){
   document.getElementById('rc-picked').classList.remove('on');
   document.getElementById('rc-costo-actual').textContent='Costo actual: —';
   document.getElementById('rc-precio-actual').textContent='Precio actual: —';
+  document.getElementById('rc-margen-actual').textContent='Margen actual: —';
   document.getElementById('rc-activar-inv').classList.add('hidden');
   document.getElementById('rc-cantidad-field').classList.remove('hidden');
   document.getElementById('rc-sin-track-msg').classList.add('hidden');
