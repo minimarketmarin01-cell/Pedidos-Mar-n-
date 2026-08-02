@@ -8288,7 +8288,11 @@ function rcShowPicked(it){
   // El costo prellenado (it.coste) es el que ya está guardado en Loyverse, y eso SIEMPRE es
   // neto — por eso el toggle arranca en "sin IVA". Si el usuario borra y escribe un costo
   // nuevo tomado de una factura (que trae IVA), ahí sí cambia a "Costo con IVA".
-  rcSetIva('sin');
+  // EXCEPCIÓN: las facturas de CCU y Coca-Cola ya vienen con el IVA incluido en el valor
+  // de costo — para esos proveedores el toggle arranca directo en "Con IVA".
+  const _provNorm=String(it.prov||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const _esProveedorConIva=/\bccu\b/.test(_provNorm)||_provNorm.includes('coca cola')||_provNorm.includes('cocacola');
+  rcSetIva(_esProveedorConIva?'con':'sin');
   rcState.margenTocado=false;
   document.getElementById('rc-margen-obj').value='30';
   document.getElementById('rc-unidades-caja').value='';
