@@ -1865,13 +1865,51 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <label>Vendido por</label><br>
         <div class="seg" id="cp-venta"><button type="button" data-v="u" class="active">Unidad</button><button type="button" data-v="kg">Peso (kg)</button></div>
       </div>
-      <div class="mm-field">
-        <label>Precio de venta (opcional)</label>
-        <input id="cp-precio" inputmode="numeric" placeholder="Vacío = precio variable" autocomplete="off" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+      <div class="mm-field" id="cp-cantidad-field" style="margin-bottom:8px">
+        <label>Cantidad inicial (opcional)</label>
+        <div style="display:flex;gap:6px;margin-bottom:6px">
+          <button type="button" class="rc-modo-btn active" id="cp-modo-unidad" data-modo="unidad" style="flex:1;padding:6px;border-radius:9px;border:1.5px solid var(--wa-d);background:var(--wa-bg,var(--verde-bg));color:var(--wa-d);font-weight:700;font-size:11.5px;cursor:pointer">Por unidad</button>
+          <button type="button" class="rc-modo-btn" id="cp-modo-caja" data-modo="caja" style="flex:1;padding:6px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--muted);font-weight:700;font-size:11.5px;cursor:pointer">Por caja</button>
+        </div>
+        <div class="mm-qty" style="height:38px">
+          <button class="qbtn cp-qty-hold" id="cp-qty-menos" type="button" style="height:100%">−</button>
+          <input id="cp-cantidad" inputmode="decimal" placeholder="0" autocomplete="off">
+          <span class="unidad" id="cp-unidad">u</span>
+          <button class="qbtn cp-qty-hold" id="cp-qty-mas" type="button" style="height:100%">+</button>
+        </div>
+        <div id="cp-caja-campos" class="hidden" style="display:flex;gap:8px;margin-top:6px">
+          <div style="flex:1">
+            <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:2px">UNIDADES POR CAJA</div>
+            <input id="cp-unidades-caja" inputmode="numeric" placeholder="Ej: 24" style="width:100%;height:34px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;font-family:'JetBrains Mono';box-sizing:border-box">
+          </div>
+        </div>
+        <div class="cat" id="cp-stock-total-hint" style="margin-top:5px"></div>
       </div>
-      <div class="mm-field">
-        <label>Costo (opcional)</label>
-        <input id="cp-costo" inputmode="numeric" placeholder="0" autocomplete="off" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+      <div class="mm-field" style="margin-bottom:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <label style="margin:0">Costo y precio <span style="font-weight:400;color:var(--muted);text-transform:none">(opcional)</span></label>
+          <div id="cp-costo-iva-toggle" style="display:flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;color:var(--muted)" role="group" aria-label="¿El costo incluye IVA?">
+            <button type="button" class="rc-iva-btn active" id="cp-costo-iva-con" data-iva="con" style="padding:4px 9px;border-radius:20px 0 0 20px;border:1.5px solid var(--wa-d);border-right:none;background:var(--wa-bg,var(--verde-bg));color:var(--wa-d);cursor:pointer">Con IVA</button>
+            <button type="button" class="rc-iva-btn" id="cp-costo-iva-sin" data-iva="sin" style="padding:4px 9px;border-radius:0 20px 20px 0;border:1.5px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;margin-left:-1px">Sin IVA</button>
+            <span title="El precio se calcula sobre el costo con IVA (el mismo valor que se guarda en Loyverse). Si eliges 'Sin IVA', se le suma 19% automáticamente." style="cursor:help;color:var(--muted);font-size:13px;line-height:1">ⓘ</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <div style="flex:1;min-width:100px">
+            <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:2px" id="cp-costo-label">COSTO</div>
+            <input id="cp-costo" inputmode="numeric" placeholder="$" autocomplete="off" style="width:100%;height:38px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13.5px;font-family:'JetBrains Mono';box-sizing:border-box">
+          </div>
+          <div style="flex:1;min-width:100px">
+            <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:2px">MARGEN % OBJETIVO</div>
+            <input id="cp-margen-obj" inputmode="numeric" value="30" placeholder="Ej: 30" style="width:100%;height:38px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13.5px;font-family:'JetBrains Mono';box-sizing:border-box">
+          </div>
+        </div>
+        <div id="cp-costo-explica" style="font-size:10px;color:var(--muted);margin-top:4px;line-height:1.3"></div>
+        <div style="margin-top:8px;padding:8px 10px;background:var(--wa-bg,var(--verde-bg));border:1.5px solid var(--wa-d);border-radius:10px">
+          <div style="font-size:10px;color:var(--wa-d);font-weight:700;margin-bottom:2px">PRECIO DE VENTA</div>
+          <input id="cp-precio" inputmode="numeric" placeholder="$ · vacío = precio variable" autocomplete="off" style="width:100%;height:40px;padding:0;border:none;background:transparent;font-size:20px;font-weight:800;font-family:'JetBrains Mono';color:var(--ink)">
+        </div>
+        <div id="cp-resumen" class="cat" style="margin-top:8px;padding:8px 10px;background:var(--paper);border-radius:9px;line-height:1.55;font-size:11.5px"></div>
       </div>
       <div class="mm-field">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
@@ -1909,9 +1947,10 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
       <div class="mm-field">
         <label class="cp-toggle">Seguir inventario <input type="checkbox" id="cp-track" checked></label>
       </div>
-      <div class="mm-field" id="cp-stock-field">
+      <div class="mm-field hidden" id="cp-stock-field">
         <label>Stock inicial</label>
         <input id="cp-stock" inputmode="decimal" placeholder="0" autocomplete="off" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Se completa solo desde "Cantidad inicial" arriba.</div>
       </div>
       <div class="mm-field" id="cp-stock-min-field">
         <label>Inventario bajo / Stock mínimo</label>
@@ -2828,9 +2867,9 @@ function rowHTML(it,a,f){const cant=qOf(it,a);
           `<span class="fila-prov">${it.prov}</span>`+pendBadge+extraProvBadge+
         `</div>`+
         `<div class="fila-precios"><span class="fila-venta">${precioVal}</span><span class="fila-costo">${costoVal}</span><span class="fila-margen ${mgCls}">${mgVal}</span>${abcBadge}</div>`+
-        `<div class="fila-col"><span class="fila-lbl">ROT</span><span><span class="trend ${a.trend.k}">${a.trend.t}</span> ${fmt1(ventasPeriodo)}</span></div>`+
-        `<div class="fila-col"><span class="fila-lbl">STK</span><span>${statStock}</span></div>`+
         `<div class="fila-col" style="color:${covColor(a)}"><span class="fila-lbl">COB</span><span>${covTxt}</span></div>`+
+        `<div class="fila-col"><span class="fila-lbl">STK</span><span>${statStock}</span></div>`+
+        `<div class="fila-col"><span class="fila-lbl">VTA</span><span><span class="trend ${a.trend.k}">${a.trend.t}</span> ${fmt.format(ventasPeriodo)}</span></div>`+
         `<div class="fila-pedir">${stepper}</div>`+
       `</div>`+
     `</div>`;
@@ -2845,7 +2884,7 @@ function rowHTML(it,a,f){const cant=qOf(it,a);
         `<div class="card-stats">`+
           `<span class="cstat" style="color:${covColor(a)}"><span class="cstat-label" style="color:inherit">COB</span> ${covTxt}</span>`+
           `<span class="cstat cstat-stock"><span class="cstat-label">STK</span> ${statStock}</span>`+
-          `<span class="cstat"><span class="trend ${a.trend.k}">${a.trend.t}</span><span class="cstat-label">VTA</span> ${fmt1(ventasPeriodo)}</span>`+
+          `<span class="cstat"><span class="trend ${a.trend.k}">${a.trend.t}</span><span class="cstat-label">VTA</span> ${fmt.format(ventasPeriodo)}</span>`+
         `</div>`+
       `</div>`+
       `<div class="card-stepper"><div class="qcell">${cambioLine}${sugHint}<div class="qstep ${cant>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}" data-step="${inStep(it)}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${(it.fmt>1||multOf(it)>1)?'gold':''}">${labelFor(it,bundles)}</span></div></div>`+
@@ -5511,15 +5550,19 @@ document.getElementById('cp-ps-sugerir').onclick=()=>{
   psSugerir(nombre,catInput?catInput.value:'','cp-proveedor','cp-sector','cp-ps-hint');
 };
 function cpReset(){
-  ['cp-nombre','cp-precio','cp-costo','cp-barcode','cp-stock','cp-stock-min','cp-fecha-dd','cp-fecha-mm','cp-fecha-aaaa','cp-cat-nuevanom'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['cp-nombre','cp-precio','cp-costo','cp-barcode','cp-stock','cp-stock-min','cp-fecha-dd','cp-fecha-mm','cp-fecha-aaaa','cp-cat-nuevanom','cp-cantidad','cp-unidades-caja'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('cp-fecha').value='';
   document.getElementById('cp-track').checked=true;
   document.getElementById('cp-iva').checked=true;
   document.getElementById('cp-activo').checked=true;
   document.getElementById('cp-cat-nuevabox').classList.add('hidden');
+  document.getElementById('cp-margen-obj').value='30';
   _cpImagenUrl=null;_cpImagenBase64=null;
   document.getElementById('cp-img-elegida').classList.add('hidden');
   cpSetVenta('u');cpToggleStock();cpValidar();
+  cpState.ivaModo='con';cpState.modo='unidad';cpState.precioTocado=false;
+  cpSetIva('con');cpSetModoCantidad('unidad');
+  cpRenderResumen();
 }
 // ---- Imagen del producto: galería o precarga automática por código de barras ----
 // La búsqueda web (Searlo) se quitó — solo queda galería y el catálogo gratuito por
@@ -5567,7 +5610,12 @@ document.getElementById('cp-img-quitar').onclick=()=>{
   document.getElementById('cp-img-elegida').classList.add('hidden');
   document.querySelectorAll('.cp-img-cand').forEach(x=>x.classList.remove('sel'));
 };
-function cpSetVenta(v){_cpVenta=v;document.querySelectorAll('#cp-venta button').forEach(b=>b.classList.toggle('active',b.dataset.v===v));}
+function cpSetVenta(v){
+  _cpVenta=v;
+  document.querySelectorAll('#cp-venta button').forEach(b=>b.classList.toggle('active',b.dataset.v===v));
+  const u=document.getElementById('cp-unidad');
+  if(u&&(!cpState||cpState.modo!=='caja'))u.textContent=v==='kg'?'kg':'u';
+}
 document.querySelectorAll('#cp-venta button').forEach(b=>b.onclick=()=>cpSetVenta(b.dataset.v));
 function cpToggleStock(){
   const on=document.getElementById('cp-track').checked;
@@ -5576,6 +5624,151 @@ function cpToggleStock(){
   document.getElementById('cp-fecha-field').style.display=on?'':'none';   // la fecha solo aplica si hay stock
 }
 document.getElementById('cp-track').onchange=cpToggleStock;
+
+// ---- Cantidad inicial (Por unidad / Por caja) + Costo/IVA/Margen → Precio, calculada
+// exactamente igual que en "Recibir mercadería" (rcState/rcSet*), pero con estado propio
+// (cpState) para no interferir con esa pantalla si ambas quedan abiertas en memoria. ----
+var cpState={modo:'unidad',ivaModo:'con',precioTocado:false,margenTocado:false};
+function cpSetIva(modo){
+  cpState.ivaModo=modo;
+  const btnCon=document.getElementById('cp-costo-iva-con'),btnSin=document.getElementById('cp-costo-iva-sin');
+  btnCon.style.background=modo==='con'?'var(--wa-bg,var(--verde-bg))':'#fff';
+  btnCon.style.color=modo==='con'?'var(--wa-d)':'var(--muted)';
+  btnCon.style.borderColor=modo==='con'?'var(--wa-d)':'var(--line)';
+  btnSin.style.background=modo==='sin'?'var(--wa-bg,var(--verde-bg))':'#fff';
+  btnSin.style.color=modo==='sin'?'var(--wa-d)':'var(--muted)';
+  btnSin.style.borderColor=modo==='sin'?'var(--wa-d)':'var(--line)';
+  if(!cpState.precioTocado)cpRecalcularPrecioAuto();
+  cpRenderExplicaCosto();
+  cpRenderResumen();
+}
+document.getElementById('cp-costo-iva-con').onclick=()=>cpSetIva('con');
+document.getElementById('cp-costo-iva-sin').onclick=()=>cpSetIva('sin');
+function cpRenderExplicaCosto(){
+  const el=document.getElementById('cp-costo-explica');
+  el.textContent=cpState.ivaModo==='con'
+    ?'Este valor ya incluye IVA — se usará tal cual para calcular el precio y para guardar en Loyverse.'
+    :'Se le sumará 19% de IVA automáticamente. Ese valor con IVA es el que se usa para calcular el precio y el que se guarda en Loyverse.';
+}
+function cpSetModoCantidad(modo){
+  cpState.modo=modo;
+  document.getElementById('cp-modo-unidad').classList.toggle('active',modo==='unidad');
+  document.getElementById('cp-modo-caja').classList.toggle('active',modo==='caja');
+  const btnU=document.getElementById('cp-modo-unidad'),btnC=document.getElementById('cp-modo-caja');
+  btnU.style.background=modo==='unidad'?'var(--wa-bg,var(--verde-bg))':'#fff';
+  btnU.style.color=modo==='unidad'?'var(--wa-d)':'var(--muted)';
+  btnU.style.borderColor=modo==='unidad'?'var(--wa-d)':'var(--line)';
+  btnC.style.background=modo==='caja'?'var(--wa-bg,var(--verde-bg))':'#fff';
+  btnC.style.color=modo==='caja'?'var(--wa-d)':'var(--muted)';
+  btnC.style.borderColor=modo==='caja'?'var(--wa-d)':'var(--line)';
+  document.getElementById('cp-caja-campos').classList.toggle('hidden',modo!=='caja');
+  document.getElementById('cp-costo-label').textContent=modo==='caja'?'COSTO DE LA CAJA':'COSTO';
+  document.getElementById('cp-unidad').textContent=modo==='caja'?'cajas':(_cpVenta==='kg'?'kg':'u');
+  cpRenderResumen();
+}
+document.getElementById('cp-modo-unidad').onclick=()=>cpSetModoCantidad('unidad');
+document.getElementById('cp-modo-caja').onclick=()=>cpSetModoCantidad('caja');
+document.getElementById('cp-unidades-caja').oninput=cpRenderResumen;
+document.getElementById('cp-cantidad').oninput=cpRenderResumen;
+function cpQtyMenos(){const i=document.getElementById('cp-cantidad');const st=_cpVenta==='kg'?0.05:1;i.value=Math.max(0,(Number(i.value)||0)-st).toFixed(_cpVenta==='kg'?3:0);cpRenderResumen();}
+function cpQtyMas(){const i=document.getElementById('cp-cantidad');const st=_cpVenta==='kg'?0.05:1;i.value=((Number(i.value)||0)+st).toFixed(_cpVenta==='kg'?3:0);cpRenderResumen();}
+document.getElementById('cp-qty-menos').onclick=cpQtyMenos;
+document.getElementById('cp-qty-mas').onclick=cpQtyMas;
+(function(){
+  let holdTimer=null,holdInterval=null;
+  function iniciarHold(fn){
+    detenerHold();
+    holdTimer=setTimeout(()=>{holdInterval=setInterval(fn,120);},380);
+  }
+  function detenerHold(){
+    if(holdTimer){clearTimeout(holdTimer);holdTimer=null;}
+    if(holdInterval){clearInterval(holdInterval);holdInterval=null;}
+  }
+  document.querySelectorAll('.cp-qty-hold').forEach(btn=>{
+    const fn=btn.id==='cp-qty-menos'?cpQtyMenos:cpQtyMas;
+    btn.addEventListener('pointerdown',()=>iniciarHold(fn));
+    btn.addEventListener('pointerup',detenerHold);
+    btn.addEventListener('pointerleave',detenerHold);
+    btn.addEventListener('pointercancel',detenerHold);
+  });
+})();
+const CP_IVA=0.19;
+function cpCostoUnitarioBruto(){
+  const costoIngresado=Number(document.getElementById('cp-costo').value)||0;
+  if(cpState.modo!=='caja')return costoIngresado;
+  const uCaja=Number(document.getElementById('cp-unidades-caja').value)||0;
+  return uCaja>0?(costoIngresado/uCaja):0;
+}
+function cpCostoBruto(){
+  const ingresado=cpCostoUnitarioBruto();
+  return cpState.ivaModo==='sin'?(ingresado*(1+CP_IVA)):ingresado;
+}
+function cpRecalcularPrecioAuto(){
+  const margenPct=Number(document.getElementById('cp-margen-obj').value);
+  const base=cpCostoBruto();
+  if(!base||!margenPct||margenPct<=0||margenPct>=100)return;
+  const precioCalc=Math.round(base/(1-margenPct/100));
+  document.getElementById('cp-precio').value=precioCalc;
+  cpState.precioTocado=false;
+}
+document.getElementById('cp-precio').oninput=()=>{cpState.precioTocado=true;cpRenderResumen();};
+document.getElementById('cp-costo').oninput=()=>{
+  if(!cpState.precioTocado)cpRecalcularPrecioAuto();
+  cpRenderExplicaCosto();
+  cpRenderResumen();
+};
+document.getElementById('cp-margen-obj').oninput=()=>{
+  cpState.margenTocado=true;
+  if(!cpState.precioTocado)cpRecalcularPrecioAuto();
+  cpRenderResumen();
+};
+// Vuelca "Cantidad inicial" (unidad o caja × unidades/caja) al campo real cp-stock que
+// usa el guardado — así el resto del flujo (payload, cpToggleStock, etc.) no cambia.
+function cpCantidadFinalUnidades(){
+  const cant=Number(document.getElementById('cp-cantidad').value)||0;
+  const uCaja=Number(document.getElementById('cp-unidades-caja').value)||0;
+  return (cpState.modo==='caja'&&uCaja>0)?(cant*uCaja):cant;
+}
+function cpRenderResumen(){
+  const cont=document.getElementById('cp-resumen');
+  const costoIngresado=Number(document.getElementById('cp-costo').value)||0;
+  const costoUnitBruto=cpCostoUnitarioBruto();
+  const base=cpCostoBruto();
+  const margenPct=Number(document.getElementById('cp-margen-obj').value)||0;
+  const precio=Number(document.getElementById('cp-precio').value)||0;
+  const margenReal=precio>0?((precio-base)/precio)*100:null;
+  const cant=Number(document.getElementById('cp-cantidad').value)||0;
+  const uCaja=Number(document.getElementById('cp-unidades-caja').value)||0;
+  const stockFinal=cpCantidadFinalUnidades();
+  // Refleja siempre en cp-stock (oculto) y activa "Seguir inventario" si hay cantidad.
+  document.getElementById('cp-stock').value=stockFinal||'';
+  if(stockFinal>0&&!document.getElementById('cp-track').checked){
+    document.getElementById('cp-track').checked=true;cpToggleStock();
+  }
+  if(!costoIngresado){cont.innerHTML='';document.getElementById('cp-stock-total-hint').textContent='';return;}
+  const filas=[];
+  if(cpState.modo==='caja'){
+    filas.push('Costo de la caja: <b>'+peso(costoIngresado)+'</b>');
+    filas.push('Costo por unidad ('+(cpState.ivaModo==='con'?'con IVA':'neto')+'): <b>'+(costoUnitBruto?peso(Math.round(costoUnitBruto)):'—')+'</b>');
+  }else{
+    filas.push('Costo ingresado ('+(cpState.ivaModo==='con'?'con IVA':'neto')+'): <b>'+peso(costoIngresado)+'</b>');
+  }
+  if(cpState.ivaModo==='sin')filas.push('Costo con IVA (19% sumado): <b>'+(base?peso(Math.round(base)):'—')+'</b>');
+  filas.push('Costo con IVA guardado en Loyverse: <b>'+(base?peso(Math.round(base)):'—')+'</b>');
+  if(margenPct)filas.push('Margen objetivo: <b>'+margenPct.toFixed(1)+'%</b>');
+  if(margenReal!=null)filas.push('Margen real'+(cpState.precioTocado?' (precio editado a mano)':'')+': <b>'+margenReal.toFixed(1)+'%</b>');
+  filas.push('Precio de venta final: <b>'+(precio?peso(precio):'—')+'</b>');
+  if(cpState.modo==='caja'&&cant>0&&uCaja>0)filas.push('Stock a crear: <b>'+cant+' caja'+(cant===1?'':'s')+' × '+uCaja+' u = '+(cant*uCaja)+' u</b>');
+  cont.innerHTML=filas.join('<br>');
+  const stockHint=document.getElementById('cp-stock-total-hint');
+  if(cpState.modo==='caja'&&cant>0&&uCaja>0){
+    stockHint.innerHTML='📦 '+cant+' caja'+(cant===1?'':'s')+' × '+uCaja+' u/caja = <b>'+(cant*uCaja)+' unidades</b> se registrarán como stock inicial.';
+  }else if(cpState.modo==='caja'&&cant>0&&!uCaja){
+    stockHint.innerHTML='<span style="color:var(--rojo)">Escribe las unidades por caja para calcular el stock total.</span>';
+  }else{
+    stockHint.textContent='';
+  }
+}
 async function cpCargarCatalogo(){
   const sel=document.getElementById('cp-cat');
   if(_cpCargado){cpLlenarSelect();return;}
@@ -6125,6 +6318,9 @@ function fcAbrirPanelCrear(row){
     if(provId||sector)psLlenarSelects('cp-proveedor','cp-sector',provId||null,sector||null);
     const fechaInp=document.getElementById('cp-fecha');
     if(fechaInp&&fechaVal)fechaInp.value=fechaVal;
+    // El precio ya viene calculado desde la factura: se marca como "puesto por el usuario"
+    // para que el margen objetivo no lo sobrescriba, y se refresca el resumen.
+    try{if(precio)cpState.precioTocado=true;cpRenderExplicaCosto();cpRenderResumen();}catch(e){}
     try{cpValidar();}catch(e){}
     showToast('Datos de la factura precargados — revisa la categoría y guarda');
   },250);
@@ -8543,9 +8739,14 @@ function rcProductoNoEncontrado(code){
   cpAbrir();
   document.getElementById('cp-barcode').value=code;
   cpAutocompletarPorCodigo(code);
+  // La cantidad y el costo se vuelcan a los campos NUEVOS (cp-cantidad / cp-costo); cp-stock
+  // ya no se escribe a mano — lo completa cpRenderResumen() a partir de la cantidad.
+  // También se hereda el modo Con/Sin IVA que venía elegido en Recepción, para no perderlo.
   if(_rcPendiente.costo)document.getElementById('cp-costo').value=_rcPendiente.costo;
-  if(_rcPendiente.cantidad){document.getElementById('cp-stock').value=_rcPendiente.cantidad;document.getElementById('cp-track').checked=true;cpToggleStock();}
+  if(_rcPendiente.cantidad){document.getElementById('cp-cantidad').value=_rcPendiente.cantidad;document.getElementById('cp-track').checked=true;cpToggleStock();}
   if(_rcPendiente.fecha)document.getElementById('cp-fecha').value=_rcPendiente.fecha;
+  try{cpSetIva(rcState.ivaModo||'con');}catch(_){}
+  try{if(!cpState.precioTocado)cpRecalcularPrecioAuto();cpRenderResumen();}catch(_){}
   // Mantiene el proveedor: intenta preseleccionar la categoría igual al filtro activo en Pedidos
   const provActual=(!state.allProv&&state.prov)?state.prov:null;
   if(provActual){
