@@ -3456,36 +3456,87 @@ function flashUpdated(){
   });
 }
 
-// Auto-sync al abrir: trae los datos que YA están frescos en la nube (Loyverse los empuja
-// solo por webhook apenas pasa algo — ver /webhook/loyverse en el Worker). Hacemos además
-// UN sync "live" real (consulta directa a Loyverse) al abrir, por si la app estuvo cerrada
-// mucho tiempo y algún webhook se perdió mientras tanto (caída de red, etc).
-async function autoSyncIfStale(){
-  await cloudSync(true,true);
-  iniciarPollingTiempoReal();
-}
-
 // ---- TIEMPO REAL: los datos llegan solos por webhook, acá solo los LEEMOS de la nube ----
 // A diferencia del sync viejo (cada 15 min, y llamaba a Loyverse), esto NO llama a Loyverse:
 // solo pide el estado actual ya guardado en la base (rapidísimo), así que se puede hacer
 // seguido sin sobrecargar nada. "Sincronizar"/"Catálogo" quedan como botones de respaldo
 // manual, por si alguna vez hay que forzar una consulta directa a Loyverse.
+//
+// CLAVE para no interrumpir al usuario: los datos se traen y se guardan en memoria SIEMPRE
+// cada 5s, pero la tabla de productos y el panel de armar pedido (los únicos con scroll o
+// campos donde se escribe) SOLO se vuelven a dibujar cuando el usuario lleva un momento sin
+// tocar la pantalla (sin scrollear, sin tipear, sin tocar). Mientras está trabajando, los
+// datos frescos quedan esperando y se muestran apenas se detiene — nunca a mitad de un gesto.
+let _ultimaActividad=0;
+['scroll','touchmove','touchstart','pointerdown','keydown','input','wheel'].forEach(ev=>{
+  document.addEventListener(ev,()=>{_ultimaActividad=Date.now();},{passive:true,capture:true});
+});
+function usuarioActivo(){return (Date.now()-_ultimaActividad)<1500;}
+
+async function autoSyncIfStale(){
+  await cloudSync(true,true);
+  iniciarPollingTiempoReal();
+}
+
 let _pollingTiempoReal=null, _ultimoPollOk=Date.now();
 function iniciarPollingTiempoReal(){
   if(_pollingTiempoReal)clearInterval(_pollingTiempoReal);
-  _pollingTiempoReal=setInterval(async()=>{
+  _pollingTiempoReal=setInterval(()=>{
     if(document.visibilityState!=='visible')return;
-    const ok=await cloudSync(true,false,false);
-    if(ok)_ultimoPollOk=Date.now();
-    actualizarIndicadorEnVivo();
+    pollFondo();
   },5000);
   // Respaldo: cada 10 min sí consulta a Loyverse directo (stock+ventas), por si algún
-  // webhook se perdió y la base quedó desactualizada sin que nadie lo note.
+  // webhook se perdió y la base quedó desactualizada sin que nadie lo note. Solo dibuja
+  // si el usuario está inactivo, igual que el poll rápido.
   setInterval(()=>{
-    if(document.visibilityState==='visible')cloudSync(true,true);
+    if(document.visibilityState==='visible'&&!usuarioActivo())cloudSync(true,true);
   },10*60*1000);
-  setInterval(actualizarIndicadorEnVivo,5000);
+  setInterval(actualizarIndicadorEnVivo,3000);
 }
+
+// Trae los datos frescos y los guarda en memoria SIEMPRE. Solo repinta la tabla/carrito
+// (las partes con scroll o inputs) si el usuario está inactivo — así nunca se le mueve
+// el piso mientras scrollea o está escribiendo una cantidad.
+async function pollFondo(){
+  try{
+    const res=await fetch(SYNC_URL,{method:'GET'});
+    if(!res.ok)return;
+    let j;try{j=await res.json();}catch(e){return;}
+    if(!j||!j.ok)return;
+    _ultimoPollOk=Date.now();
+    actualizarIndicadorEnVivo();
+
+    const firma=JSON.stringify(j.items)+'|'+JSON.stringify(j.ventas)+'|'+JSON.stringify(j.pendientes);
+    if(firma===_ultimoPayloadFirma)return; // nada cambió, no hay nada que repintar
+    _ultimoPayloadFirma=firma;
+
+    DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra);
+    INVMAP=invMapFromItems(DB.items);
+    SRC='nube · '+new Date().toLocaleString('es-CL');
+    setLastSync(Date.now());
+    persist();
+
+    if(usuarioActivo()){_repintadoPendiente=true;return;} // se aplicará solo cuando se detenga
+
+    aplicarRepintadoDiferido();
+  }catch(e){console.error('poll de fondo falló:',e);}
+}
+
+let _repintadoPendiente=false;
+function aplicarRepintadoDiferido(){
+  _repintadoPendiente=false;
+  const sc=tableScrollEl();const prevTbl=sc?sc.scrollTop:0,prevWin=window.scrollY||0;
+  const ob=document.getElementById('order-body');const prevOrder=ob?ob.scrollTop:0;
+  render();renderProvDay();
+  restaurarScrollTabla(prevTbl,prevWin);
+  const ob2=document.getElementById('order-body');if(ob2)ob2.scrollTop=prevOrder;
+  llCheckBadge();cargarVencidoParaCambio();cargarABC();flashUpdated();
+}
+// En cuanto el usuario se detiene, si había datos frescos esperando, recién ahí se muestran.
+setInterval(()=>{
+  if(_repintadoPendiente&&!usuarioActivo())aplicarRepintadoDiferido();
+},1000);
+
 function actualizarIndicadorEnVivo(){
   const el=document.getElementById('live-indicator'), txt=document.getElementById('live-text');
   if(!el||!txt)return;
