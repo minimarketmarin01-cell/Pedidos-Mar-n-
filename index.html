@@ -3373,6 +3373,7 @@ function pendienteDe(it){
   return bySku[it.ref]||(it.barcode?byBarcode[it.barcode]:null)||null;
 }
 
+let _ultimoPayloadFirma=null;
 async function cloudSync(silent,live,full,origen){
   setSyncSpinning(true,origen);
   try{
@@ -3384,6 +3385,18 @@ async function cloudSync(silent,live,full,origen){
     try{j=await res.json();}
     catch(parseErr){throw new Error('Respuesta no es JSON válido (status '+res.status+') — posible corte de conexión');}
     if(j&&j.ok){
+      // Poll de fondo (silencioso, cada 5s, sin que el usuario haya tocado nada): si los
+      // datos son EXACTAMENTE los mismos de la última vez, no se toca el DOM para nada —
+      // así el scroll y cualquier edición en curso quedan intactos.
+      const esPollDeFondo=silent&&!live&&!full;
+      const firma=JSON.stringify(j.items)+'|'+JSON.stringify(j.ventas)+'|'+JSON.stringify(j.pendientes);
+      if(esPollDeFondo&&firma===_ultimoPayloadFirma)return true;
+      // Si el usuario está justo escribiendo (cantidad en el carrito, buscador, etc.), un poll
+      // de fondo tampoco debe interrumpirlo — se vuelve a intentar solo en el próximo poll.
+      const editando=document.activeElement&&['INPUT','TEXTAREA'].includes(document.activeElement.tagName);
+      if(esPollDeFondo&&editando)return true;
+      _ultimoPayloadFirma=firma;
+
       DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra);
       INVMAP=invMapFromItems(DB.items);
       SRC='nube · '+new Date().toLocaleString('es-CL');
@@ -3400,7 +3413,13 @@ async function cloudSync(silent,live,full,origen){
       }
       if(!DB.provs.some(p=>p.prov===state.prov))state.prov=DB.provs[0]?DB.provs[0].prov:'';
       setLastSync(Date.now());
+      // Guarda dónde estaba el usuario (tabla de productos y panel de armar pedido) — un
+      // sync automático NUNCA debe devolverlo al inicio de la fila en la que estaba.
+      const sc=tableScrollEl();const prevTbl=sc?sc.scrollTop:0,prevWin=window.scrollY||0;
+      const ob=document.getElementById('order-body');const prevOrder=ob?ob.scrollTop:0;
       persist();render();renderProvDay();
+      restaurarScrollTabla(prevTbl,prevWin);
+      const ob2=document.getElementById('order-body');if(ob2)ob2.scrollTop=prevOrder;
       llCheckBadge();
       cargarVencidoParaCambio();
       cargarABC();
