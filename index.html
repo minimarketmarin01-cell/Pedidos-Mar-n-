@@ -3759,7 +3759,7 @@ document.querySelector('.bottom-nav').addEventListener('click',(e)=>{
   if(!btn)return;
   try{
     if(btn.id==='bn-pedidos'){cerrarOverlays();showScreen('pedido');}
-    else if(btn.id==='bn-recepcion'){cerrarOverlays();abrirModal('rc-ov');try{rcReset();}catch(_){}}
+    else if(btn.id==='bn-recepcion'){cerrarOverlays();openRecibir();}
     else if(btn.id==='bn-vencimientos'){cerrarOverlays();abrirModal('vc-ov');try{vcShowList();vcLoad();}catch(_){}}
     else if(btn.id==='bn-mas'){cerrarOverlays();abrirModal('mas-ov');}
   }catch(err){showToast('Ocurrió un error al abrir. Intenta de nuevo.');}
@@ -8573,6 +8573,65 @@ document.getElementById('in-guardar').onclick=async()=>{
 
 // ===================== RECIBIR MERCADERÍA =====================
 const rcState={item:null,costoOriginal:0,precioOriginal:0,precioTocado:false,margenTocado:false,modo:'unidad',ivaModo:'con',precioPreview:null};
+// ---- Borrador de Recepción en curso (localStorage, con demora — no bloquea el toque) ----
+// Mismo patrón que el borrador de Insumos (IN_DRAFT_LS_KEY): así "Recibir mercadería"
+// sobrevive a un F5 o a que el navegador mate la pestaña en segundo plano, sin perder lo
+// que ya se había escrito (producto elegido, cantidad, costo, precio, IVA, margen, fecha).
+const RC_DRAFT_LS_KEY='marin376_recepcion_draft';
+let _rcDraftT=null;
+function rcTieneDatos(){
+  return !!(rcState.item||document.getElementById('rc-cantidad').value||document.getElementById('rc-costo').value||
+    document.getElementById('rc-precio').value||document.getElementById('rc-fecha').value||document.getElementById('rc-unidades-caja').value);
+}
+let _rcSuprimirBorrador=false;
+function rcGuardarBorrador(){
+  if(_rcSuprimirBorrador)return;
+  clearTimeout(_rcDraftT);
+  _rcDraftT=setTimeout(()=>{
+    try{
+      if(!rcTieneDatos()){localStorage.removeItem(RC_DRAFT_LS_KEY);return;}
+      localStorage.setItem(RC_DRAFT_LS_KEY,JSON.stringify({
+        ref:rcState.item?rcState.item.ref:null,
+        cantidad:document.getElementById('rc-cantidad').value,
+        costo:document.getElementById('rc-costo').value,
+        precio:document.getElementById('rc-precio').value,
+        fecha:document.getElementById('rc-fecha').value,
+        modo:rcState.modo,ivaModo:rcState.ivaModo,
+        margenObj:document.getElementById('rc-margen-obj').value,
+        unidadesCaja:document.getElementById('rc-unidades-caja').value,
+        precioTocado:rcState.precioTocado,margenTocado:rcState.margenTocado
+      }));
+    }catch(e){}
+  },150);
+}
+function rcLimpiarBorrador(){clearTimeout(_rcDraftT);try{localStorage.removeItem(RC_DRAFT_LS_KEY);}catch(e){}}
+function rcCargarBorrador(){
+  try{const raw=localStorage.getItem(RC_DRAFT_LS_KEY);return raw?JSON.parse(raw):null;}catch(e){return null;}
+}
+// Aplica un borrador guardado sobre el formulario ya reseteado — reconstruye el producto
+// elegido (rcPick busca por ref en DB.items, igual que al escribir en el buscador), y luego
+// pisa cantidad/costo/precio/fecha con lo guardado (rcPick ya deja ahí los valores "actuales"
+// del producto, así que el orden importa: primero elegir, después restaurar lo escrito).
+function rcAplicarBorrador(d){
+  if(!d)return;
+  if(d.modo)rcSetModo(d.modo);
+  if(d.ivaModo)rcSetIva(d.ivaModo);
+  if(d.ref)rcPick(d.ref);
+  if(d.unidadesCaja)document.getElementById('rc-unidades-caja').value=d.unidadesCaja;
+  if(d.cantidad)document.getElementById('rc-cantidad').value=d.cantidad;
+  if(d.margenObj)document.getElementById('rc-margen-obj').value=d.margenObj;
+  if(d.costo)document.getElementById('rc-costo').value=d.costo;
+  if(d.fecha){
+    document.getElementById('rc-fecha').value=d.fecha;
+    const[aaaa,mm,dd]=d.fecha.split('-');
+    if(dd)document.getElementById('rc-fecha-dd').value=dd;
+    if(mm)document.getElementById('rc-fecha-mm').value=mm;
+    if(aaaa)document.getElementById('rc-fecha-aaaa').value=aaaa;
+  }
+  rcState.precioTocado=!!d.precioTocado;rcState.margenTocado=!!d.margenTocado;
+  if(d.precio)document.getElementById('rc-precio').value=d.precio; // se restaura al final: si había recálculo automático pendiente, esto respeta lo que el usuario tenía en pantalla
+  rcValidar();
+}
 let _rcPrecioSugerido=null; // precio sugerido al variar el costo — solo se aplica si el usuario toca "Usar este precio"
 function redondeoPsicologicoJS(p){
   const base=Math.floor(p/100)*100;
@@ -8623,6 +8682,7 @@ function rcPick(ref){
   rcShowPicked(it);
   rcActualizarBotonInventario(it);
   rcValidar();
+  rcGuardarBorrador();
 }
 // Muestra el botón "Activar inventario" listo para usarse en el producto recién elegido
 // (se reinicia cada vez que se elige un producto distinto — nunca queda "gastado" de uno anterior).
@@ -8675,6 +8735,7 @@ function rcValidar(){
   document.getElementById('rc-guardar').disabled=!(rcState.item&&cant>0);
 }
 function rcReset(){
+  _rcSuprimirBorrador=true;
   rcState.item=null;rcState.costoOriginal=0;rcState.precioOriginal=0;rcState.precioTocado=false;rcState.margenTocado=false;rcState.precioPreview=null;
   document.getElementById('rc-search').value='';
   document.getElementById('rc-results').innerHTML='';
@@ -8698,8 +8759,15 @@ function rcReset(){
   document.getElementById('rc-unidades-caja').value='';
   rcSetModo('unidad');
   document.getElementById('rc-guardar').disabled=true;
+  _rcSuprimirBorrador=false;
 }
-function openRecibir(){try{rcReset();}catch(e){}abrirModal('rc-ov');}
+// Abre Recepción reciclando un borrador si existe (F5, cambiar de app, o volver por el botón
+// atrás); si no hay nada guardado, se comporta exactamente igual que antes (formulario limpio).
+function openRecibir(){
+  try{rcReset();}catch(e){}
+  abrirModal('rc-ov');
+  try{const d=rcCargarBorrador();if(d)rcAplicarBorrador(d);}catch(e){}
+}
 function closeRecibir(){cerrarModal('rc-ov');}
 
 document.getElementById('btn-recibir').onclick=openRecibir;
@@ -8713,6 +8781,7 @@ function rcRestaurarPendiente(refNuevo){
   if(_rcPendiente.costo)document.getElementById('rc-costo').value=_rcPendiente.costo;
   if(_rcPendiente.fecha)document.getElementById('rc-fecha').value=_rcPendiente.fecha;
   rcValidar();
+  rcGuardarBorrador();
   _rcPendiente=null;
 }
 document.getElementById('rc-search').oninput=e=>{
@@ -8803,7 +8872,7 @@ document.getElementById('rc-qty-mas').onclick=rcQtyMas;
   });
 })();
 document.getElementById('rc-cantidad').oninput=()=>{rcValidar();rcRenderResumen();};
-document.getElementById('rc-fecha').oninput=rcValidar;
+document.getElementById('rc-fecha').oninput=()=>{rcValidar();rcGuardarBorrador();};
 
 // ---- Selector Unidad / Caja ----
 // Toggle claro Con IVA / Sin IVA — reemplaza el checkbox anterior, que dejaba ambigüedad
@@ -8945,6 +9014,7 @@ document.getElementById('rc-margen-obj').oninput=()=>{
 // precio → el resultado. Así queda explícito que el margen se aplicó sobre el neto, sin que
 // el usuario tenga que inferirlo.
 function rcRenderResumen(){
+  rcGuardarBorrador();
   const cont=document.getElementById('rc-resumen');
   const costoIngresado=Number(document.getElementById('rc-costo').value)||0;
   const costoUnitBruto=rcCostoUnitarioBruto();
@@ -9027,6 +9097,7 @@ document.getElementById('rc-guardar').onclick=async()=>{
       // No cerramos: reseteamos y dejamos la ventana lista para el siguiente producto,
       // así puedes recibir varios seguidos sin tener que reabrir Recepción.
       rcReset();
+      rcLimpiarBorrador(); // ya se guardó de verdad — un F5 después de esto no debe revivirlo
       document.getElementById('rc-search').focus();
     }else{showToast('Error: '+((j&&j.error)||'no se pudo guardar'));}
   }catch(e){
@@ -9604,7 +9675,7 @@ historyService.init();
 // Se reutilizan las funciones que ya existen para cada uno (nada nuevo, cero duplicado);
 // lo que no está en este mapa simplemente usa abrirModal(id) tal cual (ya cubre Más, etc.).
 const REABRIR_MODULO={
-  'rc-ov':()=>{try{rcReset();}catch(e){}abrirModal('rc-ov');},
+  'rc-ov':()=>{try{rcReset();}catch(e){}abrirModal('rc-ov');try{const d=rcCargarBorrador();if(d)rcAplicarBorrador(d);}catch(e){}},
   'vc-ov':()=>{abrirModal('vc-ov');try{vcShowList();}catch(e){}try{vcLoad();}catch(e){}},
   'cp-ov':()=>{try{cpReset();}catch(e){}abrirModal('cp-ov');try{cpCargarCatalogo();}catch(e){}},
   'in-ov':()=>{
