@@ -5650,7 +5650,7 @@ function cpSetIva(modo){
   btnSin.style.background=modo==='sin'?'var(--wa-bg,var(--verde-bg))':'#fff';
   btnSin.style.color=modo==='sin'?'var(--wa-d)':'var(--muted)';
   btnSin.style.borderColor=modo==='sin'?'var(--wa-d)':'var(--line)';
-  if(!cpState.precioTocado)cpRecalcularPrecioAuto();
+  cpRecalcularPrecioAuto(); // el costo/IVA es siempre la fuente de verdad: descarta cualquier precio editado a mano
   cpRenderExplicaCosto();
   cpRenderResumen();
 }
@@ -5725,7 +5725,7 @@ function cpRecalcularPrecioAuto(){
 }
 document.getElementById('cp-precio').oninput=()=>{cpState.precioTocado=true;cpRenderResumen();};
 document.getElementById('cp-costo').oninput=()=>{
-  if(!cpState.precioTocado)cpRecalcularPrecioAuto();
+  cpRecalcularPrecioAuto(); // el costo es la única fuente de verdad: descarta cualquier precio editado a mano
   cpRenderExplicaCosto();
   cpRenderResumen();
 };
@@ -8831,7 +8831,7 @@ function rcProductoNoEncontrado(code){
   if(_rcPendiente.cantidad){document.getElementById('cp-cantidad').value=_rcPendiente.cantidad;document.getElementById('cp-track').checked=true;cpToggleStock();}
   if(_rcPendiente.fecha)document.getElementById('cp-fecha').value=_rcPendiente.fecha;
   try{cpSetIva(rcState.ivaModo||'con');}catch(_){}
-  try{if(!cpState.precioTocado)cpRecalcularPrecioAuto();cpRenderResumen();}catch(_){}
+  try{cpRenderResumen();}catch(_){}
   // Mantiene el proveedor: intenta preseleccionar la categoría igual al filtro activo en Pedidos
   const provActual=(!state.allProv&&state.prov)?state.prov:null;
   if(provActual){
