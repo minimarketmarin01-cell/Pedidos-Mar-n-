@@ -971,10 +971,10 @@ html:not(.vista-filas) .row-urgent .prod-name::before{content:'● ';color:var(-
 html:not(.vista-filas) .row-pedir .prod-name::before{content:'● ';color:var(--salvia-2)}
 html:not(.vista-filas) .row-urgent .card-main::before{content:'URGENTE — reponer ya';display:block;font-size:9.5px;font-weight:800;letter-spacing:.03em;color:var(--rojo);background:var(--rojo-bg);border:1px solid #F0DADA;padding:2px 8px;border-radius:20px;margin-bottom:5px;width:fit-content}
 html:not(.vista-filas) .row-pedir .card-main::before{content:'A PEDIR';display:block;font-size:9.5px;font-weight:800;letter-spacing:.03em;color:var(--ambar);background:var(--salvia-tint);border:1px solid #D8E5D0;padding:2px 8px;border-radius:20px;margin-bottom:5px;width:fit-content}
-html:not(.vista-filas) .row-urgent .card-stats .cstat:first-child,
-html:not(.vista-filas) .row-pedir .card-stats .cstat:first-child{font-weight:800;padding:1px 7px;border-radius:20px}
-html:not(.vista-filas) .row-urgent .card-stats .cstat:first-child{background:var(--rojo-bg);color:var(--rojo)}
-html:not(.vista-filas) .row-pedir .card-stats .cstat:first-child{background:var(--salvia-tint);color:var(--ambar)}
+html:not(.vista-filas) .row-urgent .card-stats .cstat-cov,
+html:not(.vista-filas) .row-pedir .card-stats .cstat-cov{font-weight:800;padding:1px 7px;border-radius:20px}
+html:not(.vista-filas) .row-urgent .card-stats .cstat-cov{background:var(--rojo-bg);color:var(--rojo)}
+html:not(.vista-filas) .row-pedir .card-stats .cstat-cov{background:var(--salvia-tint);color:var(--ambar)}
 /* Tablet/BlissOS (vista-filas): mismo principio que en celular — color de fondo en toda la
    fila + badge de texto corto ("URGENTE"/"A PEDIR"), no solo un punto de color, para que se
    identifique igual de rápido en el layout de tabla más compacto. El badge es más chico que
@@ -1553,22 +1553,10 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           </div>
           <div id="rc-costo-explica" style="font-size:10px;color:var(--muted);margin-top:4px;line-height:1.3"></div>
 
-          <!-- Precio de venta: destacado, ocupa todo el ancho, justo debajo de costo/margen.
-               Este campo es el precio ACTUAL/vigente — el que se guardará en Loyverse tal
-               cual si no se aplica el sugerido de abajo. Ya no se sobreescribe solo. -->
+          <!-- Precio de venta: destacado, ocupa todo el ancho, justo debajo de costo/margen. -->
           <div style="margin-top:8px;padding:8px 10px;background:var(--wa-bg,var(--verde-bg));border:1.5px solid var(--wa-d);border-radius:10px">
-            <div style="font-size:10px;color:var(--wa-d);font-weight:700;margin-bottom:2px">PRECIO DE VENTA <span style="font-weight:400;text-transform:none">(este se guarda)</span></div>
+            <div style="font-size:10px;color:var(--wa-d);font-weight:700;margin-bottom:2px">PRECIO DE VENTA</div>
             <input id="rc-precio" inputmode="numeric" placeholder="$" style="width:100%;height:40px;padding:0;border:none;background:transparent;font-size:20px;font-weight:800;font-family:'JetBrains Mono';color:var(--ink)">
-          </div>
-
-          <!-- Vista previa del precio calculado a partir de costo/margen/IVA — NO se guarda
-               solo. El usuario debe presionar "Aplicar precio" para que reemplace al de arriba. -->
-          <div id="rc-precio-preview-box" class="hidden" style="margin-top:6px;padding:8px 10px;background:var(--paper);border:1.5px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:8px">
-            <div>
-              <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:2px">PRECIO CALCULADO <span style="font-weight:400;text-transform:none">(vista previa)</span></div>
-              <div id="rc-precio-preview-val" style="font-size:16px;font-weight:800;font-family:'JetBrains Mono';color:var(--ink)">—</div>
-            </div>
-            <button type="button" id="rc-precio-aplicar" class="rc-precio-usar" style="margin-left:0;padding:7px 12px;font-size:12px">Aplicar precio</button>
           </div>
 
           <div id="rc-resumen" class="cat" style="margin-top:8px;padding:8px 10px;background:var(--paper);border-radius:9px;line-height:1.55;font-size:11.5px"></div>
@@ -1609,9 +1597,9 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
     <div class="tablecard"><div class="tbl-scroll"><div id="ptable">
       <div class="ptable-head">
         <span class="l" data-s="nombre">Producto <span class="ar">▲▼</span></span>
-        <span data-s="cov" class="sorted">Cob <span class="ar">▲▼</span></span>
-        <span data-s="stock">Stk <span class="ar">▲▼</span></span>
+        <span data-s="stock" class="sorted">Stk <span class="ar">▲▼</span></span>
         <span data-s="rate" id="th-rate">Vta <span class="ar">▲▼</span></span>
+        <span data-s="cov">Cob <span class="ar">▲▼</span></span>
         <span data-s="sug">Pedir <span class="ar">▲▼</span></span>
       </div>
       <div id="ptbody"></div>
@@ -2879,9 +2867,9 @@ function rowHTML(it,a,f){const cant=qOf(it,a);
           `<span class="fila-prov">${it.prov}</span>`+pendBadge+extraProvBadge+
         `</div>`+
         `<div class="fila-precios"><span class="fila-venta">${precioVal}</span><span class="fila-costo">${costoVal}</span><span class="fila-margen ${mgCls}">${mgVal}</span>${abcBadge}</div>`+
-        `<div class="fila-col" style="color:${covColor(a)}"><span class="fila-lbl">COB</span><span>${covTxt}</span></div>`+
         `<div class="fila-col"><span class="fila-lbl">STK</span><span>${statStock}</span></div>`+
         `<div class="fila-col"><span class="fila-lbl">VTA</span><span><span class="trend ${a.trend.k}">${a.trend.t}</span> ${fmt.format(ventasPeriodo)}</span></div>`+
+        `<div class="fila-col" style="color:${covColor(a)}"><span class="fila-lbl">COB</span><span>${covTxt}</span></div>`+
         `<div class="fila-pedir">${stepper}</div>`+
       `</div>`+
     `</div>`;
@@ -2894,9 +2882,9 @@ function rowHTML(it,a,f){const cant=qOf(it,a);
         `<div class="prod-meta">${it.prov}</div>`+pendBadge+extraProvBadge+
         priceLine+
         `<div class="card-stats">`+
-          `<span class="cstat" style="color:${covColor(a)}"><span class="cstat-label" style="color:inherit">COB</span> ${covTxt}</span>`+
           `<span class="cstat cstat-stock"><span class="cstat-label">STK</span> ${statStock}</span>`+
           `<span class="cstat"><span class="trend ${a.trend.k}">${a.trend.t}</span><span class="cstat-label">VTA</span> ${fmt.format(ventasPeriodo)}</span>`+
+          `<span class="cstat cstat-cov" style="color:${covColor(a)}"><span class="cstat-label" style="color:inherit">COB</span> ${covTxt}</span>`+
         `</div>`+
       `</div>`+
       `<div class="card-stepper"><div class="qcell">${cambioLine}${sugHint}<div class="qstep ${cant>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}" data-step="${inStep(it)}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${(it.fmt>1||multOf(it)>1)?'gold':''}">${labelFor(it,bundles)}</span></div></div>`+
@@ -7389,11 +7377,7 @@ document.getElementById('cp-guardar').onclick=async()=>{
     const categoriaNombre=(sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:'');
     if(!nombre||!categoryId){cpValidar();showToast('Falta el nombre o la categoría');return;}
     const precioRaw=(document.getElementById('cp-precio').value||'').replace(/[^\d]/g,'');
-    // Loyverse siempre guarda el costo POR UNIDAD, nunca el costo de la caja. cpCostoBruto()
-    // ya hace ese trabajo: si el modo es "caja" divide por unidades/caja, y respeta el toggle
-    // Con/Sin IVA (mismo cálculo que ya usa la vista previa del precio). El costo de la caja
-    // (cp-costo cuando modo==='caja') queda solo para ese cálculo interno — nunca se envía tal cual.
-    const costoUnitario=Math.round(cpCostoBruto());
+    const costoRaw=(document.getElementById('cp-costo').value||'').replace(/[^\d]/g,'');
     const stockRaw=(document.getElementById('cp-stock').value||'').replace(',','.');
     const stockMinRaw=(document.getElementById('cp-stock-min').value||'').replace(',','.');
     const track=document.getElementById('cp-track').checked;
@@ -7407,7 +7391,7 @@ document.getElementById('cp-guardar').onclick=async()=>{
       nombre:nombre,categoryId:categoryId,categoriaNombre:categoriaNombre,
       soldByWeight:_cpVenta==='kg',
       precio:precioRaw?Number(precioRaw):null,
-      coste:costoUnitario>0?costoUnitario:0,
+      coste:costoRaw?Number(costoRaw):0,
       barcode:(document.getElementById('cp-barcode').value||'').trim(),
       trackStock:track,
       stockInicial:(track&&stockRaw)?Number(stockRaw):0,
@@ -8572,7 +8556,7 @@ document.getElementById('in-guardar').onclick=async()=>{
 };
 
 // ===================== RECIBIR MERCADERÍA =====================
-const rcState={item:null,costoOriginal:0,precioOriginal:0,precioTocado:false,margenTocado:false,modo:'unidad',ivaModo:'con',precioPreview:null};
+const rcState={item:null,costoOriginal:0,precioOriginal:0,precioTocado:false,margenTocado:false,modo:'unidad',ivaModo:'con'};
 let _rcPrecioSugerido=null; // precio sugerido al variar el costo — solo se aplica si el usuario toca "Usar este precio"
 function redondeoPsicologicoJS(p){
   const base=Math.floor(p/100)*100;
@@ -8675,7 +8659,7 @@ function rcValidar(){
   document.getElementById('rc-guardar').disabled=!(rcState.item&&cant>0);
 }
 function rcReset(){
-  rcState.item=null;rcState.costoOriginal=0;rcState.precioOriginal=0;rcState.precioTocado=false;rcState.margenTocado=false;rcState.precioPreview=null;
+  rcState.item=null;rcState.costoOriginal=0;rcState.precioOriginal=0;rcState.precioTocado=false;rcState.margenTocado=false;
   document.getElementById('rc-search').value='';
   document.getElementById('rc-results').innerHTML='';
   document.getElementById('rc-picked').classList.remove('on');
@@ -8817,7 +8801,7 @@ function rcSetIva(modo){
   btnSin.style.background=modo==='sin'?'var(--wa-bg,var(--verde-bg))':'#fff';
   btnSin.style.color=modo==='sin'?'var(--wa-d)':'var(--muted)';
   btnSin.style.borderColor=modo==='sin'?'var(--wa-d)':'var(--line)';
-  rcRecalcularPrecioAuto();
+  if(!rcState.precioTocado)rcRecalcularPrecioAuto();
   rcRenderExplicaCosto();
   rcRenderResumen();
 }
@@ -8847,12 +8831,11 @@ function rcSetModo(modo){
   document.getElementById('rc-costo-label').textContent=modo==='caja'?'COSTO DE LA CAJA':'COSTO';
   const esPeso=rcState.item&&rcState.item.peso;
   document.getElementById('rc-unidad').textContent=modo==='caja'?'cajas':(esPeso?'kg':'u');
-  rcRecalcularPrecioAuto(); // el costo por unidad (base del precio) cambia según el modo
   rcRenderResumen();
 }
 document.getElementById('rc-modo-unidad').onclick=()=>rcSetModo('unidad');
 document.getElementById('rc-modo-caja').onclick=()=>rcSetModo('caja');
-document.getElementById('rc-unidades-caja').oninput=()=>{rcRecalcularPrecioAuto();rcRenderResumen();};
+document.getElementById('rc-unidades-caja').oninput=rcRenderResumen;
 
 // Requisito 3: costo por unidad real cuando la compra es por caja.
 function rcCostoUnitarioBruto(){
@@ -8880,64 +8863,26 @@ function rcCostoNeto(){
 function rcBaseParaPrecio(){
   return rcCostoBruto();
 }
-// El cálculo automático sigue disparándose ante cambios de costo/margen/IVA (misma fórmula
-// de siempre), pero desde acá SOLO alimenta la vista previa (rcState.precioPreview) — ya no
-// escribe en #rc-precio. El precio que se guarda en Loyverse es el que está en #rc-precio,
-// y ese únicamente cambia si el usuario lo edita a mano o presiona "Aplicar precio".
 function rcRecalcularPrecioAuto(){
   const margenPct=Number(document.getElementById('rc-margen-obj').value);
   const base=rcBaseParaPrecio();
-  if(!base||!margenPct||margenPct<=0||margenPct>=100){
-    rcState.precioPreview=null;
-  }else{
-    rcState.precioPreview=Math.round(base/(1-margenPct/100));
-  }
-  rcRenderPrecioPreview();
+  if(!base||!margenPct||margenPct<=0||margenPct>=100)return;
+  const precioCalc=Math.round(base/(1-margenPct/100));
+  document.getElementById('rc-precio').value=precioCalc;
+  rcState.precioTocado=false; // fue el sistema quien lo puso, no el usuario
 }
-// Pinta (o esconde) la caja de vista previa y decide si el botón "Aplicar precio" está
-// habilitado. Si el precio vigente ya coincide con el calculado, se muestra como aplicado.
-function rcRenderPrecioPreview(){
-  const box=document.getElementById('rc-precio-preview-box');
-  const valEl=document.getElementById('rc-precio-preview-val');
-  const btn=document.getElementById('rc-precio-aplicar');
-  if(rcState.precioPreview==null){
-    box.classList.add('hidden');
-    return;
-  }
-  box.classList.remove('hidden');
-  valEl.textContent=peso(rcState.precioPreview);
-  const actual=Number(document.getElementById('rc-precio').value)||0;
-  if(actual===rcState.precioPreview){
-    btn.textContent='✓ Aplicado';
-    btn.disabled=true;
-    btn.style.opacity=.6;
-  }else{
-    btn.textContent='Aplicar precio';
-    btn.disabled=false;
-    btn.style.opacity=1;
-  }
-}
-// Único punto donde el precio calculado reemplaza al vigente: acción explícita del usuario.
-document.getElementById('rc-precio-aplicar').onclick=()=>{
-  if(rcState.precioPreview==null)return;
-  document.getElementById('rc-precio').value=rcState.precioPreview;
-  rcState.precioTocado=false; // el precio activo ahora es el sugerido por el sistema, no una edición manual
-  rcRenderPrecioPreview();
-  rcRenderResumen();
-};
 document.getElementById('rc-precio').oninput=()=>{
   rcState.precioTocado=true; // desde acá, el usuario manda — no se vuelve a autocompletar
-  rcRenderPrecioPreview(); // puede coincidir o no con la vista previa vigente
   rcRenderResumen();
 };
 document.getElementById('rc-costo').oninput=()=>{
-  rcRecalcularPrecioAuto();
+  if(!rcState.precioTocado)rcRecalcularPrecioAuto();
   rcRenderExplicaCosto();
   rcRenderResumen();
 };
 document.getElementById('rc-margen-obj').oninput=()=>{
   rcState.margenTocado=true; // el usuario lo modificó — no se debe volver a sobrescribir con el 30% por defecto
-  rcRecalcularPrecioAuto();
+  if(!rcState.precioTocado)rcRecalcularPrecioAuto();
   rcRenderResumen();
 };
 // Resumen dinámico: muestra SIEMPRE (no solo cuando hay IVA) las 4 líneas clave, en el orden
