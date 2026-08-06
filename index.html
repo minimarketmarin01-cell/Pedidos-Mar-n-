@@ -4022,15 +4022,40 @@ function fpPintar(f){
       '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px">Imagen</div>'+
       (p.imagen?'<img id="fp-img-actual" src="'+p.imagen+'" style="width:64px;height:64px;object-fit:cover;border-radius:9px;border:1px solid var(--line);margin-bottom:9px;display:block">':'<div style="font-size:12.5px;color:var(--muted);margin-bottom:9px">Este producto no tiene imagen en Loyverse.</div>')+
       '<div style="display:flex;gap:8px">'+
+        '<button id="fp-img-camara-btn" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font-weight:700;font-size:13px;cursor:pointer">📷 Tomar foto</button>'+
         '<button id="fp-img-galeria-btn" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font-weight:700;font-size:13px;cursor:pointer">📎 Galería</button>'+
         '<button id="fp-img-buscar" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font-weight:700;font-size:13px;cursor:pointer">🔍 Buscar por código</button>'+
       '</div>'+
       '<input type="file" accept="image/*" id="fp-img-galeria" style="display:none">'+
+      '<input type="file" accept="image/*" capture="environment" id="fp-img-camara" style="display:none">'+
       '<div id="fp-img-preview-box" class="hidden" style="margin-top:9px;display:flex;align-items:center;gap:10px;padding:8px 10px;border:1.5px solid var(--wa);border-radius:10px;background:#F1FBF5">'+
         '<img id="fp-img-preview-img" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0">'+
         '<span style="font-size:12px;color:var(--wa-d);font-weight:700;flex:1">¿Usar esta imagen?</span>'+
         '<button type="button" id="fp-img-usar" style="background:var(--wa);border:none;color:#fff;font-weight:700;font-size:11.5px;padding:6px 10px;border-radius:7px;cursor:pointer">✓ Usar</button>'+
         '<button type="button" id="fp-img-cancelar" style="background:none;border:none;color:var(--muted);font-size:11px;text-decoration:underline;cursor:pointer">Cancelar</button>'+
+      '</div>'+
+      // Foto recién tomada: primero se confirma si sirve, y solo AHÍ se manda a remove.bg
+      // (no se procesa automáticamente al tomarla, para no gastar créditos con fotos borrosas).
+      '<div id="fp-camara-preview-box" class="hidden" style="margin-top:9px;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper)">'+
+        '<img id="fp-camara-preview-img" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#fff;display:block;margin-bottom:8px">'+
+        '<div style="display:flex;gap:8px">'+
+          '<button type="button" id="fp-camara-confirmar" style="flex:1;padding:9px;border-radius:9px;border:none;background:var(--wa);color:#fff;font-weight:700;font-size:12.5px;cursor:pointer">✓ Confirmar y quitar fondo</button>'+
+          '<button type="button" id="fp-camara-repetir" style="padding:9px 14px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12.5px;cursor:pointer">↺ Repetir</button>'+
+        '</div>'+
+      '</div>'+
+      // Procesando con remove.bg (spinner discreto, sin bloquear el resto de la ficha).
+      '<div id="fp-fondo-procesando" class="hidden" style="margin-top:9px;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);display:flex;align-items:center;gap:8px">'+
+        '<span class="sync-ic spin" style="display:inline-flex">⟳</span>'+
+        '<span style="font-size:12.5px;color:var(--muted)">Quitando el fondo con remove.bg…</span>'+
+      '</div>'+
+      // Resultado con fondo blanco: solo se sube a Loyverse si el usuario toca "Aplicar al
+      // producto" — hasta entonces es únicamente una vista previa en memoria.
+      '<div id="fp-fondo-resultado-box" class="hidden" style="margin-top:9px;padding:10px;border:1.5px solid var(--wa);border-radius:10px;background:#F1FBF5">'+
+        '<img id="fp-fondo-resultado-img" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#fff;display:block;margin-bottom:8px;border:1px solid var(--line)">'+
+        '<div style="display:flex;gap:8px">'+
+          '<button type="button" id="fp-fondo-aplicar" style="flex:1;padding:9px;border-radius:9px;border:none;background:var(--wa);color:#fff;font-weight:700;font-size:12.5px;cursor:pointer">✓ Aplicar al producto</button>'+
+          '<button type="button" id="fp-fondo-descartar" style="padding:9px 14px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12.5px;cursor:pointer">Descartar</button>'+
+        '</div>'+
       '</div>'+
     '</div>'+
     '<button id="fp-eliminar-btn" style="width:100%;padding:10px;margin-top:14px;border-radius:10px;border:1.5px solid var(--rojo);background:#FCE9E7;color:var(--rojo);font-weight:700;font-size:13px;cursor:pointer">🗑️ Eliminar este producto de Loyverse</button>';
@@ -4092,6 +4117,75 @@ function fpPintar(f){
       }
     }catch(e){showToast('⚠️ No se pudo procesar esa imagen');}
   });
+
+  // ---- Tomar foto → confirmar → quitar fondo (remove.bg, fondo blanco) → aplicar ----
+  // Estado en memoria de esta ficha: la foto recién tomada (antes de confirmar) y el
+  // resultado ya procesado (antes de aplicarlo a Loyverse). Ninguno de los dos toca
+  // Loyverse hasta que el usuario toca el botón correspondiente.
+  let _fpFotoTomadaB64=null, _fpFondoResultadoB64=null;
+  document.getElementById('fp-img-camara-btn').onclick=()=>document.getElementById('fp-img-camara').click();
+  document.getElementById('fp-img-camara').addEventListener('change',async(ev)=>{
+    const file=ev.target.files&&ev.target.files[0];
+    if(!file)return;
+    ev.target.value='';
+    try{
+      _fpFotoTomadaB64=await resizeImageToBase64(file);
+      document.getElementById('fp-camara-preview-img').src='data:image/jpeg;base64,'+_fpFotoTomadaB64;
+      document.getElementById('fp-camara-preview-box').classList.remove('hidden');
+      document.getElementById('fp-fondo-resultado-box').classList.add('hidden');
+      document.getElementById('fp-fondo-procesando').classList.add('hidden');
+    }catch(e){showToast('⚠️ No se pudo procesar esa foto');}
+  });
+  document.getElementById('fp-camara-repetir').onclick=()=>{
+    _fpFotoTomadaB64=null;
+    document.getElementById('fp-camara-preview-box').classList.add('hidden');
+    document.getElementById('fp-img-camara').click();
+  };
+  document.getElementById('fp-camara-confirmar').onclick=async()=>{
+    if(!_fpFotoTomadaB64)return;
+    document.getElementById('fp-camara-preview-box').classList.add('hidden');
+    document.getElementById('fp-fondo-procesando').classList.remove('hidden');
+    try{
+      const r=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'quitar_fondo_producto',payload:{image_base64:_fpFotoTomadaB64}})});
+      const j=await r.json();
+      document.getElementById('fp-fondo-procesando').classList.add('hidden');
+      if(j&&j.ok&&j.image_base64){
+        _fpFondoResultadoB64=j.image_base64;
+        document.getElementById('fp-fondo-resultado-img').src='data:'+(j.content_type||'image/png')+';base64,'+j.image_base64;
+        document.getElementById('fp-fondo-resultado-box').classList.remove('hidden');
+      }else{
+        showToast('⚠️ '+((j&&j.error)||'No se pudo quitar el fondo'));
+        document.getElementById('fp-camara-preview-box').classList.remove('hidden'); // deja reintentar sin volver a tomar la foto
+      }
+    }catch(e){
+      document.getElementById('fp-fondo-procesando').classList.add('hidden');
+      showToast('⚠️ Error de conexión al quitar el fondo');
+      document.getElementById('fp-camara-preview-box').classList.remove('hidden');
+    }
+  };
+  document.getElementById('fp-fondo-descartar').onclick=()=>{
+    _fpFondoResultadoB64=null;_fpFotoTomadaB64=null;
+    document.getElementById('fp-fondo-resultado-box').classList.add('hidden');
+  };
+  document.getElementById('fp-fondo-aplicar').onclick=async()=>{
+    if(!_fpFondoResultadoB64)return;
+    const btn=document.getElementById('fp-fondo-aplicar');
+    btn.disabled=true;btn.textContent='Subiendo…';
+    try{
+      const r=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'subir_imagen_producto',payload:{sku:p.sku,image_base64:_fpFondoResultadoB64}})});
+      const j=await r.json();
+      if(j&&j.ok){
+        showToast('🖼️ Imagen (fondo blanco) subida a Loyverse');
+        document.getElementById('fp-fondo-resultado-box').classList.add('hidden');
+        _fpFondoResultadoB64=null;_fpFotoTomadaB64=null;
+        const existente=document.getElementById('fp-img-actual');
+        if(existente)existente.src=j.imagen_url; else fpAbrir(p.sku);
+      }else{
+        showToast('⚠️ '+((j&&j.error)||'No se pudo subir la imagen'));
+      }
+    }catch(e){showToast('⚠️ Error de conexión al subir la imagen');}
+    finally{btn.disabled=false;btn.textContent='✓ Aplicar al producto';}
+  };
 
   // --- Inventario ---
   const v=f.ventas;
