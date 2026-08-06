@@ -211,7 +211,7 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
    no como hoja inferior. Se pisan solo estos 3 IDs — el resto de los modales
    (Merma, Insumos, Crear producto, Calculadora, etc.) sigue igual. */
 #rc-ov,#vc-ov,#mas-ov{align-items:stretch;background:var(--paper)}
-#rc-ov .mm-card,#vc-ov .mm-card,#mas-ov .mm-card{width:100%;max-width:100%;height:100%;max-height:100%;border-radius:0}
+#rc-ov .mm-card,#vc-ov .mm-card,#mas-ov .mm-card,#fp-ov .mm-card{width:100%;max-width:100%;height:100%;max-height:100%;border-radius:0}
 .mm-head{display:flex;justify-content:space-between;align-items:center;padding:16px 16px 0 16px;flex:none;margin-bottom:12px}
 .mm-topbar{padding:0 16px;flex:none;margin-bottom:10px}
 .mm-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 16px 22px;flex:1;min-height:0}
@@ -356,6 +356,19 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .fp-tab{flex-shrink:0;padding:8px 14px;border-radius:20px;border:1.5px solid var(--line);background:#fff;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap}
 .fp-tab.active{background:var(--ink);border-color:var(--ink);color:#fff}
 .fp-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px dashed var(--line2);font-size:13.5px;gap:10px}
+/* Editor de artículo a pantalla completa: pestañas arriba (sticky), contenido con scroll
+   propio, y una barra de acciones (Guardar/Eliminar/Cancelar) siempre visible abajo — mismo
+   criterio que el resto de la PWA (nav inferior siempre visible). El padding-bottom del body
+   dqa espacio exacto para que la última fila de cada pestaña no quede tapada por la barra. */
+#fp-ov #fp-body{padding-bottom:0;display:flex;flex-direction:column;height:100%}
+#fp-ov #fp-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px 18px}
+#fp-ov .fp-tabs{position:sticky;top:0;background:var(--card);z-index:5;padding-top:2px;padding-bottom:8px;margin-bottom:8px}
+.fp-actionbar{flex-shrink:0;display:flex;gap:8px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--card)}
+.fp-actionbar button{flex:1;padding:12px;border-radius:10px;font-weight:700;font-size:13.5px;cursor:pointer}
+.fp-actionbar .fp-btn-cancelar{border:1.5px solid var(--line);background:#fff;color:var(--ink);flex:0 0 auto;padding-left:16px;padding-right:16px}
+.fp-actionbar .fp-btn-eliminar{border:1.5px solid var(--rojo);background:#FCE9E7;color:var(--rojo);flex:0 0 auto;padding-left:14px;padding-right:14px}
+.fp-actionbar .fp-btn-guardar{border:none;background:var(--verde);color:#fff;flex:1 1 auto}
+.fp-actionbar .fp-btn-guardar:disabled{opacity:.6;cursor:default}
 .fp-row .k{color:var(--muted);flex-shrink:0}
 .fp-row .v{font-weight:700;text-align:right}
 .fp-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
@@ -1815,24 +1828,34 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
 
 <div class="mm-ov hidden" id="fp-ov">
   <div class="mm-card">
-    <div class="mm-head"><h3 id="fp-titulo">📇 Ficha del producto</h3></div>
-    <div class="mm-topbar"><button class="loadbtn" id="fp-cerrar" style="width:100%">Cerrar</button></div>
+    <div class="mm-head"><h3 id="fp-titulo">📇 Editar artículo</h3></div>
     <div class="mm-body" id="fp-body">
       <div class="vc-empty" id="fp-loading">Cargando…</div>
-      <div id="fp-content" class="hidden">
-        <div class="hm-summary" id="fp-resumen" style="flex-direction:column;align-items:flex-start;gap:4px"></div>
-        <div class="fp-tabs" id="fp-tabs">
-          <button class="fp-tab active" data-tab="general">General</button>
-          <button class="fp-tab" data-tab="inventario">Inventario</button>
-          <button class="fp-tab" data-tab="lotes">Lotes</button>
-          <button class="fp-tab" data-tab="precios">Precios</button>
-          <button class="fp-tab" data-tab="mov">Movimientos</button>
+      <div id="fp-content" class="hidden" style="display:flex;flex-direction:column;height:100%">
+        <div id="fp-scroll">
+          <div class="hm-summary" id="fp-resumen" style="flex-direction:column;align-items:flex-start;gap:4px"></div>
+          <div class="fp-tabs" id="fp-tabs">
+            <button class="fp-tab active" data-tab="general">General</button>
+            <button class="fp-tab" data-tab="inventario">Inventario</button>
+            <button class="fp-tab" data-tab="precios">Precios</button>
+            <button class="fp-tab" data-tab="proveedores">Proveedores</button>
+            <button class="fp-tab" data-tab="sector">Sector</button>
+            <button class="fp-tab hidden" data-tab="lotes">Lotes</button>
+            <button class="fp-tab" data-tab="avanzado">Avanzado</button>
+          </div>
+          <div id="fp-pane-general" class="fp-pane"></div>
+          <div id="fp-pane-inventario" class="fp-pane hidden"></div>
+          <div id="fp-pane-precios" class="fp-pane hidden"></div>
+          <div id="fp-pane-proveedores" class="fp-pane hidden"></div>
+          <div id="fp-pane-sector" class="fp-pane hidden"></div>
+          <div id="fp-pane-lotes" class="fp-pane hidden"></div>
+          <div id="fp-pane-avanzado" class="fp-pane hidden"></div>
         </div>
-        <div id="fp-pane-general" class="fp-pane"></div>
-        <div id="fp-pane-inventario" class="fp-pane hidden"></div>
-        <div id="fp-pane-lotes" class="fp-pane hidden"></div>
-        <div id="fp-pane-precios" class="fp-pane hidden"></div>
-        <div id="fp-pane-mov" class="fp-pane hidden"></div>
+        <div class="fp-actionbar">
+          <button type="button" class="fp-btn-cancelar" id="fp-cerrar">Cancelar</button>
+          <button type="button" class="fp-btn-eliminar" id="fp-eliminar-btn">🗑️</button>
+          <button type="button" class="fp-btn-guardar" id="fp-guardar-btn">💾 Guardar cambios</button>
+        </div>
       </div>
     </div>
   </div>
@@ -3927,26 +3950,60 @@ document.getElementById('sm-selall').onchange=e=>{
   smRender();
 };
 
-// ===================== FICHA DEL PRODUCTO (solo lectura — Fase 1) =====================
-document.getElementById('fp-cerrar').onclick=()=>cerrarModal('fp-ov');
+// ===================== EDITOR DE ARTÍCULO (pantalla completa, edición directa) =====================
+// Antes: modal flotante con pestañas de solo lectura + botón "Editar" que abría un formulario
+// aparte. Ahora: pantalla completa (mismo patrón que Recepción/Vencimientos/Más — #fp-ov usa
+// el mismo CSS #rc-ov/#vc-ov/#mas-ov), con 7 pestañas donde TODOS los campos son editables
+// desde que se abre la pestaña, estilo Loyverse. Guardar/Eliminar/Cancelar viven en una barra
+// fija abajo, visible sin importar en qué pestaña estés. Cada pestaña tiene su propia función
+// fpPane*(f) — así el archivo se mantiene navegable pese al tamaño del formulario completo.
+document.getElementById('fp-cerrar').onclick=()=>{fpLimpiarBorrador();cerrarModal('fp-ov');};
 document.querySelectorAll('#fp-tabs .fp-tab').forEach(btn=>{
   btn.onclick=()=>{
     document.querySelectorAll('#fp-tabs .fp-tab').forEach(b=>b.classList.toggle('active',b===btn));
     document.querySelectorAll('#fp-body .fp-pane').forEach(p=>p.classList.add('hidden'));
     document.getElementById('fp-pane-'+btn.dataset.tab).classList.remove('hidden');
+    document.getElementById('fp-scroll').scrollTop=0;
+    fpGuardarBorrador(); // recuerda en qué pestaña estabas, ver "restaurar tras F5" más abajo
   };
 });
 let _fpActual=null;
 let _fpImagenPreviewUrl=null; // imagen encontrada en el catálogo (código de barras), pendiente de confirmar o cancelar
-async function fpAbrir(ref){
+// ---- Restaurar tras F5: recuerda SKU + pestaña activa + scroll, igual patrón que el resto
+// de la app (rcGuardarBorrador/inGuardarBorrador) — con demora para no trabar el tacto. ----
+const FP_DRAFT_LS_KEY='marin376_editor_producto_draft';
+let _fpDraftT=null;
+function fpGuardarBorrador(){
+  clearTimeout(_fpDraftT);
+  _fpDraftT=setTimeout(()=>{
+    try{
+      if(!_fpActual){localStorage.removeItem(FP_DRAFT_LS_KEY);return;}
+      const tabBtn=document.querySelector('#fp-tabs .fp-tab.active');
+      const scrollEl=document.getElementById('fp-scroll');
+      localStorage.setItem(FP_DRAFT_LS_KEY,JSON.stringify({
+        sku:_fpActual.producto.sku,
+        tab:tabBtn?tabBtn.dataset.tab:'general',
+        scroll:scrollEl?scrollEl.scrollTop:0
+      }));
+    }catch(e){}
+  },150);
+}
+function fpLimpiarBorrador(){clearTimeout(_fpDraftT);try{localStorage.removeItem(FP_DRAFT_LS_KEY);}catch(e){}}
+function fpCargarBorrador(){
+  try{const raw=localStorage.getItem(FP_DRAFT_LS_KEY);return raw?JSON.parse(raw):null;}catch(e){return null;}
+}
+async function fpAbrir(ref,restaurar){
   _fpImagenPreviewUrl=null;
   const it=DB.items.find(x=>x.ref===ref);
   document.getElementById('fp-titulo').textContent='📇 '+(it?it.nombre:ref);
   document.getElementById('fp-content').classList.add('hidden');
   document.getElementById('fp-loading').classList.remove('hidden');
   document.getElementById('fp-loading').textContent='Cargando…';
-  document.querySelectorAll('#fp-tabs .fp-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab==='general'));
-  document.querySelectorAll('#fp-body .fp-pane').forEach(p=>p.classList.toggle('hidden',p.id!=='fp-pane-general'));
+  // Si venimos de restaurar tras F5, se respeta la pestaña guardada; si no, siempre arranca
+  // en "General" (comportamiento de siempre al abrir un producto nuevo).
+  const tabInicial=(restaurar&&restaurar.tab)?restaurar.tab:'general';
+  document.querySelectorAll('#fp-tabs .fp-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tabInicial));
+  document.querySelectorAll('#fp-body .fp-pane').forEach(p=>p.classList.toggle('hidden',p.id!=='fp-pane-'+tabInicial));
   abrirModal('fp-ov');
   try{
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=ficha_producto&sku='+encodeURIComponent(ref));
@@ -3956,6 +4013,11 @@ async function fpAbrir(ref){
     fpPintar(j.ficha);
     document.getElementById('fp-loading').classList.add('hidden');
     document.getElementById('fp-content').classList.remove('hidden');
+    fpGuardarBorrador();
+    if(restaurar&&restaurar.scroll){
+      // Espera a que el DOM de la pestaña termine de pintarse antes de restaurar el scroll.
+      requestAnimationFrame(()=>{const el=document.getElementById('fp-scroll');if(el)el.scrollTop=restaurar.scroll;});
+    }
   }catch(e){document.getElementById('fp-loading').textContent='❌ Error de conexión al cargar la ficha';}
 }
 // Buscar imagen desde la ficha de un producto YA existente en Loyverse, usando SOLO el
@@ -4000,49 +4062,60 @@ function fpCancelarImagenPreview(){
   _fpImagenPreviewUrl=null;
   document.getElementById('fp-img-preview-box').classList.add('hidden');
 }
-function fpBadgeStock(p){
-  if(!p.trackStock)return '<span class="fp-badge gris">Inventario desactivado</span>';
-  if(p.stock==null||p.stock<=0)return '<span class="fp-badge rojo">Sin stock</span>';
-  if(p.stock<=5)return '<span class="fp-badge ambar">Stock bajo</span>';
-  return '<span class="fp-badge verde">Con stock</span>';
-}
-function fpBadgeLote(l){
-  const map={'⚫':['rojo','Vencido'],'🔴':['rojo','Vence pronto'],'🟠':['ambar','Por vencer'],'🟡':['ambar','Por vencer'],'🟢':['verde','Vigente'],'—':['gris','Vigente']};
-  const m=map[l.prioridad]||['gris',l.estado];
-  return '<span class="fp-badge '+m[0]+'">'+m[1]+'</span>';
-}
+// ---- Estado en memoria de la ficha abierta: qué tipo de venta y qué "seguir inventario"
+// tiene seleccionado el usuario ahora mismo (antes de guardar), para que cambiar de pestaña
+// no pierda esas dos elecciones (son botones tipo toggle, no <input>, así que no se leen
+// solos del DOM al momento de guardar como los demás campos). ----
+let fpEditState={soldByWeight:false,trackStock:false};
 function fpPintar(f){
   const p=f.producto;
   document.getElementById('fp-resumen').innerHTML=
     '<div style="font-weight:800;font-size:15px">'+p.nombre+'</div>'+
     '<div style="font-size:12px;color:var(--muted)">REF '+p.sku+' · '+p.categoria+'</div>'+
     '<div style="margin-top:4px">'+fpBadgeStock(p)+' '+(f.lotes&&f.lotes.some(l=>l.prioridad==='⚫')?'<span class="fp-badge rojo">Tiene lotes vencidos</span>':'')+'</div>';
+  fpEditState={soldByWeight:!!p.soldByWeight,trackStock:!!p.trackStock};
+  // Pestaña "Lotes" solo se muestra si el producto tiene lotes de vencimiento — "si aplica",
+  // tal como se pidió (no tiene sentido para productos sin control de vencimientos).
+  const tabLotes=document.querySelector('#fp-tabs [data-tab="lotes"]');
+  const hayLotes=!!(f.lotes&&f.lotes.length);
+  tabLotes.classList.toggle('hidden',!hayLotes);
+  if(!hayLotes&&tabLotes.classList.contains('active')){
+    tabLotes.classList.remove('active');
+    document.querySelector('#fp-tabs [data-tab="general"]').classList.add('active');
+    document.getElementById('fp-pane-lotes').classList.add('hidden');
+    document.getElementById('fp-pane-general').classList.remove('hidden');
+  }
+  fpPaneGeneral(f);
+  fpPaneInventario(f);
+  fpPanePrecios(f);
+  fpPaneProveedores(f);
+  fpPaneSector(f);
+  if(hayLotes)fpPaneLotes(f);
+  fpPaneAvanzado(f);
+}
+function fpRow(k,v){return '<div class="fp-row"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>';}
+function fpCampo(label,inputHtml,nota){
+  return '<div class="mm-field" style="margin-bottom:10px"><label>'+label+'</label>'+inputHtml+(nota?'<div style="font-size:11px;color:var(--muted);margin-top:4px">'+nota+'</div>':'')+'</div>';
+}
 
-  // --- General ---
-  document.getElementById('fp-pane-general').innerHTML=
-    '<button id="fp-editar-btn" style="width:100%;padding:10px;margin-bottom:12px;border-radius:10px;border:1.5px solid var(--azul);background:var(--azul-bg);color:var(--azul);font-weight:700;font-size:13px;cursor:pointer">✏️ Editar nombre, categoría o descripción</button>'+
-    fpRow('Nombre',p.nombre)+
-    fpRow('SKU / REF',p.sku)+
-    fpRow('Código de barras',p.barcode||'—')+
-    fpRow('Categoría',p.categoria)+
-    fpRow('Descripción',p.descripcion||'—')+
-    fpRow('Unidad',p.soldByWeight?'Kilo (venta por peso)':'Unidad')+
-    fpRow('Seguir inventario',p.trackStock?'✅ Activado':'❌ Desactivado')+
-    fpRow('Última modificación',p.ultimaModificacion||'Sin registros de cambios aún')+
-    '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">'+
-      '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px">También se puede pedir a</div>'+
-      '<div id="fp-provextra-list">'+
-        ((p.proveedoresExtra&&p.proveedoresExtra.length)
-          ?p.proveedoresExtra.map(pr=>'<div class="fp-row"><span class="k">'+pr+'</span><span class="v"><button type="button" class="fp-provextra-quitar" data-prov="'+pr+'" style="border:none;background:none;color:var(--rojo);font-weight:700;font-size:12px;cursor:pointer">✕ Quitar</button></span></div>').join('')
-          :'<div style="font-size:12px;color:var(--muted)">Solo se pide bajo su proveedor principal ('+p.categoria+').</div>')+
+// ==== PESTAÑA GENERAL: nombre, código de barras, unidad, imagen ====
+function fpPaneGeneral(f){
+  const p=f.producto;
+  const pane=document.getElementById('fp-pane-general');
+  pane.innerHTML=
+    fpCampo('Nombre','<input id="fp-g-nombre" value="'+(p.nombre||'').replace(/"/g,'&quot;')+'" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">')+
+    fpCampo('Código de barras (opcional)',
+      '<div class="mm-search"><input id="fp-g-barcode" value="'+(p.barcode||'').replace(/"/g,'&quot;')+'" placeholder="Escanea o escribe" autocomplete="off" style="padding-right:58px">'+
+      '<button class="mm-scan cam-btn" id="fp-g-scan" type="button" aria-label="Escanear"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button></div>')+
+    fpRow('SKU / REF (no editable)',p.sku)+
+    '<div class="mm-field" style="margin:14px 0 10px"><label>Unidad</label>'+
+      '<div style="display:flex;gap:8px">'+
+        '<button type="button" id="fp-g-tipo-unidad" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:13px;cursor:pointer">📦 Unidad</button>'+
+        '<button type="button" id="fp-g-tipo-peso" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:13px;cursor:pointer">⚖️ Peso (kg)</button>'+
       '</div>'+
-      '<div style="display:flex;gap:8px;margin-top:8px">'+
-        '<select id="fp-provextra-select" style="flex:1;padding:9px 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px"><option value="">Elige un proveedor…</option>'+
-          (DB.provs||[]).filter(c=>c.prov!==p.categoria&&!(p.proveedoresExtra||[]).includes(c.prov)).map(c=>'<option value="'+c.prov+'">'+c.prov+'</option>').join('')+
-        '</select>'+
-        '<button class="loadbtn" id="fp-provextra-add" type="button" style="white-space:nowrap">➕ Agregar</button>'+
-      '</div>'+
+      '<div style="font-size:11px;color:var(--muted);margin-top:5px">Define si el precio y el costo son por unidad o por kilo.</div>'+
     '</div>'+
+    fpCampo('Observaciones (opcional)','<textarea id="fp-g-desc" rows="3" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit;resize:vertical">'+(p.descripcion||'').replace(/</g,'&lt;')+'</textarea>')+
     '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">'+
       '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px">Imagen</div>'+
       (p.imagen?'<img id="fp-img-actual" src="'+p.imagen+'" style="width:64px;height:64px;object-fit:cover;border-radius:9px;border:1px solid var(--line);margin-bottom:9px;display:block">':'<div style="font-size:12.5px;color:var(--muted);margin-bottom:9px">Este producto no tiene imagen en Loyverse.</div>')+
@@ -4059,8 +4132,6 @@ function fpPintar(f){
         '<button type="button" id="fp-img-usar" style="background:var(--wa);border:none;color:#fff;font-weight:700;font-size:11.5px;padding:6px 10px;border-radius:7px;cursor:pointer">✓ Usar</button>'+
         '<button type="button" id="fp-img-cancelar" style="background:none;border:none;color:var(--muted);font-size:11px;text-decoration:underline;cursor:pointer">Cancelar</button>'+
       '</div>'+
-      // Foto recién tomada: primero se confirma si sirve, y solo AHÍ se manda a remove.bg
-      // (no se procesa automáticamente al tomarla, para no gastar créditos con fotos borrosas).
       '<div id="fp-camara-preview-box" class="hidden" style="margin-top:9px;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper)">'+
         '<img id="fp-camara-preview-img" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#fff;display:block;margin-bottom:8px">'+
         '<div style="display:flex;gap:8px">'+
@@ -4068,13 +4139,10 @@ function fpPintar(f){
           '<button type="button" id="fp-camara-repetir" style="padding:9px 14px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12.5px;cursor:pointer">↺ Repetir</button>'+
         '</div>'+
       '</div>'+
-      // Procesando con remove.bg (spinner discreto, sin bloquear el resto de la ficha).
       '<div id="fp-fondo-procesando" class="hidden" style="margin-top:9px;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);display:flex;align-items:center;gap:8px">'+
         '<span class="sync-ic spin" style="display:inline-flex">⟳</span>'+
         '<span style="font-size:12.5px;color:var(--muted)">Quitando el fondo con remove.bg…</span>'+
       '</div>'+
-      // Resultado con fondo blanco: solo se sube a Loyverse si el usuario toca "Aplicar al
-      // producto" — hasta entonces es únicamente una vista previa en memoria.
       '<div id="fp-fondo-resultado-box" class="hidden" style="margin-top:9px;padding:10px;border:1.5px solid var(--wa);border-radius:10px;background:#F1FBF5">'+
         '<img id="fp-fondo-resultado-img" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#fff;display:block;margin-bottom:8px;border:1px solid var(--line)">'+
         '<div style="display:flex;gap:8px">'+
@@ -4082,44 +4150,27 @@ function fpPintar(f){
           '<button type="button" id="fp-fondo-descartar" style="padding:9px 14px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12.5px;cursor:pointer">Descartar</button>'+
         '</div>'+
       '</div>'+
-    '</div>'+
-    '<button id="fp-eliminar-btn" style="width:100%;padding:10px;margin-top:14px;border-radius:10px;border:1.5px solid var(--rojo);background:#FCE9E7;color:var(--rojo);font-weight:700;font-size:13px;cursor:pointer">🗑️ Eliminar este producto de Loyverse</button>';
-  document.getElementById('fp-editar-btn').onclick=()=>fpModoEdicion(f);
-  document.getElementById('fp-eliminar-btn').onclick=()=>fpEliminarProducto(f);
-  const fpPEAdd=document.getElementById('fp-provextra-add');
-  if(fpPEAdd)fpPEAdd.onclick=async()=>{
-    const sel=document.getElementById('fp-provextra-select');
-    const prov=sel&&sel.value;
-    if(!prov){showToast('Elige un proveedor primero');return;}
-    fpPEAdd.disabled=true;
-    try{
-      const r=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'agregar_proveedor_extra',payload:{sku:p.sku,proveedor:prov}})});
-      const j=await r.json();
-      if(j&&j.ok){
-        p.proveedoresExtra=p.proveedoresExtra||[];p.proveedoresExtra.push(prov);
-        const itLocal=DB.items.find(x=>x.ref===p.sku);
-        if(itLocal){itLocal.provsExtra=itLocal.provsExtra||[];itLocal.provsExtra.push(prov);}
-        showToast('🔁 Ahora también se pide a '+prov);
-        fpPintar(f);render();
-      }else{showToast('⚠️ '+((j&&j.error)||'No se pudo agregar'));}
-    }catch(e){showToast('⚠️ Error de conexión');}
-    finally{fpPEAdd.disabled=false;}
+    '</div>';
+  document.querySelectorAll('#fp-g-nombre,#fp-g-barcode,#fp-g-desc').forEach(el=>el.addEventListener('input',fpGuardarBorrador));
+  document.getElementById('fp-g-scan').onclick=()=>{
+    const reopen=()=>{document.getElementById('fp-ov').classList.remove('hidden');_sincronizarNav();};
+    document.getElementById('fp-ov').classList.add('hidden');
+    openScanner(code=>{reopen();document.getElementById('fp-g-barcode').value=code;},reopen);
   };
-  document.querySelectorAll('.fp-provextra-quitar').forEach(b=>b.onclick=async()=>{
-    const prov=b.dataset.prov;
-    b.disabled=true;
-    try{
-      const r=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'quitar_proveedor_extra',payload:{sku:p.sku,proveedor:prov}})});
-      const j=await r.json();
-      if(j&&j.ok){
-        p.proveedoresExtra=(p.proveedoresExtra||[]).filter(x=>x!==prov);
-        const itLocal=DB.items.find(x=>x.ref===p.sku);
-        if(itLocal)itLocal.provsExtra=(itLocal.provsExtra||[]).filter(x=>x!==prov);
-        showToast('Quitado de '+prov);
-        fpPintar(f);render();
-      }else{showToast('⚠️ '+((j&&j.error)||'No se pudo quitar'));b.disabled=false;}
-    }catch(e){showToast('⚠️ Error de conexión');b.disabled=false;}
-  });
+  const fpPintarTipoVenta=()=>{
+    const bU=document.getElementById('fp-g-tipo-unidad'),bP=document.getElementById('fp-g-tipo-peso');
+    bU.style.background=fpEditState.soldByWeight?'#fff':'var(--verde)';
+    bU.style.color=fpEditState.soldByWeight?'var(--text)':'#fff';
+    bU.style.borderColor=fpEditState.soldByWeight?'var(--line)':'var(--verde)';
+    bP.style.background=fpEditState.soldByWeight?'var(--verde)':'#fff';
+    bP.style.color=fpEditState.soldByWeight?'#fff':'var(--text)';
+    bP.style.borderColor=fpEditState.soldByWeight?'var(--verde)':'var(--line)';
+  };
+  document.getElementById('fp-g-tipo-unidad').onclick=()=>{fpEditState.soldByWeight=false;fpPintarTipoVenta();};
+  document.getElementById('fp-g-tipo-peso').onclick=()=>{fpEditState.soldByWeight=true;fpPintarTipoVenta();};
+  fpPintarTipoVenta();
+
+  // ---- Imagen: buscar/subir/tomar foto — misma lógica de siempre, sin cambios ----
   document.getElementById('fp-img-buscar').onclick=()=>fpBuscarImagen(p);
   document.getElementById('fp-img-usar').onclick=()=>fpConfirmarImagen(p);
   document.getElementById('fp-img-cancelar').onclick=()=>fpCancelarImagenPreview();
@@ -4142,12 +4193,7 @@ function fpPintar(f){
       }
     }catch(e){showToast('⚠️ No se pudo procesar esa imagen');}
   });
-
-  // ---- Tomar foto → confirmar → quitar fondo (remove.bg, fondo blanco) → aplicar ----
-  // Estado en memoria de esta ficha: la foto recién tomada (antes de confirmar) y el
-  // resultado ya procesado (antes de aplicarlo a Loyverse). Ninguno de los dos toca
-  // Loyverse hasta que el usuario toca el botón correspondiente.
-  let _fpFotoTomadaB64=null, _fpFondoResultadoB64=null;
+  let _fpFotoTomadaB64=null,_fpFondoResultadoB64=null;
   document.getElementById('fp-img-camara-btn').onclick=()=>document.getElementById('fp-img-camara').click();
   document.getElementById('fp-img-camara').addEventListener('change',async(ev)=>{
     const file=ev.target.files&&ev.target.files[0];
@@ -4176,9 +4222,6 @@ function fpPintar(f){
       document.getElementById('fp-fondo-procesando').classList.add('hidden');
       if(j&&j.ok&&j.image_base64){
         try{
-          // Segundo paso automático: mejora de colores + sombra, sobre el resultado ya sin
-          // fondo. Si por algo falla (imagen rara, navegador viejo), se usa el resultado de
-          // remove.bg tal cual en vez de bloquear todo el flujo.
           const mejorada=await mejorarImagenProducto(j.image_base64,j.content_type);
           _fpFondoResultadoB64=mejorada;
           document.getElementById('fp-fondo-resultado-img').src='data:image/png;base64,'+mejorada;
@@ -4189,7 +4232,7 @@ function fpPintar(f){
         document.getElementById('fp-fondo-resultado-box').classList.remove('hidden');
       }else{
         showToast('⚠️ '+((j&&j.error)||'No se pudo quitar el fondo'));
-        document.getElementById('fp-camara-preview-box').classList.remove('hidden'); // deja reintentar sin volver a tomar la foto
+        document.getElementById('fp-camara-preview-box').classList.remove('hidden');
       }
     }catch(e){
       document.getElementById('fp-fondo-procesando').classList.add('hidden');
@@ -4220,19 +4263,267 @@ function fpPintar(f){
     }catch(e){showToast('⚠️ Error de conexión al subir la imagen');}
     finally{btn.disabled=false;btn.textContent='✓ Aplicar al producto';}
   };
+}
 
-  // --- Inventario ---
+// ==== PESTAÑA INVENTARIO: seguir inventario, stock mínimo, recuento directo ====
+function fpPaneInventario(f){
+  const p=f.producto;
   const v=f.ventas;
-  document.getElementById('fp-pane-inventario').innerHTML=
-    fpRow('Stock actual',p.trackStock?(p.stock!=null?fmt1(p.stock):'—'):'Sin control')+
-    fpRow('Ventas 7 días',v?fmt1(v.u7):'—')+
-    fpRow('Ventas 14 días',v?fmt1(v.u14):'—')+
-    fpRow('Ventas 30 días',v?fmt1(v.u30):'—')+
-    fpRow('Ventas 90 días',v?fmt1(v.u90):'—')+
-    fpRow('Ingresos (30d, acumulado histórico)',v?peso(v.rev):'—')+
-    fpRow('Utilidad (30d, acumulado histórico)',v?peso(v.prof):'—');
+  const pane=document.getElementById('fp-pane-inventario');
+  pane.innerHTML=
+    '<div class="mm-field" style="margin-bottom:10px"><label>Seguir inventario</label>'+
+      '<div style="display:flex;gap:8px">'+
+        '<button type="button" id="fp-i-track-on" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:13px;cursor:pointer">✅ Activado</button>'+
+        '<button type="button" id="fp-i-track-off" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:13px;cursor:pointer">❌ Desactivado</button>'+
+      '</div>'+
+      '<div style="font-size:11px;color:var(--muted);margin-top:5px">Con inventario desactivado, Loyverse no exige stock ni genera alertas de quiebre para este producto.</div>'+
+    '</div>'+
+    (p.trackStock?fpCampo('Recuento de inventario (ajusta el stock ahora)',
+      '<div style="display:flex;gap:8px;align-items:center">'+
+        '<span style="font-size:12px;color:var(--muted)">Stock actual: <b>'+(p.stock!=null?fmt1(p.stock):'0')+'</b></span>'+
+      '</div>'+
+      '<input id="fp-i-recuento" type="number" inputmode="decimal" placeholder="Nueva cantidad contada" style="width:100%;margin-top:8px;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:\'JetBrains Mono\'">'+
+      '<button type="button" id="fp-i-recuento-guardar" style="width:100%;margin-top:8px;padding:10px;border-radius:10px;border:1.5px solid var(--gold);background:var(--gold-bg);color:var(--gold);font-weight:700;font-size:13px;cursor:pointer">🔢 Guardar recuento</button>',
+      'Registra un ajuste de stock inmediato — igual acción que "Reconteo", pero sin salir de esta ficha.')
+      :'<div class="vc-empty" style="margin-bottom:10px">Activa "Seguir inventario" arriba para poder hacer un recuento.</div>')+
+    fpCampo('Stock mínimo (opcional)','<input id="fp-i-stockmin" type="number" inputmode="numeric" value="'+(p.stockMinimo!=null?p.stockMinimo:'')+'" placeholder="Ej: 5" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:\'JetBrains Mono\'">','Cuando el stock llegue a este número o menos, Loyverse genera la alerta de inventario bajo.')+
+    '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">'+
+      fpRow('Ventas 7 días',v?fmt1(v.u7):'—')+
+      fpRow('Ventas 14 días',v?fmt1(v.u14):'—')+
+      fpRow('Ventas 30 días',v?fmt1(v.u30):'—')+
+      fpRow('Ventas 90 días',v?fmt1(v.u90):'—')+
+      fpRow('Ingresos (30d, acumulado histórico)',v?peso(v.rev):'—')+
+      fpRow('Utilidad (30d, acumulado histórico)',v?peso(v.prof):'—')+
+      fpRow('Última modificación',p.ultimaModificacion||'Sin registros de cambios aún')+
+    '</div>';
+  const fpPintarTrack=()=>{
+    const bOn=document.getElementById('fp-i-track-on'),bOff=document.getElementById('fp-i-track-off');
+    bOn.style.background=fpEditState.trackStock?'var(--verde)':'#fff';
+    bOn.style.color=fpEditState.trackStock?'#fff':'var(--text)';
+    bOn.style.borderColor=fpEditState.trackStock?'var(--verde)':'var(--line)';
+    bOff.style.background=fpEditState.trackStock?'#fff':'var(--rojo)';
+    bOff.style.color=fpEditState.trackStock?'var(--text)':'#fff';
+    bOff.style.borderColor=fpEditState.trackStock?'var(--line)':'var(--rojo)';
+  };
+  document.getElementById('fp-i-track-on').onclick=()=>{
+    fpEditState.trackStock=true;fpPintarTrack();
+    if(!p.trackStock)showToast('Se activará al guardar — luego podrás hacer el recuento inicial');
+  };
+  document.getElementById('fp-i-track-off').onclick=()=>{fpEditState.trackStock=false;fpPintarTrack();};
+  fpPintarTrack();
+  const btnRecuento=document.getElementById('fp-i-recuento-guardar');
+  if(btnRecuento)btnRecuento.onclick=()=>fpGuardarRecuento(p.sku);
+  const stockMinInp=document.getElementById('fp-i-stockmin');
+  if(stockMinInp)stockMinInp.addEventListener('input',fpGuardarBorrador);
+}
+// Recuento de inventario SIN salir de la ficha — reutiliza la misma acción que ya usa
+// Reconteo de stock (rkGuardarFila / action:'ajustar_stock'), no una lógica nueva.
+async function fpGuardarRecuento(sku){
+  const inp=document.getElementById('fp-i-recuento');
+  const val=inp.value.trim();
+  if(val===''){showToast('Escribe la cantidad contada primero');return;}
+  const nuevo=Number(val);
+  if(isNaN(nuevo)||nuevo<0){showToast('⚠️ Cantidad inválida');return;}
+  const btn=document.getElementById('fp-i-recuento-guardar');
+  btn.disabled=true;btn.textContent='Guardando…';
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'ajustar_stock',payload:{sku,stockNuevo:nuevo,responsable:''}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      const it=DB.items.find(x=>x.ref===sku);
+      if(it){it.stock=j.stockNuevo!=null?j.stockNuevo:nuevo;if(j.trackHabilitado)it.track=true;}
+      persist();
+      showToast((j.trackHabilitado?'🔓 Seguimiento activado · ':'✓ Recuento guardado: ')+fmt1(nuevo));
+      await fpAbrir(sku,{tab:'inventario'});
+      render();
+    }else{
+      showToast('❌ '+(j&&j.error?j.error:'No se pudo guardar'));
+      btn.disabled=false;btn.textContent='🔢 Guardar recuento';
+    }
+  }catch(e){
+    showToast('❌ Error de conexión al guardar');
+    btn.disabled=false;btn.textContent='🔢 Guardar recuento';
+  }
+}
 
-  // --- Lotes ---
+// ==== PESTAÑA PRECIOS: misma calculadora que Crear producto (PriceCalc), sin toggle de IVA
+// porque acá el IVA ya está definido en el producto — solo se pide el costo CON IVA directo
+// (igual que Loyverse lo guarda), y el margen/precio se recalculan con la misma fórmula. ====
+let fpPState={precioTocado:false,precioPreview:null};
+function fpPanePrecios(f){
+  const p=f.producto;
+  fpPState={precioTocado:false,precioPreview:null};
+  const hist=f.historialPrecios||[];
+  const pane=document.getElementById('fp-pane-precios');
+  pane.innerHTML=
+    '<div class="mm-field" style="margin-bottom:8px">'+
+      '<label>Costo <span style="font-weight:400;color:var(--muted);text-transform:none">(con IVA — el que se guarda en Loyverse)</span></label>'+
+      '<input id="fp-pr-costo" type="number" inputmode="decimal" value="'+(p.costo!=null?p.costo:'')+'" placeholder="$" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:\'JetBrains Mono\'">'+
+    '</div>'+
+    '<div class="mm-field" style="margin-bottom:8px"><label>Margen % objetivo</label>'+
+      '<input id="fp-pr-margen-obj" type="number" inputmode="decimal" value="'+(p.margen!=null?p.margen:30)+'" placeholder="Ej: 30" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:\'JetBrains Mono\'">'+
+    '</div>'+
+    '<div id="fp-pr-precio-preview-box" class="hidden" style="margin-bottom:8px;padding:8px 10px;background:var(--paper);border:1.5px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:8px">'+
+      '<div><div style="font-size:10px;color:var(--muted);font-weight:700">PRECIO SUGERIDO (según margen)</div><span id="fp-pr-precio-preview-val" style="font-size:16px;font-weight:800;font-family:\'JetBrains Mono\'"></span></div>'+
+      '<button type="button" id="fp-pr-precio-aplicar" style="background:var(--wa);border:none;color:#fff;font-weight:700;font-size:11.5px;padding:7px 12px;border-radius:8px;cursor:pointer;white-space:nowrap">Aplicar precio</button>'+
+    '</div>'+
+    '<div class="mm-field" style="margin-bottom:8px">'+
+      '<label>Precio de venta <span style="font-weight:400;color:var(--muted);text-transform:none">(este se guarda)</span></label>'+
+      '<input id="fp-pr-precio" type="number" inputmode="decimal" value="'+(p.precio!=null?p.precio:'')+'" placeholder="$" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:16px;font-weight:800;font-family:\'JetBrains Mono\'">'+
+    '</div>'+
+    '<div id="fp-pr-resumen" class="cat" style="margin-bottom:12px;padding:8px 10px;background:var(--paper);border-radius:9px;line-height:1.55;font-size:11.5px"></div>'+
+    '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">'+
+      '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px">Historial de cambios</div>'+
+      (hist.length?hist.map(h=>`<div class="fp-row"><span class="k">${h.fecha}</span><span class="v" style="text-align:right;font-weight:600">${peso(h.precioAntes)} → ${peso(h.precioDespues)} · costo ${peso(h.costoAntes)} → ${peso(h.costoDespues)}${h.responsable?' · '+h.responsable:''}</span></div>`).join('')
+        :'<div class="vc-empty">Sin cambios de precio registrados todavía.</div>')+
+    '</div>';
+
+  // ---- Misma calculadora que Recepción y Crear producto (PriceCalc) — costo con IVA es
+  // directamente la base (acá no hay toggle: el IVA ya está definido en el producto).
+  function fpPrCostoBruto(){
+    return PriceCalc.costoBruto(document.getElementById('fp-pr-costo').value,'unidad',null,'con');
+  }
+  function fpPrRecalcularPreview(){
+    fpPState.precioPreview=PriceCalc.precioDesdeMargen(fpPrCostoBruto(),document.getElementById('fp-pr-margen-obj').value);
+    fpPrRenderPreview();
+  }
+  function fpPrRenderPreview(){
+    const box=document.getElementById('fp-pr-precio-preview-box');
+    if(fpPState.precioPreview==null){box.classList.add('hidden');return;}
+    box.classList.remove('hidden');
+    document.getElementById('fp-pr-precio-preview-val').textContent=peso(fpPState.precioPreview);
+    const actual=Number(document.getElementById('fp-pr-precio').value)||0;
+    const btn=document.getElementById('fp-pr-precio-aplicar');
+    if(actual===fpPState.precioPreview){btn.textContent='✓ Aplicado';btn.disabled=true;btn.style.opacity=.6;}
+    else{btn.textContent='Aplicar precio';btn.disabled=false;btn.style.opacity=1;}
+  }
+  document.getElementById('fp-pr-precio-aplicar').onclick=()=>{
+    if(fpPState.precioPreview==null)return;
+    document.getElementById('fp-pr-precio').value=fpPState.precioPreview;
+    fpPState.precioTocado=false;
+    fpPrRenderPreview();fpPrRenderResumen();fpGuardarBorrador();
+  };
+  function fpPrRenderResumen(){
+    const cont=document.getElementById('fp-pr-resumen');
+    const costoIngresado=Number(document.getElementById('fp-pr-costo').value)||0;
+    if(!costoIngresado){cont.innerHTML='';return;}
+    const base=fpPrCostoBruto();
+    const margenPct=Number(document.getElementById('fp-pr-margen-obj').value)||0;
+    const precio=Number(document.getElementById('fp-pr-precio').value)||0;
+    const margenReal=precio>0?PriceCalc.margenDesdePrecio(precio,base):null;
+    const filas=['Costo con IVA guardado en Loyverse: <b>'+(base?peso(Math.round(base)):'—')+'</b>'];
+    if(margenPct)filas.push('Margen objetivo: <b>'+margenPct.toFixed(1)+'%</b>');
+    if(margenReal!=null)filas.push('Margen real'+(fpPState.precioTocado?' (precio editado a mano)':'')+': <b>'+margenReal.toFixed(1)+'%</b>');
+    filas.push('Precio de venta final: <b>'+(precio?peso(precio):'—')+'</b>');
+    cont.innerHTML=filas.join('<br>');
+  }
+  document.getElementById('fp-pr-costo').oninput=()=>{fpPrRecalcularPreview();fpPrRenderResumen();fpGuardarBorrador();};
+  document.getElementById('fp-pr-margen-obj').oninput=()=>{fpPrRecalcularPreview();fpPrRenderResumen();fpGuardarBorrador();};
+  document.getElementById('fp-pr-precio').oninput=()=>{fpPState.precioTocado=true;fpPrRenderPreview();fpPrRenderResumen();fpGuardarBorrador();};
+  fpPrRecalcularPreview();
+  fpPrRenderResumen();
+}
+
+// ==== PESTAÑA PROVEEDORES: proveedor principal (=categoría) + proveedores extra ====
+function fpPaneProveedores(f){
+  const p=f.producto;
+  const pane=document.getElementById('fp-pane-proveedores');
+  const opcionesCat=(DB.provs||[]).map(c=>`<option value="${c.prov}" ${c.prov===p.categoria?'selected':''}>${c.prov}</option>`).join('');
+  pane.innerHTML=
+    fpCampo('Proveedor principal','<select id="fp-pv-cat" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;background:#fff">'+opcionesCat+'</select>','En esta app, "categoría" y "proveedor principal" son el mismo campo — de ahí sale el pedido sugerido por defecto.')+
+    '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">'+
+      '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px">También se puede pedir a</div>'+
+      '<div id="fp-provextra-list">'+
+        ((p.proveedoresExtra&&p.proveedoresExtra.length)
+          ?p.proveedoresExtra.map(pr=>'<div class="fp-row"><span class="k">'+pr+'</span><span class="v"><button type="button" class="fp-provextra-quitar" data-prov="'+pr+'" style="border:none;background:none;color:var(--rojo);font-weight:700;font-size:12px;cursor:pointer">✕ Quitar</button></span></div>').join('')
+          :'<div style="font-size:12px;color:var(--muted)">Solo se pide bajo su proveedor principal ('+p.categoria+').</div>')+
+      '</div>'+
+      '<div style="display:flex;gap:8px;margin-top:8px">'+
+        '<select id="fp-provextra-select" style="flex:1;padding:9px 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px"><option value="">Elige un proveedor…</option>'+
+          (DB.provs||[]).filter(c=>c.prov!==p.categoria&&!(p.proveedoresExtra||[]).includes(c.prov)).map(c=>'<option value="'+c.prov+'">'+c.prov+'</option>').join('')+
+        '</select>'+
+        '<button class="loadbtn" id="fp-provextra-add" type="button" style="white-space:nowrap">➕ Agregar</button>'+
+      '</div>'+
+    '</div>';
+  document.getElementById('fp-pv-cat').addEventListener('change',fpGuardarBorrador);
+  const fpPEAdd=document.getElementById('fp-provextra-add');
+  if(fpPEAdd)fpPEAdd.onclick=async()=>{
+    const sel=document.getElementById('fp-provextra-select');
+    const prov=sel&&sel.value;
+    if(!prov){showToast('Elige un proveedor primero');return;}
+    fpPEAdd.disabled=true;
+    try{
+      const r=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'agregar_proveedor_extra',payload:{sku:p.sku,proveedor:prov}})});
+      const j=await r.json();
+      if(j&&j.ok){
+        p.proveedoresExtra=p.proveedoresExtra||[];p.proveedoresExtra.push(prov);
+        const itLocal=DB.items.find(x=>x.ref===p.sku);
+        if(itLocal){itLocal.provsExtra=itLocal.provsExtra||[];itLocal.provsExtra.push(prov);}
+        showToast('🔁 Ahora también se pide a '+prov);
+        fpPaneProveedores(f);render();
+      }else{showToast('⚠️ '+((j&&j.error)||'No se pudo agregar'));}
+    }catch(e){showToast('⚠️ Error de conexión');}
+    finally{fpPEAdd.disabled=false;}
+  };
+  document.querySelectorAll('.fp-provextra-quitar').forEach(b=>b.onclick=async()=>{
+    const prov=b.dataset.prov;
+    b.disabled=true;
+    try{
+      const r=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'quitar_proveedor_extra',payload:{sku:p.sku,proveedor:prov}})});
+      const j=await r.json();
+      if(j&&j.ok){
+        p.proveedoresExtra=(p.proveedoresExtra||[]).filter(x=>x!==prov);
+        const itLocal=DB.items.find(x=>x.ref===p.sku);
+        if(itLocal)itLocal.provsExtra=(itLocal.provsExtra||[]).filter(x=>x!==prov);
+        showToast('Quitado de '+prov);
+        fpPaneProveedores(f);render();
+      }else{showToast('⚠️ '+((j&&j.error)||'No se pudo quitar'));b.disabled=false;}
+    }catch(e){showToast('⚠️ Error de conexión');b.disabled=false;}
+  });
+}
+
+// ==== PESTAÑA SECTOR/UBICACIÓN ====
+function fpPaneSector(f){
+  const p=f.producto;
+  const pane=document.getElementById('fp-pane-sector');
+  pane.innerHTML=
+    '<div class="mm-field">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'+
+        '<label style="margin:0">Sector / Ubicación</label>'+
+        '<button class="loadbtn" id="fp-s-sugerir" type="button" style="white-space:nowrap">🤖 Sugerir con IA</button>'+
+      '</div>'+
+      '<div id="fp-s-hint" class="hidden" style="font-size:11px;color:var(--muted);margin:5px 0"></div>'+
+      '<div style="display:flex;gap:8px;margin-top:6px">'+
+        '<div class="cat-combo" id="fp-s-sector-combo">'+
+          '<input id="fp-s-sector-input" class="cat-combo-input" placeholder="Buscar sector…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">'+
+          '<svg class="cat-combo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'+
+          '<select id="fp-s-sector" style="display:none"><option value="">Sin sector</option></select>'+
+          '<div class="cat-combo-menu hidden" id="fp-s-sector-menu" role="listbox"></div>'+
+        '</div>'+
+        '<button class="loadbtn" id="fp-s-sector-nueva" type="button" style="white-space:nowrap">➕ Nuevo</button>'+
+      '</div>'+
+      '<div id="fp-s-sector-nuevabox" class="hidden" style="gap:8px;margin-top:8px">'+
+        '<input id="fp-s-sector-nuevonom" placeholder="Nombre del sector nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">'+
+        '<button class="btn-ok loadbtn" id="fp-s-sector-crear" type="button" style="white-space:nowrap">Crear</button>'+
+      '</div>'+
+    '</div>';
+  // psInitCombo necesita también un <select> de proveedor para el modo "crear nuevo" — se usa
+  // uno oculto y desconectado (no se envía) solo para satisfacer la firma de la función, ya
+  // que en esta pestaña no se edita proveedor (eso vive en la pestaña Proveedores).
+  psCargarListas().then(()=>{
+    psLlenarSelects('fp-s-proveedor-dummy','fp-s-sector',p.proveedorId,p.sector);
+    psInitCombo('fp-s-proveedor-dummy','fp-s-sector-combo','fp-s-sector-input','fp-s-sector-menu','fp-s-sector','sector');
+  });
+  psWireNuevoSector('fp-s-sector-nueva','fp-s-sector-nuevabox','fp-s-sector-nuevonom','fp-s-sector-crear','fp-s-proveedor-dummy','fp-s-sector');
+  document.getElementById('fp-s-sugerir').onclick=()=>{
+    const nombreActual=document.getElementById('fp-g-nombre')?document.getElementById('fp-g-nombre').value.trim():p.nombre;
+    const catActual=document.getElementById('fp-pv-cat')?document.getElementById('fp-pv-cat').value:p.categoria;
+    psSugerir(nombreActual,catActual,'fp-s-proveedor-dummy','fp-s-sector','fp-s-hint');
+  };
+}
+
+// ==== PESTAÑA LOTES (solo si el producto tiene lotes de vencimiento) ====
+function fpPaneLotes(f){
   const paneLotes=document.getElementById('fp-pane-lotes');
   if(!f.lotes||!f.lotes.length){
     paneLotes.innerHTML='<div class="vc-empty">Este producto no tiene lotes de vencimiento activos.</div>';
@@ -4245,267 +4536,146 @@ function fpPintar(f){
       ${fpBadgeLote(l)}
     </div>`).join('');
   }
+}
 
-  // --- Precios ---
-  const paneP=document.getElementById('fp-pane-precios');
-  const hist=f.historialPrecios||[];
-  paneP.innerHTML=
-    '<button id="fp-precio-btn" style="width:100%;padding:10px;margin-bottom:12px;border-radius:10px;border:1.5px solid var(--azul);background:var(--azul-bg);color:var(--azul);font-weight:700;font-size:13px;cursor:pointer">✏️ Editar precio o costo</button>'+
-    fpRow('Precio de venta',peso(p.precio))+
-    fpRow('Precio de costo',peso(p.costo))+
-    fpRow('Margen',p.margen!=null?p.margen+'%':'—')+
-    '<div style="margin:14px 0 6px;font-weight:700;font-size:12.5px;color:var(--muted)">Historial de cambios</div>'+
-    (hist.length?hist.map(h=>`<div class="fp-row"><span class="k">${h.fecha}</span><span class="v" style="text-align:right;font-weight:600">${peso(h.precioAntes)} → ${peso(h.precioDespues)} · costo ${peso(h.costoAntes)} → ${peso(h.costoDespues)}${h.responsable?' · '+h.responsable:''}</span></div>`).join('')
-      :'<div class="vc-empty">Sin cambios de precio registrados todavía.</div>');
-  document.getElementById('fp-precio-btn').onclick=()=>fpModoEdicionPrecio(f);
-
-  // --- Movimientos (auditoría + mermas recientes juntos, orden por fecha texto tal cual vienen) ---
-  const paneMov=document.getElementById('fp-pane-mov');
+// ==== PESTAÑA AVANZADO: SKU/ID de Loyverse, movimientos/auditoría, eliminar ====
+function fpPaneAvanzado(f){
+  const p=f.producto;
+  const pane=document.getElementById('fp-pane-avanzado');
   const movs=[
     ...(f.movimientos||[]).map(m=>({fecha:m.fecha,texto:(m.motivo||m.accion),resp:m.responsable})),
     ...(f.mermasRecientes||[]).map(m=>({fecha:m.fecha,texto:'Merma: '+fmt1(m.cantidad)+' u · '+m.motivo+' · '+peso(m.costoTotal),resp:m.responsable}))
   ];
-  if(!movs.length){
-    paneMov.innerHTML='<div class="vc-empty">Sin movimientos registrados todavía para este producto.</div>';
-  }else{
-    paneMov.innerHTML=movs.map(m=>`<div class="fp-row"><span class="k">${m.fecha||'—'}</span><span class="v" style="text-align:right;font-weight:600">${m.texto}${m.resp?' · '+m.resp:''}</span></div>`).join('');
-  }
+  pane.innerHTML=
+    fpRow('SKU / REF',p.sku)+
+    fpRow('ID interno Loyverse',p.idLoyverse||'—')+
+    fpRow('Última modificación',p.ultimaModificacion||'Sin registros de cambios aún')+
+    '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">'+
+      '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px">Movimientos y auditoría</div>'+
+      (movs.length?movs.map(m=>`<div class="fp-row"><span class="k">${m.fecha||'—'}</span><span class="v" style="text-align:right;font-weight:600">${m.texto}${m.resp?' · '+m.resp:''}</span></div>`).join('')
+        :'<div class="vc-empty">Sin movimientos registrados todavía para este producto.</div>')+
+    '</div>';
 }
-function fpRow(k,v){return '<div class="fp-row"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>';}
-function fpModoEdicion(f){
-  const p=f.producto;
-  const opcionesCat=(DB.provs||[]).map(c=>`<option value="${c.prov}" ${c.prov===p.categoria?'selected':''}>${c.prov}</option>`).join('');
-  document.getElementById('fp-pane-general').innerHTML=`
-    <div class="mm-field"><label>Nombre</label>
-      <input id="fp-e-nombre" value="${(p.nombre||'').replace(/"/g,'&quot;')}" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
-    </div>
-    <div class="mm-field" style="margin-top:10px"><label>Categoría</label>
-      <select id="fp-e-cat" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;background:#fff">${opcionesCat}</select>
-    </div>
-    <div class="mm-field" style="margin-top:10px">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <label style="margin:0">Proveedor y Sector</label>
-        <button class="loadbtn" id="fp-e-ps-sugerir" type="button" style="white-space:nowrap">🤖 Sugerir con IA</button>
-      </div>
-      <div id="fp-e-ps-hint" class="hidden" style="font-size:11px;color:var(--muted);margin:5px 0"></div>
-      <div style="display:flex;gap:8px;margin-top:6px">
-        <div class="cat-combo" id="fp-e-prov-combo">
-          <input id="fp-e-proveedor-input" class="cat-combo-input" placeholder="Buscar proveedor…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
-          <svg class="cat-combo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          <select id="fp-e-proveedor" style="display:none"><option value="">Sin proveedor</option></select>
-          <div class="cat-combo-menu hidden" id="fp-e-prov-menu" role="listbox"></div>
-        </div>
-        <button class="loadbtn" id="fp-e-prov-nueva" type="button" style="white-space:nowrap">➕ Nuevo</button>
-      </div>
-      <div id="fp-e-prov-nuevabox" class="hidden" style="gap:8px;margin-top:8px">
-        <input id="fp-e-prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
-        <button class="btn-ok loadbtn" id="fp-e-prov-crear" type="button" style="white-space:nowrap">Crear</button>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <div class="cat-combo" id="fp-e-sector-combo">
-          <input id="fp-e-sector-input" class="cat-combo-input" placeholder="Buscar sector…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
-          <svg class="cat-combo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          <select id="fp-e-sector" style="display:none"><option value="">Sin sector</option></select>
-          <div class="cat-combo-menu hidden" id="fp-e-sector-menu" role="listbox"></div>
-        </div>
-        <button class="loadbtn" id="fp-e-sector-nueva" type="button" style="white-space:nowrap">➕ Nuevo</button>
-      </div>
-      <div id="fp-e-sector-nuevabox" class="hidden" style="gap:8px;margin-top:8px">
-        <input id="fp-e-sector-nuevonom" placeholder="Nombre del sector nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
-        <button class="btn-ok loadbtn" id="fp-e-sector-crear" type="button" style="white-space:nowrap">Crear</button>
-      </div>
-    </div>
-    <div class="mm-field" style="margin-top:10px"><label>Código de barras (opcional)</label>
-      <div class="mm-search">
-        <input id="fp-e-barcode" value="${(p.barcode||'').replace(/"/g,'&quot;')}" placeholder="Escanea o escribe" autocomplete="off" style="padding-right:58px">
-        <button class="mm-scan cam-btn" id="fp-e-scan" type="button" aria-label="Escanear"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
-      </div>
-    </div>
-    <div class="mm-field" style="margin-top:10px"><label>Tipo de venta</label>
-      <div style="display:flex;gap:8px">
-        <button type="button" id="fp-e-tipo-unidad" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:13px;cursor:pointer">📦 Unidad</button>
-        <button type="button" id="fp-e-tipo-peso" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:13px;cursor:pointer">⚖️ Peso (kg)</button>
-      </div>
-      <div style="font-size:11px;color:var(--muted);margin-top:5px">Define si el precio y el costo son por unidad o por kilo.</div>
-    </div>
-    <div class="mm-field" style="margin-top:10px"><label>Descripción (opcional)</label>
-      <textarea id="fp-e-desc" rows="3" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit;resize:vertical">${(p.descripcion||'').replace(/</g,'&lt;')}</textarea>
-    </div>
-    <div style="display:flex;gap:8px;margin-top:14px">
-      <button id="fp-e-cancelar" style="flex:1;padding:11px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:13px;cursor:pointer">Cancelar</button>
-      <button id="fp-e-guardar" style="flex:2;padding:11px;border-radius:10px;border:none;background:var(--verde);color:#fff;font-weight:700;font-size:13px;cursor:pointer">💾 Guardar cambios</button>
-    </div>
-    <button type="button" id="fp-e-reconteo" style="width:100%;margin-top:8px;padding:11px;border-radius:10px;border:1.5px solid var(--gold);background:var(--gold-bg);color:var(--gold);font-weight:700;font-size:13px;cursor:pointer">🔢 Ir a Reconteo de stock</button>`;
-  document.getElementById('fp-e-cancelar').onclick=()=>fpPintar(_fpActual);
-  document.getElementById('fp-e-guardar').onclick=()=>fpGuardarEdicion(p.sku);
-  document.getElementById('fp-e-reconteo').onclick=()=>{cerrarModal('fp-ov');rkAbrir(p.nombre);};
-  let _fpSoldByWeightNuevo=!!p.soldByWeight;
-  const fpPintarTipoVenta=()=>{
-    const bU=document.getElementById('fp-e-tipo-unidad'),bP=document.getElementById('fp-e-tipo-peso');
-    bU.style.background=_fpSoldByWeightNuevo?'#fff':'var(--verde)';
-    bU.style.color=_fpSoldByWeightNuevo?'var(--text)':'#fff';
-    bU.style.borderColor=_fpSoldByWeightNuevo?'var(--line)':'var(--verde)';
-    bP.style.background=_fpSoldByWeightNuevo?'var(--verde)':'#fff';
-    bP.style.color=_fpSoldByWeightNuevo?'#fff':'var(--text)';
-    bP.style.borderColor=_fpSoldByWeightNuevo?'var(--verde)':'var(--line)';
-  };
-  document.getElementById('fp-e-tipo-unidad').onclick=()=>{_fpSoldByWeightNuevo=false;fpPintarTipoVenta();};
-  document.getElementById('fp-e-tipo-peso').onclick=()=>{_fpSoldByWeightNuevo=true;fpPintarTipoVenta();};
-  fpPintarTipoVenta();
-  window._fpSoldByWeightGetter=()=>_fpSoldByWeightNuevo;
-  psCargarListas().then(()=>{
-    psLlenarSelects('fp-e-proveedor','fp-e-sector',p.proveedorId,p.sector);
-    psInitCombo('fp-e-proveedor','fp-e-prov-combo','fp-e-proveedor-input','fp-e-prov-menu','fp-e-proveedor','proveedor',
-      texto=>{const box=document.getElementById('fp-e-prov-nuevabox');box.classList.remove('hidden');const inp=document.getElementById('fp-e-prov-nuevonom');inp.value=texto;inp.focus();});
-    psInitCombo('fp-e-sector','fp-e-sector-combo','fp-e-sector-input','fp-e-sector-menu','fp-e-sector','sector');
-  });
-  psWireNuevoProveedor('fp-e-prov-nueva','fp-e-prov-nuevabox','fp-e-prov-nuevonom','fp-e-prov-crear','fp-e-proveedor','fp-e-sector');
-  psWireNuevoSector('fp-e-sector-nueva','fp-e-sector-nuevabox','fp-e-sector-nuevonom','fp-e-sector-crear','fp-e-proveedor','fp-e-sector');
-  document.getElementById('fp-e-ps-sugerir').onclick=()=>{
-    const nombreActual=(document.getElementById('fp-e-nombre').value||'').trim();
-    const catActual=document.getElementById('fp-e-cat').value;
-    psSugerir(nombreActual,catActual,'fp-e-proveedor','fp-e-sector','fp-e-ps-hint');
-  };
-  document.getElementById('fp-e-scan').onclick=()=>{
-    const reopen=()=>{document.getElementById('fp-ov').classList.remove('hidden');_sincronizarNav();};
-    document.getElementById('fp-ov').classList.add('hidden');
-    openScanner(code=>{reopen();document.getElementById('fp-e-barcode').value=code;},reopen);
-  };
+function fpBadgeStock(p){
+  if(!p.trackStock)return '<span class="fp-badge gris">Inventario desactivado</span>';
+  if(p.stock==null||p.stock<=0)return '<span class="fp-badge rojo">Sin stock</span>';
+  if(p.stock<=5)return '<span class="fp-badge ambar">Stock bajo</span>';
+  return '<span class="fp-badge verde">Con stock</span>';
 }
-// Estado del editor de precio de la Ficha — mismo rol que rcState/cpState, pero sin "modo
-// caja/unidad" (acá no se está recibiendo mercadería, solo corrigiendo el precio/costo ya
-// vigentes de un producto que ya existe), así que solo necesita costo, IVA y margen.
-let fpPState={ivaModo:'con',precioTocado:false,precioPreview:null};
-function fpModoEdicionPrecio(f){
-  const p=f.producto;
-  fpPState={ivaModo:'con',precioTocado:false,precioPreview:null};
-  document.getElementById('fp-pane-precios').innerHTML=`
-    <div class="mm-field" style="margin-bottom:8px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <label style="margin:0">Costo <span style="font-weight:400;color:var(--muted);text-transform:none">(el que se guarda en Loyverse)</span></label>
-        <div style="display:flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;color:var(--muted)" role="group" aria-label="¿El costo incluye IVA?">
-          <button type="button" id="fp-p-iva-con" style="padding:4px 9px;border-radius:20px 0 0 20px;border:1.5px solid var(--wa-d);border-right:none;background:var(--wa-bg,var(--verde-bg));color:var(--wa-d);cursor:pointer">Con IVA</button>
-          <button type="button" id="fp-p-iva-sin" style="padding:4px 9px;border-radius:0 20px 20px 0;border:1.5px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;margin-left:-1px">Sin IVA</button>
-        </div>
-      </div>
-      <input id="fp-p-costo" type="number" inputmode="decimal" value="${p.costo!=null?p.costo:''}" placeholder="$" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'JetBrains Mono'">
-      <div id="fp-p-costo-explica" style="font-size:10px;color:var(--muted);margin-top:4px;line-height:1.3"></div>
-    </div>
-    <div class="mm-field" style="margin-bottom:8px">
-      <label>Margen % objetivo</label>
-      <input id="fp-p-margen-obj" type="number" inputmode="decimal" value="${p.margen!=null?p.margen:30}" placeholder="Ej: 30" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'JetBrains Mono'">
-    </div>
-    <div id="fp-p-precio-preview-box" class="hidden" style="margin-bottom:8px;padding:8px 10px;background:var(--paper);border:1.5px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:8px">
-      <div><div style="font-size:10px;color:var(--muted);font-weight:700">PRECIO SUGERIDO (según margen)</div><span id="fp-p-precio-preview-val" style="font-size:16px;font-weight:800;font-family:'JetBrains Mono'"></span></div>
-      <button type="button" id="fp-p-precio-aplicar" style="background:var(--wa);border:none;color:#fff;font-weight:700;font-size:11.5px;padding:7px 12px;border-radius:8px;cursor:pointer;white-space:nowrap">Aplicar precio</button>
-    </div>
-    <div class="mm-field" style="margin-bottom:8px">
-      <label>Precio de venta <span style="font-weight:400;color:var(--muted);text-transform:none">(este se guarda)</span></label>
-      <input id="fp-p-precio" type="number" inputmode="decimal" value="${p.precio!=null?p.precio:''}" placeholder="$" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:16px;font-weight:800;font-family:'JetBrains Mono'">
-    </div>
-    <div id="fp-p-resumen" class="cat" style="margin-bottom:12px;padding:8px 10px;background:var(--paper);border-radius:9px;line-height:1.55;font-size:11.5px"></div>
-    <div style="display:flex;gap:8px;margin-top:14px">
-      <button id="fp-p-cancelar" style="flex:1;padding:11px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:13px;cursor:pointer">Cancelar</button>
-      <button id="fp-p-guardar" style="flex:2;padding:11px;border-radius:10px;border:none;background:var(--verde);color:#fff;font-weight:700;font-size:13px;cursor:pointer">💾 Guardar cambios</button>
-    </div>`;
-  document.getElementById('fp-p-cancelar').onclick=()=>fpPintar(_fpActual);
-  document.getElementById('fp-p-guardar').onclick=()=>fpGuardarPrecio(p.sku);
+function fpBadgeLote(l){
+  const map={'⚫':['rojo','Vencido'],'🔴':['rojo','Vence pronto'],'🟠':['ambar','Por vencer'],'🟡':['ambar','Por vencer'],'🟢':['verde','Vigente'],'—':['gris','Vigente']};
+  const m=map[l.prioridad]||['gris',l.estado];
+  return '<span class="fp-badge '+m[0]+'">'+m[1]+'</span>';
+}
+// Buscar imagen desde la ficha de un producto YA existente en Loyverse, usando SOLO el
+// catálogo gratuito por código de barras (OpenFoodFacts + UPCitemdb) — sin búsqueda web.
+async function fpBuscarImagen(p){
+  const btn=document.getElementById('fp-img-buscar');
+  const textoOriginal=btn.textContent;
+  if(!p.barcode){showToast('Este producto no tiene código de barras registrado');return;}
+  btn.disabled=true;btn.textContent='Buscando…';
+  try{
+    const urlBarcode=await lookupBarcodeImage(p.barcode).catch(()=>null);
+    if(!urlBarcode){showToast('No se encontró imagen en el catálogo para este código de barras');return;}
+    _fpImagenPreviewUrl=urlBarcode;
+    document.getElementById('fp-img-preview-img').src=urlBarcode;
+    document.getElementById('fp-img-preview-box').classList.remove('hidden');
+  }catch(e){showToast('Error de conexión al buscar la imagen');}
+  finally{btn.disabled=false;btn.textContent=textoOriginal;}
+}
+async function fpConfirmarImagen(p){
+  if(!_fpImagenPreviewUrl)return;
+  showToast('Subiendo imagen a Loyverse…');
+  try{
+    const r=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'subir_imagen_producto',payload:{sku:p.sku,image_url:_fpImagenPreviewUrl}})});
+    const j=await r.json();
+    if(j&&j.ok){
+      showToast('🖼️ Imagen subida a Loyverse');
+      _fpImagenPreviewUrl=null;
+      document.getElementById('fp-img-preview-box').classList.add('hidden');
+      const existente=document.getElementById('fp-img-actual');
+      if(existente)existente.src=j.imagen_url; else fpAbrir(p.sku);
+    }else{
+      showToast('⚠️ '+((j&&j.error)||'No se pudo subir la imagen'));
+    }
+  }catch(e){showToast('⚠️ Error de conexión al subir la imagen');}
+}
+function fpCancelarImagenPreview(){
+  _fpImagenPreviewUrl=null;
+  document.getElementById('fp-img-preview-box').classList.add('hidden');
+}
 
-  // ---- Misma calculadora que Recepción y Crear producto (PriceCalc) — el costo con IVA es
-  // siempre la fuente de verdad para el precio SUGERIDO; el precio guardado solo cambia si
-  // el usuario lo edita a mano o toca "Aplicar precio" (igual patrón que rc-precio-aplicar).
-  function fpPSetIva(modo){
-    fpPState.ivaModo=modo;
-    const btnCon=document.getElementById('fp-p-iva-con'),btnSin=document.getElementById('fp-p-iva-sin');
-    btnCon.style.background=modo==='con'?'var(--wa-bg,var(--verde-bg))':'#fff';
-    btnCon.style.color=modo==='con'?'var(--wa-d)':'var(--muted)';
-    btnCon.style.borderColor=modo==='con'?'var(--wa-d)':'var(--line)';
-    btnSin.style.background=modo==='sin'?'var(--wa-bg,var(--verde-bg))':'#fff';
-    btnSin.style.color=modo==='sin'?'var(--wa-d)':'var(--muted)';
-    btnSin.style.borderColor=modo==='sin'?'var(--wa-d)':'var(--line)';
-    fpPRecalcularPreview();
-    fpPRenderExplicaCosto();
-    fpPRenderResumen();
-  }
-  document.getElementById('fp-p-iva-con').onclick=()=>fpPSetIva('con');
-  document.getElementById('fp-p-iva-sin').onclick=()=>fpPSetIva('sin');
-  function fpPRenderExplicaCosto(){
-    document.getElementById('fp-p-costo-explica').textContent=fpPState.ivaModo==='con'
-      ?'Este valor ya incluye IVA — se usará tal cual para calcular el precio sugerido y para guardar en Loyverse.'
-      :'Se le sumará 19% de IVA automáticamente. Ese valor con IVA es el que se usa para calcular el precio y el que se guarda en Loyverse.';
-  }
-  function fpPCostoBruto(){
-    return PriceCalc.costoBruto(document.getElementById('fp-p-costo').value,'unidad',null,fpPState.ivaModo);
-  }
-  function fpPRecalcularPreview(){
-    fpPState.precioPreview=PriceCalc.precioDesdeMargen(fpPCostoBruto(),document.getElementById('fp-p-margen-obj').value);
-    fpPRenderPreview();
-  }
-  function fpPRenderPreview(){
-    const box=document.getElementById('fp-p-precio-preview-box');
-    if(fpPState.precioPreview==null){box.classList.add('hidden');return;}
-    box.classList.remove('hidden');
-    document.getElementById('fp-p-precio-preview-val').textContent=peso(fpPState.precioPreview);
-    const actual=Number(document.getElementById('fp-p-precio').value)||0;
-    const btn=document.getElementById('fp-p-precio-aplicar');
-    if(actual===fpPState.precioPreview){btn.textContent='✓ Aplicado';btn.disabled=true;btn.style.opacity=.6;}
-    else{btn.textContent='Aplicar precio';btn.disabled=false;btn.style.opacity=1;}
-  }
-  document.getElementById('fp-p-precio-aplicar').onclick=()=>{
-    if(fpPState.precioPreview==null)return;
-    document.getElementById('fp-p-precio').value=fpPState.precioPreview;
-    fpPState.precioTocado=false;
-    fpPRenderPreview();fpPRenderResumen();
-  };
-  function fpPRenderResumen(){
-    const cont=document.getElementById('fp-p-resumen');
-    const costoIngresado=Number(document.getElementById('fp-p-costo').value)||0;
-    if(!costoIngresado){cont.innerHTML='';return;}
-    const base=fpPCostoBruto();
-    const margenPct=Number(document.getElementById('fp-p-margen-obj').value)||0;
-    const precio=Number(document.getElementById('fp-p-precio').value)||0;
-    const margenReal=precio>0?PriceCalc.margenDesdePrecio(precio,base):null;
-    const filas=['Costo ingresado ('+(fpPState.ivaModo==='con'?'con IVA':'neto')+'): <b>'+peso(costoIngresado)+'</b>'];
-    if(fpPState.ivaModo==='sin')filas.push('Costo con IVA (19% sumado): <b>'+(base?peso(Math.round(base)):'—')+'</b>');
-    filas.push('Costo con IVA guardado en Loyverse: <b>'+(base?peso(Math.round(base)):'—')+'</b>');
-    if(margenPct)filas.push('Margen objetivo: <b>'+margenPct.toFixed(1)+'%</b>');
-    if(margenReal!=null)filas.push('Margen real'+(fpPState.precioTocado?' (precio editado a mano)':'')+': <b>'+margenReal.toFixed(1)+'%</b>');
-    filas.push('Precio de venta final: <b>'+(precio?peso(precio):'—')+'</b>');
-    cont.innerHTML=filas.join('<br>');
-  }
-  document.getElementById('fp-p-costo').oninput=()=>{fpPRecalcularPreview();fpPRenderExplicaCosto();fpPRenderResumen();};
-  document.getElementById('fp-p-margen-obj').oninput=()=>{fpPRecalcularPreview();fpPRenderResumen();};
-  document.getElementById('fp-p-precio').oninput=()=>{fpPState.precioTocado=true;fpPRenderPreview();fpPRenderResumen();};
-  fpPSetIva('con'); // arranca en "Con IVA" — el costo actual del producto ya viene con IVA desde Loyverse
-  fpPRecalcularPreview();
-  fpPRenderResumen();
-}
-async function fpGuardarPrecio(sku){
-  const btn=document.getElementById('fp-p-guardar');
-  const precio=document.getElementById('fp-p-precio').value.trim();
-  // Igual que en Recepción: lo que se guarda en Loyverse es siempre el costo BRUTO (con
-  // IVA) calculado por PriceCalc — no el valor crudo del input, que puede ser el neto si el
-  // usuario tiene elegido "Sin IVA". Si no hay costo ingresado, no se manda (deja el actual).
-  const costoIngresado=document.getElementById('fp-p-costo').value.trim();
-  const costoBase=PriceCalc.costoBruto(costoIngresado,'unidad',null,fpPState.ivaModo);
-  const costo=costoBase?String(Math.round(costoBase)):'';
+// ==== GUARDAR TODO (barra de acciones fija) ====
+// Un único botón "Guardar cambios" para las 7 pestañas — junta lo editado en General,
+// Inventario, Precios, Proveedores y Sector, y llama a los mismos endpoints de siempre
+// (editar_producto, editar_codigo_barras, editar_precio) en secuencia. Al terminar, NO cierra
+// la pantalla ni cambia de pestaña ni pierde el scroll — solo refresca los datos en el mismo
+// lugar donde el usuario estaba, tal como se pidió.
+document.getElementById('fp-guardar-btn').onclick=()=>fpGuardarTodo();
+async function fpGuardarTodo(){
+  if(!_fpActual)return;
+  const p=_fpActual.producto;
+  const sku=p.sku;
+  const btn=document.getElementById('fp-guardar-btn');
+  const nombre=(document.getElementById('fp-g-nombre').value||'').trim();
+  if(!nombre){showToast('⚠️ El nombre no puede quedar vacío');document.querySelector('#fp-tabs [data-tab="general"]').click();return;}
+  const categoria=document.getElementById('fp-pv-cat')?document.getElementById('fp-pv-cat').value:p.categoria;
+  const descripcion=(document.getElementById('fp-g-desc').value||'').trim();
+  const barcode=(document.getElementById('fp-g-barcode').value||'').trim();
+  const sector=document.getElementById('fp-s-sector')?(document.getElementById('fp-s-sector').value||null):undefined;
+  const stockMinRaw=document.getElementById('fp-i-stockmin')?document.getElementById('fp-i-stockmin').value.trim():'';
+  const costoIngresado=document.getElementById('fp-pr-costo')?document.getElementById('fp-pr-costo').value.trim():'';
+  const precioIngresado=document.getElementById('fp-pr-precio')?document.getElementById('fp-pr-precio').value.trim():'';
+  const costoBase=costoIngresado?PriceCalc.costoBruto(costoIngresado,'unidad',null,'con'):null;
+  const costoFinal=costoBase?String(Math.round(costoBase)):'';
+
+  const scrollGuardado=document.getElementById('fp-scroll').scrollTop;
+  const tabActiva=document.querySelector('#fp-tabs .fp-tab.active').dataset.tab;
   btn.disabled=true;btn.textContent='Guardando…';
   try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_precio',payload:{sku,precio,costo,responsable:''}})});
+    // 1) Datos generales (nombre, categoría/proveedor principal, descripción, unidad, sector,
+    //    seguir inventario, stock mínimo) — un único endpoint, igual que ya hacía fpGuardarEdicion.
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_producto',payload:{
+      sku,nombre,categoria,descripcion,sector,
+      soldByWeight:fpEditState.soldByWeight,trackStock:fpEditState.trackStock,
+      stockMinimo:stockMinRaw!==''?stockMinRaw:undefined,
+      responsable:''
+    }})});
     const j=await res.json();
-    if(j&&j.ok){
-      const it=DB.items.find(x=>x.ref===sku);
-      if(it){if(j.precio!=null)it.precio=j.precio;if(j.costo!=null)it.coste=j.costo;}
-      persist();
-      showToast(j.sinCambios?'Sin cambios que guardar':('✅ Precio actualizado'+(j.advertencia?' — '+j.advertencia:'')));
-      await fpAbrir(sku);
-      render();
-    }else{
+    if(!j||!j.ok){
       showToast('❌ '+(j&&j.error?j.error:'No se pudo guardar'));
       btn.disabled=false;btn.textContent='💾 Guardar cambios';
+      return;
     }
+    // 2) Código de barras (vive en la variante, se guarda aparte).
+    let avisoBarcode='';
+    const resB=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_codigo_barras',payload:{sku,barcode,responsable:''}})});
+    const jb=await resB.json();
+    if(!jb||!jb.ok)avisoBarcode=' — ⚠️ código de barras: '+((jb&&jb.error)||'no se pudo guardar');
+    // 3) Precio/costo (solo si se escribió algo — igual criterio que fpGuardarPrecio de antes).
+    let avisoPrecio='';
+    if(costoFinal||precioIngresado){
+      const resP=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_precio',payload:{sku,precio:precioIngresado,costo:costoFinal,responsable:''}})});
+      const jp=await resP.json();
+      if(!jp||!jp.ok)avisoPrecio=' — ⚠️ precio: '+((jp&&jp.error)||'no se pudo guardar');
+    }
+
+    const it=DB.items.find(x=>x.ref===sku);
+    if(it){
+      it.nombre=nombre;it.prov=categoria;it.descripcion=descripcion;
+      if(!avisoBarcode)it.barcode=barcode;
+      it.peso=fpEditState.soldByWeight;it.track=fpEditState.trackStock;
+    }
+    if(sector)psGuardarAprendizaje(nombre.toUpperCase(),document.getElementById('fp-pv-cat')?null:p.proveedorId,sector);
+    persist();
+    showToast('✅ Producto actualizado'+avisoBarcode+avisoPrecio);
+    // Recarga la ficha con los datos confirmados por el servidor, pero SIN cerrar ni cambiar
+    // de pestaña/scroll — se restaura exactamente donde el usuario estaba.
+    await fpAbrir(sku,{tab:tabActiva,scroll:scrollGuardado});
+    render();
   }catch(e){
     showToast('❌ Error de conexión al guardar');
+  }finally{
     btn.disabled=false;btn.textContent='💾 Guardar cambios';
   }
 }
@@ -4525,59 +4695,22 @@ async function fpEliminarProducto(f){
       DB.items=(DB.items||[]).filter(it=>it.ref!==p.sku);
       persist();
       showToast('✓ '+p.nombre+' eliminado de Loyverse');
+      fpLimpiarBorrador();
       cerrarModal('fp-ov');
       try{render();}catch(_){}
-      try{smRender();}catch(_){}   // si Sin movimiento está abierto detrás, también se actualiza
+      try{smRender();}catch(_){}
     }else{
       console.warn('[fpEliminarProducto] error:',r);
       showToast('❌ '+((r&&r.error)||(j&&j.error)||'No se pudo eliminar'));
-      btn.disabled=false;btn.textContent='🗑️ Eliminar este producto de Loyverse';
+      btn.disabled=false;btn.textContent='🗑️';
     }
   }catch(e){
     showToast('❌ Error de conexión al eliminar');
-    btn.disabled=false;btn.textContent='🗑️ Eliminar este producto de Loyverse';
+    btn.disabled=false;btn.textContent='🗑️';
   }
 }
-async function fpGuardarEdicion(sku){
-  const btn=document.getElementById('fp-e-guardar');
-  const nombre=document.getElementById('fp-e-nombre').value.trim();
-  const categoria=document.getElementById('fp-e-cat').value;
-  const descripcion=document.getElementById('fp-e-desc').value.trim();
-  const barcode=document.getElementById('fp-e-barcode').value.trim();
-  const proveedorId=document.getElementById('fp-e-proveedor')?(document.getElementById('fp-e-proveedor').value||null):null;
-  const sector=document.getElementById('fp-e-sector')?(document.getElementById('fp-e-sector').value||null):null;
-  const soldByWeight=typeof window._fpSoldByWeightGetter==='function'?window._fpSoldByWeightGetter():undefined;
-  if(!nombre){showToast('⚠️ El nombre no puede quedar vacío');return;}
-  btn.disabled=true;btn.textContent='Guardando…';
-  try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_producto',payload:{sku,nombre,categoria,descripcion,proveedor_id:proveedorId,sector,soldByWeight,responsable:''}})});
-    const j=await res.json();
-    if(!j||!j.ok){
-      showToast('❌ '+(j&&j.error?j.error:'No se pudo guardar'));
-      btn.disabled=false;btn.textContent='💾 Guardar cambios';
-      return;
-    }
-    // Código de barras se guarda aparte (vive en la variante, no en el ítem general) —
-    // si falla por duplicado, el resto de los cambios ya quedó guardado igual.
-    let avisoBarcode='';
-    const resB=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_codigo_barras',payload:{sku,barcode,responsable:''}})});
-    const jb=await resB.json();
-    if(!jb||!jb.ok)avisoBarcode=' — ⚠️ código de barras: '+((jb&&jb.error)||'no se pudo guardar');
+document.getElementById('fp-eliminar-btn').onclick=()=>{if(_fpActual)fpEliminarProducto(_fpActual);};
 
-    const it=DB.items.find(x=>x.ref===sku);
-    if(it){it.nombre=nombre;it.prov=categoria;it.descripcion=descripcion;if(!avisoBarcode)it.barcode=barcode;if(soldByWeight!==undefined)it.peso=soldByWeight;}
-    if(sector)psGuardarAprendizaje(nombre.toUpperCase(),proveedorId,sector);
-    persist();
-    showToast('✅ Producto actualizado'+avisoBarcode);
-    await fpAbrir(sku); // recarga la ficha completa con los datos ya confirmados desde el servidor
-    render(); // refleja el nombre/categoría nuevos en la tabla principal, sin recargar la página
-  }catch(e){
-    showToast('❌ Error de conexión al guardar');
-    btn.disabled=false;btn.textContent='💾 Guardar cambios';
-  }
-}
-// Puntos de entrada a la ficha: tocar el nombre del producto en la tabla de Pedidos o en Reconteo.
-// Un solo listener delegado por lista (no se duplica en cada render).
 document.getElementById('ptbody').addEventListener('click',ev=>{
   const nom=ev.target.closest('.prod-name');
   if(!nom)return;
@@ -5275,9 +5408,9 @@ document.getElementById('cc-resumen-pendientes').addEventListener('click',ev=>{
 // Reemplaza al antiguo módulo "Revisión de productos" (proveedor/sector faltante). En vez de
 // una lista con edición inline limitada a esos dos campos, este módulo es solo un buscador:
 // al elegir o escanear un producto se abre su Ficha completa (fp-ov / fpAbrir), que YA trae
-// todos los campos editables, además de Guardar cambios (fp-e-guardar), Eliminar
-// (fp-eliminar-btn) y Cerrar (fp-cerrar) — cero lógica de edición duplicada, se reutiliza
-// tal cual la Ficha del producto que ya usan Clasificar catálogo, Vencimientos, etc.
+// todos los campos editables, además de Guardar cambios (fp-guardar-btn), Eliminar
+// (fp-eliminar-btn) y Cancelar (fp-cerrar) — cero lógica de edición duplicada, se reutiliza
+// tal cual el Editor de artículo que ya usan Clasificar catálogo, Vencimientos, etc.
 document.getElementById('mas-q-editar').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');edAbrir();};
 document.getElementById('ed-cerrar').onclick=()=>cerrarModal('ed-ov');
 function edAbrir(){
@@ -9878,6 +10011,10 @@ const REABRIR_MODULO={
     abrirModal('in-ov');
     inRenderCart();
     if(inResp)document.querySelectorAll('#in-resp button').forEach(b=>b.classList.toggle('sel',b.dataset.r===inResp));
+  },
+  'fp-ov':()=>{
+    const d=fpCargarBorrador();
+    if(d&&d.sku)fpAbrir(d.sku,d); else cerrarModal('fp-ov'); // sin sku guardado, no hay nada que reabrir
   }
 };
 (function restaurarUltimaPantallaAlCargar(){
