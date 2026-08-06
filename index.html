@@ -3193,7 +3193,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-06.6';
+const APP_VERSION='2026-08-06.7';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -5795,7 +5795,7 @@ function mejorarImagenProducto(base64PNG,contentType){
     img.onload=()=>{
       try{
         // Márgenes extra alrededor para que la sombra tenga espacio y no se corte contra el borde.
-        const pad=Math.round(Math.max(img.width,img.height)*0.08);
+        const pad=Math.round(Math.max(img.width,img.height)*0.10);
         const w=img.width+pad*2, h=img.height+pad*2;
         const canvas=document.createElement('canvas');
         canvas.width=w;canvas.height=h;
@@ -5803,16 +5803,50 @@ function mejorarImagenProducto(base64PNG,contentType){
         // Fondo blanco sólido (por si el PNG de remove.bg trae transparencia en las esquinas).
         ctx.fillStyle='#ffffff';
         ctx.fillRect(0,0,w,h);
-        // Sombra proyectada suave, difuminada, apenas desplazada hacia abajo — sutil, no un
-        // recuadro duro. shadowBlur/offsetY generosos para que se vea como catálogo, no como
-        // un recorte con borde marcado.
+
+        // ---- Sombra "en el piso": una elipse difuminada apoyada justo debajo del producto,
+        // no un halo alrededor de todo el contorno (que es lo que daba shadowBlur+drawImage
+        // directo — se veía como aura pareja, no como una sombra proyectada real). Se calcula
+        // dónde termina visualmente el producto (su borde inferior real de píxeles opacos),
+        // usando el canvas del propio PNG recortado, y se dibuja la elipse justo ahí.
+        const probeCanvas=document.createElement('canvas');
+        probeCanvas.width=img.width;probeCanvas.height=img.height;
+        const probeCtx=probeCanvas.getContext('2d');
+        probeCtx.drawImage(img,0,0);
+        let bottomY=img.height-1,leftX=0,rightX=img.width-1;
+        try{
+          const data=probeCtx.getImageData(0,0,img.width,img.height).data;
+          let minX=img.width,maxX=0,maxY=0,foundAny=false;
+          // Recorre en pasos de 2px (rendimiento) buscando el alpha>10 más bajo (borde
+          // inferior real) y el ancho ocupado por el producto en esa franja.
+          for(let y=img.height-1;y>=0;y-=2){
+            let rowHasPixel=false;
+            for(let x=0;x<img.width;x+=2){
+              const alpha=data[(y*img.width+x)*4+3];
+              if(alpha>10){
+                rowHasPixel=true;foundAny=true;
+                if(x<minX)minX=x;if(x>maxX)maxX=x;
+              }
+            }
+            if(rowHasPixel&&maxY===0)maxY=y; // primera fila con píxeles opacos recorriendo de abajo hacia arriba = borde inferior real del producto
+          }
+          if(foundAny){bottomY=maxY;leftX=minX;rightX=maxX;}
+        }catch(e){/* getImageData puede fallar por CORS si la imagen no es same-origin; se usa el fallback (borde inferior del lienzo) */}
+        const anchoProducto=Math.max(40,rightX-leftX);
+        const centroX=pad+(leftX+rightX)/2;
+        const pisoY=pad+bottomY;
+
         ctx.save();
-        ctx.shadowColor='rgba(0,0,0,0.28)';
-        ctx.shadowBlur=Math.round(w*0.035);
-        ctx.shadowOffsetY=Math.round(h*0.018);
-        ctx.shadowOffsetX=0;
-        ctx.drawImage(img,pad,pad,img.width,img.height);
+        ctx.filter='blur('+Math.round(anchoProducto*0.035)+'px)';
+        ctx.fillStyle='rgba(0,0,0,0.24)';
+        ctx.beginPath();
+        ctx.ellipse(centroX,pisoY+Math.round(anchoProducto*0.02),anchoProducto*0.42,Math.max(6,anchoProducto*0.07),0,0,Math.PI*2);
+        ctx.fill();
         ctx.restore();
+
+        // Producto encima de la sombra, sin filtro (nítido).
+        ctx.drawImage(img,pad,pad,img.width,img.height);
+
         // Segunda pasada: contraste + saturación sobre TODO el lienzo (incluida la sombra ya
         // dibujada) usando un filtro CSS aplicado antes de redibujar — Canvas no permite
         // "filter" retroactivo sobre lo ya pintado, así que se recompone con un canvas auxiliar.
