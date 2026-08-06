@@ -3193,7 +3193,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-06.5';
+const APP_VERSION='2026-08-06.6';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -7798,8 +7798,9 @@ document.getElementById('cp-guardar').onclick=async()=>{
       cerrarModal('cp-ov');
       if(_cpDesdeRecepcion){
         _cpDesdeRecepcion=false;
-        abrirModal('rc-ov');
-        rcRestaurarPendiente(j.producto.ref);
+        _rcPendiente=null; // se descarta a propósito: Recepción debe volver limpia, sin arrastrar costo/cantidad/fecha del producto anterior
+        rcLimpiarBorrador(); // evita que openRecibir() reviva un borrador viejo del producto anterior
+        openRecibir(); // reabre Recepción desde cero — solo el buscador, listo para escanear el siguiente producto
       }
       try{render();}catch(_){}
     }else{
