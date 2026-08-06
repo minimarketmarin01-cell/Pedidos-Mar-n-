@@ -352,17 +352,14 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .sc-summary{font-size:12.5px;color:var(--muted);margin-bottom:10px;line-height:1.5}
 .sc-warn{background:var(--rojo-bg);border:1px solid var(--rojo);border-radius:10px;padding:9px 12px;font-size:12px;color:var(--rojo);font-weight:600;margin-bottom:12px;line-height:1.4}
 .hm-summary{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
-.fp-tabs{display:flex;gap:4px;margin-bottom:12px;overflow-x:auto;-webkit-overflow-scrolling:touch}
-.fp-tab{flex-shrink:0;padding:8px 14px;border-radius:20px;border:1.5px solid var(--line);background:#fff;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap}
-.fp-tab.active{background:var(--ink);border-color:var(--ink);color:#fff}
+.fp-section-title{font-size:12px;font-weight:800;color:var(--verde);text-transform:uppercase;letter-spacing:.03em;margin:22px 0 10px;padding-top:14px;border-top:1px solid var(--line)}
+.fp-section-title:first-of-type{margin-top:14px;padding-top:0;border-top:none}
 .fp-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px dashed var(--line2);font-size:13.5px;gap:10px}
-/* Editor de artículo a pantalla completa: pestañas arriba (sticky), contenido con scroll
-   propio, y una barra de acciones (Guardar/Eliminar/Cancelar) siempre visible abajo — mismo
-   criterio que el resto de la PWA (nav inferior siempre visible). El padding-bottom del body
-   dqa espacio exacto para que la última fila de cada pestaña no quede tapada por la barra. */
+/* Editor de artículo a pantalla completa, en UNA sola pantalla con scroll (sin pestañas que
+   cambian de vista, estilo Loyverse) — secciones apiladas con su título, y una barra de
+   acciones (Guardar/Eliminar/Cancelar) siempre visible abajo, sin importar cuánto se baje. */
 #fp-ov #fp-body{padding-bottom:0;display:flex;flex-direction:column;height:100%}
 #fp-ov #fp-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px 18px}
-#fp-ov .fp-tabs{position:sticky;top:0;background:var(--card);z-index:5;padding-top:2px;padding-bottom:8px;margin-bottom:8px}
 .fp-actionbar{flex-shrink:0;display:flex;gap:8px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--card)}
 .fp-actionbar button{flex:1;padding:12px;border-radius:10px;font-weight:700;font-size:13.5px;cursor:pointer}
 .fp-actionbar .fp-btn-cancelar{border:1.5px solid var(--line);background:#fff;color:var(--ink);flex:0 0 auto;padding-left:16px;padding-right:16px}
@@ -1834,22 +1831,19 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
       <div id="fp-content" class="hidden" style="display:flex;flex-direction:column;height:100%">
         <div id="fp-scroll">
           <div class="hm-summary" id="fp-resumen" style="flex-direction:column;align-items:flex-start;gap:4px"></div>
-          <div class="fp-tabs" id="fp-tabs">
-            <button class="fp-tab active" data-tab="general">General</button>
-            <button class="fp-tab" data-tab="inventario">Inventario</button>
-            <button class="fp-tab" data-tab="precios">Precios</button>
-            <button class="fp-tab" data-tab="proveedores">Proveedores</button>
-            <button class="fp-tab" data-tab="sector">Sector</button>
-            <button class="fp-tab hidden" data-tab="lotes">Lotes</button>
-            <button class="fp-tab" data-tab="avanzado">Avanzado</button>
-          </div>
           <div id="fp-pane-general" class="fp-pane"></div>
-          <div id="fp-pane-inventario" class="fp-pane hidden"></div>
-          <div id="fp-pane-precios" class="fp-pane hidden"></div>
-          <div id="fp-pane-proveedores" class="fp-pane hidden"></div>
-          <div id="fp-pane-sector" class="fp-pane hidden"></div>
+          <div class="fp-section-title">Inventario</div>
+          <div id="fp-pane-inventario" class="fp-pane"></div>
+          <div class="fp-section-title">Precios</div>
+          <div id="fp-pane-precios" class="fp-pane"></div>
+          <div class="fp-section-title">Proveedores</div>
+          <div id="fp-pane-proveedores" class="fp-pane"></div>
+          <div class="fp-section-title">Sector / Ubicación</div>
+          <div id="fp-pane-sector" class="fp-pane"></div>
+          <div class="fp-section-title hidden" id="fp-section-lotes-title">Lotes</div>
           <div id="fp-pane-lotes" class="fp-pane hidden"></div>
-          <div id="fp-pane-avanzado" class="fp-pane hidden"></div>
+          <div class="fp-section-title">Avanzado</div>
+          <div id="fp-pane-avanzado" class="fp-pane"></div>
         </div>
         <div class="fp-actionbar">
           <button type="button" class="fp-btn-cancelar" id="fp-cerrar">Cancelar</button>
@@ -3193,7 +3187,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-07-24.4';
+const APP_VERSION='2026-08-06.1';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -3953,20 +3947,13 @@ document.getElementById('sm-selall').onchange=e=>{
 // ===================== EDITOR DE ARTÍCULO (pantalla completa, edición directa) =====================
 // Antes: modal flotante con pestañas de solo lectura + botón "Editar" que abría un formulario
 // aparte. Ahora: pantalla completa (mismo patrón que Recepción/Vencimientos/Más — #fp-ov usa
-// el mismo CSS #rc-ov/#vc-ov/#mas-ov), con 7 pestañas donde TODOS los campos son editables
-// desde que se abre la pestaña, estilo Loyverse. Guardar/Eliminar/Cancelar viven en una barra
-// fija abajo, visible sin importar en qué pestaña estés. Cada pestaña tiene su propia función
-// fpPane*(f) — así el archivo se mantiene navegable pese al tamaño del formulario completo.
+// el mismo CSS #rc-ov/#vc-ov/#mas-ov), UNA sola pantalla con scroll continuo — sin pestañas
+// para cambiar de vista, igual que Loyverse — con secciones tituladas (General, Inventario,
+// Precios, Proveedores, Sector, Lotes si aplica, Avanzado) y TODOS los campos editables desde
+// que se abre. Guardar/Eliminar/Cancelar viven en una barra fija abajo, siempre visible sin
+// importar cuánto se haya bajado. Cada sección tiene su propia función fpPane*(f) — así el
+// archivo se mantiene navegable pese al tamaño del formulario completo.
 document.getElementById('fp-cerrar').onclick=()=>{fpLimpiarBorrador();cerrarModal('fp-ov');};
-document.querySelectorAll('#fp-tabs .fp-tab').forEach(btn=>{
-  btn.onclick=()=>{
-    document.querySelectorAll('#fp-tabs .fp-tab').forEach(b=>b.classList.toggle('active',b===btn));
-    document.querySelectorAll('#fp-body .fp-pane').forEach(p=>p.classList.add('hidden'));
-    document.getElementById('fp-pane-'+btn.dataset.tab).classList.remove('hidden');
-    document.getElementById('fp-scroll').scrollTop=0;
-    fpGuardarBorrador(); // recuerda en qué pestaña estabas, ver "restaurar tras F5" más abajo
-  };
-});
 let _fpActual=null;
 let _fpImagenPreviewUrl=null; // imagen encontrada en el catálogo (código de barras), pendiente de confirmar o cancelar
 // ---- Restaurar tras F5: recuerda SKU + pestaña activa + scroll, igual patrón que el resto
@@ -3978,11 +3965,9 @@ function fpGuardarBorrador(){
   _fpDraftT=setTimeout(()=>{
     try{
       if(!_fpActual){localStorage.removeItem(FP_DRAFT_LS_KEY);return;}
-      const tabBtn=document.querySelector('#fp-tabs .fp-tab.active');
       const scrollEl=document.getElementById('fp-scroll');
       localStorage.setItem(FP_DRAFT_LS_KEY,JSON.stringify({
         sku:_fpActual.producto.sku,
-        tab:tabBtn?tabBtn.dataset.tab:'general',
         scroll:scrollEl?scrollEl.scrollTop:0
       }));
     }catch(e){}
@@ -3999,11 +3984,6 @@ async function fpAbrir(ref,restaurar){
   document.getElementById('fp-content').classList.add('hidden');
   document.getElementById('fp-loading').classList.remove('hidden');
   document.getElementById('fp-loading').textContent='Cargando…';
-  // Si venimos de restaurar tras F5, se respeta la pestaña guardada; si no, siempre arranca
-  // en "General" (comportamiento de siempre al abrir un producto nuevo).
-  const tabInicial=(restaurar&&restaurar.tab)?restaurar.tab:'general';
-  document.querySelectorAll('#fp-tabs .fp-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tabInicial));
-  document.querySelectorAll('#fp-body .fp-pane').forEach(p=>p.classList.toggle('hidden',p.id!=='fp-pane-'+tabInicial));
   abrirModal('fp-ov');
   try{
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=ficha_producto&sku='+encodeURIComponent(ref));
@@ -4015,7 +3995,7 @@ async function fpAbrir(ref,restaurar){
     document.getElementById('fp-content').classList.remove('hidden');
     fpGuardarBorrador();
     if(restaurar&&restaurar.scroll){
-      // Espera a que el DOM de la pestaña termine de pintarse antes de restaurar el scroll.
+      // Espera a que el DOM termine de pintarse antes de restaurar el scroll de la pantalla.
       requestAnimationFrame(()=>{const el=document.getElementById('fp-scroll');if(el)el.scrollTop=restaurar.scroll;});
     }
   }catch(e){document.getElementById('fp-loading').textContent='❌ Error de conexión al cargar la ficha';}
@@ -4074,17 +4054,11 @@ function fpPintar(f){
     '<div style="font-size:12px;color:var(--muted)">REF '+p.sku+' · '+p.categoria+'</div>'+
     '<div style="margin-top:4px">'+fpBadgeStock(p)+' '+(f.lotes&&f.lotes.some(l=>l.prioridad==='⚫')?'<span class="fp-badge rojo">Tiene lotes vencidos</span>':'')+'</div>';
   fpEditState={soldByWeight:!!p.soldByWeight,trackStock:!!p.trackStock};
-  // Pestaña "Lotes" solo se muestra si el producto tiene lotes de vencimiento — "si aplica",
+  // Sección "Lotes" solo se muestra si el producto tiene lotes de vencimiento — "si aplica",
   // tal como se pidió (no tiene sentido para productos sin control de vencimientos).
-  const tabLotes=document.querySelector('#fp-tabs [data-tab="lotes"]');
   const hayLotes=!!(f.lotes&&f.lotes.length);
-  tabLotes.classList.toggle('hidden',!hayLotes);
-  if(!hayLotes&&tabLotes.classList.contains('active')){
-    tabLotes.classList.remove('active');
-    document.querySelector('#fp-tabs [data-tab="general"]').classList.add('active');
-    document.getElementById('fp-pane-lotes').classList.add('hidden');
-    document.getElementById('fp-pane-general').classList.remove('hidden');
-  }
+  document.getElementById('fp-section-lotes-title').classList.toggle('hidden',!hayLotes);
+  document.getElementById('fp-pane-lotes').classList.toggle('hidden',!hayLotes);
   fpPaneGeneral(f);
   fpPaneInventario(f);
   fpPanePrecios(f);
@@ -4334,7 +4308,8 @@ async function fpGuardarRecuento(sku){
       if(it){it.stock=j.stockNuevo!=null?j.stockNuevo:nuevo;if(j.trackHabilitado)it.track=true;}
       persist();
       showToast((j.trackHabilitado?'🔓 Seguimiento activado · ':'✓ Recuento guardado: ')+fmt1(nuevo));
-      await fpAbrir(sku,{tab:'inventario'});
+      const scrollActual=document.getElementById('fp-scroll').scrollTop;
+      await fpAbrir(sku,{scroll:scrollActual});
       render();
     }else{
       showToast('❌ '+(j&&j.error?j.error:'No se pudo guardar'));
@@ -4618,7 +4593,7 @@ async function fpGuardarTodo(){
   const sku=p.sku;
   const btn=document.getElementById('fp-guardar-btn');
   const nombre=(document.getElementById('fp-g-nombre').value||'').trim();
-  if(!nombre){showToast('⚠️ El nombre no puede quedar vacío');document.querySelector('#fp-tabs [data-tab="general"]').click();return;}
+  if(!nombre){showToast('⚠️ El nombre no puede quedar vacío');document.getElementById('fp-scroll').scrollTop=0;document.getElementById('fp-g-nombre').focus();return;}
   const categoria=document.getElementById('fp-pv-cat')?document.getElementById('fp-pv-cat').value:p.categoria;
   const descripcion=(document.getElementById('fp-g-desc').value||'').trim();
   const barcode=(document.getElementById('fp-g-barcode').value||'').trim();
@@ -4630,7 +4605,6 @@ async function fpGuardarTodo(){
   const costoFinal=costoBase?String(Math.round(costoBase)):'';
 
   const scrollGuardado=document.getElementById('fp-scroll').scrollTop;
-  const tabActiva=document.querySelector('#fp-tabs .fp-tab.active').dataset.tab;
   btn.disabled=true;btn.textContent='Guardando…';
   try{
     // 1) Datos generales (nombre, categoría/proveedor principal, descripción, unidad, sector,
@@ -4669,9 +4643,9 @@ async function fpGuardarTodo(){
     if(sector)psGuardarAprendizaje(nombre.toUpperCase(),document.getElementById('fp-pv-cat')?null:p.proveedorId,sector);
     persist();
     showToast('✅ Producto actualizado'+avisoBarcode+avisoPrecio);
-    // Recarga la ficha con los datos confirmados por el servidor, pero SIN cerrar ni cambiar
-    // de pestaña/scroll — se restaura exactamente donde el usuario estaba.
-    await fpAbrir(sku,{tab:tabActiva,scroll:scrollGuardado});
+    // Recarga la ficha con los datos confirmados por el servidor, pero SIN cerrar ni perder
+    // el scroll — se restaura exactamente donde el usuario estaba en la pantalla.
+    await fpAbrir(sku,{scroll:scrollGuardado});
     render();
   }catch(e){
     showToast('❌ Error de conexión al guardar');
