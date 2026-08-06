@@ -3193,7 +3193,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-06.7';
+const APP_VERSION='2026-08-06.8';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -5789,78 +5789,155 @@ var _cpImagenContentType='image/jpeg'; // tipo real de _cpImagenBase64: jpeg (ga
 // agrega una sombra proyectada suave debajo del producto — mismo efecto visual que catálogos
 // de e-commerce. Todo con Canvas, sin servicios externos ni costo. Recibe base64 SIN el
 // prefijo data:..., devuelve base64 PNG también sin prefijo.
+// Prepara la foto final de catálogo a partir del PNG ya recortado por remove.bg (con
+// transparencia REAL — ver accionQuitarFondoProducto en el Worker, que ya no le pide a
+// remove.bg que rellene el fondo, precisamente para que este paso pueda leer el canal alpha
+// real y trabajar con precisión). Pasos, en orden:
+//   1) Detecta la caja delimitadora exacta del producto (bbox de píxeles no transparentes)
+//      — esto es lo que permite recortar SIN perder ningún borde ni detalle fino: no se
+//      basa en un margen fijo, sino en dónde realmente termina el producto en cada lado.
+//   2) Redibuja el producto centrado en un lienzo cuadrado, ocupando ~85% del área útil
+//      (el 15% restante es aire alrededor, como pide un catálogo).
+//   3) Fondo blanco puro (#FFFFFF) sólido detrás.
+//   4) Sombra elíptica suave y difuminada, apoyada justo debajo del producto (no un halo
+//      parejo alrededor de todo el contorno).
+//   5) Corrección de imagen: contraste, saturación, brillo, y un afinado leve de nitidez
+//      (unsharp mask simplificado) — sin alterar la forma, el color base ni las proporciones.
+// Si por cualquier motivo el recorte de remove.bg no trae transparencia utilizable (bbox
+// degenerado, imagen completamente opaca), se hace un segundo intento con un umbral de alpha
+// más permisivo antes de rendirse y usar la imagen completa tal cual llegó — nunca deja al
+// usuario sin resultado.
 function mejorarImagenProducto(base64PNG,contentType){
   return new Promise((resolve,reject)=>{
     const img=new Image();
     img.onload=()=>{
       try{
-        // Márgenes extra alrededor para que la sombra tenga espacio y no se corte contra el borde.
-        const pad=Math.round(Math.max(img.width,img.height)*0.10);
-        const w=img.width+pad*2, h=img.height+pad*2;
-        const canvas=document.createElement('canvas');
-        canvas.width=w;canvas.height=h;
-        const ctx=canvas.getContext('2d');
-        // Fondo blanco sólido (por si el PNG de remove.bg trae transparencia en las esquinas).
-        ctx.fillStyle='#ffffff';
-        ctx.fillRect(0,0,w,h);
-
-        // ---- Sombra "en el piso": una elipse difuminada apoyada justo debajo del producto,
-        // no un halo alrededor de todo el contorno (que es lo que daba shadowBlur+drawImage
-        // directo — se veía como aura pareja, no como una sombra proyectada real). Se calcula
-        // dónde termina visualmente el producto (su borde inferior real de píxeles opacos),
-        // usando el canvas del propio PNG recortado, y se dibuja la elipse justo ahí.
         const probeCanvas=document.createElement('canvas');
         probeCanvas.width=img.width;probeCanvas.height=img.height;
         const probeCtx=probeCanvas.getContext('2d');
         probeCtx.drawImage(img,0,0);
-        let bottomY=img.height-1,leftX=0,rightX=img.width-1;
-        try{
-          const data=probeCtx.getImageData(0,0,img.width,img.height).data;
-          let minX=img.width,maxX=0,maxY=0,foundAny=false;
-          // Recorre en pasos de 2px (rendimiento) buscando el alpha>10 más bajo (borde
-          // inferior real) y el ancho ocupado por el producto en esa franja.
-          for(let y=img.height-1;y>=0;y-=2){
-            let rowHasPixel=false;
-            for(let x=0;x<img.width;x+=2){
-              const alpha=data[(y*img.width+x)*4+3];
-              if(alpha>10){
-                rowHasPixel=true;foundAny=true;
-                if(x<minX)minX=x;if(x>maxX)maxX=x;
+
+        function calcularBBox(umbralAlpha){
+          let minX=img.width,maxX=-1,minY=img.height,maxY=-1;
+          try{
+            const data=probeCtx.getImageData(0,0,img.width,img.height).data;
+            // Paso de 1px: la precisión del recorte importa más que el rendimiento acá — a
+            // 1024px de máximo (resizeImageToBase64 ya limita a eso) esto sigue siendo rápido.
+            for(let y=0;y<img.height;y++){
+              const rowBase=y*img.width;
+              for(let x=0;x<img.width;x++){
+                if(data[(rowBase+x)*4+3]>umbralAlpha){
+                  if(x<minX)minX=x;if(x>maxX)maxX=x;
+                  if(y<minY)minY=y;if(y>maxY)maxY=y;
+                }
               }
             }
-            if(rowHasPixel&&maxY===0)maxY=y; // primera fila con píxeles opacos recorriendo de abajo hacia arriba = borde inferior real del producto
-          }
-          if(foundAny){bottomY=maxY;leftX=minX;rightX=maxX;}
-        }catch(e){/* getImageData puede fallar por CORS si la imagen no es same-origin; se usa el fallback (borde inferior del lienzo) */}
-        const anchoProducto=Math.max(40,rightX-leftX);
-        const centroX=pad+(leftX+rightX)/2;
-        const pisoY=pad+bottomY;
+          }catch(e){/* getImageData puede fallar si el canvas quedó "tainted"; se maneja abajo devolviendo bbox degenerado */}
+          return {minX,maxX,minY,maxY,valido:maxX>minX&&maxY>minY};
+        }
 
+        // Intento principal (alpha>10, ignora ruido de transparencia casi nula en los bordes).
+        // Si degenera (imagen completamente opaca o completamente transparente), se prueba con
+        // un umbral más bajo, y si aún así falla, se usa el lienzo completo como bbox — mejora
+        // automática de la máscara sin nunca dejar al usuario sin resultado.
+        let bbox=calcularBBox(10);
+        if(!bbox.valido)bbox=calcularBBox(2);
+        if(!bbox.valido)bbox={minX:0,maxX:img.width-1,minY:0,maxY:img.height-1,valido:true};
+
+        const anchoProd=bbox.maxX-bbox.minX+1;
+        const altoProd=bbox.maxY-bbox.minY+1;
+
+        // Lienzo final cuadrado (estándar de catálogo), con el producto ocupando ~85% del
+        // lado — el máximo entre ancho/alto del producto define la escala, así nunca se corta
+        // ningún borde por más alargado que sea el objeto.
+        const OCUPACION=0.85;
+        const ladoLienzo=Math.max(anchoProd,altoProd)/OCUPACION;
+        const w=Math.round(ladoLienzo), h=Math.round(ladoLienzo);
+
+        const canvas=document.createElement('canvas');
+        canvas.width=w;canvas.height=h;
+        const ctx=canvas.getContext('2d');
+        // Fondo blanco puro (#FFFFFF) sólido — el catálogo nunca debe mostrar transparencia.
+        ctx.fillStyle='#ffffff';
+        ctx.fillRect(0,0,w,h);
+
+        // Punto donde quedará dibujado el producto, centrado en el lienzo.
+        const destW=anchoProd, destH=altoProd;
+        const destX=Math.round((w-destW)/2);
+        const destY=Math.round((h-destH)/2);
+
+        // ---- Sombra "en el piso": elipse difuminada apoyada justo debajo del producto ya
+        // centrado — nunca a los lados (solo se dibuja en el eje inferior). Opacidad y tamaño
+        // dentro del rango pedido (15–25%), proporcional al ancho real del producto.
+        const pisoY=destY+destH;
+        const centroX=destX+destW/2;
         ctx.save();
-        ctx.filter='blur('+Math.round(anchoProducto*0.035)+'px)';
-        ctx.fillStyle='rgba(0,0,0,0.24)';
+        ctx.filter='blur('+Math.max(2,Math.round(destW*0.035))+'px)';
+        ctx.fillStyle='rgba(0,0,0,0.20)';
         ctx.beginPath();
-        ctx.ellipse(centroX,pisoY+Math.round(anchoProducto*0.02),anchoProducto*0.42,Math.max(6,anchoProducto*0.07),0,0,Math.PI*2);
+        ctx.ellipse(centroX,pisoY+Math.round(destW*0.015),destW*0.40,Math.max(5,destW*0.065),0,0,Math.PI*2);
         ctx.fill();
         ctx.restore();
 
-        // Producto encima de la sombra, sin filtro (nítido).
-        ctx.drawImage(img,pad,pad,img.width,img.height);
+        // Producto recortado EXACTO a su bbox (sin perder ningún borde: se copia tal cual el
+        // rectángulo real donde hay contenido, ni un píxel más ni uno menos) y centrado.
+        ctx.drawImage(img,bbox.minX,bbox.minY,anchoProd,altoProd,destX,destY,destW,destH);
 
-        // Segunda pasada: contraste + saturación sobre TODO el lienzo (incluida la sombra ya
-        // dibujada) usando un filtro CSS aplicado antes de redibujar — Canvas no permite
-        // "filter" retroactivo sobre lo ya pintado, así que se recompone con un canvas auxiliar.
+        // ---- Corrección de imagen: contraste, saturación, brillo/exposición y un afinado de
+        // nitidez leve — recompuesto en un segundo canvas porque Canvas no permite aplicar
+        // "filter" retroactivamente sobre lo ya pintado (incluida la sombra).
         const canvas2=document.createElement('canvas');
         canvas2.width=w;canvas2.height=h;
         const ctx2=canvas2.getContext('2d');
-        ctx2.filter='contrast(1.08) saturate(1.15) brightness(1.02)';
+        ctx2.filter='contrast(1.08) saturate(1.15) brightness(1.03)';
         ctx2.drawImage(canvas,0,0);
-        resolve(canvas2.toDataURL('image/png',0.92).split(',')[1]);
+
+        // Afinado de nitidez (unsharp mask simplificado): resta una versión desenfocada de la
+        // imagen a sí misma para realzar bordes, sin tocar el color base ni la forma — mismo
+        // principio que usan las apps de foto de producto profesionales.
+        try{
+          const nitida=aplicarNitidezSuave(ctx2,w,h);
+          resolve(nitida.split(',')[1]);
+        }catch(e){
+          // Si el afinado falla por cualquier motivo, se entrega igual el resultado sin ese
+          // último paso — nunca se bloquea el flujo completo por un detalle final.
+          resolve(canvas2.toDataURL('image/png',0.95).split(',')[1]);
+        }
       }catch(e){reject(e);}
     };
     img.onerror=()=>reject(new Error('No se pudo procesar la imagen para mejorarla'));
     img.src='data:'+(contentType||'image/png')+';base64,'+base64PNG;
   });
+}
+// Afinado de nitidez simple (unsharp mask con un solo paso de blur): calcula una versión
+// desenfocada del lienzo actual y la resta ponderadamente del original para realzar bordes.
+// No cambia la resolución ni el tamaño — solo el detalle percibido, útil sobre todo tras el
+// reescalado que hace remove.bg internamente.
+function aplicarNitidezSuave(ctx,w,h){
+  const original=ctx.getImageData(0,0,w,h);
+  // putImageData no respeta ctx.filter (solo drawImage lo hace) — por eso el blur se logra
+  // pintando el original en un canvas intermedio y luego DIBUJÁNDOLO (no pegándolo) en el
+  // canvas de blur, que sí tiene el filtro activo en ese momento.
+  const tmp=document.createElement('canvas');
+  tmp.width=w;tmp.height=h;
+  tmp.getContext('2d').putImageData(original,0,0);
+  const blurCanvas=document.createElement('canvas');
+  blurCanvas.width=w;blurCanvas.height=h;
+  const blurCtx=blurCanvas.getContext('2d');
+  blurCtx.filter='blur(1.2px)';
+  blurCtx.drawImage(tmp,0,0);
+  const blurred=blurCtx.getImageData(0,0,w,h);
+  const out=ctx.createImageData(w,h);
+  const AMOUNT=0.35; // intensidad del afinado — sutil, no agresivo (evita halos visibles)
+  for(let i=0;i<original.data.length;i+=4){
+    for(let c=0;c<3;c++){
+      const orig=original.data[i+c],blur=blurred.data[i+c];
+      out.data[i+c]=Math.max(0,Math.min(255,orig+(orig-blur)*AMOUNT));
+    }
+    out.data[i+3]=original.data[i+3];
+  }
+  ctx.putImageData(out,0,0);
+  return ctx.canvas.toDataURL('image/png',0.95);
 }
 // Redimensiona/comprime una foto local antes de subirla — funciona bien acá porque es un
 // archivo del propio celular (sin el bloqueo CORS que sí afecta a las imágenes de la web).
