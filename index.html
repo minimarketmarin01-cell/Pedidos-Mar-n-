@@ -1688,7 +1688,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <button id="mas-q-crear"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><br>Crear producto</button>
         <button id="mas-q-proveedores"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg><br>Proveedores</button>
         <button id="mas-q-clasificar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 5V3M12 21v-2M5 12H3M21 12h-2M6.6 6.6 5.2 5.2M18.8 18.8l-1.4-1.4M6.6 17.4l-1.4 1.4M18.8 5.2l-1.4 1.4"/></svg><br>Clasificar catálogo</button>
-        <button id="mas-q-revision"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><br>Revisión de productos</button>
+        <button id="mas-q-editar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><br>Editar productos</button>
         <button id="mas-q-categorias"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg><br>Mapeo de categorías</button>
         <button id="mas-q-recargar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="20" x2="5" y2="11"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="19" y1="20" x2="19" y2="14"/></svg><br>Recargar historial</button>
         <button id="mas-q-factura"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="10" y2="12"/><line x1="13" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="10" y2="16"/><line x1="13" y1="16" x2="16" y2="16"/></svg><br>Calculadora de precios</button>
@@ -2065,25 +2065,25 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
   </div>
 </div>
 
-<div class="mm-ov hidden" id="rv-ov">
+<div class="mm-ov hidden" id="ed-ov">
   <div class="mm-card">
-    <div class="mm-head"><h3>🔍 Revisión de productos</h3></div>
-    <div class="mm-body" style="padding-bottom:0">
-      <input id="rv-buscar" placeholder="Buscar por nombre…" autocomplete="off" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;margin-bottom:8px">
-      <div style="display:flex;gap:6px;margin-bottom:10px">
-        <select id="rv-filtro-cat" style="flex:1;min-width:0;padding:9px 6px;border:1.5px solid var(--line);border-radius:8px;font-size:11.5px;background:#fff"><option value="">Categoría</option></select>
-        <select id="rv-filtro-prov" style="flex:1;min-width:0;padding:9px 6px;border:1.5px solid var(--line);border-radius:8px;font-size:11.5px;background:#fff"><option value="">Proveedor</option></select>
-        <select id="rv-filtro-sector" style="flex:1;min-width:0;padding:9px 6px;border:1.5px solid var(--line);border-radius:8px;font-size:11.5px;background:#fff"><option value="">Sector</option></select>
+    <div class="mm-head"><h3>✏️ Editar productos</h3></div>
+    <div class="mm-topbar"><button class="loadbtn" id="ed-cerrar" style="width:100%">Cerrar</button></div>
+    <div class="mm-body">
+      <div class="mm-field" style="margin-bottom:8px">
+        <label>Producto</label>
+        <div class="mm-search">
+          <input id="ed-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off">
+          <button class="mm-mic" id="ed-mic" type="button" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
+          <button class="mm-scan cam-btn" id="ed-scan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
+        </div>
       </div>
-      <div id="rv-contador" style="font-size:11.5px;color:var(--muted);margin-bottom:8px"></div>
-    </div>
-    <div class="mm-body" style="padding-top:0;max-height:56vh;overflow-y:auto" id="rv-lista"><div class="vc-empty">Cargando…</div></div>
-    <div class="mm-body" style="padding-top:0">
-      <button class="loadbtn hidden" id="rv-cargar-mas" style="width:100%;margin-bottom:8px"></button>
-      <button class="loadbtn" id="rv-cerrar" style="width:100%">Cerrar</button>
+      <div id="ed-results"></div>
+      <div id="ed-hint" class="cat" style="margin-top:6px">Busca un producto o escanea su código — se abrirá su ficha completa lista para editar.</div>
     </div>
   </div>
 </div>
+
 
 <div class="mm-ov hidden" id="mc-ov">
   <div class="mm-card" style="display:flex;flex-direction:column;max-height:88vh">
@@ -5046,233 +5046,67 @@ document.getElementById('cc-resumen-pendientes').addEventListener('click',ev=>{
   fpAbrir(row.dataset.ccSku);
 });
 
-// ===================== REVISIÓN DE PRODUCTOS (proveedor/sector faltante) =====================
-let _rvProductos=[],_rvFiltrados=[],_rvMostrados=0;
-const RV_TAM_PAGINA=60;
-document.getElementById('mas-q-revision').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');rvAbrir();};
-document.getElementById('rv-cerrar').onclick=()=>cerrarModal('rv-ov');
-document.getElementById('rv-buscar').addEventListener('input',ev=>{rvFiltrar(ev.target.value);});
-document.getElementById('rv-cargar-mas').onclick=()=>{_rvMostrados+=RV_TAM_PAGINA;rvRender();};
-function rvAbrir(){
-  document.getElementById('rv-buscar').value='';
-  document.getElementById('rv-filtro-cat').value='';
-  document.getElementById('rv-filtro-prov').value='';
-  document.getElementById('rv-filtro-sector').value='';
-  abrirModal('rv-ov');
-  rvCargar();
+// ===================== EDITAR PRODUCTOS =====================
+// Reemplaza al antiguo módulo "Revisión de productos" (proveedor/sector faltante). En vez de
+// una lista con edición inline limitada a esos dos campos, este módulo es solo un buscador:
+// al elegir o escanear un producto se abre su Ficha completa (fp-ov / fpAbrir), que YA trae
+// todos los campos editables, además de Guardar cambios (fp-e-guardar), Eliminar
+// (fp-eliminar-btn) y Cerrar (fp-cerrar) — cero lógica de edición duplicada, se reutiliza
+// tal cual la Ficha del producto que ya usan Clasificar catálogo, Vencimientos, etc.
+document.getElementById('mas-q-editar').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');edAbrir();};
+document.getElementById('ed-cerrar').onclick=()=>cerrarModal('ed-ov');
+function edAbrir(){
+  document.getElementById('ed-search').value='';
+  document.getElementById('ed-results').innerHTML='';
+  document.getElementById('ed-hint').classList.remove('hidden');
+  abrirModal('ed-ov');
+  setTimeout(()=>document.getElementById('ed-search').focus(),150);
 }
-async function rvCargar(){
-  document.getElementById('rv-lista').innerHTML='<div class="vc-empty">Cargando…</div>';
-  document.getElementById('rv-contador').textContent='';
-  try{
-    await psCargarListas();
-    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=productos_por_revisar');
-    const j=await res.json();
-    if(!j||!j.ok)throw new Error((j&&j.error)||'respuesta inválida');
-    _rvProductos=j.productos||[];
-    rvPoblarFiltros(_rvProductos);
-    rvFiltrar(document.getElementById('rv-buscar').value);
-  }catch(e){
-    document.getElementById('rv-lista').innerHTML='<div class="vc-empty">❌ Error al cargar: '+e.message+'</div>';
-  }
+function edRenderResultados(list){
+  const box=document.getElementById('ed-results');
+  const hint=document.getElementById('ed-hint');
+  if(!list.length){box.innerHTML='';hint.classList.remove('hidden');return;}
+  hint.classList.add('hidden');
+  box.innerHTML=list.map(it=>`<div class="fp-row" data-ed-ref="${it.ref}" style="cursor:pointer">
+    <span class="k">${it.nombre}</span>
+    <span class="v" style="font-size:11px;color:var(--muted);text-align:right;font-weight:600">${it.prov||''}</span>
+  </div>`).join('');
 }
-// Los tres filtros se arman solo con lo que realmente aparece en la lista de pendientes (no con
-// el catálogo completo de proveedores/sectores) — así no se llenan de opciones irrelevantes.
-function rvPoblarFiltros(items){
-  const selCat=document.getElementById('rv-filtro-cat');
-  const catActual=selCat.value;
-  const cats=[...new Set(items.map(p=>p.categoria||'SIN CATEGORÍA'))].sort((a,b)=>a.localeCompare(b,'es'));
-  selCat.innerHTML='<option value="">Todas las categorías</option>'+cats.map(c=>`<option value="${c.replace(/"/g,'&quot;')}">${c}</option>`).join('');
-  if(cats.includes(catActual))selCat.value=catActual;
-
-  const selProv=document.getElementById('rv-filtro-prov');
-  const provActual=selProv.value;
-  const provIds=new Set(items.map(p=>p.proveedor_id).filter(Boolean));
-  const provOpts=_psProveedores.filter(pr=>provIds.has(pr.id)).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
-  const haySinProv=items.some(p=>!p.proveedor_id);
-  selProv.innerHTML='<option value="">Todos los proveedores</option>'+(haySinProv?'<option value="__sin__">Sin proveedor</option>':'')+provOpts.map(pr=>`<option value="${pr.id}">${pr.nombre}</option>`).join('');
-  selProv.value=provActual;
-
-  const selSector=document.getElementById('rv-filtro-sector');
-  const sectorActual=selSector.value;
-  const sectores=[...new Set(items.map(p=>p.sector).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
-  const haySinSector=items.some(p=>!p.sector);
-  selSector.innerHTML='<option value="">Todos los sectores</option>'+(haySinSector?'<option value="__sin__">Sin sector</option>':'')+sectores.map(s=>`<option value="${s}">${s}</option>`).join('');
-  selSector.value=sectorActual;
-}
-document.getElementById('rv-filtro-cat').addEventListener('change',()=>rvFiltrar(document.getElementById('rv-buscar').value));
-document.getElementById('rv-filtro-prov').addEventListener('change',()=>rvFiltrar(document.getElementById('rv-buscar').value));
-document.getElementById('rv-filtro-sector').addEventListener('change',()=>rvFiltrar(document.getElementById('rv-buscar').value));
-function rvFiltrar(texto){
-  const q=normTxt(texto||'');
-  const fc=document.getElementById('rv-filtro-cat').value;
-  const fp=document.getElementById('rv-filtro-prov').value;
-  const fs=document.getElementById('rv-filtro-sector').value;
-  _rvFiltrados=_rvProductos.filter(p=>{
-    if(q&&normTxt(p.nombre).indexOf(q)===-1)return false;
-    if(fc&&(p.categoria||'SIN CATEGORÍA')!==fc)return false;
-    if(fp){
-      if(fp==='__sin__'){if(p.proveedor_id)return false;}
-      else if(String(p.proveedor_id||'')!==fp)return false;
-    }
-    if(fs){
-      if(fs==='__sin__'){if(p.sector)return false;}
-      else if((p.sector||'')!==fs)return false;
-    }
-    return true;
-  });
-  _rvMostrados=RV_TAM_PAGINA;
-  rvRender();
-}
-function rvEstado(p){
-  if(p.pendiente_motivo)return{texto:'Revisar',color:'var(--wa-d)',bg:'var(--wa-bg,#fdf3e2)'};
-  if(!p.proveedor_id&&!p.sector)return{texto:'Sin clasificar',color:'var(--muted)',bg:'var(--paper)'};
-  if(!p.proveedor_id)return{texto:'Falta proveedor',color:'var(--azul)',bg:'var(--azul-bg)'};
-  return{texto:'Falta sector',color:'var(--azul)',bg:'var(--azul-bg)'};
-}
-function rvRender(){
-  const cont=document.getElementById('rv-lista');
-  const total=_rvFiltrados.length;
-  document.getElementById('rv-contador').textContent=total+' producto'+(total===1?'':'s')+' por revisar'+(total!==_rvProductos.length?' (de '+_rvProductos.length+' en total)':'');
-  if(!total){cont.innerHTML='<div class="vc-empty">🎉 No hay productos pendientes de proveedor/sector.</div>';document.getElementById('rv-cargar-mas').classList.add('hidden');return;}
-  const visibles=_rvFiltrados.slice(0,_rvMostrados);
-  cont.innerHTML=visibles.map(p=>{
-    const e=rvEstado(p);
-    const id='rv'+String(p.sku).replace(/[^a-zA-Z0-9]/g,'');
-    const provNombre=p.proveedor_nombre||'';
-    return `<div class="fp-row" style="flex-direction:column;align-items:stretch;gap:8px;padding:12px 0" data-rv-sku="${p.sku}" data-rv-id="${id}">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-        <div>
-          <div style="font-weight:700;font-size:13.5px">${p.nombre}</div>
-          <div style="font-size:11px;color:var(--muted)">${p.categoria||'sin categoría'}</div>
-        </div>
-        <span style="font-size:10.5px;font-weight:700;color:${e.color};background:${e.bg};padding:3px 8px;border-radius:20px;white-space:nowrap" class="rv-estado-badge">${e.texto}</span>
-      </div>
-      <div class="fc-ps-grid" style="margin-bottom:0">
-        <div class="fc-ps-field">
-          <label>Proveedor</label>
-          <div class="fc-ps-line">
-            <div class="cat-combo" id="${id}prov-combo">
-              <input id="${id}prov-input" class="cat-combo-input" placeholder="Buscar proveedor…" autocomplete="off" value="${provNombre.replace(/"/g,'&quot;')}" role="combobox" aria-expanded="false" aria-haspopup="listbox">
-              <select id="${id}prov" style="display:none"><option value="">Sin proveedor</option></select>
-              <div class="cat-combo-menu hidden" id="${id}prov-menu" role="listbox"></div>
-            </div>
-            <button class="loadbtn" id="${id}prov-limpiar" type="button" title="Quitar proveedor">✕</button>
-          </div>
-          <div class="fc-ps-nuevabox hidden" id="${id}prov-nuevabox">
-            <input id="${id}prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off">
-            <button class="btn-ok loadbtn" id="${id}prov-crear" type="button">Crear</button>
-          </div>
-        </div>
-        <div class="fc-ps-field">
-          <label>Sector</label>
-          <div class="fc-ps-line">
-            <div class="cat-combo" id="${id}sect-combo">
-              <input id="${id}sect-input" class="cat-combo-input" placeholder="Buscar sector…" autocomplete="off" value="${(p.sector||'').replace(/"/g,'&quot;')}" role="combobox" aria-expanded="false" aria-haspopup="listbox">
-              <select id="${id}sect" style="display:none"><option value="">Sin sector</option></select>
-              <div class="cat-combo-menu hidden" id="${id}sect-menu" role="listbox"></div>
-            </div>
-            <button class="loadbtn" id="${id}sect-limpiar" type="button" title="Quitar sector">✕</button>
-          </div>
-          <div class="fc-ps-nuevabox hidden" id="${id}sect-nuevabox">
-            <input id="${id}sect-nuevonom" placeholder="Nombre del sector nuevo" autocomplete="off">
-            <button class="btn-ok loadbtn" id="${id}sect-crear" type="button">Crear</button>
-          </div>
-        </div>
-      </div>
-      <button class="btn-ok loadbtn rv-guardar" type="button" style="width:100%;padding:8px">Guardar</button>
-    </div>`;
-  }).join('');
-  const masBtn=document.getElementById('rv-cargar-mas');
-  if(_rvMostrados<total){masBtn.classList.remove('hidden');masBtn.textContent='Cargar más ('+(total-_rvMostrados)+' restantes)';}
-  else masBtn.classList.add('hidden');
-  // Buscador + "➕ Nuevo" en cada tarjeta: mismo componente que usan Crear producto y la
-  // Calculadora de precios (psInitCombo/psLlenarSelects) — cero lógica duplicada. Se
-  // preselecciona lo que el producto ya tenía, y el botón ✕ deja el campo en "Sin
-  // proveedor/sector" siempre disponible sin depender de borrar el texto a mano.
-  visibles.forEach(p=>{
-    const id='rv'+String(p.sku).replace(/[^a-zA-Z0-9]/g,'');
-    psLlenarSelects(id+'prov',id+'sect',p.proveedor_id||null,p.sector||null);
-    psInitCombo(id+'prov',id+'prov-combo',id+'prov-input',id+'prov-menu',id+'prov','proveedor',texto=>{
-      const box=document.getElementById(id+'prov-nuevabox');box.classList.remove('hidden');
-      const inp=document.getElementById(id+'prov-nuevonom');inp.value=texto;inp.focus();
-    });
-    psInitCombo(id+'sect',id+'sect-combo',id+'sect-input',id+'sect-menu',id+'sect','sector',texto=>{
-      const box=document.getElementById(id+'sect-nuevabox');box.classList.remove('hidden');
-      const inp=document.getElementById(id+'sect-nuevonom');inp.value=texto;inp.focus();
-    });
-    psWireNuevoProveedor(id+'prov-nueva',id+'prov-nuevabox',id+'prov-nuevonom',id+'prov-crear',id+'prov',id+'sect');
-    psWireNuevoSector(id+'sect-nueva',id+'sect-nuevabox',id+'sect-nuevonom',id+'sect-crear',id+'prov',id+'sect');
-    // Al crear proveedor/sector nuevo DESDE esta tarjeta, además de asignarlo (que ya hace
-    // psWireNuevoProveedor/psWireNuevoSector vía psLlenarSelects), se guarda el producto de
-    // inmediato — así "crear" y "guardar" quedan en un solo toque en vez de dos.
-    const crearProvBtn=document.getElementById(id+'prov-crear');
-    if(crearProvBtn)crearProvBtn.addEventListener('click',()=>setTimeout(()=>rvGuardarFila(document.querySelector(`[data-rv-id="${id}"]`)),50));
-    const crearSectBtn=document.getElementById(id+'sect-crear');
-    if(crearSectBtn)crearSectBtn.addEventListener('click',()=>setTimeout(()=>rvGuardarFila(document.querySelector(`[data-rv-id="${id}"]`)),50));
-    const limpiarProv=document.getElementById(id+'prov-limpiar');
-    if(limpiarProv)limpiarProv.onclick=()=>{
-      document.getElementById(id+'prov').value='';
-      document.getElementById(id+'prov-input').value='';
-    };
-    const limpiarSect=document.getElementById(id+'sect-limpiar');
-    if(limpiarSect)limpiarSect.onclick=()=>{
-      document.getElementById(id+'sect').value='';
-      document.getElementById(id+'sect-input').value='';
-    };
-  });
-}
-// Guarda proveedor/sector de una fila de Revisión de productos. Se usa desde el botón
-// "Guardar" y también automáticamente al crear un proveedor/sector nuevo desde la misma
-// tarjeta — así "crear" y "asignar al producto" quedan en un solo paso, sin que el usuario
-// tenga que tocar Guardar por separado después de crear.
-async function rvGuardarFila(fila){
-  if(!fila)return;
-  const id=fila.dataset.rvId;
-  // Si el usuario crea proveedor y sector casi a la vez en la misma tarjeta, evita disparar
-  // dos guardados pisados — el segundo intento en el mismo ciclo se descarta silenciosamente,
-  // ya el primero guarda con los valores más recientes de ambos campos.
-  if(fila.dataset.rvGuardando==='1')return;
-  fila.dataset.rvGuardando='1';
-  const sku=fila.dataset.rvSku;
-  const btn=fila.querySelector('.rv-guardar');
-  const pOriginal=_rvProductos.find(x=>x.sku===sku);
-  const provId=document.getElementById(id+'prov').value||null;
-  const sectorVal=document.getElementById(id+'sect').value||null;
-  if(btn){btn.disabled=true;}
-  const txtOriginal=btn?btn.textContent:'';
-  if(btn)btn.textContent='Guardando…';
-  try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_producto',payload:{sku,proveedor_id:provId,sector:sectorVal,responsable:''}})});
-    const j=await res.json();
-    if(!j||!j.ok)throw new Error((j&&j.error)||'No se pudo guardar');
-    if(sectorVal&&pOriginal)psGuardarAprendizaje(pOriginal.nombre.toUpperCase(),provId,sectorVal);
-    const idx=_rvProductos.findIndex(p=>p.sku===sku);
-    if(provId&&sectorVal){
-      if(idx>-1)_rvProductos.splice(idx,1);
-      showToast('✓ Producto clasificado y removido de la lista');
-      rvFiltrar(document.getElementById('rv-buscar').value);
-    }else{
-      if(idx>-1){_rvProductos[idx].proveedor_id=provId?Number(provId):null;_rvProductos[idx].sector=sectorVal;_rvProductos[idx].pendiente_motivo=null;
-        const provObj=_psProveedores.find(pr=>String(pr.id)===String(provId));_rvProductos[idx].proveedor_nombre=provObj?provObj.nombre:null;}
-      showToast('✓ Guardado');
-      rvFiltrar(document.getElementById('rv-buscar').value);
-    }
-  }catch(e){
-    showToast('❌ '+e.message);
-    if(btn){btn.disabled=false;btn.textContent=txtOriginal;}
-  }
-  fila.dataset.rvGuardando='0';
-}
-document.getElementById('rv-lista').addEventListener('click',async ev=>{
-  const crearProvBtn=ev.target.closest('[id$="prov-crear"]');
-  const crearSectBtn=ev.target.closest('[id$="sect-crear"]');
-  if(crearProvBtn||crearSectBtn)return; // ya manejado por psWireNuevoProveedor/psWireNuevoSector + autoguardado
-  const btn=ev.target.closest('.rv-guardar');
-  if(!btn)return;
-  const fila=ev.target.closest('[data-rv-sku]');
-  await rvGuardarFila(fila);
+document.getElementById('ed-search').addEventListener('input',ev=>{
+  const q=ev.target.value;
+  edRenderResultados(q.trim()?mmFindItems(q):[]);
 });
+document.getElementById('ed-results').addEventListener('click',ev=>{
+  const row=ev.target.closest('[data-ed-ref]');
+  if(!row)return;
+  cerrarModal('ed-ov');
+  fpAbrir(row.dataset.edRef);
+});
+document.getElementById('ed-mic').onclick=()=>voiceSearch(document.getElementById('ed-mic'),text=>{
+  document.getElementById('ed-search').value=text;
+  document.getElementById('ed-search').dispatchEvent(new Event('input',{bubbles:true}));
+});
+document.getElementById('ed-scan').onclick=()=>{
+  const reopen=()=>{document.getElementById('ed-ov').classList.remove('hidden');};
+  cerrarModal('ed-ov');
+  openScanner(code=>{
+    const list=mmFindItems(code);
+    if(list.length===1){
+      // Un solo resultado: coincidencia exacta de código de barras — abre la ficha de inmediato,
+      // tal como se pide ("al escanear un producto, abrir inmediatamente su ficha completa").
+      fpAbrir(list[0].ref);
+    }else if(list.length===0){
+      reopen();
+      document.getElementById('ed-search').value=code;
+      edRenderResultados([]);
+      showToast('No se encontró ningún producto con ese código');
+    }else{
+      reopen();
+      document.getElementById('ed-search').value=code;
+      edRenderResultados(list);
+    }
+  },reopen);
+};
 
 // ===================== MAPEO DE CATEGORÍAS (rediseño: header sticky global) =====================
 // Antes: cada categoría repetía su propio bloque completo (proveedor+sector+botones+lista),
