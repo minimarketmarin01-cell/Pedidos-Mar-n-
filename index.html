@@ -3193,7 +3193,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-06.2';
+const APP_VERSION='2026-08-06.3';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -5711,21 +5711,37 @@ document.getElementById('mcg-sect-renombrar').onclick=()=>{
 // ===================== CREAR PRODUCTO =====================
 let _cpCats=[], _cpImpuestos=[], _cpVenta='u', _cpCargado=false;
 let _cpDesdeRecepcion=false, _rcPendiente=null; // recuerdan volver a Recepción con los datos ya ingresados
-document.getElementById('mas-q-crear').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');_cpDesdeRecepcion=false;_rcPendiente=null;cpAbrir();};
+document.getElementById('mas-q-crear').onclick=()=>{
+  try{
+    const masOv=document.getElementById('mas-ov');if(masOv)masOv.classList.add('hidden');
+    _cpDesdeRecepcion=false;_rcPendiente=null;
+    cpAbrir();
+  }catch(err){console.error('[mas-q-crear] error al abrir Crear producto:',err);showToast('Ocurrió un error al abrir Crear producto. Intenta de nuevo.');}
+};
 document.getElementById('cp-cerrar').onclick=()=>{
   cerrarModal('cp-ov');
   if(_cpDesdeRecepcion){_cpDesdeRecepcion=false;abrirModal('rc-ov');rcRestaurarPendiente();}
 };
+// El modal SIEMPRE debe abrirse cuando se toca "Crear producto" — si cpReset() u otra
+// función de preparación falla por cualquier motivo (elemento inesperadamente ausente,
+// error de red al cargar catálogos, etc.), eso no debe impedir que abrirModal('cp-ov') se
+// ejecute. Antes, un error sin capturar en cualquier paso previo dejaba la llamada a
+// abrirModal() sin ejecutar, y la app quedaba "atascada" en la pantalla de fondo (Armar
+// pedido) sin ningún aviso — exactamente el bug reportado.
 function cpAbrir(){
-  cpReset();abrirModal('cp-ov');cpCargarCatalogo();
-  psCargarListas().then(()=>{
-    psLlenarSelects('cp-proveedor','cp-sector',null,null);
-    psInitCombo('cp-proveedor','cp-prov-combo','cp-proveedor-input','cp-prov-menu','cp-proveedor','proveedor',
-      texto=>{const box=document.getElementById('cp-prov-nuevabox');box.classList.remove('hidden');const inp=document.getElementById('cp-prov-nuevonom');inp.value=texto;inp.focus();});
-    psInitCombo('cp-sector','cp-sector-combo','cp-sector-input','cp-sector-menu','cp-sector','sector');
-  });
-  psWireNuevoProveedor('cp-prov-nueva','cp-prov-nuevabox','cp-prov-nuevonom','cp-prov-crear','cp-proveedor','cp-sector');
-  psWireNuevoSector('cp-sector-nueva','cp-sector-nuevabox','cp-sector-nuevonom','cp-sector-crear','cp-proveedor','cp-sector');
+  try{cpReset();}catch(e){console.error('[cpAbrir] cpReset falló:',e);}
+  abrirModal('cp-ov'); // se ejecuta siempre, pase lo que pase arriba
+  try{cpCargarCatalogo();}catch(e){console.error('[cpAbrir] cpCargarCatalogo falló:',e);}
+  try{
+    psCargarListas().then(()=>{
+      psLlenarSelects('cp-proveedor','cp-sector',null,null);
+      psInitCombo('cp-proveedor','cp-prov-combo','cp-proveedor-input','cp-prov-menu','cp-proveedor','proveedor',
+        texto=>{const box=document.getElementById('cp-prov-nuevabox');box.classList.remove('hidden');const inp=document.getElementById('cp-prov-nuevonom');inp.value=texto;inp.focus();});
+      psInitCombo('cp-sector','cp-sector-combo','cp-sector-input','cp-sector-menu','cp-sector','sector');
+    }).catch(e=>console.error('[cpAbrir] psCargarListas falló:',e));
+  }catch(e){console.error('[cpAbrir] psCargarListas falló:',e);}
+  try{psWireNuevoProveedor('cp-prov-nueva','cp-prov-nuevabox','cp-prov-nuevonom','cp-prov-crear','cp-proveedor','cp-sector');}catch(e){}
+  try{psWireNuevoSector('cp-sector-nueva','cp-sector-nuevabox','cp-sector-nuevonom','cp-sector-crear','cp-proveedor','cp-sector');}catch(e){}
   const hint=document.getElementById('cp-ps-hint');if(hint)hint.classList.add('hidden');
 }
 document.getElementById('cp-ps-sugerir').onclick=()=>{
@@ -5734,23 +5750,25 @@ document.getElementById('cp-ps-sugerir').onclick=()=>{
   psSugerir(nombre,catInput?catInput.value:'','cp-proveedor','cp-sector','cp-ps-hint');
 };
 function cpReset(){
-  ['cp-nombre','cp-precio','cp-costo','cp-barcode','cp-stock','cp-stock-min','cp-fecha-dd','cp-fecha-mm','cp-fecha-aaaa','cp-cat-nuevanom','cp-cantidad','cp-unidades-caja'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  document.getElementById('cp-fecha').value='';
-  document.getElementById('cp-track').checked=true;
-  document.getElementById('cp-iva').checked=true;
-  document.getElementById('cp-activo').checked=true;
-  document.getElementById('cp-cat-nuevabox').classList.add('hidden');
-  document.getElementById('cp-margen-obj').value='30';
+  ['cp-nombre','cp-precio','cp-costo','cp-barcode','cp-stock','cp-stock-min','cp-fecha-dd','cp-fecha-mm','cp-fecha-aaaa','cp-cat-nuevanom','cp-cantidad','cp-unidades-caja','cp-fecha'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const track=document.getElementById('cp-track');if(track)track.checked=true;
+  const iva=document.getElementById('cp-iva');if(iva)iva.checked=true;
+  const activo=document.getElementById('cp-activo');if(activo)activo.checked=true;
+  const catNuevabox=document.getElementById('cp-cat-nuevabox');if(catNuevabox)catNuevabox.classList.add('hidden');
+  const margenObj=document.getElementById('cp-margen-obj');if(margenObj)margenObj.value='30';
   _cpImagenUrl=null;_cpImagenBase64=null;_cpImagenContentType='image/jpeg';
-  document.getElementById('cp-img-elegida').classList.add('hidden');
+  const imgElegida=document.getElementById('cp-img-elegida');if(imgElegida)imgElegida.classList.add('hidden');
   _cpFotoTomadaB64=null;_cpFondoResultadoB64=null;
-  document.getElementById('cp-camara-preview-box').classList.add('hidden');
-  document.getElementById('cp-fondo-resultado-box').classList.add('hidden');
-  document.getElementById('cp-fondo-procesando').classList.add('hidden');
-  cpSetVenta('u');cpToggleStock();cpValidar();
+  const camaraPreview=document.getElementById('cp-camara-preview-box');if(camaraPreview)camaraPreview.classList.add('hidden');
+  const fondoResultado=document.getElementById('cp-fondo-resultado-box');if(fondoResultado)fondoResultado.classList.add('hidden');
+  const fondoProcesando=document.getElementById('cp-fondo-procesando');if(fondoProcesando)fondoProcesando.classList.add('hidden');
+  try{cpSetVenta('u');}catch(e){}
+  try{cpToggleStock();}catch(e){}
+  try{cpValidar();}catch(e){}
   cpState.ivaModo='con';cpState.modo='unidad';cpState.precioTocado=false;
-  cpSetIva('con');cpSetModoCantidad('unidad');
-  cpRenderResumen();
+  try{cpSetIva('con');}catch(e){}
+  try{cpSetModoCantidad('unidad');}catch(e){}
+  try{cpRenderResumen();}catch(e){}
 }
 // ---- Imagen del producto: galería o precarga automática por código de barras ----
 // La búsqueda web (Searlo) se quitó — solo queda galería y el catálogo gratuito por
@@ -6105,6 +6123,7 @@ function cpRenderResumen(){
 }
 async function cpCargarCatalogo(){
   const sel=document.getElementById('cp-cat');
+  if(!sel)return; // el modal no está montado en el DOM (no debería pasar, pero no debe romper el flujo)
   if(_cpCargado){cpLlenarSelect();return;}
   sel.innerHTML='<option value="">Cargando…</option>';
   try{
