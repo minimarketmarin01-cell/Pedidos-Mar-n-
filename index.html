@@ -1991,14 +1991,39 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
       <div class="mm-field">
         <label>Imagen (opcional)</label>
         <div style="display:flex;gap:8px">
+          <button type="button" class="loadbtn" id="cp-img-camara-btn" style="flex:1">📷 Tomar foto</button>
           <button type="button" class="loadbtn" id="cp-img-galeria-btn" style="flex:1">📎 Adjuntar de galería</button>
         </div>
         <div style="font-size:11px;color:var(--muted);margin-top:4px">Si el código de barras tiene imagen en el catálogo (OpenFoodFacts/UPCitemdb), se precarga sola abajo.</div>
         <input type="file" accept="image/*" id="cp-img-galeria" style="display:none">
+        <input type="file" accept="image/*" capture="environment" id="cp-img-camara" style="display:none">
         <div id="cp-img-elegida" class="hidden" style="margin-top:9px;display:flex;align-items:center;gap:10px;padding:8px 10px;border:1.5px solid var(--wa);border-radius:10px;background:#F1FBF5">
           <img id="cp-img-preview" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0">
           <span style="font-size:12px;color:var(--wa-d);font-weight:700;flex:1">✓ Imagen lista — se sube al crear el producto</span>
           <button type="button" id="cp-img-quitar" style="background:none;border:none;color:var(--muted);font-size:11px;text-decoration:underline;cursor:pointer">Quitar</button>
+        </div>
+        <!-- Foto recién tomada: se confirma antes de mandarla a quitar el fondo (no se procesa
+             sola, para no gastar créditos de remove.bg con fotos borrosas o repetidas). -->
+        <div id="cp-camara-preview-box" class="hidden" style="margin-top:9px;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper)">
+          <img id="cp-camara-preview-img" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#fff;display:block;margin-bottom:8px">
+          <div style="display:flex;gap:8px">
+            <button type="button" id="cp-camara-confirmar" style="flex:1;padding:9px;border-radius:9px;border:none;background:var(--wa);color:#fff;font-weight:700;font-size:12.5px;cursor:pointer">✓ Confirmar y quitar fondo</button>
+            <button type="button" id="cp-camara-repetir" style="padding:9px 14px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12.5px;cursor:pointer">↺ Repetir</button>
+          </div>
+        </div>
+        <div id="cp-fondo-procesando" class="hidden" style="margin-top:9px;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);display:flex;align-items:center;gap:8px">
+          <span class="sync-ic spin" style="display:inline-flex">⟳</span>
+          <span style="font-size:12.5px;color:var(--muted)">Quitando el fondo con remove.bg…</span>
+        </div>
+        <!-- Resultado con fondo blanco: al tocar "Usar esta imagen" queda como la imagen del
+             producto (en _cpImagenBase64) — se sube recién al crear el producto, igual que
+             cualquier otra imagen elegida aquí; no se sube por su cuenta a Loyverse. -->
+        <div id="cp-fondo-resultado-box" class="hidden" style="margin-top:9px;padding:10px;border:1.5px solid var(--wa);border-radius:10px;background:#F1FBF5">
+          <img id="cp-fondo-resultado-img" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#fff;display:block;margin-bottom:8px;border:1px solid var(--line)">
+          <div style="display:flex;gap:8px">
+            <button type="button" id="cp-fondo-usar" style="flex:1;padding:9px;border-radius:9px;border:none;background:var(--wa);color:#fff;font-weight:700;font-size:12.5px;cursor:pointer">✓ Usar esta imagen</button>
+            <button type="button" id="cp-fondo-descartar" style="padding:9px 14px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12.5px;cursor:pointer">Descartar</button>
+          </div>
         </div>
       </div>
       <div style="font-size:11.5px;color:var(--muted);margin:2px 0 10px">El código interno (SKU) se genera <b>automáticamente</b> y es único — no se edita a mano.</div>
@@ -5499,6 +5524,10 @@ function cpReset(){
   document.getElementById('cp-margen-obj').value='30';
   _cpImagenUrl=null;_cpImagenBase64=null;
   document.getElementById('cp-img-elegida').classList.add('hidden');
+  _cpFotoTomadaB64=null;_cpFondoResultadoB64=null;
+  document.getElementById('cp-camara-preview-box').classList.add('hidden');
+  document.getElementById('cp-fondo-resultado-box').classList.add('hidden');
+  document.getElementById('cp-fondo-procesando').classList.add('hidden');
   cpSetVenta('u');cpToggleStock();cpValidar();
   cpState.ivaModo='con';cpState.modo='unidad';cpState.precioTocado=false;
   cpSetIva('con');cpSetModoCantidad('unidad');
@@ -5550,6 +5579,65 @@ document.getElementById('cp-img-quitar').onclick=()=>{
   document.getElementById('cp-img-elegida').classList.add('hidden');
   document.querySelectorAll('.cp-img-cand').forEach(x=>x.classList.remove('sel'));
 };
+
+// ---- Tomar foto → confirmar → quitar fondo (remove.bg, fondo blanco) → usar ----
+// Igual patrón que en la Ficha del producto, con la diferencia de que aquí el resultado NO
+// se sube solo a Loyverse (el producto todavía no existe) — queda guardado en _cpImagenBase64
+// y se sube junto con el resto de los datos cuando se toca "Crear producto".
+var _cpFotoTomadaB64=null,_cpFondoResultadoB64=null;
+document.getElementById('cp-img-camara-btn').onclick=()=>document.getElementById('cp-img-camara').click();
+document.getElementById('cp-img-camara').addEventListener('change',async(ev)=>{
+  const file=ev.target.files&&ev.target.files[0];
+  if(!file)return;
+  ev.target.value='';
+  try{
+    _cpFotoTomadaB64=await resizeImageToBase64(file);
+    document.getElementById('cp-camara-preview-img').src='data:image/jpeg;base64,'+_cpFotoTomadaB64;
+    document.getElementById('cp-camara-preview-box').classList.remove('hidden');
+    document.getElementById('cp-fondo-resultado-box').classList.add('hidden');
+    document.getElementById('cp-fondo-procesando').classList.add('hidden');
+  }catch(e){showToast('⚠️ No se pudo procesar esa foto');}
+});
+document.getElementById('cp-camara-repetir').onclick=()=>{
+  _cpFotoTomadaB64=null;
+  document.getElementById('cp-camara-preview-box').classList.add('hidden');
+  document.getElementById('cp-img-camara').click();
+};
+document.getElementById('cp-camara-confirmar').onclick=async()=>{
+  if(!_cpFotoTomadaB64)return;
+  document.getElementById('cp-camara-preview-box').classList.add('hidden');
+  document.getElementById('cp-fondo-procesando').classList.remove('hidden');
+  try{
+    const r=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'quitar_fondo_producto',payload:{image_base64:_cpFotoTomadaB64}})});
+    const j=await r.json();
+    document.getElementById('cp-fondo-procesando').classList.add('hidden');
+    if(j&&j.ok&&j.image_base64){
+      _cpFondoResultadoB64=j.image_base64;
+      document.getElementById('cp-fondo-resultado-img').src='data:'+(j.content_type||'image/png')+';base64,'+j.image_base64;
+      document.getElementById('cp-fondo-resultado-box').classList.remove('hidden');
+    }else{
+      showToast('⚠️ '+((j&&j.error)||'No se pudo quitar el fondo'));
+      document.getElementById('cp-camara-preview-box').classList.remove('hidden');
+    }
+  }catch(e){
+    document.getElementById('cp-fondo-procesando').classList.add('hidden');
+    showToast('⚠️ Error de conexión al quitar el fondo');
+    document.getElementById('cp-camara-preview-box').classList.remove('hidden');
+  }
+};
+document.getElementById('cp-fondo-descartar').onclick=()=>{
+  _cpFondoResultadoB64=null;_cpFotoTomadaB64=null;
+  document.getElementById('cp-fondo-resultado-box').classList.add('hidden');
+};
+document.getElementById('cp-fondo-usar').onclick=()=>{
+  if(!_cpFondoResultadoB64)return;
+  _cpImagenBase64=_cpFondoResultadoB64;_cpImagenUrl=null;
+  document.getElementById('cp-img-preview').src='data:image/png;base64,'+_cpFondoResultadoB64;
+  document.getElementById('cp-img-elegida').classList.remove('hidden');
+  document.getElementById('cp-fondo-resultado-box').classList.add('hidden');
+  _cpFondoResultadoB64=null;_cpFotoTomadaB64=null;
+};
+
 function cpSetVenta(v){
   _cpVenta=v;
   document.querySelectorAll('#cp-venta button').forEach(b=>b.classList.toggle('active',b.dataset.v===v));
