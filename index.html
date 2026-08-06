@@ -1514,6 +1514,10 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <button id="rc-activar-inv" class="hidden" type="button" style="width:100%;margin:8px 0 0;padding:8px 10px;border-radius:9px;border:1.5px solid var(--azul);background:var(--azul-bg);color:var(--azul);font-weight:700;font-size:12.5px;cursor:pointer">🔓 Activar inventario</button>
         </div>
 
+        <!-- Todo lo que sigue solo tiene sentido cuando ya se eligió un producto (por
+             búsqueda o escaneo) — permanece oculto hasta entonces, así el módulo abre
+             mostrando SOLO el buscador, sin el resto del formulario compitiendo por espacio. -->
+        <div id="rc-detalle" class="hidden">
         <div class="mm-field" id="rc-cantidad-field" style="margin-bottom:8px">
           <label>Cantidad recibida</label>
           <div style="display:flex;gap:6px;margin-bottom:6px">
@@ -1596,12 +1600,14 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
             <input type="date" id="rc-fecha" class="fecha-date-hidden" tabindex="-1">
           </div>
         </div>
+        </div>
 
         </div>
         <!-- Guardar/Cancelar fuera de .mm-body (que scrollea) — quedan siempre visibles
-             abajo, sin depender de hasta dónde haya bajado el usuario. -->
+             abajo, sin depender de hasta dónde haya bajado el usuario. El botón Guardar
+             solo aparece cuando ya hay un producto elegido (ver rc-detalle arriba). -->
         <div style="padding:8px 16px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--line);flex:none">
-          <button class="mm-save" id="rc-guardar" disabled style="padding:11px">Guardar y sumar stock</button>
+          <button class="mm-save hidden" id="rc-guardar" disabled style="padding:11px">Guardar y sumar stock</button>
           <button class="loadbtn" id="rc-cancelar" style="width:100%;margin-top:6px;padding:9px">Cancelar</button>
         </div>
       </div>
@@ -3187,7 +3193,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-06.1';
+const APP_VERSION='2026-08-06.2';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -8997,6 +9003,8 @@ function rcPick(ref){
   document.getElementById('rc-results').innerHTML='';
   rcShowPicked(it);
   rcActualizarBotonInventario(it);
+  document.getElementById('rc-detalle').classList.remove('hidden');
+  document.getElementById('rc-guardar').classList.remove('hidden');
   rcValidar();
   rcGuardarBorrador();
 }
@@ -9056,6 +9064,8 @@ function rcReset(){
   document.getElementById('rc-search').value='';
   document.getElementById('rc-results').innerHTML='';
   document.getElementById('rc-picked').classList.remove('on');
+  document.getElementById('rc-detalle').classList.add('hidden');
+  document.getElementById('rc-guardar').classList.add('hidden');
   document.getElementById('rc-costo-actual').textContent='Costo actual: —';
   document.getElementById('rc-precio-actual').textContent='Precio actual: —';
   document.getElementById('rc-margen-actual').textContent='Margen actual: —';
