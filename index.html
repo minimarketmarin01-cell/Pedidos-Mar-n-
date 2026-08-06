@@ -4372,26 +4372,123 @@ function fpModoEdicion(f){
     openScanner(code=>{reopen();document.getElementById('fp-e-barcode').value=code;},reopen);
   };
 }
+// Estado del editor de precio de la Ficha — mismo rol que rcState/cpState, pero sin "modo
+// caja/unidad" (acá no se está recibiendo mercadería, solo corrigiendo el precio/costo ya
+// vigentes de un producto que ya existe), así que solo necesita costo, IVA y margen.
+let fpPState={ivaModo:'con',precioTocado:false,precioPreview:null};
 function fpModoEdicionPrecio(f){
   const p=f.producto;
+  fpPState={ivaModo:'con',precioTocado:false,precioPreview:null};
   document.getElementById('fp-pane-precios').innerHTML=`
-    <div class="mm-field"><label>Precio de venta</label>
-      <input id="fp-p-precio" type="number" inputmode="decimal" value="${p.precio!=null?p.precio:''}" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+    <div class="mm-field" style="margin-bottom:8px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <label style="margin:0">Costo <span style="font-weight:400;color:var(--muted);text-transform:none">(el que se guarda en Loyverse)</span></label>
+        <div style="display:flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;color:var(--muted)" role="group" aria-label="¿El costo incluye IVA?">
+          <button type="button" id="fp-p-iva-con" style="padding:4px 9px;border-radius:20px 0 0 20px;border:1.5px solid var(--wa-d);border-right:none;background:var(--wa-bg,var(--verde-bg));color:var(--wa-d);cursor:pointer">Con IVA</button>
+          <button type="button" id="fp-p-iva-sin" style="padding:4px 9px;border-radius:0 20px 20px 0;border:1.5px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;margin-left:-1px">Sin IVA</button>
+        </div>
+      </div>
+      <input id="fp-p-costo" type="number" inputmode="decimal" value="${p.costo!=null?p.costo:''}" placeholder="$" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'JetBrains Mono'">
+      <div id="fp-p-costo-explica" style="font-size:10px;color:var(--muted);margin-top:4px;line-height:1.3"></div>
     </div>
-    <div class="mm-field" style="margin-top:10px"><label>Precio de costo</label>
-      <input id="fp-p-costo" type="number" inputmode="decimal" value="${p.costo!=null?p.costo:''}" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+    <div class="mm-field" style="margin-bottom:8px">
+      <label>Margen % objetivo</label>
+      <input id="fp-p-margen-obj" type="number" inputmode="decimal" value="${p.margen!=null?p.margen:30}" placeholder="Ej: 30" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'JetBrains Mono'">
     </div>
+    <div id="fp-p-precio-preview-box" class="hidden" style="margin-bottom:8px;padding:8px 10px;background:var(--paper);border:1.5px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <div><div style="font-size:10px;color:var(--muted);font-weight:700">PRECIO SUGERIDO (según margen)</div><span id="fp-p-precio-preview-val" style="font-size:16px;font-weight:800;font-family:'JetBrains Mono'"></span></div>
+      <button type="button" id="fp-p-precio-aplicar" style="background:var(--wa);border:none;color:#fff;font-weight:700;font-size:11.5px;padding:7px 12px;border-radius:8px;cursor:pointer;white-space:nowrap">Aplicar precio</button>
+    </div>
+    <div class="mm-field" style="margin-bottom:8px">
+      <label>Precio de venta <span style="font-weight:400;color:var(--muted);text-transform:none">(este se guarda)</span></label>
+      <input id="fp-p-precio" type="number" inputmode="decimal" value="${p.precio!=null?p.precio:''}" placeholder="$" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:16px;font-weight:800;font-family:'JetBrains Mono'">
+    </div>
+    <div id="fp-p-resumen" class="cat" style="margin-bottom:12px;padding:8px 10px;background:var(--paper);border-radius:9px;line-height:1.55;font-size:11.5px"></div>
     <div style="display:flex;gap:8px;margin-top:14px">
       <button id="fp-p-cancelar" style="flex:1;padding:11px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:13px;cursor:pointer">Cancelar</button>
       <button id="fp-p-guardar" style="flex:2;padding:11px;border-radius:10px;border:none;background:var(--verde);color:#fff;font-weight:700;font-size:13px;cursor:pointer">💾 Guardar cambios</button>
     </div>`;
   document.getElementById('fp-p-cancelar').onclick=()=>fpPintar(_fpActual);
   document.getElementById('fp-p-guardar').onclick=()=>fpGuardarPrecio(p.sku);
+
+  // ---- Misma calculadora que Recepción y Crear producto (PriceCalc) — el costo con IVA es
+  // siempre la fuente de verdad para el precio SUGERIDO; el precio guardado solo cambia si
+  // el usuario lo edita a mano o toca "Aplicar precio" (igual patrón que rc-precio-aplicar).
+  function fpPSetIva(modo){
+    fpPState.ivaModo=modo;
+    const btnCon=document.getElementById('fp-p-iva-con'),btnSin=document.getElementById('fp-p-iva-sin');
+    btnCon.style.background=modo==='con'?'var(--wa-bg,var(--verde-bg))':'#fff';
+    btnCon.style.color=modo==='con'?'var(--wa-d)':'var(--muted)';
+    btnCon.style.borderColor=modo==='con'?'var(--wa-d)':'var(--line)';
+    btnSin.style.background=modo==='sin'?'var(--wa-bg,var(--verde-bg))':'#fff';
+    btnSin.style.color=modo==='sin'?'var(--wa-d)':'var(--muted)';
+    btnSin.style.borderColor=modo==='sin'?'var(--wa-d)':'var(--line)';
+    fpPRecalcularPreview();
+    fpPRenderExplicaCosto();
+    fpPRenderResumen();
+  }
+  document.getElementById('fp-p-iva-con').onclick=()=>fpPSetIva('con');
+  document.getElementById('fp-p-iva-sin').onclick=()=>fpPSetIva('sin');
+  function fpPRenderExplicaCosto(){
+    document.getElementById('fp-p-costo-explica').textContent=fpPState.ivaModo==='con'
+      ?'Este valor ya incluye IVA — se usará tal cual para calcular el precio sugerido y para guardar en Loyverse.'
+      :'Se le sumará 19% de IVA automáticamente. Ese valor con IVA es el que se usa para calcular el precio y el que se guarda en Loyverse.';
+  }
+  function fpPCostoBruto(){
+    return PriceCalc.costoBruto(document.getElementById('fp-p-costo').value,'unidad',null,fpPState.ivaModo);
+  }
+  function fpPRecalcularPreview(){
+    fpPState.precioPreview=PriceCalc.precioDesdeMargen(fpPCostoBruto(),document.getElementById('fp-p-margen-obj').value);
+    fpPRenderPreview();
+  }
+  function fpPRenderPreview(){
+    const box=document.getElementById('fp-p-precio-preview-box');
+    if(fpPState.precioPreview==null){box.classList.add('hidden');return;}
+    box.classList.remove('hidden');
+    document.getElementById('fp-p-precio-preview-val').textContent=peso(fpPState.precioPreview);
+    const actual=Number(document.getElementById('fp-p-precio').value)||0;
+    const btn=document.getElementById('fp-p-precio-aplicar');
+    if(actual===fpPState.precioPreview){btn.textContent='✓ Aplicado';btn.disabled=true;btn.style.opacity=.6;}
+    else{btn.textContent='Aplicar precio';btn.disabled=false;btn.style.opacity=1;}
+  }
+  document.getElementById('fp-p-precio-aplicar').onclick=()=>{
+    if(fpPState.precioPreview==null)return;
+    document.getElementById('fp-p-precio').value=fpPState.precioPreview;
+    fpPState.precioTocado=false;
+    fpPRenderPreview();fpPRenderResumen();
+  };
+  function fpPRenderResumen(){
+    const cont=document.getElementById('fp-p-resumen');
+    const costoIngresado=Number(document.getElementById('fp-p-costo').value)||0;
+    if(!costoIngresado){cont.innerHTML='';return;}
+    const base=fpPCostoBruto();
+    const margenPct=Number(document.getElementById('fp-p-margen-obj').value)||0;
+    const precio=Number(document.getElementById('fp-p-precio').value)||0;
+    const margenReal=precio>0?PriceCalc.margenDesdePrecio(precio,base):null;
+    const filas=['Costo ingresado ('+(fpPState.ivaModo==='con'?'con IVA':'neto')+'): <b>'+peso(costoIngresado)+'</b>'];
+    if(fpPState.ivaModo==='sin')filas.push('Costo con IVA (19% sumado): <b>'+(base?peso(Math.round(base)):'—')+'</b>');
+    filas.push('Costo con IVA guardado en Loyverse: <b>'+(base?peso(Math.round(base)):'—')+'</b>');
+    if(margenPct)filas.push('Margen objetivo: <b>'+margenPct.toFixed(1)+'%</b>');
+    if(margenReal!=null)filas.push('Margen real'+(fpPState.precioTocado?' (precio editado a mano)':'')+': <b>'+margenReal.toFixed(1)+'%</b>');
+    filas.push('Precio de venta final: <b>'+(precio?peso(precio):'—')+'</b>');
+    cont.innerHTML=filas.join('<br>');
+  }
+  document.getElementById('fp-p-costo').oninput=()=>{fpPRecalcularPreview();fpPRenderExplicaCosto();fpPRenderResumen();};
+  document.getElementById('fp-p-margen-obj').oninput=()=>{fpPRecalcularPreview();fpPRenderResumen();};
+  document.getElementById('fp-p-precio').oninput=()=>{fpPState.precioTocado=true;fpPRenderPreview();fpPRenderResumen();};
+  fpPSetIva('con'); // arranca en "Con IVA" — el costo actual del producto ya viene con IVA desde Loyverse
+  fpPRecalcularPreview();
+  fpPRenderResumen();
 }
 async function fpGuardarPrecio(sku){
   const btn=document.getElementById('fp-p-guardar');
   const precio=document.getElementById('fp-p-precio').value.trim();
-  const costo=document.getElementById('fp-p-costo').value.trim();
+  // Igual que en Recepción: lo que se guarda en Loyverse es siempre el costo BRUTO (con
+  // IVA) calculado por PriceCalc — no el valor crudo del input, que puede ser el neto si el
+  // usuario tiene elegido "Sin IVA". Si no hay costo ingresado, no se manda (deja el actual).
+  const costoIngresado=document.getElementById('fp-p-costo').value.trim();
+  const costoBase=PriceCalc.costoBruto(costoIngresado,'unidad',null,fpPState.ivaModo);
+  const costo=costoBase?String(Math.round(costoBase)):'';
   btn.disabled=true;btn.textContent='Guardando…';
   try{
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_precio',payload:{sku,precio,costo,responsable:''}})});
@@ -5711,12 +5808,52 @@ function cpToggleStock(){
   document.getElementById('cp-stock-min-field').style.display=on?'':'none'; // solo tiene sentido si hay control de inventario
   document.getElementById('cp-fecha-field').style.display=on?'':'none';   // la fecha solo aplica si hay stock
 }
-document.getElementById('cp-track').onchange=cpToggleStock;
+// ===================== CALCULADORA DE PRECIOS COMPARTIDA =====================
+// Única fuente de verdad para "costo → precio de venta" en TODA la app. Antes existían dos
+// copias casi idénticas de esta fórmula (rcCostoBruto/rcRecalcularPrecioAuto en Recepción y
+// cpCostoBruto/cpRecalcularPrecioAuto en Crear producto), y el editor de precio de la Ficha
+// del producto ni siquiera la tenía (campos numéricos crudos, sin IVA ni margen). Ahora los
+// tres llaman a estas mismas funciones puras — nada de DOM acá adentro, solo números — así
+// que cualquier ajuste futuro a la fórmula se hace en un solo lugar y se refleja en los tres
+// módulos automáticamente.
+const PriceCalc=(function(){
+  const IVA=0.19;
+  // Costo por unidad real a partir de lo que el usuario escribió: si compró "por caja", el
+  // costo ingresado es el de la caja completa y hay que dividirlo por las unidades que trae.
+  function costoUnitario(costoIngresado,modo,unidadesCaja){
+    costoIngresado=Number(costoIngresado)||0;
+    if(modo!=='caja')return costoIngresado;
+    const uCaja=Number(unidadesCaja)||0;
+    return uCaja>0?(costoIngresado/uCaja):0;
+  }
+  // Costo BRUTO (con IVA) — es el único valor que después se usa tanto para calcular el
+  // precio de venta como para lo que efectivamente se guarda en Loyverse.
+  //   ivaModo 'con' -> lo escrito YA es el bruto, se usa tal cual.
+  //   ivaModo 'sin' -> lo escrito es el neto, se le suma 19% para obtener el bruto.
+  function costoBruto(costoIngresado,modo,unidadesCaja,ivaModo){
+    const unit=costoUnitario(costoIngresado,modo,unidadesCaja);
+    return ivaModo==='sin'?(unit*(1+IVA)):unit;
+  }
+  // Precio de venta a partir del costo bruto y el margen objetivo (margen SOBRE VENTA, no
+  // sobre costo): Precio = Costo / (1 - Margen). Devuelve null si no hay datos suficientes
+  // para calcular (costo o margen vacíos/inválidos) — el llamador decide qué hacer con eso.
+  function precioDesdeMargen(costoBrutoVal,margenPct){
+    costoBrutoVal=Number(costoBrutoVal)||0;
+    margenPct=Number(margenPct);
+    if(!costoBrutoVal||!margenPct||margenPct<=0||margenPct>=100)return null;
+    return Math.round(costoBrutoVal/(1-margenPct/100));
+  }
+  // Margen real ya alcanzado por un precio dado (para mostrar en el resumen "margen real:
+  // X%" incluso cuando el precio fue editado a mano y ya no coincide con el margen objetivo).
+  function margenDesdePrecio(precio,costoBrutoVal){
+    precio=Number(precio)||0;
+    if(!precio)return null;
+    return ((precio-(Number(costoBrutoVal)||0))/precio)*100;
+  }
+  return {IVA,costoUnitario,costoBruto,precioDesdeMargen,margenDesdePrecio};
+})();
 
-// ---- Cantidad inicial (Por unidad / Por caja) + Costo/IVA/Margen → Precio, calculada
-// exactamente igual que en "Recibir mercadería" (rcState/rcSet*), pero con estado propio
-// (cpState) para no interferir con esa pantalla si ambas quedan abiertas en memoria. ----
-var cpState={modo:'unidad',ivaModo:'con',precioTocado:false,margenTocado:false};
+
 function cpSetIva(modo){
   cpState.ivaModo=modo;
   const btnCon=document.getElementById('cp-costo-iva-con'),btnSin=document.getElementById('cp-costo-iva-sin');
@@ -5780,22 +5917,18 @@ document.getElementById('cp-qty-mas').onclick=cpQtyMas;
     btn.addEventListener('pointercancel',detenerHold);
   });
 })();
-const CP_IVA=0.19;
+// Wrappers finos sobre PriceCalc — leen el DOM propio de Crear producto y delegan el cálculo
+// real a la calculadora compartida (misma fórmula que usan Recepción y el editor de precio
+// de la Ficha del producto).
 function cpCostoUnitarioBruto(){
-  const costoIngresado=Number(document.getElementById('cp-costo').value)||0;
-  if(cpState.modo!=='caja')return costoIngresado;
-  const uCaja=Number(document.getElementById('cp-unidades-caja').value)||0;
-  return uCaja>0?(costoIngresado/uCaja):0;
+  return PriceCalc.costoUnitario(document.getElementById('cp-costo').value,cpState.modo,document.getElementById('cp-unidades-caja').value);
 }
 function cpCostoBruto(){
-  const ingresado=cpCostoUnitarioBruto();
-  return cpState.ivaModo==='sin'?(ingresado*(1+CP_IVA)):ingresado;
+  return PriceCalc.costoBruto(document.getElementById('cp-costo').value,cpState.modo,document.getElementById('cp-unidades-caja').value,cpState.ivaModo);
 }
 function cpRecalcularPrecioAuto(){
-  const margenPct=Number(document.getElementById('cp-margen-obj').value);
-  const base=cpCostoBruto();
-  if(!base||!margenPct||margenPct<=0||margenPct>=100)return;
-  const precioCalc=Math.round(base/(1-margenPct/100));
+  const precioCalc=PriceCalc.precioDesdeMargen(cpCostoBruto(),document.getElementById('cp-margen-obj').value);
+  if(precioCalc==null)return;
   document.getElementById('cp-precio').value=precioCalc;
   cpState.precioTocado=false;
 }
@@ -5824,7 +5957,7 @@ function cpRenderResumen(){
   const base=cpCostoBruto();
   const margenPct=Number(document.getElementById('cp-margen-obj').value)||0;
   const precio=Number(document.getElementById('cp-precio').value)||0;
-  const margenReal=precio>0?((precio-base)/precio)*100:null;
+  const margenReal=precio>0?PriceCalc.margenDesdePrecio(precio,base):null;
   const cant=Number(document.getElementById('cp-cantidad').value)||0;
   const uCaja=Number(document.getElementById('cp-unidades-caja').value)||0;
   const stockFinal=cpCantidadFinalUnidades();
@@ -8999,24 +9132,15 @@ document.getElementById('rc-modo-unidad').onclick=()=>rcSetModo('unidad');
 document.getElementById('rc-modo-caja').onclick=()=>rcSetModo('caja');
 document.getElementById('rc-unidades-caja').oninput=()=>{rcRecalcularPrecioAuto();rcRenderResumen();};
 
-// Requisito 3: costo por unidad real cuando la compra es por caja.
+// Requisito 3: costo por unidad real cuando la compra es por caja. Wrappers finos sobre
+// PriceCalc — misma fórmula que Crear producto y el editor de precio de la Ficha.
 function rcCostoUnitarioBruto(){
-  const costoIngresado=Number(document.getElementById('rc-costo').value)||0;
-  if(rcState.modo!=='caja')return costoIngresado;
-  const uCaja=Number(document.getElementById('rc-unidades-caja').value)||0;
-  return uCaja>0?(costoIngresado/uCaja):0;
+  return PriceCalc.costoUnitario(document.getElementById('rc-costo').value,rcState.modo,document.getElementById('rc-unidades-caja').value);
 }
 // Loyverse guarda el costo BRUTO (con IVA), y el precio de venta se calcula sobre ese mismo
-// bruto. Los dos modos del toggle solo cambian CÓMO se llega al bruto a partir de lo que el
-// usuario escribió:
-//   "Costo con IVA"  -> lo escrito YA es el bruto, se usa tal cual.
-//   "Costo sin IVA"  -> lo escrito es el neto, se le suma 19% para obtener el bruto.
-// En ambos casos, rcCostoBruto() es el único valor que después se usa tanto para calcular
-// el precio como para lo que se guarda — nunca se calculan por separado.
-const IVA_RC=0.19;
+// bruto — ver PriceCalc.costoBruto para el detalle de cómo se llega a él según el toggle.
 function rcCostoBruto(){
-  const ingresado=rcCostoUnitarioBruto();
-  return rcState.ivaModo==='sin'?(ingresado*(1+IVA_RC)):ingresado;
+  return PriceCalc.costoBruto(document.getElementById('rc-costo').value,rcState.modo,document.getElementById('rc-unidades-caja').value,rcState.ivaModo);
 }
 // Alias por compatibilidad con el resto del módulo (Ficha, historial, etc. pueden llamarla).
 function rcCostoNeto(){
@@ -9030,13 +9154,7 @@ function rcBaseParaPrecio(){
 // escribe en #rc-precio. El precio que se guarda en Loyverse es el que está en #rc-precio,
 // y ese únicamente cambia si el usuario lo edita a mano o presiona "Aplicar precio".
 function rcRecalcularPrecioAuto(){
-  const margenPct=Number(document.getElementById('rc-margen-obj').value);
-  const base=rcBaseParaPrecio();
-  if(!base||!margenPct||margenPct<=0||margenPct>=100){
-    rcState.precioPreview=null;
-  }else{
-    rcState.precioPreview=Math.round(base/(1-margenPct/100));
-  }
+  rcState.precioPreview=PriceCalc.precioDesdeMargen(rcBaseParaPrecio(),document.getElementById('rc-margen-obj').value);
   rcRenderPrecioPreview();
 }
 // Pinta (o esconde) la caja de vista previa y decide si el botón "Aplicar precio" está
@@ -9097,7 +9215,7 @@ function rcRenderResumen(){
   const base=rcCostoBruto(); // bruto real: base del precio Y lo que se guarda en Loyverse (son el mismo valor)
   const margenPct=Number(document.getElementById('rc-margen-obj').value)||0;
   const precio=Number(document.getElementById('rc-precio').value)||0;
-  const margenReal=precio>0?((precio-base)/precio)*100:null;
+  const margenReal=precio>0?PriceCalc.margenDesdePrecio(precio,base):null;
   const cant=Number(document.getElementById('rc-cantidad').value)||0;
   const uCaja=Number(document.getElementById('rc-unidades-caja').value)||0;
 
