@@ -3193,7 +3193,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-06.3';
+const APP_VERSION='2026-08-06.4';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -5749,6 +5749,13 @@ document.getElementById('cp-ps-sugerir').onclick=()=>{
   const catInput=document.getElementById('cp-cat-input');
   psSugerir(nombre,catInput?catInput.value:'','cp-proveedor','cp-sector','cp-ps-hint');
 };
+// Estado del formulario Crear producto: modo de cantidad (unidad/caja), si el IVA del costo
+// ingresado ya viene incluido o hay que sumarlo, y si el usuario tocó el precio a mano (para
+// no pisarlo con el cálculo automático salvo que cambie costo/IVA). Usa var (no let/const)
+// para evitar cualquier problema de orden de inicialización si esta línea llegara a
+// ejecutarse en un punto distinto al esperado del script (ver cpReset más abajo, que ya
+// depende de este objeto existiendo).
+var cpState={modo:'unidad',ivaModo:'con',precioTocado:false,margenTocado:false};
 function cpReset(){
   ['cp-nombre','cp-precio','cp-costo','cp-barcode','cp-stock','cp-stock-min','cp-fecha-dd','cp-fecha-mm','cp-fecha-aaaa','cp-cat-nuevanom','cp-cantidad','cp-unidades-caja','cp-fecha'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   const track=document.getElementById('cp-track');if(track)track.checked=true;
@@ -5774,9 +5781,9 @@ function cpReset(){
 // La búsqueda web (Searlo) se quitó — solo queda galería y el catálogo gratuito por
 // código de barras (cpAutocompletarPorCodigo, más abajo). No bloquea la creación del
 // producto — si no se elige imagen, se crea igual, exactamente como funcionaba antes.
-let _cpImagenUrl=null;
-let _cpImagenBase64=null; // imagen elegida desde la galería (ya comprimida), alternativa a _cpImagenUrl
-let _cpImagenContentType='image/jpeg'; // tipo real de _cpImagenBase64: jpeg (galería) o png (quitar fondo + mejorar)
+var _cpImagenUrl=null;
+var _cpImagenBase64=null; // imagen elegida desde la galería (ya comprimida), alternativa a _cpImagenUrl
+var _cpImagenContentType='image/jpeg'; // tipo real de _cpImagenBase64: jpeg (galería) o png (quitar fondo + mejorar)
 // Mejora una foto de producto con fondo blanco (resultado de remove.bg): sube ligeramente
 // contraste y saturación (colores del producto más vivos, sin quemar el blanco de fondo) y
 // agrega una sombra proyectada suave debajo del producto — mismo efecto visual que catálogos
