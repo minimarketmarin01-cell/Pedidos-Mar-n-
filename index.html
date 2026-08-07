@@ -3193,7 +3193,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-06.8';
+const APP_VERSION='2026-08-06.10';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -8267,13 +8267,22 @@ function vcUpdatePendBadge(n){
   if(!b)return;
   b.textContent=n>0?(' '+(n>99?'99+':n)):'';
 }
-// Refresca la vista que esté activa en ese momento (Lista o Pendientes) después de resolver
-// un lote — antes siempre refrescaba Lista aunque la acción viniera de la pestaña Pendientes.
-function vcRefreshCurrentView(){
+// Refresca la vista que esté activa en ese momento (Lista, Pendientes o Góndola) después de
+// resolver un lote — antes siempre refrescaba Lista aunque la acción viniera de otra pestaña,
+// y Góndola en particular quedaba sin repintar (mostraba datos viejos hasta que el usuario
+// cambiaba de vista y volvía). Recarga _vcTodos desde el servidor antes de repintar, para que
+// la fecha/estado recién editado se refleje de inmediato en cualquiera de las tres vistas.
+async function vcRefreshCurrentView(){
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=vencimientos');
+    const j=await res.json();
+    _vcTodos=(j&&j.ok)?j.lotes:_vcTodos;
+  }catch(e){/* si falla la recarga, se repinta igual con los datos que ya había en memoria */}
   const activo=document.querySelector('#vc-viewseg button.active');
   const v=activo?activo.dataset.view:'lista';
   if(v==='pendientes')vcRenderPendientes();
-  else if(v!=='gondola')vcAplicarFiltro();
+  else if(v==='gondola')gonRender();
+  else vcAplicarFiltro();
   vcUpdatePendBadge(_vcTodos.filter(l=>l.estado==='Retirado').length);
 }
 function gonIniciar(){
@@ -8311,15 +8320,62 @@ function gonRender(){
                   c.d7?`<span class="gon-badge d7">${c.d7} en 4-7d</span>`:''].filter(Boolean).join('');
     const filas=items.map(l=>{
       const nom=(l.nombre||'').replace(/"/g,'&quot;');
-      return `<div class="gon-row">
-        <div class="gon-info"><div class="nom">${l.prioridad} ${l.nombre}</div>
-        <div class="meta">${l._bk.lbl} · vence ${l.fechaVencimiento} · ${l.cantidad} ${l.unidad}${l.lote?' · lote '+l.lote:''}</div></div>
-        <button class="gon-retirar" data-fi="${l.filaIndex}" data-nom="${nom}">Retirar</button>
+      return `<div class="gon-row" style="flex-direction:column;align-items:stretch;gap:6px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <div class="gon-info"><div class="nom">${l.prioridad} ${l.nombre}</div>
+          <div class="meta">${l._bk.lbl} · vence ${l.fechaVencimiento} · ${l.cantidad} ${l.unidad}${l.lote?' · lote '+l.lote:''}</div></div>
+          <button class="gon-retirar" data-fi="${l.filaIndex}" data-nom="${nom}">Retirar</button>
+        </div>
+        <div style="display:flex;justify-content:flex-end">
+          <button type="button" class="btn-editfecha" data-editf="${l.filaIndex}" data-fv="${l.fechaVencimiento}">✏️ Editar fecha</button>
+        </div>
+        <div class="vc-editbox hidden" data-editbox="${l.filaIndex}">
+          <span class="vc-editlbl">Nueva fecha de vencimiento:</span>
+          <div class="fecha-wrap">
+            <input id="gon-ef-dd-${l.filaIndex}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="DD" autocomplete="off">
+            <span class="fecha-sep">/</span>
+            <input id="gon-ef-mm-${l.filaIndex}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="off">
+            <span class="fecha-sep">/</span>
+            <input id="gon-ef-aaaa-${l.filaIndex}" class="fecha-seg fecha-seg-y" inputmode="numeric" maxlength="4" placeholder="AAAA" autocomplete="off">
+            <button type="button" class="btn-ok vc-ef-save" data-savef="${l.filaIndex}" style="white-space:nowrap">Guardar</button>
+          </div>
+        </div>
       </div>`;
     }).join('');
     return `<div class="gon-cat"><div class="gon-cat-head"><span class="cat-nom">${cat}</span><span class="gon-counts">${badges}</span></div>${filas}</div>`;
   }).join('');
   box.querySelectorAll('.gon-retirar').forEach(b=>b.onclick=()=>gonRetirar(b.dataset.fi,b.dataset.nom,b));
+  // Editar fecha en Góndola: mismo mini-formulario y misma función vcEditarFecha que ya usa
+  // la lista principal de Vencimientos — solo cambian los IDs (prefijo gon- en vez de vc-)
+  // para no chocar si ambas vistas llegaran a estar montadas en el DOM a la vez.
+  box.querySelectorAll('[data-editf]').forEach(b=>b.onclick=()=>{
+    const fi=b.dataset.editf;
+    const bx=box.querySelector(`[data-editbox="${fi}"]`);
+    if(!bx)return;
+    const wasHidden=bx.classList.contains('hidden');
+    bx.classList.toggle('hidden');
+    if(wasHidden){
+      const p=(b.dataset.fv||'').split('/');
+      if(p.length===3){
+        document.getElementById('gon-ef-dd-'+fi).value=p[0];
+        document.getElementById('gon-ef-mm-'+fi).value=p[1];
+        document.getElementById('gon-ef-aaaa-'+fi).value=p[2];
+      }
+    }
+  });
+  box.querySelectorAll('[data-savef]').forEach(b=>{
+    const fi=b.dataset.savef;
+    document.getElementById('gon-ef-dd-'+fi).addEventListener('keydown',e=>{if(e.key==='Enter')b.click();});
+    document.getElementById('gon-ef-mm-'+fi).addEventListener('keydown',e=>{if(e.key==='Enter')b.click();});
+    document.getElementById('gon-ef-aaaa-'+fi).addEventListener('keydown',e=>{if(e.key==='Enter')b.click();});
+    b.onclick=()=>{
+      const dd=document.getElementById('gon-ef-dd-'+fi).value;
+      const mm=document.getElementById('gon-ef-mm-'+fi).value;
+      const aaaa=document.getElementById('gon-ef-aaaa-'+fi).value;
+      if(dd.length!==2||mm.length!==2||aaaa.length!==4){showToast('Completa día, mes y año');return;}
+      vcEditarFecha(fi,dd+'/'+mm+'/'+aaaa);
+    };
+  });
 }
 async function gonRetirar(fi,nombre,btn){
   const revisor=(document.getElementById('gon-revisor').value||'').trim();
@@ -8418,7 +8474,7 @@ function vcRender(lotes,containerId){
     const esCambio=esCategoriaCambio(l.categoria);
     let botones, notaExtra='';
     if(esCambio && l.estado==='Retirado'){
-      botones=`<button class="btn-cambio" data-actm="cambiado" data-i="${l.filaIndex}" data-nom="${l.nombre.replace(/"/g,'&quot;')}">✓ Marcar como cambiado</button>
+      botones=`<button class="btn-cambio" data-actm="cambiado" data-i="${l.filaIndex}" data-nom="${l.nombre.replace(/"/g,'&quot;')}" data-cant="${l.cantidad}" data-unidad="${l.unidad}">✓ Marcar como cambiado</button>
          <button class="btn-descuento" data-actm="descuento" data-i="${l.filaIndex}" data-nom="${l.nombre.replace(/"/g,'&quot;')}">💰 Descuento en factura</button>`;
       notaExtra='<div class="cat" style="color:var(--azul);font-weight:700">📤 Ya se retiró y se descontó del stock — esperando al proveedor</div>';
     }else if(esCambio){
@@ -8454,7 +8510,7 @@ function vcRender(lotes,containerId){
     mmPrefill(b.dataset.sku,b.dataset.cant,b.dataset.lote,b.dataset.i);
     openMerma(true);
   });
-  box.querySelectorAll('[data-actm="cambiado"]').forEach(b=>b.onclick=()=>vcMarcarCambiado(b.dataset.i,b.dataset.nom));
+  box.querySelectorAll('[data-actm="cambiado"]').forEach(b=>b.onclick=()=>vcMarcarCambiado(b.dataset.i,b.dataset.nom,b.dataset.cant,b.dataset.unidad));
   box.querySelectorAll('[data-actm="descuento"]').forEach(b=>b.onclick=()=>vcMarcarDescuento(b.dataset.i,b.dataset.nom));
   box.querySelectorAll('[data-elim]').forEach(b=>b.onclick=()=>vcEliminarLote(b.dataset.elim,b.dataset.sku,b.dataset.cant,b.dataset.nom));
   // Editar fecha: abre el mini-formulario con la fecha actual precargada en los 3 campos
@@ -8497,21 +8553,41 @@ async function vcEditarFecha(filaIndex,nuevaFecha){
     const j=await res.json();
     if(j&&j.ok){
       showToast('✓ Fecha corregida a '+j.nuevaFecha+' ('+j.estado+')');
-      vcLoad();
+      vcRefreshCurrentView();
     }else{showToast('Error: '+((j&&j.error)||'no se pudo corregir la fecha'));}
   }catch(e){showToast('Error de conexión al corregir la fecha');}
 }
 // El producto ya se retiró de la góndola y el stock ya se descontó SOLO (automático,
-// la noche que venció). Esto solo cierra el registro cuando por fin llega el proveedor
-// y se hace el cambio — nunca vuelve a tocar Loyverse ni a duplicar la merma.
-async function vcMarcarCambiado(filaIndex,nombre){
+// la noche que venció). Esto cierra el registro cuando llega el proveedor con el cambio —
+// nunca vuelve a tocar Loyverse ni a duplicar la merma. Si el proveedor trae MENOS unidades
+// de las que había en el lote (ej. 3 pendientes, llegaron 2), se pregunta la cantidad y el
+// backend cierra solo esa parte, dejando el resto todavía pendiente en la lista.
+async function vcMarcarCambiado(filaIndex,nombre,cantidadTotal,unidad){
+  const total=Number(cantidadTotal)||0;
+  let cantidadCambiada=total;
+  // Solo pregunta si hay más de 1 unidad en el lote — con 1 sola unidad no existe "parcial"
+  // posible, así que no vale la pena interrumpir con un prompt innecesario.
+  if(total>1){
+    const txt=prompt('¿Cuántas '+(unidad||'unidades')+' trajo el proveedor de "'+(nombre||'este producto')+'"?\n\nEl lote tiene '+total+' '+(unidad||'unidades')+' pendientes. Si trajo menos, el resto queda pendiente.',String(total));
+    if(txt===null)return; // canceló el prompt, no se hace nada
+    const num=Number(txt.replace(',','.').trim());
+    if(isNaN(num)||num<=0){showToast('⚠️ Cantidad inválida');return;}
+    if(num>total){showToast('⚠️ No puede ser más de las '+total+' pendientes');return;}
+    cantidadCambiada=num;
+  }
   try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'marcar_cambiado',payload:{filaIndex:filaIndex,revisadoPor:''}})});
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'marcar_cambiado',payload:{filaIndex:filaIndex,cantidadCambiada:cantidadCambiada,revisadoPor:''}})});
     const j=await res.json();
     if(j&&j.ok){
-      showToast('✓ Cambio confirmado: '+(nombre||j.fila.nombre)+' · ahora carga lo que recibiste a cambio');
-      closeVenc();
-      openRecibir();
+      const f=j.fila||{};
+      if(f.parcial){
+        showToast('✓ Cambio parcial: '+cantidadCambiada+' de '+total+' '+(unidad||'u')+' de '+(nombre||f.nombre)+' — quedan '+f.cantidadRestante+' pendientes');
+        closeVenc();vcLoad(); // se queda en Vencimientos: todavía hay unidades pendientes de este mismo lote
+      }else{
+        showToast('✓ Cambio confirmado: '+(nombre||f.nombre)+' · ahora carga lo que recibiste a cambio');
+        closeVenc();
+        openRecibir();
+      }
     }else{
       showToast('Error: '+((j&&j.error)||'no se pudo confirmar el cambio'));
     }
