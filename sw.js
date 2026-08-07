@@ -16,17 +16,29 @@ self.addEventListener('activate', (event) => {
 // El servidor manda el mensaje cifrado (ver webPushCifrarPayload en el Worker) con esta forma:
 // { title, body, url }. Si por algún motivo el payload no viene o no es JSON válido, se
 // muestra un mensaje genérico en vez de fallar en silencio.
+//
+// IMPORTANTE sobre la URL: self.registration.scope es la ruta REAL donde está instalado este
+// Service Worker (ej. https://minimarketmarin01-cell.github.io/Pedidos-Mar-n-/) — nunca "/"
+// a secas, que apuntaría a la raíz del dominio de github.io (donde no hay nada, error 404).
+// El backend puede mandar una url relativa ("/") o no mandar nada, y acá se resuelve siempre
+// contra el scope real antes de abrir la notificación.
 self.addEventListener('push', (event) => {
-  let data = { title: 'Marín 376', body: 'Tienes una notificación nueva', url: '/' };
+  let data = { title: 'Marín 376', body: 'Tienes una notificación nueva', url: self.registration.scope };
   try {
-    if (event.data) data = Object.assign(data, event.data.json());
+    if (event.data) {
+      const parsed = event.data.json();
+      data = Object.assign(data, parsed);
+      // Si vino una url relativa ("/", "/algo"), se resuelve contra el scope real de la PWA
+      // en vez de contra el dominio — new URL(relativa, scope) hace exactamente eso.
+      if (parsed.url) data.url = new URL(parsed.url, self.registration.scope).href;
+    }
   } catch (e) { /* payload no era JSON — se usa el genérico de arriba */ }
 
   const options = {
     body: data.body,
     icon: 'icono-192.png',
     badge: 'icono-192.png',
-    data: { url: data.url || '/' },
+    data: { url: data.url },
     vibrate: [120, 60, 120], // patrón corto, no intrusivo — se siente como un aviso, no una alarma
     tag: 'marin376-riesgo-quiebre', // agrupa notificaciones seguidas del mismo tipo en vez de apilarlas
     renotify: true
@@ -37,7 +49,7 @@ self.addEventListener('push', (event) => {
 // Al tocar la notificación: si ya hay una pestaña de la app abierta, la enfoca; si no, abre una nueva.
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const targetUrl = (event.notification.data && event.notification.data.url) || '/';
+  const targetUrl = (event.notification.data && event.notification.data.url) || self.registration.scope;
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
