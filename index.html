@@ -1708,6 +1708,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <button id="mas-q-categorias"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg><br>Mapeo de categorías</button>
         <button id="mas-q-recargar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="20" x2="5" y2="11"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="19" y1="20" x2="19" y2="14"/></svg><br>Recargar historial</button>
         <button id="mas-q-factura"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="10" y2="12"/><line x1="13" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="10" y2="16"/><line x1="13" y1="16" x2="16" y2="16"/></svg><br>Calculadora de precios</button>
+        <button id="mas-q-riesgo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><br>Riesgo de quiebre<span class="mas-badge" id="riesgo-badge"></span></button>
         <button id="mas-q-abc"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg><br>Clasificación ABC</button>
       </div>
       <div class="method" style="margin:0;padding:16px 18px">
@@ -1754,6 +1755,27 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
     </div>
   </div>
 </div>
+<div class="mm-ov hidden" id="rz-ov">
+  <div class="mm-card">
+    <div class="mm-head"><h3>⚠️ Riesgo de quiebre</h3></div>
+    <div class="mm-topbar"><button class="loadbtn" id="rz-cerrar" style="width:100%">Cerrar</button></div>
+    <div class="mm-body">
+      <div class="hm-summary"><span class="lbl" id="rz-lbl">—</span></div>
+      <div class="cat" style="margin-bottom:10px;line-height:1.4">Productos <b>A</b> o <b>B</b> (los que más venden) con cobertura urgente o sin control de stock — es decir, alta rotación que se puede quedar sin vender por falta de reposición a tiempo.</div>
+      <div class="sm-filters" style="display:flex;gap:6px;margin-bottom:10px">
+        <select id="rz-prov" style="flex:1;min-width:0;padding:8px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:12.5px">
+          <option value="">📋 Todos los proveedores</option>
+        </select>
+        <select id="rz-clase" style="width:110px;padding:8px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:12.5px">
+          <option value="AB">Clase A y B</option>
+          <option value="A">Solo clase A</option>
+        </select>
+      </div>
+      <div id="rz-list"></div>
+    </div>
+  </div>
+</div>
+
 <div class="mm-ov hidden" id="sm-ov">
   <div class="mm-card">
     <div class="mm-head"><h3>🧹 Sin movimiento (90 días)</h3></div>
@@ -3193,7 +3215,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-06.10';
+const APP_VERSION='2026-08-06.11';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -3255,6 +3277,7 @@ async function cargarABC(){
       j.abc.forEach(r=>{map[r.sku]={clase:r.clase,pct:r.pct_participacion,venta:r.venta_total};});
       ABC_BY_SKU=map;
       if(DB&&DB.items){DB.items.forEach(it=>{it.abc=ABC_BY_SKU[it.ref]||null;});render();}
+      try{rzActualizarBadge();}catch(e){} // se protege con try/catch: si algo falla acá, no debe interrumpir la carga del ABC en sí
     }
   }catch(e){console.warn('No se pudo cargar ABC:',e);}
 }
@@ -9680,6 +9703,7 @@ async function llLoad(){
     box.querySelectorAll('.btn-ignorar').forEach(b=>b.onclick=()=>llIgnorar(b.dataset.ig));
   }catch(e){lbl.textContent='Error de conexión.';}
 }
+let _rzUltimoConteo=0; // se actualiza cada vez que se recalcula el riesgo de quiebre (ver rzCalcular) — el punto de la nav combina esto con las llegadas pendientes
 function llUpdateBadge(n){
   const b=document.getElementById('ll-badge');
   if(b){
@@ -9689,11 +9713,101 @@ function llUpdateBadge(n){
       b.style.display='flex';
     }else{b.style.display='none';}
   }
+  // El punto de "Más" en la barra inferior se enciende si hay CUALQUIERA de las dos señales
+  // pendientes (llegadas por revisar O productos en riesgo de quiebre) — no solo la última
+  // que se haya recalculado, para que una no apague el aviso de la otra.
   const dot=document.getElementById('bn-mas-dot');
-  if(dot)dot.classList.toggle('on',n>0);
+  if(dot)dot.classList.toggle('on',n>0||_rzUltimoConteo>0);
   const mb=document.getElementById('mas-badge');
   if(mb){mb.textContent=n>99?'99+':String(n);mb.classList.toggle('on',n>0);}
 }
+
+// ===================== RIESGO DE QUIEBRE (alta rotación + cobertura crítica) =====================
+// Criterio: producto clase A o B (los que más venden, calculado por Clasificación ABC — ver
+// cargarABC/recalcularABC) que además está en estado 'urgente' según analyze() (cobertura por
+// debajo del tiempo de entrega configurado) o 'sinstock' con ventas activas (sin control de
+// inventario en Loyverse, pero se está vendiendo). No verifica si ya se hizo un pedido — es
+// una señal simple: "esto vende mucho y se puede acabar", pensada para no llegar tarde con
+// proveedores que no cumplen fecha. Reutiliza analyze() e it.abc tal cual — no duplica ni
+// reinventa el cálculo de cobertura/urgencia ni el de clasificación ABC.
+function rzCalcular(soloClaseA){
+  return DB.items
+    .map(it=>{
+      if(!it.abc)return null; // sin clasificación ABC calculada todavía — no se puede saber si es alta rotación
+      const clase=it.abc.clase;
+      if(soloClaseA?clase!=='A':(clase!=='A'&&clase!=='B'))return null;
+      const a=analyze(it);
+      const enRiesgo=a.status==='urgente'||(a.status==='sinstock'&&a.rate>0);
+      if(!enRiesgo)return null;
+      return {it,a,clase};
+    })
+    .filter(Boolean)
+    .sort((x,y)=>{
+      // Orden: primero clase A antes que B, y dentro de cada clase, menor cobertura primero
+      // (lo más urgente arriba) — los sin control de stock (cov=null) van al final de su clase.
+      if(x.clase!==y.clase)return x.clase==='A'?-1:1;
+      const cx=x.a.cov==null?Infinity:x.a.cov, cy=y.a.cov==null?Infinity:y.a.cov;
+      return cx-cy;
+    });
+}
+function rzActualizarBadge(){
+  const lista=rzCalcular(false);
+  _rzUltimoConteo=lista.length;
+  const rb=document.getElementById('riesgo-badge');
+  if(rb){
+    const txt=_rzUltimoConteo>99?'99+':String(_rzUltimoConteo);
+    rb.textContent=txt;
+    rb.classList.toggle('on',_rzUltimoConteo>0);
+  }
+  // Reutiliza el mismo punto de "Más" que ya usan las Llegadas — se combina con lo que haya
+  // ahí (ver llUpdateBadge), así que solo hay que volver a evaluar el toggle acá también.
+  const dot=document.getElementById('bn-mas-dot');
+  if(dot){
+    const llegadasBadge=document.getElementById('ll-badge');
+    const hayLlegadas=llegadasBadge&&llegadasBadge.style.display==='flex';
+    dot.classList.toggle('on',hayLlegadas||_rzUltimoConteo>0);
+  }
+}
+function rzAbrir(){
+  abrirModal('rz-ov');
+  const selProv=document.getElementById('rz-prov');
+  const provsConRiesgo=[...new Set(rzCalcular(false).map(x=>x.it.prov))].sort((a,b)=>String(a).localeCompare(String(b)));
+  const provActual=selProv.value;
+  selProv.innerHTML='<option value="">📋 Todos los proveedores</option>'+provsConRiesgo.map(p=>`<option value="${p}">${p}</option>`).join('');
+  if(provsConRiesgo.includes(provActual))selProv.value=provActual;
+  rzRender();
+}
+function rzRender(){
+  const soloA=document.getElementById('rz-clase').value==='A';
+  const provFiltro=document.getElementById('rz-prov').value;
+  let lista=rzCalcular(soloA);
+  if(provFiltro)lista=lista.filter(x=>x.it.prov===provFiltro);
+  document.getElementById('rz-lbl').textContent=lista.length+' producto'+(lista.length===1?'':'s')+' en riesgo de quiebre';
+  const box=document.getElementById('rz-list');
+  if(!lista.length){box.innerHTML='<div class="vc-empty">🎉 Sin productos de alta rotación en riesgo ahora mismo.</div>';return;}
+  box.innerHTML=lista.map(({it,a,clase})=>{
+    const covTxt=a.cov==null?'sin control de stock':a.cov===Infinity?'∞':(fmt1(a.cov)+'d de cobertura');
+    const stockTxt=it.track&&it.stock!=null?fmt1(it.stock)+' u en stock':'sin seguimiento de inventario';
+    return `<div class="fp-row" style="flex-direction:column;align-items:stretch;gap:6px;padding:11px 0">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div>
+          <div style="font-weight:700;font-size:13.5px">${it.nombre}</div>
+          <div style="font-size:11px;color:var(--muted)">${it.prov} · ${stockTxt} · ${covTxt}</div>
+        </div>
+        <span class="abc-badge abc-${clase.toLowerCase()}" style="flex-shrink:0">${clase}</span>
+      </div>
+      <button type="button" class="loadbtn rz-ir-pedido" data-prov="${(it.prov||'').replace(/"/g,'&quot;')}" style="width:100%;padding:8px;font-size:12.5px">🛒 Ir al pedido de ${it.prov}</button>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('.rz-ir-pedido').forEach(b=>b.onclick=()=>{
+    cerrarModal('rz-ov');
+    pickProv(b.dataset.prov); // misma función que usa el selector de proveedores de siempre — no duplica lógica de navegación del catálogo
+  });
+}
+document.getElementById('mas-q-riesgo').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');rzAbrir();};
+document.getElementById('rz-cerrar').onclick=()=>cerrarModal('rz-ov');
+document.getElementById('rz-prov').onchange=rzRender;
+document.getElementById('rz-clase').onchange=rzRender;
 async function llCheckBadge(){
   try{
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=llegadas');
