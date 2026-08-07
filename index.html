@@ -3309,7 +3309,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-07.6';
+const APP_VERSION='2026-08-07.7';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -6033,11 +6033,15 @@ function mejorarImagenProducto(base64PNG,contentType){
 
         // ---- Corrección de imagen: contraste, saturación, brillo/exposición y un afinado de
         // nitidez leve — recompuesto en un segundo canvas porque Canvas no permite aplicar
-        // "filter" retroactivamente sobre lo ya pintado (incluida la sombra).
+        // "filter" retroactivamente sobre lo ya pintado (incluida la sombra). Valores subidos
+        // respecto a la versión anterior (contrast 1.08→1.15, saturate 1.15→1.22,
+        // brightness 1.03→1.10) porque las fotos tomadas con la cámara del celular en la
+        // tienda suelen salir apagadas/grisáceas por la luz interior — el resultado ahora se
+        // ve más claro y con colores más vivos sin llegar a sobre-exponer ni saturar en exceso.
         const canvas2=document.createElement('canvas');
         canvas2.width=w;canvas2.height=h;
         const ctx2=canvas2.getContext('2d');
-        ctx2.filter='contrast(1.08) saturate(1.15) brightness(1.03)';
+        ctx2.filter='contrast(1.15) saturate(1.22) brightness(1.10)';
         ctx2.drawImage(canvas,0,0);
 
         // Afinado de nitidez (unsharp mask simplificado): resta una versión desenfocada de la
