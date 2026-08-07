@@ -3235,7 +3235,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-07.2';
+const APP_VERSION='2026-08-07.3';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -3484,7 +3484,8 @@ function buildDBfromCloud(items, ventas, pendientes, provsExtra){
       coste:inv.costo!=null?inv.costo:null,
       track:!!inv.track, barcode:inv.barcode||'', peso:!!inv.peso, creado:inv.creado||null, imagen:inv.imagen||'',
       fmt:t.fmt, min:t.min, scale:t.scale, role:t.role, word:t.word,
-      hoyU:hoyU, abc:ABC_BY_SKU[ref]||null
+      hoyU:hoyU, abc:ABC_BY_SKU[ref]||null,
+      proveedorId:inv.proveedorId||null, proveedorNombre:inv.proveedorNombre||null
     });
   });
   items_arr.sort((a,b)=>b.u_all-a.u_all);
@@ -3504,8 +3505,16 @@ function buildDBfromCloud(items, ventas, pendientes, provsExtra){
     return {...p,dow:null,peak:0};
   }).sort((a,b)=>b.u30-a.u30);
 
+  // Proveedores REALES de la WebApp (tabla propia, distinta de la categoría de Loyverse) —
+  // usado por el buscador de "Proveedores de hoy" en Pedidos. Cada producto aporta su
+  // proveedorNombre si ya fue migrado a la tabla nueva, o su categoría (prov) si todavía no
+  // — mismo criterio de fallback que itemsFor(), para que buscador y filtrado coincidan.
+  const psReal={};
+  items_arr.forEach(it=>{const n=it.proveedorNombre||it.prov;if(!psReal[n])psReal[n]={prov:n,n:0};psReal[n].n++;});
+  const provsReal=Object.values(psReal).sort((a,b)=>String(a.prov).localeCompare(String(b.prov),'es'));
+
   const meta=ventas&&ventas.meta?ventas.meta:{min:'',max:'',ndays:0};
-  return {meta:{min:meta.min,max:meta.max,ndays:meta.ndays,nitems:items_arr.length,nprov:provs.length},items:items_arr,provs:provs,pendBySku:pendBySku,pendByBarcode:pendByBarcode};
+  return {meta:{min:meta.min,max:meta.max,ndays:meta.ndays,nitems:items_arr.length,nprov:provs.length},items:items_arr,provs:provs,provsReal:provsReal,pendBySku:pendBySku,pendByBarcode:pendByBarcode};
 }
 // Devuelve el registro de "pedido pendiente" de un producto (por sku, o por barcode si otro
 // proveedor lo vende bajo un sku distinto), o null si no tiene nada pedido en camino.
