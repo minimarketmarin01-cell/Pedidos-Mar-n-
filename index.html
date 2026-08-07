@@ -1358,6 +1358,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
             <button class="mm-mic" id="vc-lmic" type="button" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
             <button class="mm-scan cam-btn" id="vc-lscan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
           </div>
+          <select id="vc-provfilter" style="width:100%;margin:0 0 10px;padding:9px 10px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:12.5px"><option value="">📋 Todos los proveedores</option></select>
           <div id="vc-list"><div class="vc-empty">Cargando…</div></div>
           </div>
           <div id="vc-view-gondola" class="hidden">
@@ -3217,7 +3218,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-06.12';
+const APP_VERSION='2026-08-07.1';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -8213,21 +8214,39 @@ let _vcTodos=[];   // lista completa de lotes cargada; el buscador filtra sobre 
 function vcAplicarFiltro(){
   const inp=document.getElementById('vc-lsearch');
   const q=(inp?inp.value:'').toLowerCase().trim();
+  const provFiltro=document.getElementById('vc-provfilter').value;
   const x=document.getElementById('vc-lx'); if(x)x.style.display=q?'block':'none';
-  if(!q){vcRender(_vcTodos);return;}   // sin texto → lista normal de vencimientos activos
-  vcBuscarCatalogo(q);                 // con texto → busca en TODO el catálogo
+  if(!q){
+    const base=provFiltro?_vcTodos.filter(l=>l.categoria===provFiltro):_vcTodos;
+    vcRender(base);   // sin texto → lista normal de vencimientos activos, filtrada por proveedor si corresponde
+    return;
+  }
+  vcBuscarCatalogo(q,provFiltro);                 // con texto → busca en TODO el catálogo, combinable con el proveedor
 }
+// Puebla el filtro de proveedor SOLO con los que realmente tienen lotes de vencimiento
+// activos (no todo el catálogo de proveedores) — mismo criterio que ya usan otros filtros de
+// la app, para no llenar el selector de opciones sin resultados.
+function vcPoblarFiltroProveedor(){
+  const sel=document.getElementById('vc-provfilter');
+  const actual=sel.value;
+  const provs=[...new Set(_vcTodos.map(l=>l.categoria).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'es'));
+  sel.innerHTML='<option value="">📋 Todos los proveedores</option>'+provs.map(p=>`<option value="${p}">${p}</option>`).join('');
+  if(provs.includes(actual))sel.value=actual;
+}
+document.getElementById('vc-provfilter').onchange=vcAplicarFiltro;
 // Busca en el catálogo completo (no solo en lotes activos) por nombre, código de
 // barras o SKU. Muestra los lotes registrados del producto reutilizando vcRender
 // (todos sus botones siguen funcionando) y, si el producto no tiene lote/fecha,
 // una tarjeta "Sin fecha de vencimiento" con acceso directo a registrar un lote.
-function vcBuscarCatalogo(q){
+function vcBuscarCatalogo(q,provFiltro){
   const box=document.getElementById('vc-list');
   const words=q.split(/\s+/).filter(Boolean);
-  const prods=(DB.items||[]).filter(it=>{
+  let prods=(DB.items||[]).filter(it=>{
     const s=((it.nombre||'')+' '+(it.ref||'')+' '+(it.barcode||'')).toLowerCase();
     return words.every(w=>s.includes(w));
-  }).slice(0,80);
+  });
+  if(provFiltro)prods=prods.filter(it=>it.prov===provFiltro); // it.prov = categoría/proveedor propio de la WebApp, igual campo que l.categoria en los lotes
+  prods=prods.slice(0,80);
   if(!prods.length){box.innerHTML='<div class="vc-empty">Sin coincidencias en el catálogo.</div>';return;}
   const lotesPorSku={};_vcTodos.forEach(l=>{(lotesPorSku[l.sku]=lotesPorSku[l.sku]||[]).push(l);});
   const lotesMatch=[], sinLote=[];
@@ -8303,6 +8322,7 @@ async function vcRefreshCurrentView(){
     const j=await res.json();
     _vcTodos=(j&&j.ok)?j.lotes:_vcTodos;
   }catch(e){/* si falla la recarga, se repinta igual con los datos que ya había en memoria */}
+  vcPoblarFiltroProveedor();
   const activo=document.querySelector('#vc-viewseg button.active');
   const v=activo?activo.dataset.view:'lista';
   if(v==='pendientes')vcRenderPendientes();
@@ -8488,7 +8508,8 @@ async function vcLoad(){
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=vencimientos');
     const j=await res.json();
     _vcTodos=(j&&j.ok)?j.lotes:[];
-    vcAplicarFiltro();   // pinta ya filtrado por lo que haya escrito en el buscador de la lista
+    vcPoblarFiltroProveedor();
+    vcAplicarFiltro();   // pinta ya filtrado por lo que haya escrito en el buscador y/o el proveedor elegido
     vcUpdatePendBadge(_vcTodos.filter(l=>l.estado==='Retirado').length);
   }catch(e){box.innerHTML='<div class="vc-empty">Error al cargar. Intenta de nuevo.</div>';}
 }
@@ -9790,13 +9811,18 @@ function rzRender(){
   box.innerHTML=lista.map(({it,a,clase})=>{
     const covTxt=a.cov==null?'sin control de stock':a.cov===Infinity?'∞':(fmt1(a.cov)+'d de cobertura');
     const stockTxt=it.track&&it.stock!=null?fmt1(it.stock)+' u en stock':'sin seguimiento de inventario';
-    return `<div class="fp-row" style="flex-direction:column;align-items:stretch;gap:6px;padding:11px 0">
+    const rid='rz'+String(it.ref).replace(/[^a-zA-Z0-9]/g,'');
+    return `<div class="fp-row" style="flex-direction:column;align-items:stretch;gap:6px;padding:11px 0" data-rz-sku="${it.ref}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
         <div>
           <div style="font-weight:700;font-size:13.5px">${it.nombre}</div>
           <div style="font-size:11px;color:var(--muted)">${it.prov} · ${stockTxt} · ${covTxt}</div>
         </div>
         <span class="abc-badge abc-${clase.toLowerCase()}" style="flex-shrink:0">${clase}</span>
+      </div>
+      <div style="display:flex;gap:6px">
+        <input id="${rid}-stock" type="number" inputmode="decimal" placeholder="Corregir stock" value="${it.track&&it.stock!=null?it.stock:''}" style="flex:1;min-width:0;padding:8px 10px;border:1.5px solid var(--line);border-radius:9px;font-size:12.5px;font-family:'JetBrains Mono'">
+        <button type="button" class="loadbtn rz-guardar-stock" data-sku="${it.ref}" data-rid="${rid}" style="white-space:nowrap;padding:8px 12px;font-size:12.5px">✓ Guardar stock</button>
       </div>
       <button type="button" class="loadbtn rz-ir-pedido" data-prov="${(it.prov||'').replace(/"/g,'&quot;')}" style="width:100%;padding:8px;font-size:12.5px">🛒 Ir al pedido de ${it.prov}</button>
     </div>`;
@@ -9805,6 +9831,37 @@ function rzRender(){
     cerrarModal('rz-ov');
     pickProv(b.dataset.prov); // misma función que usa el selector de proveedores de siempre — no duplica lógica de navegación del catálogo
   });
+  box.querySelectorAll('.rz-guardar-stock').forEach(b=>b.onclick=()=>rzGuardarStock(b.dataset.sku,b.dataset.rid));
+}
+// Corrige el stock directamente desde Riesgo de quiebre — mismo endpoint que ya usan Ficha
+// del producto (fpGuardarRecuento) e Insumos, sin lógica nueva del lado del servidor. Al
+// terminar, recalcula y repinta solo esta lista (sin recargar la página ni cerrar el modal).
+async function rzGuardarStock(sku,rid){
+  const inp=document.getElementById(rid+'-stock');
+  const val=inp.value.trim();
+  if(val===''){showToast('Escribe el stock corregido primero');return;}
+  const nuevo=Number(val);
+  if(isNaN(nuevo)){showToast('⚠️ Cantidad inválida');return;}
+  const btn=document.querySelector(`.rz-guardar-stock[data-rid="${rid}"]`);
+  btn.disabled=true;btn.textContent='Guardando…';
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'ajustar_stock',payload:{sku,stockNuevo:nuevo,responsable:''}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      const it=DB.items.find(x=>x.ref===sku);
+      if(it){it.stock=j.stockNuevo!=null?j.stockNuevo:nuevo;if(j.trackHabilitado)it.track=true;}
+      persist();
+      showToast((j.trackHabilitado?'🔓 Seguimiento activado · ':'✓ Stock corregido: ')+fmt1(nuevo));
+      rzRender(); // vuelve a calcular el riesgo con el stock ya corregido — el producto puede salir de la lista si ya no está en riesgo
+      try{render();}catch(_){} // refleja el cambio también en la tabla principal de Pedidos
+    }else{
+      showToast('❌ '+(j&&j.error?j.error:'No se pudo guardar'));
+      btn.disabled=false;btn.textContent='✓ Guardar stock';
+    }
+  }catch(e){
+    showToast('❌ Error de conexión al guardar');
+    btn.disabled=false;btn.textContent='✓ Guardar stock';
+  }
 }
 document.getElementById('mas-q-riesgo').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');rzAbrir();};
 document.getElementById('rz-cerrar').onclick=()=>cerrarModal('rz-ov');
@@ -10435,7 +10492,8 @@ const REABRIR_MODULO={
   'fp-ov':()=>{
     const d=fpCargarBorrador();
     if(d&&d.sku)fpAbrir(d.sku,d); else cerrarModal('fp-ov'); // sin sku guardado, no hay nada que reabrir
-  }
+  },
+  'rz-ov':()=>{try{rzAbrir();}catch(e){}} // rzAbrir ya carga la lista Y pinta el estado real de las notificaciones — antes faltaba esta entrada, así que un F5 caía al fallback genérico que solo mostraba el modal vacío
 };
 (function restaurarUltimaPantallaAlCargar(){
   const id=cargarUltimaPantalla();
