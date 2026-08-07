@@ -1143,6 +1143,13 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
    vista-filas, carrito-fijo), solo que en sentido inverso porque celular es el modo base. */
 #tab-inicio{display:none}
 html.modo-celular #tab-inicio:not(.hidden){display:block}
+/* Oculta el contenido propio de Pedidos (header de búsqueda + tarjetas de la tabla) cuando
+   se está en Inicio — pero NUNCA los overlays (.mm-ov/.scan-ov), que viven como HERMANOS de
+   esas tarjetas dentro del mismo div y se controlan siempre por su propia clase 'hidden'
+   individual. Por eso el selector apunta a .tablecard específicamente, no a un contenedor
+   compartido con los overlays. */
+html.ocultar-contenido-pedido #sticky-hdr,
+html.ocultar-contenido-pedido #tab-pedido .tablecard{display:none}
 #tab-inicio{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
 .in2-hdr{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;background:rgba(252,252,249,.94);backdrop-filter:saturate(180%) blur(14px);-webkit-backdrop-filter:saturate(180%) blur(14px);border-bottom:1px solid var(--line)}
 .in2-hdr-left{display:flex;align-items:center;gap:8px;min-width:0}
@@ -3302,7 +3309,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-07.5';
+const APP_VERSION='2026-08-07.6';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -3800,7 +3807,17 @@ const LAST_SCREEN_LS_KEY='marin376_ultima_pantalla';
 function guardarUltimaPantalla(id){try{localStorage.setItem(LAST_SCREEN_LS_KEY,id||'pedido');}catch(e){}}
 function cargarUltimaPantalla(){try{return localStorage.getItem(LAST_SCREEN_LS_KEY)||'pedido';}catch(e){return 'pedido';}}
 function showScreen(name){
-  document.getElementById('tab-pedido').classList.toggle('hidden',name!=='pedido');
+  // FIX importante: los módulos como Recepción (rc-ov) y Vencimientos (vc-ov) viven
+  // anidados DENTRO de #tab-pedido (no son hermanos), porque siempre se construyeron ahí.
+  // Ocultar #tab-pedido completo (como se hacía antes de que existiera Inicio) también
+  // ocultaba esos overlays aunque tuvieran su propio z-index alto — un ancestro con
+  // display:none anula visualmente a sus hijos sin importar el z-index. Por eso ya NO se
+  // toca la visibilidad de #tab-pedido en sí: se deja siempre montado, y en su lugar se
+  // oculta solo su CONTENIDO propio (header de búsqueda + tabla) vía la clase
+  // 'ocultar-contenido-pedido' en <html> — los overlays (.mm-ov/.scan-ov), que se controlan
+  // por su propia clase 'hidden' de forma independiente, quedan intactos y pueden abrirse
+  // sin importar en qué pestaña (Inicio o Pedidos) esté el usuario.
+  document.documentElement.classList.toggle('ocultar-contenido-pedido',name!=='pedido');
   const inicioEl=document.getElementById('tab-inicio');
   if(inicioEl)inicioEl.classList.toggle('hidden',name!=='inicio');
   document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('active'));
@@ -3829,6 +3846,13 @@ function playTabAnim(name){
   if(!el)return;
   el.classList.remove('tab-anim'); void el.offsetWidth; // reinicia la animación aunque sea la misma pantalla
   el.classList.add('tab-anim');
+  // IMPORTANTE: la animación usa CSS transform (@keyframes tabIn), y una vez aplicada, la
+  // clase queda pegada al elemento para siempre si nadie la quita — eso deja un stacking
+  // context PERMANENTE (transform crea uno nuevo aunque la animación ya haya terminado),
+  // lo que puede tapar modales con z-index alto (.mm-ov) que se abren encima más tarde. Se
+  // quita apenas termina la animación (280ms) para que el elemento vuelva a su apilamiento
+  // normal — esto no cambia nada visual, la animación ya se vio completa.
+  el.addEventListener('animationend',()=>{el.classList.remove('tab-anim');},{once:true});
 }
 // (bn-pedidos se maneja en el listener delegado de .bottom-nav más abajo — evita duplicar el evento)
 
@@ -9875,10 +9899,23 @@ function llUpdateBadge(n){
 // una señal simple: "esto vende mucho y se puede acabar", pensada para no llegar tarde con
 // proveedores que no cumplen fecha. Reutiliza analyze() e it.abc tal cual — no duplica ni
 // reinventa el cálculo de cobertura/urgencia ni el de clasificación ABC.
+// Categorías de Loyverse que se excluyen del cálculo de riesgo: productos frescos/perecibles
+// (verduras, frutas, huevos) tienen una lógica de reposición completamente distinta a un
+// producto envasado de alta rotación — se compran a diario o cada pocos días según llegada
+// de proveedor, no según cobertura calculada con ventas históricas, así que aparecer aquí
+// como "en riesgo" no es útil y genera ruido. Comparación por texto normalizado (sin tildes,
+// insensible a mayúsculas) para no depender de que la categoría esté escrita exactamente igual.
+const RZ_CATEGORIAS_EXCLUIDAS=['verdura','fruta','huevo'];
+function rzCategoriaExcluida(prov){
+  const p=normTxt(prov||'');
+  return RZ_CATEGORIAS_EXCLUIDAS.some(c=>p.includes(c));
+}
 function rzCalcular(soloClaseA){
   return DB.items
     .map(it=>{
       if(!it.abc)return null; // sin clasificación ABC calculada todavía — no se puede saber si es alta rotación
+      if(it.peso)return null; // vendido por peso (verdulería/carnicería suelta) — mismo motivo que las categorías excluidas: la cobertura no es comparable a un producto envasado
+      if(rzCategoriaExcluida(it.prov))return null; // categoría de Loyverse frutas/verduras/huevos
       const clase=it.abc.clase;
       if(soloClaseA?clase!=='A':(clase!=='A'&&clase!=='B'))return null;
       const a=analyze(it);
@@ -9916,7 +9953,10 @@ function rzActualizarBadge(){
 function rzAbrir(){
   abrirModal('rz-ov');
   const selProv=document.getElementById('rz-prov');
-  const provsConRiesgo=[...new Set(rzCalcular(false).map(x=>x.it.prov))].sort((a,b)=>String(a).localeCompare(String(b)));
+  // Proveedor real de la WebApp (proveedorNombre) — mismo fallback a categoría de Loyverse
+  // que ya usa itemsFor()/el filtro de Vencimientos, para los productos que aún no fueron
+  // migrados a la tabla de proveedores propia.
+  const provsConRiesgo=[...new Set(rzCalcular(false).map(x=>x.it.proveedorNombre||x.it.prov))].sort((a,b)=>String(a).localeCompare(String(b),'es'));
   const provActual=selProv.value;
   selProv.innerHTML='<option value="">📋 Todos los proveedores</option>'+provsConRiesgo.map(p=>`<option value="${p}">${p}</option>`).join('');
   if(provsConRiesgo.includes(provActual))selProv.value=provActual;
@@ -9926,7 +9966,7 @@ function rzRender(){
   const soloA=document.getElementById('rz-clase').value==='A';
   const provFiltro=document.getElementById('rz-prov').value;
   let lista=rzCalcular(soloA);
-  if(provFiltro)lista=lista.filter(x=>x.it.prov===provFiltro);
+  if(provFiltro)lista=lista.filter(x=>(x.it.proveedorNombre||x.it.prov)===provFiltro);
   document.getElementById('rz-lbl').textContent=lista.length+' producto'+(lista.length===1?'':'s')+' en riesgo de quiebre';
   const box=document.getElementById('rz-list');
   if(!lista.length){box.innerHTML='<div class="vc-empty">🎉 Sin productos de alta rotación en riesgo ahora mismo.</div>';return;}
@@ -9938,7 +9978,7 @@ function rzRender(){
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
         <div>
           <div style="font-weight:700;font-size:13.5px">${it.nombre}</div>
-          <div style="font-size:11px;color:var(--muted)">${it.prov} · ${stockTxt} · ${covTxt}</div>
+          <div style="font-size:11px;color:var(--muted)">${it.proveedorNombre||it.prov} · ${stockTxt} · ${covTxt}</div>
         </div>
         <span class="abc-badge abc-${clase.toLowerCase()}" style="flex-shrink:0">${clase}</span>
       </div>
