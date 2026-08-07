@@ -3235,7 +3235,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-07.3';
+const APP_VERSION='2026-08-07.4';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -8395,7 +8395,10 @@ function gonRender(){
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
           <div class="gon-info"><div class="nom">${l.prioridad} ${l.nombre}</div>
           <div class="meta">${l._bk.lbl} · vence ${l.fechaVencimiento} · ${l.cantidad} ${l.unidad}${l.lote?' · lote '+l.lote:''}</div></div>
-          <button class="gon-retirar" data-fi="${l.filaIndex}" data-nom="${nom}">Retirar</button>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="gon-vendido" data-fi="${l.filaIndex}" data-nom="${nom}" style="flex:1;padding:9px;border-radius:9px;border:1.5px solid var(--verde);background:var(--verde-bg,#E9F1E5);color:var(--verde);font-weight:700;font-size:12.5px;cursor:pointer">✓ Vendido</button>
+          <button class="gon-retirar" data-fi="${l.filaIndex}" data-nom="${nom}" style="flex:1">Retirar</button>
         </div>
         <div style="display:flex;justify-content:flex-end">
           <button type="button" class="btn-editfecha" data-editf="${l.filaIndex}" data-fv="${l.fechaVencimiento}">✏️ Editar fecha</button>
@@ -8416,6 +8419,7 @@ function gonRender(){
     return `<div class="gon-cat"><div class="gon-cat-head"><span class="cat-nom">${cat}</span><span class="gon-counts">${badges}</span></div>${filas}</div>`;
   }).join('');
   box.querySelectorAll('.gon-retirar').forEach(b=>b.onclick=()=>gonRetirar(b.dataset.fi,b.dataset.nom,b));
+  box.querySelectorAll('.gon-vendido').forEach(b=>b.onclick=()=>gonMarcarVendido(b.dataset.fi,b.dataset.nom,b));
   // Editar fecha en Góndola: mismo mini-formulario y misma función vcEditarFecha que ya usa
   // la lista principal de Vencimientos — solo cambian los IDs (prefijo gon- en vez de vc-)
   // para no chocar si ambas vistas llegaran a estar montadas en el DOM a la vez.
@@ -8472,6 +8476,26 @@ async function gonRetirar(fi,nombre,btn){
       vcUpdatePendBadge(_vcTodos.filter(x=>x.estado==='Retirado').length);
     }else{showToast('Error: '+((j&&j.error)||'no se pudo marcar'));if(btn){btn.disabled=false;btn.textContent='Retirar';}}
   }catch(e){showToast('Error de conexión');if(btn){btn.disabled=false;btn.textContent='Retirar';}}
+}
+// "✓ Vendido" en Góndola — antes solo existía en la vista Lista (vcRevisar con
+// resultado='vendido'). Se reutiliza la misma función/endpoint: el lote pasa a "Revisado" y
+// deja de mostrarse en las próximas vueltas de Góndola, sin pasar por Pendientes (a
+// diferencia de "Retirar", que sí espera cambio con proveedor).
+async function gonMarcarVendido(fi,nombre,btn){
+  if(btn){btn.disabled=true;btn.textContent='…';}
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'revisar_lote',payload:{
+      filaIndex:Number(fi),revisadoPor:(document.getElementById('gon-revisor').value||'').trim(),resultado:'vendido'
+    }})});
+    const j=await res.json();
+    if(j&&j.ok){
+      const l=_vcTodos.find(x=>String(x.filaIndex)===String(fi));
+      if(l)l.estado='Revisado';
+      _gonRevisados++;
+      showToast('✓ Vendido / liquidado: '+nombre);
+      gonRender();
+    }else{showToast('Error: '+((j&&j.error)||'no se pudo marcar'));if(btn){btn.disabled=false;btn.textContent='✓ Vendido';}}
+  }catch(e){showToast('Error de conexión');if(btn){btn.disabled=false;btn.textContent='✓ Vendido';}}
 }
 function fmtDateInputToDDMMAAAA(v){ // "YYYY-MM-DD" → "DD/MM/AAAA"
   const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v||'');
