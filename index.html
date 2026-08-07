@@ -2527,7 +2527,14 @@ function aggregate(sales, invMap){
   sales.forEach(s=>{const d=(s.fecha.getDay()+6)%7;if(!provDow[s.prov])provDow[s.prov]=[0,0,0,0,0,0,0];provDow[s.prov][d]+=s.uds;});
   items.forEach(it=>{if(!ps[it.prov])ps[it.prov]={prov:it.prov,u30:0,u_all:0,rev:0,prof:0,n:0};ps[it.prov].u30+=it.u30;ps[it.prov].u_all+=it.u_all;ps[it.prov].rev+=it.rev;ps[it.prov].prof+=it.prof;ps[it.prov].n++;});
   const provs=Object.values(ps).map(p=>{const raw=provDow[p.prov]||[0,0,0,0,0,0,0];const dow=raw.map((x,i)=>occ[i]?Math.round(x/occ[i]*100)/100:0);let peak=0;dow.forEach((x,i)=>{if(x>dow[peak])peak=i;});return{...p,dow,peak};}).sort((a,b)=>b.u30-a.u30);
-  return{meta:{min:new Date(minT).toISOString().slice(0,10),max:new Date(maxT).toISOString().slice(0,10),ndays:Math.round((maxT-minT)/D)+1,nitems:items.length,nprov:provs.length},items,provs};
+  // Proveedores REALES de la WebApp (tabla propia, no categoría de Loyverse) — usado solo por
+  // el buscador de "Proveedores de hoy" en Pedidos. Cada producto aporta su proveedorNombre
+  // si ya fue migrado, o su categoría (prov) si todavía no — mismo criterio de fallback que
+  // itemsFor(), para que el buscador y el filtrado real coincidan siempre entre sí.
+  const psReal={};
+  items.forEach(it=>{const nombre=it.proveedorNombre||it.prov;if(!psReal[nombre])psReal[nombre]={prov:nombre,n:0};psReal[nombre].n++;});
+  const provsReal=Object.values(psReal).sort((a,b)=>String(a.prov).localeCompare(String(b.prov),'es'));
+  return{meta:{min:new Date(minT).toISOString().slice(0,10),max:new Date(maxT).toISOString().slice(0,10),ndays:Math.round((maxT-minT)/D)+1,nitems:items.length,nprov:provs.length},items,provs,provsReal};
 }
 // invMap desde items (para tener inventario base al cargar solo ventas)
 function invMapFromItems(items){const m={};items.forEach(it=>{m[it.ref]={nombre:it.nombre,prov:it.prov,coste:it.coste,precio:it.precio,stock:it.stock,track:it.track,barcode:it.barcode||''};});return m;}
@@ -2606,7 +2613,17 @@ function analyze(it){const rate=rateOf(it),tracked=it.track&&it.stock!=null,esCa
     else if(cov>(lead+cover)*2.5){status='sobre';sug=0;}else{status='ok';sug=0;}}
   return{rate,cov,status,sug,tracked,trend:trendOf(it),vencido:paraCambioTotal};}
 const SO={urgente:0,pedir:1,sinstock:2,ok:3,sobre:4};const SL={urgente:'Urgente',pedir:'Pedir',ok:'OK',sobre:'Sobrestock',sinstock:'Ref.'};
-function itemsFor(p){return DB.items.filter(i=>i.prov===p||(i.provsExtra&&i.provsExtra.includes(p)));}
+// Un producto pertenece al proveedor "p" si: 1) ya tiene proveedor real asignado en la
+// WebApp y coincide (it.proveedorNombre) — fuente correcta y la que se prioriza siempre que
+// exista — o 2) todavía no tiene proveedor real asignado (sigue en migración) y coincide por
+// categoría de Loyverse (it.prov), que es el fallback para no perder productos del buscador
+// mientras se termina de clasificar todo el catálogo. provsExtra sigue funcionando igual.
+function itemsFor(p){return DB.items.filter(i=>(i.proveedorNombre?i.proveedorNombre===p:i.prov===p)||(i.provsExtra&&i.provsExtra.includes(p)));}
+// Variante ESTRICTA solo por categoría de Loyverse (sin el fallback de proveedor real) — la
+// usa "Proveedores de hoy" (calendario/dow), que está indexado por categoría y se rompería si
+// un producto ya migrado a proveedor real (con nombre distinto a su categoría) desapareciera
+// de su categoría original.
+function itemsForCategoria(p){return DB.items.filter(i=>i.prov===p||(i.provsExtra&&i.provsExtra.includes(p)));}
 // Normaliza texto para comparar sin tildes/mayúsculas ("Pingüino"≈"pinguino")
 function normTxt(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
 function currentItems(){if(state.search){const words=normTxt(state.search).trim().split(/\s+/).filter(Boolean);return DB.items.filter(i=>{const hay=normTxt(i.nombre);const ref=String(i.ref||'');const bc=i.barcode?String(i.barcode):'';return words.every(w=>hay.includes(w)||ref.includes(w)||bc.includes(w));});}if(state.allProv)return DB.items;return itemsFor(state.prov);}
@@ -2626,7 +2643,7 @@ function onQty(inp){const ref=inp.dataset.ref,fmt=+inp.dataset.fmt;let b=Math.ma
   }
   renderOrder();renderScale();persistUI();}
 function stepQty(btn){const cell=btn.closest('.qcell');const inp=cell.querySelector('.qty-in');const st=+inp.dataset.step||1;inp.value=Math.max(0,(parseInt(inp.value)||0)+(+btn.dataset.d)*st);onQty(inp);}
-function ccuMixedPacks(){let p=0;itemsFor('CCU').forEach(it=>{if(it.scale==='ccu_ret'){const a=analyze(it);p+=Math.ceil(qOf(it,a)/it.fmt);}});return p;}
+function ccuMixedPacks(){let p=0;itemsForCategoria('CCU').forEach(it=>{if(it.scale==='ccu_ret'){const a=analyze(it);p+=Math.ceil(qOf(it,a)/it.fmt);}});return p;}
 function ccuTierIdx(packs){const b=SCALES.ccu_ret.breaks;let idx=0;for(let i=0;i<b.length;i++)if(packs>=b[i])idx=i;return idx;}
 function tierCostUn(it){if(it.scale==='ccu_ret'){return SCALES.ccu_ret.cost[it.role||'otros'][ccuTierIdx(ccuMixedPacks())];}if(it.scale&&SCALES[it.scale]){const a=analyze(it);const packs=Math.ceil(qOf(it,a)/it.fmt);const t=SCALES[it.scale].tiers.find(t=>packs>=t.min&&packs<=t.max);return t?t.c:(it.coste||0);}return it.coste||0;}
 
@@ -2638,7 +2655,7 @@ function buildChips(){
   function opt(label,n,val,isAll){const o=document.createElement('div');o.className='prov-opt'+(isAll?' all':'');o.dataset.val=val;const t=document.createElement('span');t.textContent=label;o.appendChild(t);if(n!=null){const c=document.createElement('span');c.className='n';c.textContent=n;o.appendChild(c);}o.onclick=()=>pickProv(val);return o;}
   function renderProvMenu(filter){const q=normTxt(filter||'').trim();menu.innerHTML='';
     if(!q||'todos los proveedores'.indexOf(q)===0)menu.appendChild(opt('📋 Todos los proveedores',DB.items.length,'__ALL__',true));
-    DB.provs.filter(p=>!q||normTxt(p.prov).indexOf(q)>-1).forEach(p=>menu.appendChild(opt(p.prov,p.n,p.prov,false)));
+    (DB.provsReal||[]).filter(p=>!q||normTxt(p.prov).indexOf(q)>-1).forEach(p=>menu.appendChild(opt(p.prov,p.n,p.prov,false)));
     const matchProd=q&&DB.items.some(i=>normTxt(i.nombre).includes(q));
     acts=[].slice.call(menu.querySelectorAll('.prov-opt'));
     if(!acts.length){const e=document.createElement('div');e.className='prov-opt';e.style.color='var(--muted)';e.textContent=matchProd?'Sin proveedores — mostrando productos abajo ↓':'Sin coincidencias';menu.appendChild(e);}}
@@ -2647,7 +2664,7 @@ function buildChips(){
   sel.onfocus=()=>{openMenu(sel.value);setTimeout(()=>caretToEnd(sel),0);};
   sel.oninput=()=>{openMenu(sel.value);state.search=sel.value.trim();document.getElementById('prov-x').classList.toggle('on',!!state.search);clearTimeout(window._searchT);window._searchT=setTimeout(()=>{render();persistUI();},200);};
   const xb=document.getElementById('prov-x');
-  if(xb)xb.onclick=ev=>{ev.preventDefault();ev.stopPropagation();const q=normTxt(sel.value||'').trim();const esProveedor=q&&DB.provs.some(p=>normTxt(p.prov).indexOf(q)>-1);state.search='';xb.classList.remove('on');clearTimeout(window._searchT);if(esProveedor){sel.value='';openMenu('');sel.focus();}else{menu.classList.add('hidden');sel.blur();setProvInputValue();}render();persistUI();};
+  if(xb)xb.onclick=ev=>{ev.preventDefault();ev.stopPropagation();const q=normTxt(sel.value||'').trim();const esProveedor=q&&(DB.provsReal||[]).some(p=>normTxt(p.prov).indexOf(q)>-1);state.search='';xb.classList.remove('on');clearTimeout(window._searchT);if(esProveedor){sel.value='';openMenu('');sel.focus();}else{menu.classList.add('hidden');sel.blur();setProvInputValue();}render();persistUI();};
   sel.onkeydown=e=>{
     if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();if(!acts.length)return;let i=acts.indexOf(menu.querySelector('.prov-opt.act'));acts.forEach(o=>o.classList.remove('act'));i=e.key==='ArrowDown'?(i+1)%acts.length:(i<=0?acts.length-1:i-1);acts[i].classList.add('act');acts[i].scrollIntoView({block:'nearest'});}
     else if(e.key==='Enter'){e.preventDefault();const a=menu.querySelector('.prov-opt.act');if(a&&a.dataset.val){pickProv(a.dataset.val);}else{menu.classList.add('hidden');if(sel.value.trim()&&!commitProv(sel.value))setProvInputValue();sel.blur();}}
@@ -2707,7 +2724,7 @@ if(!window._provMenuPortalBound){
     window.addEventListener('scroll',()=>{if(_provMenuHome)_provMenuPosition(_pm);},true);
   }
 }
-function setProvInputValue(){const sel=document.getElementById('prov-all');if(!sel)return;if(document.activeElement===sel)return;/* el usuario está escribiendo ahí: no lo interrumpimos */if(state.search)return;const allMode=state.allProv&&!state.search;sel.value=allMode?'📋 Todos los proveedores':(DB.provs.some(p=>p.prov===state.prov)?state.prov:(DB.provs[0]?DB.provs[0].prov:''));}
+function setProvInputValue(){const sel=document.getElementById('prov-all');if(!sel)return;if(document.activeElement===sel)return;/* el usuario está escribiendo ahí: no lo interrumpimos */if(state.search)return;const allMode=state.allProv&&!state.search;sel.value=allMode?'📋 Todos los proveedores':((DB.provsReal||[]).some(p=>p.prov===state.prov)?state.prov:(DB.provsReal&&DB.provsReal[0]?DB.provsReal[0].prov:''));}
 // Modal de cambio de proveedor (reemplaza el confirm() nativo que se usaba antes). Controlado
 // 100% por callbacks — quien lo abre decide qué pasa en cada opción, este solo muestra/oculta.
 function pvAbrir(providerName,editedCount,onKeepSuggested,onKeepCurrent,onCancel){
@@ -2730,7 +2747,7 @@ function pickProv(target){
   if(target==='__ALL__'){state.allProv=true;}else{state.allProv=false;state.prov=target;state.sort='rate';state.dir=-1;}
   state.search='';const sx=document.getElementById('prov-x');if(sx)sx.classList.remove('on');const menu=document.getElementById('prov-menu');if(menu)menu.classList.add('hidden');const sel=document.getElementById('prov-all');if(sel)sel.blur();setProvInputValue();render();persistUI();
 }
-function commitProv(val){const key=(val||'').trim().toLowerCase();if(!key)return false;if(key.indexOf('todos')===0||key.indexOf('📋')===0){pickProv('__ALL__');return true;}let hit=DB.provs.find(p=>p.prov.toLowerCase()===key);if(!hit&&key.length>=2)hit=DB.provs.find(p=>p.prov.toLowerCase().indexOf(key)>-1);if(hit){pickProv(hit.prov);return true;}return false;}
+function commitProv(val){const key=(val||'').trim().toLowerCase();if(!key)return false;if(key.indexOf('todos')===0||key.indexOf('📋')===0){pickProv('__ALL__');return true;}let hit=(DB.provsReal||[]).find(p=>p.prov.toLowerCase()===key);if(!hit&&key.length>=2)hit=(DB.provsReal||[]).find(p=>p.prov.toLowerCase().indexOf(key)>-1);if(hit){pickProv(hit.prov);return true;}return false;}
 function updGlob(){let q=0;DB.items.forEach(it=>{if(it.track&&it.stock!=null&&it.stock<=0&&it.u30>0)q++;});document.getElementById('glob-quiebre').textContent='● '+q+' en quiebre';
   document.getElementById('updlabel').innerHTML=`Datos: <b>${DB.meta.min} → ${DB.meta.max}</b> · ${DB.meta.nitems} productos · ${SRC}`;}
 
@@ -3012,10 +3029,10 @@ function renderScale(){
     html+=`<div class="prog-track"><div class="prog-fill" style="width:${pct}%"></div>${marks}</div>`;
     if(idx<3){const falta=S.breaks[idx+1]-packs,nextD=S.dtoG[idx+1],save=(S.cost.otros[idx]-S.cost.otros[idx+1]);html+=`<div class="scale-next">Te faltan <b>${falta} pack(s)</b> para <b>-${nextD}%</b>. Ahorras ~<b>${peso(save)}/u</b> en retornables.</div>`;}
     else html+=`<div class="scale-max">✓ Máximo descuento (-21.06%)</div>`;
-    const list=itemsFor('CCU').filter(it=>it.scale==='ccu_ret').map(it=>{const a=analyze(it);const q=qOf(it,a);return{it,q,p:Math.ceil(q/it.fmt)};}).filter(x=>x.q>0);
+    const list=itemsForCategoria('CCU').filter(it=>it.scale==='ccu_ret').map(it=>{const a=analyze(it);const q=qOf(it,a);return{it,q,p:Math.ceil(q/it.fmt)};}).filter(x=>x.q>0);
     html+=list.length?`<div class="scale-list">`+list.map(x=>`<div class="scale-li"><span>${x.it.nombre.replace(/2\.5.*/i,'2.5L')}</span><span class="pk">${x.p} pk · ${peso(tierCostUn(x.it))}/u</span></div>`).join('')+`</div>`:`<div class="scale-list" style="color:var(--muted);text-align:center;padding:8px">Agrega retornables para activar la escala.</div>`;
   }else{document.getElementById('scale-sub').textContent='Coca-Cola — escalón por formato';
-    const ds=itemsFor('COCA COLA').filter(it=>it.scale).map(it=>{const a=analyze(it);const q=qOf(it,a);return{it,q,packs:Math.ceil(q/it.fmt)};}).filter(x=>x.q>0);
+    const ds=itemsForCategoria('COCA COLA').filter(it=>it.scale).map(it=>{const a=analyze(it);const q=qOf(it,a);return{it,q,packs:Math.ceil(q/it.fmt)};}).filter(x=>x.q>0);
     if(!ds.length)html=`<div class="scale-list" style="color:var(--muted);text-align:center;padding:14px 8px">Agrega 1.5L (pack x6) o Vidrio Retornable (caja x9) al pedido para ver tu escalón.</div>`;
     else{html='<div class="scale-list">';ds.forEach(x=>{const S=SCALES[x.it.scale];const tier=S.tiers.find(t=>x.packs>=t.min&&x.packs<=t.max)||S.tiers[0];const ti=S.tiers.indexOf(tier),next=S.tiers[ti+1];
       html+=`<div style="padding:9px 0;border-bottom:1px dashed var(--line2)"><div style="font-weight:600;font-size:12.5px">${x.it.nombre}</div><div style="display:flex;justify-content:space-between;margin-top:3px"><span class="pk" style="font-family:'JetBrains Mono';font-weight:700">${x.packs} ${S.word}</span><span style="color:var(--wa-d);font-weight:700">-${tier.dto}% · ${peso(tier.c)}/u</span></div>`;
@@ -3188,7 +3205,7 @@ function renderOverview(){
   const max=arr.length?arr[0].val:1;
   const cc=document.getElementById('catchart');
   if(cc){cc.innerHTML=arr.length?arr.map(r=>`<div class="cbar-row"><span class="cbar-lbl" title="${r.prov}">${r.prov}</span><span class="cbar-track"><span class="cbar-fill" style="width:${Math.max(3,Math.round(r.val/max*100))}%"></span></span><span class="cbar-val">${peso(r.val)}</span></div>`).join(''):'<div class="cc-empty">Sin datos de venta semanal todavía.</div>';}
-  const rows=DB.provs.map(p=>{const items=itemsFor(p.prov);let urg=0,ped=0,cost=0;items.forEach(it=>{const a=analyze(it);if(a.status==='urgente')urg++;if(a.status==='pedir')ped++;if(a.sug>0)cost+=(it.coste||0)*a.sug;});return{...p,urg,ped,cost,need:urg+ped};}).filter(r=>r.n>0).sort((a,b)=>b.urg-a.urg||b.need-a.need||b.cost-a.cost);
+  const rows=DB.provs.map(p=>{const items=itemsForCategoria(p.prov);let urg=0,ped=0,cost=0;items.forEach(it=>{const a=analyze(it);if(a.status==='urgente')urg++;if(a.status==='pedir')ped++;if(a.sug>0)cost+=(it.coste||0)*a.sug;});return{...p,urg,ped,cost,need:urg+ped};}).filter(r=>r.n>0).sort((a,b)=>b.urg-a.urg||b.need-a.need||b.cost-a.cost);
   const tb=document.getElementById('ovbody');tb.innerHTML='';
   rows.forEach(r=>{const tr=document.createElement('tr');tr.innerHTML=`<td class="l"><span class="ov-prov" data-p="${r.prov}">${r.prov}</span></td><td class="num">${r.n}</td><td class="num">${fmt1(r.u30/30)}</td><td class="num">${r.dow?DIAS[r.peak]:'—'}</td><td class="num" style="color:${r.urg>0?'var(--rojo)':'var(--muted)'};font-weight:700">${r.urg||'—'}</td><td class="num" style="color:${r.ped>0?'var(--ambar)':'var(--muted)'};font-weight:700">${r.ped||'—'}</td><td class="num">${r.cost>0?peso(r.cost):'—'}</td><td class="num">${peso(r.prof)}</td>`;tb.appendChild(tr);});
   tb.querySelectorAll('.ov-prov').forEach(el=>el.onclick=()=>{
@@ -3218,7 +3235,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-07.1';
+const APP_VERSION='2026-08-07.2';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -3536,7 +3553,7 @@ async function cloudSync(silent,live,full,origen){
           if(!refsValidos.has(ref))delete state.edits[ref];
         });
       }
-      if(!DB.provs.some(p=>p.prov===state.prov))state.prov=DB.provs[0]?DB.provs[0].prov:'';
+      if(!(DB.provsReal||[]).some(p=>p.prov===state.prov))state.prov=DB.provsReal&&DB.provsReal[0]?DB.provsReal[0].prov:'';
       setLastSync(Date.now());
       // Guarda dónde estaba el usuario (tabla de productos y panel de armar pedido) — un
       // sync automático NUNCA debe devolverlo al inicio de la fila en la que estaba.
