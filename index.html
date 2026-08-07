@@ -1135,6 +1135,52 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
 .mas-badge{position:absolute;top:-5px;right:-5px;background:var(--rojo);color:#fff;border-radius:10px;min-width:16px;height:16px;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 3px}
 .mas-badge.on{display:flex}
 @media(prefers-reduced-motion:reduce){.bn-item,.bn-item .ic{transition:none!important}}
+/* ===================== PANTALLA INICIO — SOLO MODO CELULAR =====================
+   Doble bloqueo a propósito: 1) oculta por defecto (sea cual sea el modo) y 2) solo se
+   revela bajo html.modo-celular. Así, aunque el JS de _aplicarModo() fallara o el usuario
+   entrara directo sin pasar por el selector, tablet/BlissOS/escritorio JAMÁS muestran esta
+   pantalla — mismo criterio de aislamiento que ya usa el resto de la app (modo-bliss,
+   vista-filas, carrito-fijo), solo que en sentido inverso porque celular es el modo base. */
+#tab-inicio{display:none}
+html.modo-celular #tab-inicio:not(.hidden){display:block}
+#tab-inicio{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+.in2-hdr{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;background:rgba(252,252,249,.94);backdrop-filter:saturate(180%) blur(14px);-webkit-backdrop-filter:saturate(180%) blur(14px);border-bottom:1px solid var(--line)}
+.in2-hdr-left{display:flex;align-items:center;gap:8px;min-width:0}
+.in2-logo{width:30px;height:30px;border-radius:8px;flex-shrink:0;object-fit:cover}
+.in2-hdr-txt{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+.in2-hdr-txt b{font-size:14px;font-weight:800;color:var(--ink)}
+.in2-hdr-txt span{font-size:10.5px;color:var(--muted);font-weight:600}
+.in2-hdr-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.in2-live{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;color:var(--verde,#3a9d5c);font-family:'JetBrains Mono',monospace}
+.in2-live-dot{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block;animation:live-pulse 2s ease-in-out infinite}
+.in2-notif-btn{position:relative;background:var(--paper);border:1px solid var(--line);border-radius:10px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;color:var(--ink);cursor:pointer;flex-shrink:0}
+.in2-notif-btn:active{background:var(--line)}
+.in2-notif-badge{position:absolute;top:-5px;right:-5px;background:var(--rojo);color:#fff;border-radius:10px;min-width:16px;height:16px;font-size:9.5px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px}
+.in2-body{padding:14px}
+.in2-section-title{font-size:11.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin:18px 0 9px}
+.in2-section-title:first-child{margin-top:0}
+.in2-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.in2-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;text-align:center;position:relative;min-height:86px;justify-content:center}
+.in2-card:active{background:var(--paper);transform:scale(.97)}
+.in2-card .ic{font-size:22px;line-height:1}
+.in2-card .lab{font-size:10.5px;font-weight:700;color:var(--ink);line-height:1.2}
+.in2-card .badge{position:absolute;top:6px;right:6px;background:var(--rojo);color:#fff;border-radius:10px;min-width:17px;height:17px;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px;font-family:'JetBrains Mono',monospace}
+.in2-card .badge.ok{background:var(--verde,#3a9d5c)}
+.in2-card .badge.warn{background:var(--gold,#c68a1b)}
+.in2-atencion{display:flex;flex-direction:column;gap:7px}
+.in2-att-row{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--rojo);border-radius:11px;padding:10px 12px;cursor:pointer}
+.in2-att-row:active{background:var(--paper)}
+.in2-att-row .n{font-size:17px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--rojo);min-width:26px;text-align:center}
+.in2-att-row .txt{flex:1;min-width:0}
+.in2-att-row .t{font-size:12.5px;font-weight:700;color:var(--ink)}
+.in2-att-row .s{font-size:10.5px;color:var(--muted);margin-top:1px}
+.in2-att-row .chev{color:var(--muted);flex-shrink:0}
+.in2-empty{font-size:12px;color:var(--muted);text-align:center;padding:14px 8px}
+.in2-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.in2-action-btn{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;font-size:10px;font-weight:700;color:var(--ink);text-align:center}
+.in2-action-btn:active{background:var(--paper)}
+.in2-action-btn .ic{font-size:18px}
+@media (min-width:400px){.in2-card .lab{font-size:11px}}
 /* Tablet (1000–1399px): el carrito fijo deja un hueco a la derecha de la tabla porque el
    padding/gap se pensó para BlissOS (>=1400px). Este bloque solo corrige eso en el rango de
    tablet — no toca nada fuera de este ancho, así que BlissOS queda exactamente igual. */
@@ -1198,6 +1244,28 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
   </div>
 </div>
 <button class="cart-fab" id="cart-fab" aria-label="Ver carrito"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M3 4h2l2.2 11h9.6L19 8H6.4"/></svg><span class="cart-badge" id="cart-badge"></span></button>
+<div id="tab-inicio" class="hidden">
+  <div class="in2-hdr">
+    <div class="in2-hdr-left">
+      <img class="in2-logo" src="icon-192.png" alt="" onerror="this.style.display='none'">
+      <div class="in2-hdr-txt"><b>Marín</b><span>Local 03</span></div>
+    </div>
+    <div class="in2-hdr-right">
+      <span id="in2-live" class="in2-live"><span class="in2-live-dot"></span>En vivo</span>
+      <button id="in2-notif-btn" class="in2-notif-btn" aria-label="Avisos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span id="in2-notif-badge" class="in2-notif-badge hidden"></span></button>
+    </div>
+  </div>
+  <div class="in2-body">
+    <div class="in2-section-title">Accesos rápidos</div>
+    <div class="in2-grid" id="in2-grid"></div>
+
+    <div class="in2-section-title" id="in2-atencion-title">Requiere atención</div>
+    <div class="in2-atencion" id="in2-atencion"></div>
+
+    <div class="in2-section-title">Acciones rápidas</div>
+    <div class="in2-actions" id="in2-actions"></div>
+  </div>
+</div>
 <div id="tab-pedido">
 <div class="sticky-hdr" id="sticky-hdr">
   <div class="shc-inner">
@@ -1683,6 +1751,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
 <div class="toast" id="toast"></div>
 
 <nav class="bottom-nav" id="bottom-nav">
+  <button class="bn-item" id="bn-inicio"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg></span>Inicio</button>
   <button class="bn-item active" id="bn-pedidos"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M3 4h2l2.2 11h9.6L19 8H6.4"/></svg></span>Pedidos</button>
   <button class="bn-item" id="bn-recepcion"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M3 8l9-5 9 5-9 5-9-5Z"/><path d="M3 8v9l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="22"/></svg></span>Recepción</button>
   <button class="bn-item" id="bn-vencimientos"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></span>Vencimientos</button>
@@ -2761,116 +2830,114 @@ function render(){
   if(thRate&&thRate.childNodes[0])thRate.childNodes[0].nodeValue='Vta '+state.basis+'d ';
   renderTable();renderScale();renderOrder();
 }
-// ===================== INICIO (dashboard resumen) =====================
-async function renderInicio(){
-  const items = DB.items || [];
+// ===================== INICIO (pantalla de accesos rápidos — solo modo celular) =====================
+// Reutiliza SIEMPRE la lógica de cálculo que ya existe en otros módulos — no reinventa nada:
+//   · analyze(it) — misma función que usa la tabla de Pedidos para 'urgente'/'pedir'.
+//   · smCalcular()/_smTodos — mismo cálculo que usa "Sin movimiento".
+//   · rzCalcular() — mismo cálculo que usa "Riesgo de quiebre" (alta rotación + crítico).
+//   · action=vencimientos — mismo endpoint que ya consume el módulo Vencimientos.
+// Cada tarjeta/fila navega llamando a la MISMA función que usa su acceso original (openRecibir,
+// showScreen, abrirModal+vcLoad, rzAbrir, rkAbrir, cpAbrir, smAbrir) — cero lógica de
+// navegación duplicada.
+let _in2VencCache=null;
+async function renderInicio2(){
+  const items=DB.items||[];
 
-  // Ventas / utilidad / unidades de HOY (dato real, no acumulado de 7 días)
-  let ventasHoy=0, utilidadHoy=0, unidadesHoy=0;
-  items.forEach(it=>{
-    if(it.hoyU>0 && it.precio){
-      ventasHoy += it.hoyU*it.precio;
-      utilidadHoy += it.hoyU*((it.precio||0)-(it.coste||0));
-      unidadesHoy += it.hoyU;
-    }
-  });
-  const margenHoy = ventasHoy>0 ? (utilidadHoy/ventasHoy*100) : 0;
+  // --- Indicador "En vivo" — mismo estado que ya muestra el header de Pedidos ---
+  const liveTxt=document.getElementById('live-text');
+  const in2Live=document.getElementById('in2-live');
+  if(in2Live)in2Live.querySelector('span:last-child') && (in2Live.lastChild.textContent=liveTxt?liveTxt.textContent:'En vivo');
 
-  // En quiebre / por pedir — reusa la misma lógica que Armar pedido
-  let urg=0, ped=0;
+  // --- Cálculos base: quiebre/pedir (analyze), sin movimiento (smCalcular) ---
+  let urg=0,ped=0;
   items.forEach(it=>{const a=analyze(it);if(a.status==='urgente')urg++;else if(a.status==='pedir')ped++;});
+  try{smCalcular();}catch(e){}
+  const sinMovNum=(_smTodos||[]).length;
 
-  // Por vencer (próximos días) — lectura puntual de Vencimientos
-  let porVencer=0;
+  // --- Vencimientos: mismo endpoint que usa el módulo Vencimientos, con cache corta para no
+  // repetir la llamada si se vuelve a Inicio varias veces seguidas en pocos segundos. ---
+  let porVencer=0,vencidos=0;
   try{
-    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=vencimientos');
-    const j=await res.json();
-    if(j&&j.ok) porVencer=(j.lotes||[]).filter(l=>l.estado==='Por vencer').length;
+    if(!_in2VencCache||(Date.now()-_in2VencCache.ts)>15000){
+      const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=vencimientos');
+      const j=await res.json();
+      _in2VencCache={ts:Date.now(),lotes:(j&&j.ok)?j.lotes:[]};
+    }
+    const lotes=_in2VencCache.lotes||[];
+    porVencer=lotes.filter(l=>l.estado!=='Retirado'&&l.estado!=='Revisado'&&l.prioridad!=='⚫').length;
+    vencidos=lotes.filter(l=>l.prioridad==='⚫'&&l.estado!=='Revisado').length;
   }catch(e){}
 
-  // Vencido para cambio — reusa el mapa ya cargado por cargarVencidosPendientes()
-  let vencidoCambioUds=0;
-  Object.keys(VENCIDOS_POR_SKU||{}).forEach(k=>vencidoCambioUds+=VENCIDOS_POR_SKU[k]);
-  Object.keys(RETIRADOS_POR_SKU||{}).forEach(k=>vencidoCambioUds+=RETIRADOS_POR_SKU[k]);
+  // --- Riesgo de quiebre (alta rotación + crítico) — mismo cálculo que ese módulo ---
+  let riesgoNum=0;
+  try{riesgoNum=(rzCalcular(false)||[]).length;}catch(e){}
 
-  document.getElementById('in-updated').textContent='Actualizado '+new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
-
-  // --- KPIs (6 tarjetas con ícono, todo dato real) ---
-  const kpis=[
-    {ic:'💰',bg:'var(--verde-bg)',lab:'Ventas hoy',val:peso(ventasHoy),sub:unidadesHoy+' productos'},
-    {ic:'📈',bg:'var(--azul-bg)',lab:'Utilidad hoy',val:peso(utilidadHoy),sub:'beneficio'},
-    {ic:'🏷️',bg:'var(--gold-bg)',lab:'Margen hoy',val:(ventasHoy>0?margenHoy.toFixed(1)+'%':'—'),sub:'promedio'},
-    {ic:'📦',bg:'var(--paper)',lab:'Vendidos hoy',val:fmt.format(unidadesHoy),sub:'unidades'},
-    {ic:'⚠️',bg:'var(--rojo-bg)',lab:'En quiebre',val:urg,sub:'reponer ya'},
-    {ic:'📅',bg:'var(--gold-bg)',lab:'Por vencer',val:porVencer,sub:'próx. 7 días'}
+  // ---- 6 tarjetas de accesos rápidos ----
+  const cards=[
+    {ic:'📦',lab:'Recepción',n:null,go:()=>{cerrarOverlays();openRecibir();}},
+    {ic:'🛒',lab:'Armar pedido',n:(urg+ped)||null,cls:(urg?'':'warn'),go:()=>{cerrarOverlays();showScreen('pedido');}},
+    {ic:'📅',lab:'Vencimientos',n:(porVencer+vencidos)||null,cls:(vencidos?'':'warn'),go:()=>{cerrarOverlays();abrirModal('vc-ov');try{vcShowList();vcLoad();}catch(e){}}},
+    {ic:'⚠️',lab:'Quiebres',n:riesgoNum||null,go:()=>{cerrarOverlays();try{rzAbrir();}catch(e){}}},
+    {ic:'🔄',lab:'Recuento stock',n:null,go:()=>{cerrarOverlays();try{rkAbrir();}catch(e){}}},
+    {ic:'➕',lab:'Crear producto',n:null,go:()=>{cerrarOverlays();try{cpAbrir();}catch(e){}}}
   ];
-  document.getElementById('in-kpis').innerHTML=kpis.map(x=>`<div class="in-kpi"><div class="in-kpi-ic" style="background:${x.bg}">${x.ic}</div><div class="in-kpi-body"><div class="lab">${x.lab}</div><div class="val">${x.val}</div><div class="sub">${x.sub}</div></div></div>`).join('');
+  const gridBox=document.getElementById('in2-grid');
+  gridBox.innerHTML=cards.map((c,i)=>`<div class="in2-card" data-i="${i}"><span class="ic">${c.ic}</span><span class="lab">${c.lab}</span>${c.n?`<span class="badge${c.cls?(' '+c.cls):''}">${c.n>99?'99+':c.n}</span>`:''}</div>`).join('');
+  gridBox.querySelectorAll('.in2-card').forEach(el=>el.onclick=()=>cards[+el.dataset.i].go());
 
-  // --- Alertas importantes (tarjetas horizontales) ---
-  const alertas=[];
-  if(urg>0)alertas.push({color:'var(--rojo)',n:urg,tit:'En quiebre',sub:'Requieren reposición ya',tab:'pedido'});
-  if(ped>0)alertas.push({color:'var(--gold)',n:ped,tit:'Por pedir',sub:'Cobertura baja',tab:'pedido'});
-  if(porVencer>0)alertas.push({color:'var(--gold)',n:porVencer,tit:'Por vencer',sub:'Próximos 7 días',action:'venc'});
-  if(vencidoCambioUds>0)alertas.push({color:'var(--azul)',n:fmt.format(vencidoCambioUds),tit:'Cambio de producto',sub:'Retirar de góndola / esperando proveedor',action:'venc'});
-  const lastSyncTs=Number(localStorage.getItem('marin_last_sync'))||0;
-  const lastSyncTxt=lastSyncTs?new Date(lastSyncTs).toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'}):'sin datos';
-  alertas.push({color:'var(--verde)',n:'✓',tit:'Sincronizado',sub:lastSyncTxt,tab:''});
-  const alertBox=document.getElementById('in-alertas');
-  alertBox.innerHTML = alertas.map(a=>`<div class="in-alert-card" style="border-left-color:${a.color}" data-tab="${a.tab||''}" data-action="${a.action||''}"><div class="n" style="color:${a.color}">${a.n}</div><div class="t">${a.tit}</div><div class="s">${a.sub}</div></div>`).join('');
-  alertBox.querySelectorAll('.in-alert-card').forEach(el=>el.onclick=()=>{
-    if(el.dataset.tab)document.querySelector('.tab[data-tab="'+el.dataset.tab+'"]').click();
-    else if(el.dataset.action==='venc')document.getElementById('btn-venc').click();
-  });
-
-  // --- Ventas de hoy por categoría (dona + leyenda) ---
-  const DONUT_COLORS=['#3C6FB0','#2E9E5B','#C68A1B','#B0473C','#7B5CC9','#1FA855','#C6501B','#5C8CC9','#9E7A2E','#4C4C7B'];
-  const cats={};
-  items.forEach(it=>{if(it.hoyU>0&&it.precio)cats[it.prov]=(cats[it.prov]||0)+it.hoyU*it.precio;});
-  const catArr=Object.keys(cats).map(c=>({cat:c,val:cats[c]})).sort((a,b)=>b.val-a.val).slice(0,8);
-  const catBox=document.getElementById('in-catchart');
-  if(catArr.length){
-    const total=catArr.reduce((s,c)=>s+c.val,0);
-    let acc=0;
-    const stops=catArr.map((c,i)=>{
-      const from=acc/total*360; acc+=c.val; const to=acc/total*360;
-      return DONUT_COLORS[i%DONUT_COLORS.length]+' '+from.toFixed(1)+'deg '+to.toFixed(1)+'deg';
-    }).join(',');
-    catBox.innerHTML=`<div class="in-donut-wrap">
-      <div class="in-donut" style="background:conic-gradient(${stops})"><div class="in-donut-hole"><b>${peso(total).replace('$','$')}</b><span>hoy</span></div></div>
-      <div class="in-legend">${catArr.map((c,i)=>`<div class="in-legend-row"><span class="in-legend-dot" style="background:${DONUT_COLORS[i%DONUT_COLORS.length]}"></span><span class="lc" title="${c.cat}">${c.cat}</span><span class="lv">${Math.round(c.val/total*100)}%</span></div>`).join('')}</div>
-    </div>`;
+  // ---- Requiere atención: quiebres, vencimientos, stock crítico, sin movimiento ----
+  const atencion=[];
+  if(urg>0)atencion.push({n:urg,t:'Productos en quiebre',s:'Requieren reposición ya',go:()=>{cerrarOverlays();showScreen('pedido');}});
+  if(vencidos>0)atencion.push({n:vencidos,t:'Lotes vencidos',s:'Gestionar cambio o merma',go:()=>{cerrarOverlays();abrirModal('vc-ov');try{vcShowList();vcLoad();}catch(e){}}});
+  if(porVencer>0)atencion.push({n:porVencer,t:'Por vencer pronto',s:'Revisar en los próximos días',go:()=>{cerrarOverlays();abrirModal('vc-ov');try{vcShowList();vcLoad();}catch(e){}}});
+  if(sinMovNum>0)atencion.push({n:sinMovNum,t:'Sin movimiento',s:'0 ventas en 90 días — revisar',go:()=>{cerrarOverlays();try{smAbrir();}catch(e){}}});
+  const attBox=document.getElementById('in2-atencion');
+  const attTitle=document.getElementById('in2-atencion-title');
+  if(atencion.length){
+    attTitle.classList.remove('hidden');attBox.classList.remove('hidden');
+    attBox.innerHTML=atencion.map((a,i)=>`<div class="in2-att-row" data-i="${i}"><span class="n">${a.n>99?'99+':a.n}</span><span class="txt"><span class="t">${a.t}</span><span class="s">${a.s}</span></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></div>`).join('');
+    attBox.querySelectorAll('.in2-att-row').forEach(el=>el.onclick=()=>atencion[+el.dataset.i].go());
   }else{
-    catBox.innerHTML='<div class="in-empty">Aún no hay ventas registradas hoy</div>';
+    attTitle.classList.add('hidden');
+    attBox.innerHTML='';attBox.classList.add('hidden');
   }
 
-  // --- Top 10 productos de hoy (con barra) ---
-  const top=items.filter(it=>it.hoyU>0).map(it=>({nombre:it.nombre,val:it.hoyU*(it.precio||0)})).sort((a,b)=>b.val-a.val).slice(0,10);
-  if(top.length){
-    const maxTop=top[0].val;
-    document.getElementById('in-top10').innerHTML = top.map((t,i)=>`<div class="in-top-row"><span class="n">${i+1}</span><span class="nom" title="${t.nombre}">${t.nombre}</span><span class="bar-track"><span class="bar-fill" style="width:${Math.max(4,Math.round(t.val/maxTop*100))}%"></span></span><span class="v">${peso(t.val)}</span></div>`).join('');
-  }else{
-    document.getElementById('in-top10').innerHTML='<div class="in-empty">Aún no hay ventas registradas hoy</div>';
+  // ---- Acciones rápidas: Escanear, Crear producto, Recepcionar, Buscar ----
+  const actionsBox=document.getElementById('in2-actions');
+  if(!actionsBox.dataset.wired){
+    actionsBox.innerHTML=`
+      <button class="in2-action-btn" id="in2-act-scan"><span class="ic">📷</span>Escanear</button>
+      <button class="in2-action-btn" id="in2-act-crear"><span class="ic">➕</span>Crear</button>
+      <button class="in2-action-btn" id="in2-act-recep"><span class="ic">📦</span>Recepcionar</button>
+      <button class="in2-action-btn" id="in2-act-buscar"><span class="ic">🔍</span>Buscar</button>`;
+    actionsBox.dataset.wired='1';
+    document.getElementById('in2-act-scan').onclick=()=>{
+      // Misma acción que el escáner del buscador principal (prov-scan) — se reutiliza el
+      // mismo botón en vez de reimplementar el flujo de cámara.
+      cerrarOverlays();showScreen('pedido');
+      const btn=document.getElementById('prov-scan');
+      if(btn)setTimeout(()=>btn.click(),50);
+    };
+    document.getElementById('in2-act-crear').onclick=()=>{cerrarOverlays();try{cpAbrir();}catch(e){}};
+    document.getElementById('in2-act-recep').onclick=()=>{cerrarOverlays();openRecibir();};
+    document.getElementById('in2-act-buscar').onclick=()=>{
+      cerrarOverlays();showScreen('pedido');
+      const inp=document.getElementById('prov-all');
+      if(inp)setTimeout(()=>inp.focus(),50);
+    };
   }
 
-  // --- Stock crítico ---
-  const critico=items.filter(it=>analyze(it).status==='urgente').sort((a,b)=>(a.stock||0)-(b.stock||0)).slice(0,10);
-  document.getElementById('in-critico').innerHTML = critico.length ? critico.map(it=>`<div class="in-top-row"><span class="nom" style="width:auto;flex:1" title="${it.nombre}">${it.nombre}</span><span class="v" style="color:var(--rojo);width:auto">${it.stock==null?'s/c':fmt.format(it.stock)}</span></div>`).join('') : '<div class="in-empty">Sin productos en quiebre 🎉</div>';
-
-  // --- Proveedores de hoy (mismo dato real que ya usa el panel de arriba) ---
-  const now=new Date(), hoyDow=now.getDay();
-  const pide=[], lleg=[];
-  (typeof CAL_PROV!=='undefined'?CAL_PROV:[]).forEach(p=>{
-    p.r.forEach(par=>{
-      const dp=par[0], dl=par[1];
-      if(dp===hoyDow){ if(p.retiro) pide.push(p.n+' (retiras hoy)'); else pide.push(p.n+' → llega '+DOW_AB[dl]); }
-      if(dl===hoyDow && !p.retiro) lleg.push(p.n);
-    });
-  });
-  const provBox=document.getElementById('in-provhoy');
-  provBox.innerHTML =
-    '<div class="in-prov-row pide"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="6" y="4" width="12" height="17" rx="1.5"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="15" y2="15"/></svg></span><div><b>Pides hoy:</b> '+(pide.length?pide.join(' · '):'<span class="in-empty" style="padding:0">sin pedidos programados</span>')+'</div></div>'+
-    '<div class="in-prov-row lleg"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="12" height="10" rx="1"/><path d="M14 10h4l3 3v4h-7z"/><circle cx="7" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg></span><div><b>Llega hoy:</b> '+(lleg.length?lleg.join(' · '):'<span class="in-empty" style="padding:0">sin entregas programadas</span>')+'</div></div>';
+  // ---- Notificaciones: mismo badge combinado que ya usa "Más" (llegadas + riesgo) ----
+  const notifBadge=document.getElementById('in2-notif-badge');
+  const llBadge=document.getElementById('ll-badge');
+  const nLlegadas=(llBadge&&llBadge.style.display==='flex')?(Number(llBadge.textContent)||0):0;
+  const nTotal=nLlegadas+riesgoNum;
+  if(notifBadge){
+    if(nTotal>0){notifBadge.textContent=nTotal>99?'99+':String(nTotal);notifBadge.classList.remove('hidden');}
+    else notifBadge.classList.add('hidden');
+  }
 }
+document.getElementById('in2-notif-btn').onclick=()=>{cerrarOverlays();abrirModal('mas-ov');};
 
 
 function renderKPIs(){
@@ -3235,7 +3302,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-07.4';
+const APP_VERSION='2026-08-07.5';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -3734,12 +3801,16 @@ function guardarUltimaPantalla(id){try{localStorage.setItem(LAST_SCREEN_LS_KEY,i
 function cargarUltimaPantalla(){try{return localStorage.getItem(LAST_SCREEN_LS_KEY)||'pedido';}catch(e){return 'pedido';}}
 function showScreen(name){
   document.getElementById('tab-pedido').classList.toggle('hidden',name!=='pedido');
+  const inicioEl=document.getElementById('tab-inicio');
+  if(inicioEl)inicioEl.classList.toggle('hidden',name!=='inicio');
   document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('active'));
   if(name==='pedido')document.getElementById('bn-pedidos').classList.add('active');
+  else if(name==='inicio'){const b=document.getElementById('bn-inicio');if(b)b.classList.add('active');}
   playTabAnim(name);
   persistUI();
-  guardarUltimaPantalla('pedido');
+  guardarUltimaPantalla(name==='inicio'?'inicio':'pedido');
   _actualizarVisibilidadFab();
+  if(name==='inicio')try{renderInicio2();}catch(e){}
 }
 // El carrito YA NO es una "pantalla" (showScreen) — es un panel superpuesto, siempre montado,
 // que se muestra/oculta con una clase CSS. El contenido ya se mantiene al día solo con que
@@ -3858,7 +3929,8 @@ document.querySelector('.bottom-nav').addEventListener('click',(e)=>{
   const btn=e.target.closest('.bn-item');
   if(!btn)return;
   try{
-    if(btn.id==='bn-pedidos'){cerrarOverlays();showScreen('pedido');}
+    if(btn.id==='bn-inicio'){cerrarOverlays();showScreen('inicio');}
+    else if(btn.id==='bn-pedidos'){cerrarOverlays();showScreen('pedido');}
     else if(btn.id==='bn-recepcion'){cerrarOverlays();openRecibir();}
     else if(btn.id==='bn-vencimientos'){cerrarOverlays();abrirModal('vc-ov');try{vcShowList();vcLoad();}catch(_){}}
     else if(btn.id==='bn-mas'){cerrarOverlays();abrirModal('mas-ov');}
@@ -10548,6 +10620,20 @@ const REABRIR_MODULO={
 (function restaurarUltimaPantallaAlCargar(){
   const id=cargarUltimaPantalla();
   const draft=fcCargarBorrador();
+  // Solo en modo celular: si no hay pantalla guardada (primera vez, o quedó en "pedido" por
+  // defecto), Inicio es la pestaña de entrada — tal como se pidió. Tablet/BlissOS/escritorio
+  // JAMÁS pasan por acá con 'inicio' (esta rama solo se activa bajo html.modo-celular), así
+  // que su comportamiento de siempre (Pedidos por defecto) queda intacto.
+  if(id==='pedido'&&document.documentElement.classList.contains('modo-celular')){
+    try{showScreen('inicio');}catch(e){}
+    if(draft)fcLimpiarBorrador();
+    return;
+  }
+  if(id==='inicio'&&document.documentElement.classList.contains('modo-celular')){
+    try{showScreen('inicio');}catch(e){}
+    if(draft)fcLimpiarBorrador();
+    return;
+  }
   if(id==='pedido'||!document.getElementById(id)){
     // Pantalla por defecto (o un id que ya no existe): nada que reabrir. Un borrador
     // huérfano tampoco debe forzar nada por su cuenta — solo se descarta.
