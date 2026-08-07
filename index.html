@@ -1945,7 +1945,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <div id="fp-pane-precios" class="fp-pane"></div>
           <div class="fp-section-title">Proveedores</div>
           <div id="fp-pane-proveedores" class="fp-pane"></div>
-          <div class="fp-section-title">Sector / Ubicación</div>
+          <div class="fp-section-title">Sector</div>
           <div id="fp-pane-sector" class="fp-pane"></div>
           <div class="fp-section-title hidden" id="fp-section-lotes-title">Lotes</div>
           <div id="fp-pane-lotes" class="fp-pane hidden"></div>
@@ -3029,7 +3029,7 @@ function rowHTML(it,a,f){const cant=qOf(it,a);
   // aparece también acá aunque su categoría real sea otra. Aviso neutro, mismo estilo que
   // pend-badge, para no confundirlo con los 5 colores de alerta de stock.
   const viendoComoExtra=!state.allProv&&!state.search&&state.prov&&state.prov!==it.prov;
-  const extraProvBadge=viendoComoExtra?`<span class="pend-badge" title="Su proveedor principal en Loyverse es ${it.prov}">↳ normalmente ${it.prov}</span>`:'';
+  const extraProvBadge=viendoComoExtra?`<span class="pend-badge" title="Su categoría principal es ${it.prov}">↳ normalmente ${it.prov}</span>`:'';
   if(document.documentElement.classList.contains('vista-filas')){
     // Pantallas grandes (BlissOS/monitor táctil): formato de fila tipo planilla — mismos
     // datos que la tarjeta (arriba), reutilizados tal cual, solo en otro maquetado.
@@ -3309,7 +3309,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-07.7';
+const APP_VERSION='2026-08-07.8';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -4553,33 +4553,59 @@ function fpPanePrecios(f){
   fpPrRenderResumen();
 }
 
-// ==== PESTAÑA PROVEEDORES: proveedor principal (=categoría) + proveedores extra ====
+// ==== PESTAÑA PROVEEDORES: 3 campos independientes —
+//   · Categoría: antiguo "proveedor de Loyverse" (it.prov / p.categoria). De acá sale el
+//     pedido sugerido por defecto — sigue siendo el mismo campo que siempre fue, solo
+//     renombrado en toda la interfaz para no confundirlo con el proveedor real.
+//   · Proveedor: el proveedor REAL de la WebApp (tabla `proveedores`, proveedor_id/nombre).
+//     Ya existía en el backend y en el sistema de sugerencia por IA, pero nunca se mostraba
+//     como campo editable ni se guardaba al tocar "Guardar cambios" — ahora sí, con el mismo
+//     combo (buscar + crear nuevo) que ya usa Crear producto, sin reescribir esa lógica.
+//   · "También se puede pedir a": proveedores extra de Loyverse — sigue funcionando exacto
+//     igual que antes, es un concepto aparte ligado a Categoría, no al Proveedor real.
 function fpPaneProveedores(f){
   const p=f.producto;
   const pane=document.getElementById('fp-pane-proveedores');
   const opcionesCat=(DB.provs||[]).map(c=>`<option value="${c.prov}" ${c.prov===p.categoria?'selected':''}>${c.prov}</option>`).join('');
   pane.innerHTML=
-    fpCampo('Proveedor principal','<select id="fp-pv-cat" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;background:#fff">'+opcionesCat+'</select>','En esta app, "categoría" y "proveedor principal" son el mismo campo — de ahí sale el pedido sugerido por defecto.')+
+    fpCampo('Categoría','<select id="fp-pv-cat" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;background:#fff">'+opcionesCat+'</select>','En esta app, "categoría" es el antiguo proveedor de Loyverse — de ahí sale el pedido sugerido por defecto.')+
     '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">'+
       '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px">También se puede pedir a</div>'+
       '<div id="fp-provextra-list">'+
         ((p.proveedoresExtra&&p.proveedoresExtra.length)
           ?p.proveedoresExtra.map(pr=>'<div class="fp-row"><span class="k">'+pr+'</span><span class="v"><button type="button" class="fp-provextra-quitar" data-prov="'+pr+'" style="border:none;background:none;color:var(--rojo);font-weight:700;font-size:12px;cursor:pointer">✕ Quitar</button></span></div>').join('')
-          :'<div style="font-size:12px;color:var(--muted)">Solo se pide bajo su proveedor principal ('+p.categoria+').</div>')+
+          :'<div style="font-size:12px;color:var(--muted)">Solo se pide bajo su categoría ('+p.categoria+').</div>')+
       '</div>'+
       '<div style="display:flex;gap:8px;margin-top:8px">'+
-        '<select id="fp-provextra-select" style="flex:1;padding:9px 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px"><option value="">Elige un proveedor…</option>'+
+        '<select id="fp-provextra-select" style="flex:1;padding:9px 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px"><option value="">Elige una categoría…</option>'+
           (DB.provs||[]).filter(c=>c.prov!==p.categoria&&!(p.proveedoresExtra||[]).includes(c.prov)).map(c=>'<option value="'+c.prov+'">'+c.prov+'</option>').join('')+
         '</select>'+
         '<button class="loadbtn" id="fp-provextra-add" type="button" style="white-space:nowrap">➕ Agregar</button>'+
       '</div>'+
+    '</div>'+
+    '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">'+
+      fpCampo('Proveedor',
+        '<div style="display:flex;gap:8px">'+
+          '<div class="cat-combo" id="fp-pv-prov-combo">'+
+            '<input id="fp-pv-prov-input" class="cat-combo-input" placeholder="Buscar proveedor…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">'+
+            '<svg class="cat-combo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'+
+            '<select id="fp-pv-prov" style="display:none"><option value="">Sin proveedor</option></select>'+
+            '<div class="cat-combo-menu hidden" id="fp-pv-prov-menu" role="listbox"></div>'+
+          '</div>'+
+          '<button class="loadbtn" id="fp-pv-prov-nueva" type="button" style="white-space:nowrap">➕ Nuevo</button>'+
+        '</div>'+
+        '<div id="fp-pv-prov-nuevabox" class="hidden" style="display:flex;gap:8px;margin-top:8px">'+
+          '<input id="fp-pv-prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">'+
+          '<button class="btn-ok loadbtn" id="fp-pv-prov-crear" type="button" style="white-space:nowrap">Crear</button>'+
+        '</div>',
+        'El proveedor real de este negocio — distinto de la Categoría de Loyverse. Se usa para clasificar y filtrar por quién realmente provee el producto.')+
     '</div>';
   document.getElementById('fp-pv-cat').addEventListener('change',fpGuardarBorrador);
   const fpPEAdd=document.getElementById('fp-provextra-add');
   if(fpPEAdd)fpPEAdd.onclick=async()=>{
     const sel=document.getElementById('fp-provextra-select');
     const prov=sel&&sel.value;
-    if(!prov){showToast('Elige un proveedor primero');return;}
+    if(!prov){showToast('Elige una categoría primero');return;}
     fpPEAdd.disabled=true;
     try{
       const r=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'agregar_proveedor_extra',payload:{sku:p.sku,proveedor:prov}})});
@@ -4609,16 +4635,26 @@ function fpPaneProveedores(f){
       }else{showToast('⚠️ '+((j&&j.error)||'No se pudo quitar'));b.disabled=false;}
     }catch(e){showToast('⚠️ Error de conexión');b.disabled=false;}
   });
+  // Combo real de Proveedor — mismo componente (buscar + crear nuevo) que ya usa Crear
+  // producto, solo con IDs propios de esta pestaña (fp-pv-prov-*) para no chocar.
+  psCargarListas().then(()=>{
+    psLlenarSelects('fp-pv-prov','fp-pv-sector-dummy',p.proveedorId,null);
+    psInitCombo('fp-pv-prov','fp-pv-prov-combo','fp-pv-prov-input','fp-pv-prov-menu','fp-pv-prov','proveedor',
+      texto=>{const box=document.getElementById('fp-pv-prov-nuevabox');box.classList.remove('hidden');const inp=document.getElementById('fp-pv-prov-nuevonom');inp.value=texto;inp.focus();});
+  });
+  psWireNuevoProveedor('fp-pv-prov-nueva','fp-pv-prov-nuevabox','fp-pv-prov-nuevonom','fp-pv-prov-crear','fp-pv-prov','fp-pv-sector-dummy');
+  const provSel=document.getElementById('fp-pv-prov');
+  if(provSel)provSel.addEventListener('change',fpGuardarBorrador);
 }
 
-// ==== PESTAÑA SECTOR/UBICACIÓN ====
+// ==== PESTAÑA SECTOR ====
 function fpPaneSector(f){
   const p=f.producto;
   const pane=document.getElementById('fp-pane-sector');
   pane.innerHTML=
     '<div class="mm-field">'+
       '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'+
-        '<label style="margin:0">Sector / Ubicación</label>'+
+        '<label style="margin:0">Sector</label>'+
         '<button class="loadbtn" id="fp-s-sugerir" type="button" style="white-space:nowrap">🤖 Sugerir con IA</button>'+
       '</div>'+
       '<div id="fp-s-hint" class="hidden" style="font-size:11px;color:var(--muted);margin:5px 0"></div>'+
@@ -4637,8 +4673,9 @@ function fpPaneSector(f){
       '</div>'+
     '</div>';
   // psInitCombo necesita también un <select> de proveedor para el modo "crear nuevo" — se usa
-  // uno oculto y desconectado (no se envía) solo para satisfacer la firma de la función, ya
-  // que en esta pestaña no se edita proveedor (eso vive en la pestaña Proveedores).
+  // uno oculto y desconectado (no se envía) solo para satisfacer la firma de la función. El
+  // Proveedor real ahora tiene su propio campo visible y funcional en la pestaña Proveedores
+  // (fp-pv-prov-*) — este dummy es puramente técnico, no representa un campo editable acá.
   psCargarListas().then(()=>{
     psLlenarSelects('fp-s-proveedor-dummy','fp-s-sector',p.proveedorId,p.sector);
     psInitCombo('fp-s-proveedor-dummy','fp-s-sector-combo','fp-s-sector-input','fp-s-sector-menu','fp-s-sector','sector');
@@ -4752,6 +4789,11 @@ async function fpGuardarTodo(){
   const descripcion=(document.getElementById('fp-g-desc').value||'').trim();
   const barcode=(document.getElementById('fp-g-barcode').value||'').trim();
   const sector=document.getElementById('fp-s-sector')?(document.getElementById('fp-s-sector').value||null):undefined;
+  // Proveedor real de la WebApp — antes nunca se enviaba al guardar aunque el backend ya lo
+  // soportaba (accionEditarProducto acepta proveedor_id desde hace tiempo). '' = "Sin
+  // proveedor" (se limpia); undefined solo si el campo no está en el DOM por algún motivo.
+  const proveedorIdRaw=document.getElementById('fp-pv-prov')?document.getElementById('fp-pv-prov').value:undefined;
+  const proveedorId=proveedorIdRaw===undefined?undefined:(proveedorIdRaw||'');
   const stockMinRaw=document.getElementById('fp-i-stockmin')?document.getElementById('fp-i-stockmin').value.trim():'';
   const costoIngresado=document.getElementById('fp-pr-costo')?document.getElementById('fp-pr-costo').value.trim():'';
   const precioIngresado=document.getElementById('fp-pr-precio')?document.getElementById('fp-pr-precio').value.trim():'';
@@ -4761,10 +4803,10 @@ async function fpGuardarTodo(){
   const scrollGuardado=document.getElementById('fp-scroll').scrollTop;
   btn.disabled=true;btn.textContent='Guardando…';
   try{
-    // 1) Datos generales (nombre, categoría/proveedor principal, descripción, unidad, sector,
+    // 1) Datos generales (nombre, categoría, descripción, unidad, proveedor, sector,
     //    seguir inventario, stock mínimo) — un único endpoint, igual que ya hacía fpGuardarEdicion.
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_producto',payload:{
-      sku,nombre,categoria,descripcion,sector,
+      sku,nombre,categoria,descripcion,sector,proveedor_id:proveedorId,
       soldByWeight:fpEditState.soldByWeight,trackStock:fpEditState.trackStock,
       stockMinimo:stockMinRaw!==''?stockMinRaw:undefined,
       responsable:''
@@ -4793,8 +4835,14 @@ async function fpGuardarTodo(){
       it.nombre=nombre;it.prov=categoria;it.descripcion=descripcion;
       if(!avisoBarcode)it.barcode=barcode;
       it.peso=fpEditState.soldByWeight;it.track=fpEditState.trackStock;
+      if(proveedorId!==undefined){
+        const provSel=document.getElementById('fp-pv-prov');
+        const provInput=document.getElementById('fp-pv-prov-input');
+        it.proveedorId=proveedorId||null;
+        it.proveedorNombre=proveedorId?((provInput&&provInput.value)||null):null;
+      }
     }
-    if(sector)psGuardarAprendizaje(nombre.toUpperCase(),document.getElementById('fp-pv-cat')?null:p.proveedorId,sector);
+    if(sector)psGuardarAprendizaje(nombre.toUpperCase(),proveedorId||null,sector);
     persist();
     showToast('✅ Producto actualizado'+avisoBarcode+avisoPrecio);
     // Recarga la ficha con los datos confirmados por el servidor, pero SIN cerrar ni perder
