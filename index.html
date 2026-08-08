@@ -1609,12 +1609,6 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <div class="mm-topbar"><button class="loadbtn" id="pr-cerrar" style="width:100%">Cerrar</button></div>
         <div class="mm-body" style="padding-bottom:8px">
 
-        <div class="seg" id="pr-tipo-seg" style="display:flex;width:100%;margin:0 0 12px">
-          <button type="button" data-tipo="producto" class="active" style="flex:1">📦 Artículo</button>
-          <button type="button" data-tipo="dinero" style="flex:1">💵 Dinero</button>
-        </div>
-
-        <div id="pr-tab-producto">
         <div class="mm-field" style="margin-bottom:8px">
           <label>Dirección</label>
           <div style="display:flex;gap:6px">
@@ -1673,47 +1667,6 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
             <span class="cat" id="pr-pend-resumen">—</span>
           </div>
           <div id="pr-pend-list"><div class="vc-empty">Cargando…</div></div>
-        </div>
-        </div>
-
-        <div id="pr-tab-dinero" class="hidden">
-        <div class="mm-field" style="margin-bottom:8px">
-          <label>Dirección</label>
-          <div style="display:flex;gap:6px">
-            <button type="button" class="rc-modo-btn active" id="pd-dir-salida" data-dir="salida" style="flex:1;padding:8px;border-radius:9px;border:1.5px solid var(--wa-d);background:var(--wa-bg,var(--verde-bg));color:var(--wa-d);font-weight:700;font-size:11.5px;cursor:pointer">📤 Le presto a Los Cumpas</button>
-            <button type="button" class="rc-modo-btn" id="pd-dir-entrada" data-dir="entrada" style="flex:1;padding:8px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--muted);font-weight:700;font-size:11.5px;cursor:pointer">📥 Los Cumpas me prestan</button>
-          </div>
-          <div class="cat" id="pd-dir-hint" style="margin-top:6px">Sale dinero de la caja — se registra como deuda a favor, hasta que Los Cumpas lo devuelvan.</div>
-        </div>
-
-        <div class="mm-field" style="margin-bottom:8px">
-          <label>Monto</label>
-          <input id="pd-monto" inputmode="decimal" placeholder="$0" style="width:100%;height:44px;padding:0 12px;border:1.5px solid var(--line);border-radius:9px;font-size:16px;font-weight:700;font-family:'JetBrains Mono';box-sizing:border-box">
-        </div>
-
-        <div class="mm-field" style="margin-bottom:8px">
-          <label>Nota (opcional)</label>
-          <input id="pd-nota" placeholder="Ej: para cambio de la mañana" style="width:100%;height:38px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;box-sizing:border-box">
-        </div>
-
-        <div class="mm-field" style="margin-bottom:8px">
-          <label>Responsable</label>
-          <div class="mm-resp" id="pd-resp">
-            <button data-r="Dueña">Dueña</button>
-            <button data-r="Rossy">Rossy</button>
-            <button data-r="Edwin">Edwin</button>
-          </div>
-        </div>
-
-        <button class="mm-save" id="pd-guardar" disabled>Registrar préstamo de dinero</button>
-
-        <div class="mm-field" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <label style="margin:0">Pendientes de devolución</label>
-            <span class="cat" id="pd-pend-resumen">—</span>
-          </div>
-          <div id="pd-pend-list"><div class="vc-empty">Cargando…</div></div>
-        </div>
         </div>
 
         </div>
@@ -9651,16 +9604,6 @@ function prAbrir(){
   document.getElementById('pr-costo-field').classList.add('hidden');
   document.querySelectorAll('#pr-resp button').forEach(b=>b.classList.remove('sel'));
   prSetDireccion('salida');
-  // Vuelve siempre a la pestaña "Artículo" al abrir — dinero se resetea aparte, sin pisar el
-  // estado si el usuario acaba de guardar algo y reabre rápido desde otra pantalla.
-  document.querySelectorAll('#pr-tipo-seg button').forEach(b=>b.classList.toggle('active',b.dataset.tipo==='producto'));
-  document.getElementById('pr-tab-producto').classList.remove('hidden');
-  document.getElementById('pr-tab-dinero').classList.add('hidden');
-  pdState.dir='salida';pdState.resp='';
-  document.getElementById('pd-monto').value='';
-  document.getElementById('pd-nota').value='';
-  document.querySelectorAll('#pd-resp button').forEach(b=>b.classList.remove('sel'));
-  pdSetDireccion('salida');
   abrirModal('pr-ov');
   prCargarPendientes();
   setTimeout(()=>document.getElementById('pr-search').focus(),150);
@@ -9807,117 +9750,6 @@ async function prDevolver(id,btn){
       prCargarPendientes();
     }else{showToast('Error: '+((j&&j.error)||'no se pudo guardar'));btn.disabled=false;btn.textContent='✓ Devuelto';}
   }catch(e){showToast('Error de conexión');btn.disabled=false;btn.textContent='✓ Devuelto';}
-}
-
-// ---- Pestañas "Artículo" / "Dinero" dentro del mismo modal de Préstamos ----
-document.querySelectorAll('#pr-tipo-seg button').forEach(b=>b.onclick=()=>{
-  document.querySelectorAll('#pr-tipo-seg button').forEach(x=>x.classList.remove('active'));
-  b.classList.add('active');
-  const esDinero=b.dataset.tipo==='dinero';
-  document.getElementById('pr-tab-producto').classList.toggle('hidden',esDinero);
-  document.getElementById('pr-tab-dinero').classList.toggle('hidden',!esDinero);
-  if(esDinero)pdCargarPendientes();
-});
-
-// ===================== PRÉSTAMOS DE DINERO (misma sucursal, Los Cumpas) =====================
-// Mismo concepto que el préstamo de producto, pero sin Loyverse ni stock — es plata. La única
-// diferencia real de flujo: admite ABONOS PARCIALES (se puede devolver de a poco), así que en
-// vez de un botón único "Devuelto" cada pendiente tiene un campo de monto a abonar.
-const pdState={dir:'salida',resp:''};
-function pdSetDireccion(dir){
-  pdState.dir=dir;
-  const salidaBtn=document.getElementById('pd-dir-salida'),entradaBtn=document.getElementById('pd-dir-entrada');
-  const activa='var(--wa-d)',activaBg='var(--wa-bg,var(--verde-bg))';
-  salidaBtn.classList.toggle('active',dir==='salida');
-  entradaBtn.classList.toggle('active',dir==='entrada');
-  salidaBtn.style.borderColor=dir==='salida'?activa:'var(--line)';
-  salidaBtn.style.background=dir==='salida'?activaBg:'#fff';
-  salidaBtn.style.color=dir==='salida'?activa:'var(--muted)';
-  entradaBtn.style.borderColor=dir==='entrada'?activa:'var(--line)';
-  entradaBtn.style.background=dir==='entrada'?activaBg:'#fff';
-  entradaBtn.style.color=dir==='entrada'?activa:'var(--muted)';
-  document.getElementById('pd-dir-hint').textContent=dir==='salida'
-    ?'Sale dinero de la caja — se registra como deuda a favor, hasta que Los Cumpas lo devuelvan.'
-    :'Entra dinero a la caja — se registra como deuda pendiente, hasta que se lo devuelvas a Los Cumpas.';
-}
-document.getElementById('pd-dir-salida').onclick=()=>pdSetDireccion('salida');
-document.getElementById('pd-dir-entrada').onclick=()=>pdSetDireccion('entrada');
-document.getElementById('pd-monto').addEventListener('input',pdValidar);
-document.querySelectorAll('#pd-resp button').forEach(b=>b.onclick=()=>{
-  document.querySelectorAll('#pd-resp button').forEach(x=>x.classList.remove('sel'));
-  b.classList.add('sel');pdState.resp=b.dataset.r;pdValidar();
-});
-function pdValidar(){
-  const monto=Number(document.getElementById('pd-monto').value)||0;
-  document.getElementById('pd-guardar').disabled=!(monto>0);
-}
-document.getElementById('pd-guardar').onclick=async()=>{
-  const btn=document.getElementById('pd-guardar');
-  btn.disabled=true;btn.textContent='Guardando…';
-  try{
-    const payload={
-      direccion:pdState.dir, monto:Number(document.getElementById('pd-monto').value)||0,
-      nota:document.getElementById('pd-nota').value||'', responsable:pdState.resp
-    };
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'registrar_prestamo_dinero',payload})});
-    const j=await res.json();
-    if(j&&j.ok){
-      showToast((pdState.dir==='salida'?'📤 Salida registrada: ':'📥 Entrada registrada: ')+peso(j.monto));
-      document.getElementById('pd-monto').value='';
-      document.getElementById('pd-nota').value='';
-      document.querySelectorAll('#pd-resp button').forEach(x=>x.classList.remove('sel'));
-      pdState.resp='';
-      pdCargarPendientes();
-    }else{showToast('Error: '+((j&&j.error)||'no se pudo guardar'));}
-  }catch(e){showToast('Error de conexión al registrar el préstamo');}
-  btn.disabled=false;btn.textContent='Registrar préstamo de dinero';pdValidar();
-};
-async function pdCargarPendientes(){
-  const box=document.getElementById('pd-pend-list');
-  try{
-    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=historial_prestamos_dinero');
-    const j=await res.json();
-    if(!j||!j.ok){box.innerHTML='<div class="vc-empty">No se pudo cargar</div>';return;}
-    const pend=(j.prestamos||[]).filter(p=>p.estado==='pendiente');
-    document.getElementById('pd-pend-resumen').textContent=pend.length?pend.length+' pendiente'+(pend.length===1?'':'s'):'sin pendientes';
-    if(!pend.length){box.innerHTML='<div class="vc-empty">No hay préstamos de dinero pendientes de devolución</div>';return;}
-    box.innerHTML=pend.map(p=>{
-      const dirTxt=p.direccion==='salida'?'📤 Le prestamos':'📥 Nos prestaron';
-      const abonadoTxt=p.abonado>0?(' · abonado '+peso(p.abonado)):'';
-      return `<div class="pd-pend-row" data-id="${p.id}" style="background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:9px 11px;margin-bottom:6px">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px">
-          <div style="min-width:0">
-            <div style="font-size:12.5px;font-weight:700;color:var(--ink)">${dirTxt} · ${peso(p.monto)}</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:1px">Saldo: ${peso(p.saldoPendiente)}${abonadoTxt} · ${p.fecha}</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:6px">
-          <input type="text" inputmode="decimal" class="pd-abono-input" data-id="${p.id}" placeholder="Monto a abonar" style="flex:1;min-width:0;height:34px;padding:0 8px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px;font-family:'JetBrains Mono';box-sizing:border-box">
-          <button type="button" class="pd-abono-full" data-id="${p.id}" data-saldo="${p.saldoPendiente}" style="flex:none;padding:0 9px;border-radius:8px;border:1.5px solid var(--line);background:#fff;color:var(--muted);font-weight:700;font-size:11px;cursor:pointer">Todo</button>
-          <button type="button" class="pd-abono-btn" data-id="${p.id}" style="flex:none;padding:0 11px;border-radius:8px;border:none;background:var(--verde,#3a9d5c);color:#fff;font-weight:700;font-size:11.5px;cursor:pointer">Abonar</button>
-        </div>
-      </div>`;
-    }).join('');
-    document.querySelectorAll('.pd-abono-full').forEach(b=>b.onclick=()=>{
-      const inp=document.querySelector('.pd-abono-input[data-id="'+b.dataset.id+'"]');
-      if(inp)inp.value=b.dataset.saldo;
-    });
-    document.querySelectorAll('.pd-abono-btn').forEach(b=>b.onclick=()=>pdAbonar(Number(b.dataset.id),b));
-  }catch(e){box.innerHTML='<div class="vc-empty">Error de conexión</div>';}
-}
-async function pdAbonar(id,btn){
-  const inp=document.querySelector('.pd-abono-input[data-id="'+id+'"]');
-  const monto=Number(inp&&inp.value)||0;
-  if(!monto||monto<=0){showToast('Escribe un monto válido para abonar');return;}
-  btn.disabled=true;btn.textContent='Guardando…';
-  try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'abonar_prestamo_dinero',payload:{id,monto}})});
-    const j=await res.json();
-    if(j&&j.ok){
-      showToast(j.estado==='devuelto'?('✓ Préstamo #'+id+' totalmente devuelto'):('✓ Abono registrado · saldo: '+peso(j.saldoPendiente)));
-      pdCargarPendientes();
-    }else{showToast('Error: '+((j&&j.error)||'no se pudo guardar'));btn.disabled=false;btn.textContent='Abonar';}
-  }catch(e){showToast('Error de conexión');btn.disabled=false;btn.textContent='Abonar';}
 }
 
 // ===================== RECIBIR MERCADERÍA =====================
