@@ -2709,9 +2709,13 @@ const SO={urgente:0,pedir:1,sinstock:2,ok:3,sobre:4};const SL={urgente:'Urgente'
 // Un producto pertenece al proveedor "p" si: 1) ya tiene proveedor real asignado en la
 // WebApp y coincide (it.proveedorNombre) — fuente correcta y la que se prioriza siempre que
 // exista — o 2) todavía no tiene proveedor real asignado (sigue en migración) y coincide por
-// categoría de Loyverse (it.prov), que es el fallback para no perder productos del buscador
-// mientras se termina de clasificar todo el catálogo. provsExtra sigue funcionando igual.
-function itemsFor(p){return DB.items.filter(i=>(i.proveedorNombre?i.proveedorNombre===p:i.prov===p)||(i.provsExtra&&i.provsExtra.includes(p)));}
+// categoría de Loyverse (it.prov) o por alguna de sus categorías EXTRA legacy (provsExtra).
+// Antes provsExtra se evaluaba siempre, sin importar si el producto ya tenía proveedor real
+// asignado — así, un producto migrado a "San Jorge" pero con "QUESOS EN BARRA" (u otra
+// categoría) en sus provsExtra legacy, seguía colándose bajo proveedores a los que ya no
+// pertenece. Ahora ese fallback por categoría queda reservado solo para productos SIN
+// proveedor real todavía, igual que ya hacía it.prov más arriba.
+function itemsFor(p){return DB.items.filter(i=>i.proveedorNombre?i.proveedorNombre===p:(i.prov===p||(i.provsExtra&&i.provsExtra.includes(p))));}
 // Variante ESTRICTA solo por categoría de Loyverse (sin el fallback de proveedor real) — la
 // usa "Proveedores de hoy" (calendario/dow), que está indexado por categoría y se rompería si
 // un producto ya migrado a proveedor real (con nombre distinto a su categoría) desapareciera
@@ -3075,11 +3079,18 @@ function rowHTML(it,a,f){const cant=qOf(it,a);
   // El carrito ya no se autocompleta con el sugerido (ver qOf) — este hint mantiene visible
   // la recomendación aunque el stepper esté en 0, para no perder esa información de un vistazo.
   const sugHint=(a.sug>0&&cant===0)?`<span class="sug-hint">Sugerido: ${fmt.format(a.sug)}</span>`:'';
-  // Se está viendo bajo un proveedor "extra" (Opción A): el sku es único en Loyverse, pero
-  // aparece también acá aunque su categoría real sea otra. Aviso neutro, mismo estilo que
-  // pend-badge, para no confundirlo con los 5 colores de alerta de stock.
-  const viendoComoExtra=!state.allProv&&!state.search&&state.prov&&state.prov!==it.prov;
-  const extraProvBadge=viendoComoExtra?`<span class="pend-badge" title="Su categoría principal es ${it.prov}">↳ normalmente ${it.prov}</span>`:'';
+  // Aviso de "también se puede pedir a otro proveedor" — SOLO cuenta el Proveedor real de
+  // la WebApp (it.proveedorIdsExtra, ids), nunca la categoría de Loyverse (it.prov). Antes
+  // esto comparaba state.prov contra it.prov (categoría) y por eso aparecía en cualquier
+  // producto migrado por categoría aunque no tuviera ningún proveedor adicional real
+  // asignado — ahora, si no tiene proveedorIdsExtra, no se muestra nada.
+  let extraProvBadge='';
+  if(!state.allProv&&!state.search&&state.prov&&(it.proveedorIdsExtra||[]).length&&typeof _psProveedores!=='undefined'){
+    const otro=(it.proveedorIdsExtra||[])
+      .map(id=>{const hit=_psProveedores.find(p=>String(p.id)===String(id));return hit?hit.nombre:null;})
+      .find(nombre=>nombre&&nombre!==state.prov);
+    if(otro)extraProvBadge=`<span class="pend-badge" title="También se puede pedir a ${otro}">↳ también: ${otro}</span>`;
+  }
   if(document.documentElement.classList.contains('vista-filas')){
     // Pantallas grandes (BlissOS/monitor táctil): formato de fila tipo planilla — mismos
     // datos que la tarjeta (arriba), reutilizados tal cual, solo en otro maquetado.
