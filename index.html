@@ -1611,7 +1611,8 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <div class="mm-field" style="margin-bottom:8px">
           <label>Producto</label>
           <div class="mm-search">
-            <input id="rc-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off">
+            <input id="rc-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off" style="padding-right:132px">
+            <button class="mm-x" id="rc-lx" type="button" aria-label="Limpiar" style="display:none">✕</button>
             <button class="mm-mic" id="rc-mic" type="button" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
             <button class="mm-scan cam-btn" id="rc-scan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
           </div>
@@ -2259,7 +2260,8 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
       <div class="mm-field" style="margin-bottom:8px">
         <label>Producto</label>
         <div class="mm-search">
-          <input id="ed-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off">
+          <input id="ed-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off" style="padding-right:132px">
+          <button class="mm-x" id="ed-lx" type="button" aria-label="Limpiar" style="display:none">✕</button>
           <button class="mm-mic" id="ed-mic" type="button" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
           <button class="mm-scan cam-btn" id="ed-scan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
         </div>
@@ -2726,16 +2728,15 @@ function analyze(it){const rate=rateOf(it),tracked=it.track&&it.stock!=null,esCa
     else if(cov>(lead+cover)*2.5){status='sobre';sug=0;}else{status='ok';sug=0;}}
   return{rate,cov,status,sug,tracked,trend:trendOf(it),vencido:paraCambioTotal};}
 const SO={urgente:0,pedir:1,sinstock:2,ok:3,sobre:4};const SL={urgente:'Urgente',pedir:'Pedir',ok:'OK',sobre:'Sobrestock',sinstock:'Ref.'};
-// Un producto pertenece al proveedor "p" si: 1) ya tiene proveedor real asignado en la
-// WebApp y coincide (it.proveedorNombre) — fuente correcta y la que se prioriza siempre que
-// exista — o 2) todavía no tiene proveedor real asignado (sigue en migración) y coincide por
-// categoría de Loyverse (it.prov) o por alguna de sus categorías EXTRA legacy (provsExtra).
-// Antes provsExtra se evaluaba siempre, sin importar si el producto ya tenía proveedor real
-// asignado — así, un producto migrado a "San Jorge" pero con "QUESOS EN BARRA" (u otra
-// categoría) en sus provsExtra legacy, seguía colándose bajo proveedores a los que ya no
-// pertenece. Ahora ese fallback por categoría queda reservado solo para productos SIN
-// proveedor real todavía, igual que ya hacía it.prov más arriba.
-function itemsFor(p){return DB.items.filter(i=>i.proveedorNombre?i.proveedorNombre===p:(i.prov===p||(i.provsExtra&&i.provsExtra.includes(p))));}
+// Un producto pertenece al proveedor "p" si: 1) su proveedor real principal coincide
+// (it.proveedorNombre) — fuente correcta y la que se prioriza siempre que exista — o 2) "p"
+// es uno de sus proveedores REALES adicionales de la WebApp (it.proveedorNombresExtra,
+// resueltos ya con nombre desde el Worker) — así un producto con 2+ Proveedores WebApp
+// asignados aparece bajo todos ellos, no solo el principal — o 3) todavía no tiene proveedor
+// real asignado (sigue en migración) y coincide por categoría de Loyverse (it.prov) o por
+// alguna de sus categorías EXTRA legacy (provsExtra), fallback reservado solo para productos
+// sin proveedor real todavía.
+function itemsFor(p){return DB.items.filter(i=>i.proveedorNombre?(i.proveedorNombre===p||(i.proveedorNombresExtra&&i.proveedorNombresExtra.includes(p))):(i.prov===p||(i.provsExtra&&i.provsExtra.includes(p))));}
 // Variante ESTRICTA solo por categoría de Loyverse (sin el fallback de proveedor real) — la
 // usa "Proveedores de hoy" (calendario/dow), que está indexado por categoría y se rompería si
 // un producto ya migrado a proveedor real (con nombre distinto a su categoría) desapareciera
@@ -3610,7 +3611,7 @@ function renderABCResumen(){
 })();
 
 // Convierte los datos del endpoint (items + ventas) al formato DB que usa el dashboard
-function buildDBfromCloud(items, ventas, pendientes, provsExtra, provsIdsExtra){
+function buildDBfromCloud(items, ventas, pendientes, provsExtra, provsIdsExtra, provsNombresExtra){
   const itemRows=(items&&items.rows)?items.rows:{};
   const ventaRows=(ventas&&ventas.rows)?ventas.rows:{};
   const hoyRows=(ventas&&ventas.hoy&&ventas.hoy.rows)?ventas.hoy.rows:{};
@@ -3632,6 +3633,7 @@ function buildDBfromCloud(items, ventas, pendientes, provsExtra, provsIdsExtra){
   // asignado a 2+ Proveedores WebApp; proveedorIdsTodos junta principal + adicionales sin
   // duplicar, para que el panel de pedidos de CADA proveedor asignado lo pueda mostrar.
   const provsIdsExtraObj=provsIdsExtra||{};
+  const provsNombresExtraObj=provsNombresExtra||{};
 
   // Solo productos que EXISTEN en el catálogo actual (los eliminados en Loyverse no se muestran)
   const refs=new Set(Object.keys(itemRows));
@@ -3660,7 +3662,8 @@ function buildDBfromCloud(items, ventas, pendientes, provsExtra, provsIdsExtra){
       fmt:t.fmt, min:t.min, scale:t.scale, role:t.role, word:t.word,
       hoyU:hoyU, abc:ABC_BY_SKU[ref]||null,
       proveedorId:inv.proveedorId||null, proveedorNombre:inv.proveedorNombre||null,
-      proveedorIdsExtra:idsExtra, proveedorIdsTodos:proveedorIdsTodos
+      proveedorIdsExtra:idsExtra, proveedorIdsTodos:proveedorIdsTodos,
+      proveedorNombresExtra:provsNombresExtraObj[ref]||[]
     });
   });
   items_arr.sort((a,b)=>b.u_all-a.u_all);
@@ -3723,7 +3726,7 @@ async function cloudSync(silent,live,full,origen){
       if(esPollDeFondo&&editando)return true;
       _ultimoPayloadFirma=firma;
 
-      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra);
+      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra);
       INVMAP=invMapFromItems(DB.items);
       SRC='nube · '+new Date().toLocaleString('es-CL');
       // FIX: antes esto era "state.edits={}" incondicional, así que CUALQUIER sync
@@ -3836,7 +3839,7 @@ async function pollFondo(){
     if(firma===_ultimoPayloadFirma)return; // nada cambió, no hay nada que repintar
     _ultimoPayloadFirma=firma;
 
-    DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra);
+    DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra);
     INVMAP=invMapFromItems(DB.items);
     SRC='nube · '+new Date().toLocaleString('es-CL');
     setLastSync(Date.now());
@@ -5747,6 +5750,7 @@ function edAbrir(){
   document.getElementById('ed-search').value='';
   document.getElementById('ed-results').innerHTML='';
   document.getElementById('ed-hint').classList.remove('hidden');
+  const x=document.getElementById('ed-lx'); if(x)x.style.display='none';
   abrirModal('ed-ov');
   setTimeout(()=>document.getElementById('ed-search').focus(),150);
 }
@@ -5762,8 +5766,15 @@ function edRenderResultados(list){
 }
 document.getElementById('ed-search').addEventListener('input',ev=>{
   const q=ev.target.value;
+  const x=document.getElementById('ed-lx'); if(x)x.style.display=q?'block':'none';
   edRenderResultados(q.trim()?mmFindItems(q):[]);
 });
+document.getElementById('ed-lx').onclick=()=>{
+  const inp=document.getElementById('ed-search');
+  inp.value='';
+  inp.dispatchEvent(new Event('input',{bubbles:true}));
+  inp.focus();
+};
 document.getElementById('ed-results').addEventListener('click',ev=>{
   const row=ev.target.closest('[data-ed-ref]');
   if(!row)return;
@@ -5786,11 +5797,13 @@ document.getElementById('ed-scan').onclick=()=>{
     }else if(list.length===0){
       reopen();
       document.getElementById('ed-search').value=code;
+      {const x=document.getElementById('ed-lx'); if(x)x.style.display='block';}
       edRenderResultados([]);
       showToast('No se encontró ningún producto con ese código');
     }else{
       reopen();
       document.getElementById('ed-search').value=code;
+      {const x=document.getElementById('ed-lx'); if(x)x.style.display='block';}
       edRenderResultados(list);
     }
   },reopen);
@@ -8074,9 +8087,11 @@ function _esInputBusqueda(el){
 function wireClearX(inp){
   if(!inp||inp.dataset.xWired)return;
   inp.dataset.xWired='1';
-  // Si ya hay un ✕ hermano puesto a mano en el HTML, no se duplica.
+  // Si ya hay un ✕ hermano puesto a mano en el HTML, no se duplica — puede ser .search-x
+  // (genérica) o .mm-x (la usada en los buscadores dentro de .mm-search, con su propio
+  // posicionamiento fijo junto al mic/scan; ver rc-search, ed-search, vc-lsearch, etc.).
   const hermano=inp.nextElementSibling;
-  if(hermano&&hermano.classList&&hermano.classList.contains('search-x'))return;
+  if(hermano&&hermano.classList&&(hermano.classList.contains('search-x')||hermano.classList.contains('mm-x')))return;
   const cont=inp.parentElement;
   if(!cont)return;
   if(getComputedStyle(cont).position==='static')cont.style.position='relative';
@@ -8295,7 +8310,7 @@ async function recargarHistorial(){
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=recargar_historial');
     const j=await res.json();
     if(j&&j.ok){
-      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra);
+      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra);
       INVMAP=invMapFromItems(DB.items);
       state.edits={};
       persist();render();
@@ -9612,6 +9627,7 @@ function rcPick(ref){
   if(!it)return;
   rcState.item=it;
   document.getElementById('rc-search').value=it.nombre;
+  {const x=document.getElementById('rc-lx'); if(x)x.style.display='block';}
   document.getElementById('rc-results').innerHTML='';
   rcShowPicked(it);
   rcActualizarBotonInventario(it);
@@ -9674,6 +9690,7 @@ function rcReset(){
   _rcSuprimirBorrador=true;
   rcState.item=null;rcState.costoOriginal=0;rcState.precioOriginal=0;rcState.precioTocado=false;rcState.margenTocado=false;rcState.precioPreview=null;
   document.getElementById('rc-search').value='';
+  {const x=document.getElementById('rc-lx'); if(x)x.style.display='none';}
   document.getElementById('rc-results').innerHTML='';
   document.getElementById('rc-picked').classList.remove('on');
   document.getElementById('rc-detalle').classList.add('hidden');
@@ -9724,6 +9741,7 @@ function rcRestaurarPendiente(refNuevo){
 }
 document.getElementById('rc-search').oninput=e=>{
   const q=e.target.value;
+  const x=document.getElementById('rc-lx'); if(x)x.style.display=q?'block':'none';
   const list=mmFindItems(q);
   if(list.length){
     document.getElementById('rc-results').innerHTML=list.map(it=>`<div class="mm-motivo" style="display:block;margin-bottom:6px;cursor:pointer" data-ref="${it.ref}">${it.nombre} <span style="color:var(--muted);font-weight:400">· ${it.prov}</span></div>`).join('');
@@ -9735,6 +9753,12 @@ document.getElementById('rc-search').oninput=e=>{
   }else{
     document.getElementById('rc-results').innerHTML='';
   }
+};
+document.getElementById('rc-lx').onclick=()=>{
+  const inp=document.getElementById('rc-search');
+  inp.value='';
+  inp.dispatchEvent(new Event('input',{bubbles:true}));
+  inp.focus();
 };
 document.getElementById('rc-scan').onclick=()=>{
   const reopen=()=>{document.getElementById('rc-ov').classList.remove('hidden');};
