@@ -407,6 +407,14 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .fp-chip{display:inline-flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:5px 6px 5px 11px;font-size:12px;font-weight:600;color:var(--ink)}
 .fp-chip button{border:none;background:var(--gris-bg,#F3F1EA);color:var(--muted);width:18px;height:18px;border-radius:50%;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none}
 .fp-chip-principal{display:inline-flex;align-items:center;gap:5px;background:var(--verde-bg,#E3F3E8);color:#1E7A3E;border-radius:20px;padding:4px 10px;font-size:11px;font-weight:700;margin-top:6px}
+/* Acordeón de Lotes — plegado por defecto para que muchos lotes no empujen el resto del
+   formulario hacia abajo. Mismo componente .prov-acc-toggle que ya usa "Proveedores de hoy",
+   solo con un poco más de padding/tamaño porque acá muestra el resumen "Lotes (N) · stock
+   total" en vez de un título corto. Al expandir, la lista tiene su propio scroll interno
+   limitado (máx. ~5 filas visibles) en vez de estirar todo el modal. */
+#fp-lotes-toggle{padding:10px 12px;font-size:12.5px;margin-bottom:0}
+#fp-lotes-toggle[aria-expanded="true"]{border-radius:8px 8px 0 0;margin-bottom:0}
+#fp-pane-lotes{max-height:260px;overflow-y:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-top:none;border-radius:0 0 8px 8px;padding:8px 10px;margin-top:0!important}
 .rk-head{display:flex;gap:0;position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1.5px solid var(--line);margin-bottom:2px}
 .rk-hcol{flex:1;text-align:right;background:none;border:none;padding:8px 6px;font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .rk-hcol.l{text-align:left;flex:2}
@@ -2084,7 +2092,9 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         </div>
         <div id="fp-scroll">
           <div id="fp-pane-general" class="fp-pane"></div>
-          <div class="fp-section-title hidden" id="fp-section-lotes-title">Lotes</div>
+          <button type="button" class="prov-acc-toggle hidden" id="fp-lotes-toggle" aria-expanded="false" style="margin-top:14px">
+            <span id="fp-lotes-toggle-lbl">Lotes (0)</span><span class="prov-acc-caret">▾</span>
+          </button>
           <div id="fp-pane-lotes" class="fp-pane hidden"></div>
           <div class="fp-section-title" data-step="2">Unidad</div>
           <div id="fp-pane-unidad" class="fp-pane"></div>
@@ -4439,20 +4449,32 @@ function fpPintar(f){
   const p=f.producto;
   fpEditState={soldByWeight:!!p.soldByWeight,trackStock:!!p.trackStock};
   // Sección "Lotes" solo se muestra si el producto tiene lotes de vencimiento — "si aplica",
-  // tal como se pidió (no tiene sentido para productos sin control de vencimientos).
+  // tal como se pidió (no tiene sentido para productos sin control de vencimientos). Plegada
+  // por defecto: con muchos lotes, mostrarlos desplegados de entrada empujaba el resto del
+  // formulario (Unidad, Precio, Proveedores) muy hacia abajo.
   const hayLotes=!!(f.lotes&&f.lotes.length);
-  const lotesTitle=document.getElementById('fp-section-lotes-title');
-  lotesTitle.textContent='Lotes ('+((f.lotes&&f.lotes.length)||0)+')';
-  lotesTitle.classList.toggle('hidden',!hayLotes);
-  document.getElementById('fp-pane-lotes').classList.toggle('hidden',!hayLotes);
+  const nLotes=(f.lotes&&f.lotes.length)||0;
+  const stockTotalLotes=hayLotes?f.lotes.reduce((s,l)=>s+(Number(l.cantidad)||0),0):0;
+  const lotesToggle=document.getElementById('fp-lotes-toggle');
+  document.getElementById('fp-lotes-toggle-lbl').textContent='Lotes ('+nLotes+')'+(hayLotes?' · '+fmt1(stockTotalLotes)+' u en total':'');
+  lotesToggle.classList.toggle('hidden',!hayLotes);
+  lotesToggle.setAttribute('aria-expanded','false');
+  const lotesPane=document.getElementById('fp-pane-lotes');
+  lotesPane.classList.add('hidden');
+  lotesPane.innerHTML=''; // se pinta recién al expandir (ver fpPaneLotes) — no de entrada
   fpPaneGeneral(f);
   fpPaneUnidad(f);
   fpPanePreciosActual(f);
   fpPanePrecios(f);
   fpPaneProveedores(f);
   fpPaneSector(f);
-  if(hayLotes)fpPaneLotes(f);
   fpWireSteps();
+  lotesToggle.onclick=()=>{
+    const abrir=lotesPane.classList.contains('hidden');
+    lotesToggle.setAttribute('aria-expanded',abrir?'true':'false');
+    lotesPane.classList.toggle('hidden',!abrir);
+    if(abrir&&!lotesPane.dataset.pintado){fpPaneLotes(f);lotesPane.dataset.pintado='1';}
+  };
 }
 // Barra de progreso discreta: resalta el paso (1..4) según qué sección esté más cerca del
 // borde superior visible del scroll — puramente visual, no bloquea ni valida nada, el scroll
@@ -4567,7 +4589,7 @@ function fpPaneGeneral(f){
       ):'<div class="cat">Activa "Seguir inventario" para poder recontar.</div>')+
       fpCampo('Stock mínimo (opcional)','<input id="fp-i-stockmin" type="number" inputmode="numeric" value="'+(p.stockMinimo!=null?p.stockMinimo:'')+'" placeholder="Ej: 5" style="width:100%;padding:9px 12px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;font-family:\'JetBrains Mono\';margin-top:10px">')+
     '</div>';
-  document.querySelectorAll('#fp-g-nombre,#fp-g-barcode,#fp-g-desc').forEach(el=>el&&el.addEventListener('input',fpGuardarBorrador));
+  document.querySelectorAll('#fp-g-nombre,#fp-g-barcode').forEach(el=>el&&el.addEventListener('input',fpGuardarBorrador));
   const stockMinInp=document.getElementById('fp-i-stockmin');
   if(stockMinInp)stockMinInp.addEventListener('input',fpGuardarBorrador);
 
@@ -4728,7 +4750,7 @@ async function fpGuardarRecuento(sku){
     btn.disabled=false;btn.textContent='✓ Guardar stock';
   }
 }
-// ==== SECCIÓN 2 — UNIDAD: unidad vs. peso (kg), y observaciones opcionales ====
+// ==== SECCIÓN 2 — UNIDAD: unidad vs. peso (kg) ====
 function fpPaneUnidad(f){
   const p=f.producto;
   const pane=document.getElementById('fp-pane-unidad');
@@ -4742,9 +4764,8 @@ function fpPaneUnidad(f){
     '</div>'+
     fpCampo('Código de barras (opcional)',
       '<div class="mm-search"><input id="fp-g-barcode" value="'+(p.barcode||'').replace(/"/g,'&quot;')+'" placeholder="Escanea o escribe" autocomplete="off" style="padding-right:58px">'+
-      '<button class="mm-scan cam-btn" id="fp-g-scan" type="button" aria-label="Escanear"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button></div>')+
-    fpCampo('Observaciones (opcional)','<textarea id="fp-g-desc" rows="2" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit;resize:vertical">'+(p.descripcion||'').replace(/</g,'&lt;')+'</textarea>');
-  document.querySelectorAll('#fp-g-barcode,#fp-g-desc').forEach(el=>el&&el.addEventListener('input',fpGuardarBorrador));
+      '<button class="mm-scan cam-btn" id="fp-g-scan" type="button" aria-label="Escanear"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button></div>');
+  document.querySelectorAll('#fp-g-barcode').forEach(el=>el&&el.addEventListener('input',fpGuardarBorrador));
   const fpBarcodeInp=document.getElementById('fp-g-barcode');
   document.getElementById('fp-g-scan').onclick=()=>{
     const reopen=()=>{document.getElementById('fp-ov').classList.remove('hidden');_sincronizarNav();};
@@ -5119,7 +5140,9 @@ async function fpGuardarTodo(){
   const nombre=(document.getElementById('fp-g-nombre').value||'').trim();
   if(!nombre){showToast('⚠️ El nombre no puede quedar vacío');document.getElementById('fp-scroll').scrollTop=0;document.getElementById('fp-g-nombre').focus();return;}
   const categoria=document.getElementById('fp-pv-cat')?document.getElementById('fp-pv-cat').value:p.categoria;
-  const descripcion=(document.getElementById('fp-g-desc').value||'').trim();
+  // Observaciones se quitó del formulario — se manda undefined (el backend interpreta eso
+  // como "no tocar la descripción existente", ver payload.descripcion != null en el Worker).
+  const descripcion=document.getElementById('fp-g-desc')?(document.getElementById('fp-g-desc').value||'').trim():undefined;
   const barcode=(document.getElementById('fp-g-barcode').value||'').trim();
   const sector=document.getElementById('fp-s-sector')?(document.getElementById('fp-s-sector').value||null):undefined;
   // Proveedor real de la WebApp — antes nunca se enviaba al guardar aunque el backend ya lo
