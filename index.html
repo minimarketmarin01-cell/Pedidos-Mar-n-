@@ -82,10 +82,14 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
    el menú desplegable está realmente abierto, para no interferir con nada más el resto del
    tiempo. :has() reacciona solo a la clase .hidden que ya se togglea hoy — cero JS nuevo. */
 #sticky-hdr:has(#prov-menu:not(.hidden)){z-index:260}
-.prov-acc-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:5px 10px;font-family:'Manrope';font-weight:800;font-size:11.5px;color:var(--ink);cursor:pointer;margin-bottom:4px}
+.prov-acc-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:5px 10px;font-family:'Manrope';font-weight:800;font-size:11.5px;color:var(--ink);cursor:pointer;margin-bottom:4px;position:relative}
 .prov-acc-toggle:active{background:var(--line)}
 .prov-acc-caret{transition:transform .2s ease;color:var(--muted);font-size:12px}
 .prov-acc-toggle[aria-expanded="true"] .prov-acc-caret{transform:rotate(180deg)}
+/* Mismo lenguaje que el badge de conteo de las tarjetas de Inicio (.in2-card .badge) —
+   ámbar/warn porque es informativo (proveedores a los que pedir o de los que llega mercadería
+   hoy), no crítico como el rojo de Quiebres. */
+.prov-acc-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--gold,#c68a1b);color:#fff;font-size:10.5px;font-weight:800;font-family:'JetBrains Mono',monospace;margin-left:2px}
 .shc-inner{max-width:1520px;margin:0 auto}
 .shc-row{display:flex;gap:6px;align-items:center;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:1px}
 .shc-row::-webkit-scrollbar{display:none}
@@ -549,16 +553,18 @@ input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .dowbar .dv{font-size:9px;color:var(--muted);font-family:'JetBrains Mono'}
 .dowtip{font-size:12.5px;line-height:1.5;flex:1;min-width:200px}
 .dowtip b{color:var(--ink)}.dowtip .o{color:var(--wa-d);font-weight:700}
-.provday{margin:0 0 6px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:11px 14px;max-height:40vh;overflow-y:auto}
-.provday h3{font-family:'Manrope';font-size:13px;font-weight:800;letter-spacing:-.01em;margin-bottom:8px;display:flex;align-items:center;gap:7px;color:var(--ink);flex-wrap:wrap}
-.provday .pd-date{font-weight:600;color:var(--muted);font-size:11.5px}
-.provday .pd-row{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.5;padding:3px 0}
-.provday .pd-ic{flex:none;font-size:13px;margin-top:1px}
-.provday .pd-row b{font-weight:700}
-.provday .pd-pide b{color:var(--azul)}
-.provday .pd-lleg b{color:var(--verde)}
-.provday .pd-lbl{font-weight:700;color:var(--ink)}
-.provday .pd-empty{color:var(--muted)}
+.provday{margin:0 0 6px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:11px 14px;max-height:50vh;overflow-y:auto}
+.provday .pd-date-row{font-weight:600;color:var(--muted);font-size:11.5px;margin-bottom:8px}
+.provday .pd-empty-row{color:var(--muted);font-size:12.5px;padding:4px 0}
+/* Fila por proveedor — mismo lenguaje visual que .in2-att-row (Requiere atención), así se
+   lee igual de rápido: ícono a la izquierda, nombre + motivo a la derecha. 📋 pedir = azul,
+   🚚 solo llega = verde (mismo criterio de color que usaba el bloque de texto anterior). */
+.provday .pd-prov-row{display:flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:8px 10px;margin-bottom:6px}
+.provday .pd-prov-row:last-of-type{margin-bottom:0}
+.provday .pd-prov-ic{flex:none;font-size:15px}
+.provday .pd-prov-txt{flex:1;min-width:0}
+.provday .pd-prov-nom{display:block;font-size:12.5px;font-weight:700;color:var(--ink)}
+.provday .pd-prov-sub{display:block;font-size:11px;color:var(--muted);margin-top:1px}
 .provday .pd-note{margin-top:7px;font-size:11px;color:var(--gold);border-top:1px dashed var(--line);padding-top:7px;line-height:1.5}
 .price-mg{font-weight:700}
 .price-mg.mg-hi{color:var(--verde)}
@@ -1158,12 +1164,17 @@ html.ocultar-contenido-pedido #tab-pedido .tablecard{display:none}
 .in2-icon-btn:active{background:var(--line2,#eee)}
 .in2-icon-btn.spinning svg{animation:in2-spin .8s linear infinite}
 @keyframes in2-spin{to{transform:rotate(360deg)}}
-/* En celular (no bliss, no tablet de dos paneles), la barra .top global queda redundante con
-   este header propio de Inicio (mismo logo "Marín", mismo indicador En vivo). Se oculta SOLO
-   ahí — Pedidos y el resto de módulos, que sí necesitan .top con sus botones de acción, no se
-   tocan. Tablet (.carrito-fijo) y BlissOS (.modo-bliss) mantienen .top siempre visible porque
-   no tienen este problema de duplicación (la vista Inicio no es la que ven ahí primero). */
+/* La barra .top global (Marín/Local 03 · En vivo · Sincronizar · Catálogo) queda redundante
+   en Inicio (mismo logo/indicador que su propio header) y en Pedidos (el buscador/filtros de
+   #sticky-hdr ya cubren esa función). Se oculta en ambas, solo en celular puro — el resto de
+   módulos (Recepción, Vencimientos, Más, etc.) sí la necesitan con sus botones de acción.
+   Tablet (.carrito-fijo) y BlissOS (.modo-bliss) la mantienen siempre visible.
+   No se puede usar :has(~#tab-pedido) para detectar Pedidos porque #tab-pedido nunca lleva
+   la clase 'hidden' (queda siempre montado, ver showScreen); se usa en cambio la clase que sí
+   refleja si Pedidos está activo: 'ocultar-contenido-pedido' en <html> (invertida: su
+   AUSENCIA es "estoy en Pedidos"). */
 html:not(.modo-bliss):not(.carrito-fijo) .top:has(~#tab-inicio:not(.hidden)){display:none}
+html:not(.modo-bliss):not(.carrito-fijo):not(.ocultar-contenido-pedido) .top{display:none}
 .in2-hdr-left{display:flex;align-items:center;gap:8px;min-width:0}
 .in2-logo{width:30px;height:30px;border-radius:8px;flex-shrink:0;object-fit:cover}
 .in2-hdr-txt{display:flex;flex-direction:column;line-height:1.2;min-width:0}
@@ -1286,6 +1297,11 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
     <div class="in2-section-title" id="in2-atencion-title">Requiere atención</div>
     <div class="in2-atencion" id="in2-atencion"></div>
 
+    <button class="prov-acc-toggle" id="prov-acc-toggle" aria-expanded="false">
+      <span>📦 Proveedores de hoy<span class="prov-acc-badge hidden" id="prov-acc-badge"></span></span><span class="prov-acc-caret" id="prov-acc-caret">▾</span>
+    </button>
+    <div class="provday hidden" id="provday"></div>
+
     <div class="in2-section-title">Acciones rápidas</div>
     <div class="in2-actions" id="in2-actions"></div>
   </div>
@@ -1293,10 +1309,6 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
 <div id="tab-pedido">
 <div class="sticky-hdr" id="sticky-hdr">
   <div class="shc-inner">
-  <button class="prov-acc-toggle" id="prov-acc-toggle" aria-expanded="false">
-    <span>📦 Proveedores de hoy</span><span class="prov-acc-caret" id="prov-acc-caret">▾</span>
-  </button>
-  <div class="provday hidden" id="provday"></div>
   <div style="position:relative" id="prov-anchor">
     <div class="shc-row shc-wrap">
       <div class="prov-combo" id="prov-combo"><span class="prov-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13.5 13.5 20a1.5 1.5 0 0 1-2.1 0L4 12.6V4h8.6l7.4 7.4a1.5 1.5 0 0 1 0 2.1Z"/><circle cx="8.3" cy="8.3" r="1.3"/></svg></span><input class="prov-all" id="prov-all" placeholder="Proveedor o producto… escribe o toca" autocomplete="off" inputmode="text"><button class="prov-mic" id="prov-mic" type="button" tabindex="-1" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button><button class="prov-scan cam-btn" id="prov-scan" type="button" tabindex="-1" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button><button class="prov-x" id="prov-x" type="button" tabindex="-1" aria-label="Borrar">✕</button></div>
@@ -2913,6 +2925,17 @@ async function renderInicio2(){
   try{smCalcular();}catch(e){}
   const sinMovNum=(_smTodos||[]).length;
 
+  // --- Proveedores de hoy: badge de conteo en el acordeón + repinta su contenido si ya
+  // estaba montado (no hace falta esperar a que el usuario lo abra para que el número esté
+  // al día). ---
+  const provHoyNum=calcularProveedoresHoy().length;
+  const provAccBadge=document.getElementById('prov-acc-badge');
+  if(provAccBadge){
+    if(provHoyNum>0){provAccBadge.textContent=provHoyNum;provAccBadge.classList.remove('hidden');}
+    else provAccBadge.classList.add('hidden');
+  }
+  try{renderProvDay();}catch(e){}
+
   // --- Vencimientos: mismo endpoint que usa el módulo Vencimientos, con cache corta para no
   // repetir la llamada si se vuelve a Inicio varias veces seguidas en pocos segundos. ---
   let porVencer=0,vencidos=0;
@@ -2988,11 +3011,12 @@ async function renderInicio2(){
     };
   }
 
-  // ---- Notificaciones: mismo badge combinado que ya usa "Más" (llegadas + riesgo) ----
+  // ---- Notificaciones: mismo badge combinado que ya usa "Más" (llegadas + riesgo +
+  // proveedores de hoy) ----
   const notifBadge=document.getElementById('in2-notif-badge');
   const llBadge=document.getElementById('ll-badge');
   const nLlegadas=(llBadge&&llBadge.style.display==='flex')?(Number(llBadge.textContent)||0):0;
-  const nTotal=nLlegadas+riesgoNum;
+  const nTotal=nLlegadas+riesgoNum+provHoyNum;
   if(notifBadge){
     if(nTotal>0){notifBadge.textContent=nTotal>99?'99+':String(nTotal);notifBadge.classList.remove('hidden');}
     else notifBadge.classList.add('hidden');
@@ -3911,6 +3935,10 @@ function showScreen(name){
   document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('active'));
   if(name==='pedido')document.getElementById('bn-pedidos').classList.add('active');
   else if(name==='inicio'){const b=document.getElementById('bn-inicio');if(b)b.classList.add('active');}
+  // .top ahora se oculta tanto en Inicio como en Pedidos (ver regla CSS) — su altura real
+  // cambia con cada cambio de pestaña, así que --top-h/--hdr-h deben recalcularse acá; si no,
+  // quedan "stale" con el alto de cuando .top SÍ estaba visible, hasta el próximo resize.
+  setTimeout(()=>{if(typeof _actualizarAlturaTop==='function')_actualizarAlturaTop();},0);
   playTabAnim(name);
   persistUI();
   guardarUltimaPantalla(name==='inicio'?'inicio':'pedido');
@@ -4073,14 +4101,8 @@ document.getElementById('mas-cerrar').onclick=()=>cerrarModal('mas-ov');
   if(sc)sc.addEventListener('scroll',()=>onScroll(sc),{passive:true});
 })();
 
-// Acordeón de "Proveedores de hoy": cerrado por defecto, se abre al tocar
-document.getElementById('prov-acc-toggle').onclick=()=>{
-  const t=document.getElementById('prov-acc-toggle'), pd=document.getElementById('provday');
-  const abrir=pd.classList.contains('hidden');
-  pd.classList.toggle('hidden',!abrir);
-  t.setAttribute('aria-expanded',abrir?'true':'false');
-  setTimeout(()=>{if(typeof _actualizarAlturaTop==='function')_actualizarAlturaTop();},0); // el acordeón cambia el alto de .sticky-hdr sin disparar 'resize'
-};
+// El acordeón "Proveedores de hoy" (antes vivía acá, en el sticky-hdr de Pedidos) se movió a
+// Inicio — ver renderInicio2()/in2-provday más abajo. El wiring de su toggle vive ahí ahora.
 document.getElementById('cart-fab').onclick=()=>toggleCarrito();
 document.getElementById('cart-back').onclick=()=>toggleCarrito(false);
 
@@ -5397,6 +5419,7 @@ async function ejecutarRenombrar(){
 document.getElementById('rn-cancelar').onclick=()=>cerrarModal('rn-ov');
 document.getElementById('rn-guardar').onclick=ejecutarRenombrar;
 document.getElementById('rn-nuevo').addEventListener('keydown',ev=>{if(ev.key==='Enter')ejecutarRenombrar();});
+forzarMayusculaInput(document.getElementById('rn-nuevo'));
 async function psCrearProveedorInline(nombre){
   const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'crear_proveedor',payload:{nombre}})});
   const j=await res.json();
@@ -5417,13 +5440,28 @@ async function psCrearSectorInline(nombre){
   }
   throw new Error((j&&j.error)||'No se pudo crear el sector');
 }
+// Fuerza mayúscula en vivo mientras se escribe, conservando la posición del cursor (si no se
+// preserva, el cursor salta al final en cada tecla — molesto al editar en medio del texto en
+// un teléfono). Reutilizado por los inputs de "nuevo proveedor"/"nuevo sector" de todos los
+// módulos (Crear producto, Ficha, Mapeo de categorías) — proveedores y sectores siempre se
+// guardan en MAYÚSCULA (ver normalizarNombreProveedor en el Worker y accionCrearSector).
+function forzarMayusculaInput(inp){
+  if(!inp||inp._mayusWired)return;
+  inp._mayusWired=true;
+  inp.addEventListener('input',()=>{
+    const pos=inp.selectionStart;
+    inp.value=inp.value.toUpperCase();
+    if(pos!=null)try{inp.setSelectionRange(pos,pos);}catch(e){}
+  });
+}
 // Wire genérico del botón "+ Nuevo proveedor" — reutilizado por Crear producto y por la Ficha.
 function psWireNuevoProveedor(btnId,boxId,inputId,crearBtnId,provSelId,sectorSelId){
   const btn=document.getElementById(btnId),box=document.getElementById(boxId);
   if(btn&&box)btn.onclick=()=>{box.classList.toggle('hidden');if(!box.classList.contains('hidden'))document.getElementById(inputId).focus();};
+  forzarMayusculaInput(document.getElementById(inputId));
   const crearBtn=document.getElementById(crearBtnId);
   if(crearBtn)crearBtn.onclick=async()=>{
-    const nom=(document.getElementById(inputId).value||'').trim();
+    const nom=(document.getElementById(inputId).value||'').trim().toUpperCase();
     if(!nom){showToast('Escribe el nombre del proveedor');return;}
     crearBtn.disabled=true;
     try{
@@ -5439,9 +5477,10 @@ function psWireNuevoProveedor(btnId,boxId,inputId,crearBtnId,provSelId,sectorSel
 function psWireNuevoSector(btnId,boxId,inputId,crearBtnId,provSelId,sectorSelId){
   const btn=document.getElementById(btnId),box=document.getElementById(boxId);
   if(btn&&box)btn.onclick=()=>{box.classList.toggle('hidden');if(!box.classList.contains('hidden'))document.getElementById(inputId).focus();};
+  forzarMayusculaInput(document.getElementById(inputId));
   const crearBtn=document.getElementById(crearBtnId);
   if(crearBtn)crearBtn.onclick=async()=>{
-    const nom=(document.getElementById(inputId).value||'').trim();
+    const nom=(document.getElementById(inputId).value||'').trim().toUpperCase();
     if(!nom){showToast('Escribe el nombre del sector');return;}
     crearBtn.disabled=true;
     try{
@@ -10527,29 +10566,54 @@ const CAL_PROV=[
   {n:'Oreo',               r:[[3,4]]},
   {n:'Dinac',              r:[[3,5]], nota:'cada 15 días'}
 ];
+// Antes esto armaba dos bloques de texto ("Pides hoy: A · B · C" / "Llega hoy: X · Y"),
+// donde había que leer con calma para saber a quién le tocaba qué. Ahora es una fila por
+// proveedor (solo los que tienen algo hoy — pedir y/o recibir), mismo patrón visual que
+// "Requiere atención" (in2-att-row), así se lee de un vistazo igual que Quiebres/Vencimientos.
+// Devuelve la cantidad de proveedores con algo hoy, para el badge de notificación.
+function calcularProveedoresHoy(){
+  const now=new Date(), hoy=now.getDay();
+  const filas=[];
+  CAL_PROV.forEach(p=>{
+    let pide=false,llega=false,llegaDia=null;
+    p.r.forEach(par=>{
+      const dp=par[0], dl=par[1];
+      if(dp===hoy)pide=true;
+      if(dp===hoy)llegaDia=dl;
+      if(dl===hoy && !p.retiro)llega=true;
+    });
+    if(pide||llega){
+      let sub;
+      if(pide&&p.retiro)sub='📋 Pedir/retirar hoy (Lo Valledor)';
+      else if(pide&&llega)sub='📋 Pedir hoy · 🚚 también llega hoy';
+      else if(pide)sub='📋 Pedir hoy'+(llegaDia!=null?' · llega '+DOW_AB[llegaDia]:'');
+      else sub='🚚 Llega hoy';
+      if(p.nota)sub+=' · '+p.nota;
+      filas.push({nombre:p.n,sub,pide,llega});
+    }
+  });
+  return filas;
+}
 function renderProvDay(){
   const el=document.getElementById('provday'); if(!el)return;
   const now=new Date(), hoy=now.getDay();
-  const pide=[], lleg=[];
-  CAL_PROV.forEach(p=>{
-    p.r.forEach(par=>{
-      const dp=par[0], dl=par[1];
-      if(dp===hoy){
-        if(p.retiro) pide.push('<b>'+p.n+'</b> (retiras hoy en Lo Valledor)');
-        else pide.push('<b>'+p.n+'</b> → llega '+DOW_AB[dl]+(p.nota?' · '+p.nota:''));
-      }
-      if(dl===hoy && !p.retiro) lleg.push('<b>'+p.n+'</b>'+(p.nota?' ('+p.nota+')':''));
-    });
-  });
   const fecha=DOW_LBL[hoy]+' '+now.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit'});
-  let h='<h3>📦 Proveedores de hoy <span class="pd-date">· '+fecha+'</span></h3>';
-  h+='<div class="pd-row pd-pide"><span class="pd-ic">📋</span><div><span class="pd-lbl">Pides hoy:</span> '+
-     (pide.length?pide.join(' · '):'<span class="pd-empty">sin pedidos programados</span>')+'</div></div>';
-  h+='<div class="pd-row pd-lleg"><span class="pd-ic">🚚</span><div><span class="pd-lbl">Llega hoy:</span> '+
-     (lleg.length?lleg.join(' · '):'<span class="pd-empty">sin entregas programadas</span>')+'</div></div>';
+  const filas=calcularProveedoresHoy();
+  let h='<div class="pd-date-row">· '+fecha+'</div>';
+  if(!filas.length){
+    h+='<div class="pd-empty-row">Sin pedidos ni entregas programadas para hoy</div>';
+  }else{
+    h+=filas.map(f=>`<div class="pd-prov-row"><span class="pd-prov-ic">${f.pide?'📋':'🚚'}</span><span class="pd-prov-txt"><span class="pd-prov-nom">${f.nombre}</span><span class="pd-prov-sub">${f.sub}</span></span></div>`).join('');
+  }
   h+='<div class="pd-note">⏰ Evercrisp: pedir con 48 h de anticipación. · Dinac es quincenal: confirma si esta semana corresponde.</div>';
   el.innerHTML=h;
 }
+document.getElementById('prov-acc-toggle').onclick=()=>{
+  const t=document.getElementById('prov-acc-toggle'), pd=document.getElementById('provday');
+  const abrir=pd.classList.contains('hidden');
+  pd.classList.toggle('hidden',!abrir);
+  t.setAttribute('aria-expanded',abrir?'true':'false');
+};
 
 // ===================== RECORDAR DÓNDE QUEDASTE =====================
 let _uiSaveT=null;
