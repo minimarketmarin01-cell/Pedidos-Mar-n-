@@ -1603,6 +1603,75 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         </div>
       </div>
     </div>
+    <div class="mm-ov hidden" id="pr-ov">
+      <div class="mm-card">
+        <div class="mm-head"><h3>🔄 Préstamos con Los Cumpas</h3></div>
+        <div class="mm-topbar"><button class="loadbtn" id="pr-cerrar" style="width:100%">Cerrar</button></div>
+        <div class="mm-body" style="padding-bottom:8px">
+
+        <div class="mm-field" style="margin-bottom:8px">
+          <label>Dirección</label>
+          <div style="display:flex;gap:6px">
+            <button type="button" class="rc-modo-btn active" id="pr-dir-salida" data-dir="salida" style="flex:1;padding:8px;border-radius:9px;border:1.5px solid var(--wa-d);background:var(--wa-bg,var(--verde-bg));color:var(--wa-d);font-weight:700;font-size:11.5px;cursor:pointer">📤 Le presto a Los Cumpas</button>
+            <button type="button" class="rc-modo-btn" id="pr-dir-entrada" data-dir="entrada" style="flex:1;padding:8px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--muted);font-weight:700;font-size:11.5px;cursor:pointer">📥 Los Cumpas me prestan</button>
+          </div>
+          <div class="cat" id="pr-dir-hint" style="margin-top:6px">Sale stock de Marín — se registra como deuda a favor, hasta que Los Cumpas lo devuelvan.</div>
+        </div>
+
+        <div class="mm-field" style="margin-bottom:8px">
+          <label>Producto</label>
+          <div class="mm-search">
+            <input id="pr-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off" style="padding-right:132px">
+            <button class="mm-x" id="pr-lx" type="button" aria-label="Limpiar" style="display:none">✕</button>
+            <button class="mm-mic" id="pr-mic" type="button" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
+            <button class="mm-scan cam-btn" id="pr-scan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
+          </div>
+          <div class="mm-picked" id="pr-picked">
+            <div class="nom" id="pr-nom">—</div>
+            <div class="cat" id="pr-stock" style="font-weight:700;color:var(--ink);margin-top:3px">Stock actual: —</div>
+          </div>
+          <div id="pr-results"></div>
+        </div>
+
+        <div id="pr-detalle" class="hidden">
+        <div class="mm-field" style="margin-bottom:8px">
+          <label>Cantidad</label>
+          <div class="mm-qty" style="height:38px">
+            <button class="qbtn rc-qty-hold" id="pr-qty-menos" type="button" style="height:100%">−</button>
+            <input id="pr-cantidad" inputmode="decimal" placeholder="0">
+            <span class="unidad" id="pr-unidad">u</span>
+            <button class="qbtn rc-qty-hold" id="pr-qty-mas" type="button" style="height:100%">+</button>
+          </div>
+        </div>
+
+        <div class="mm-field hidden" id="pr-costo-field" style="margin-bottom:8px">
+          <label>Costo unitario (este producto no tiene costo cargado — se guardará en Loyverse)</label>
+          <input id="pr-costo" inputmode="decimal" placeholder="$0" style="width:100%;height:38px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;font-family:'JetBrains Mono';box-sizing:border-box">
+        </div>
+
+        <div class="mm-field" style="margin-bottom:8px">
+          <label>Responsable</label>
+          <div class="mm-resp" id="pr-resp">
+            <button data-r="Dueña">Dueña</button>
+            <button data-r="Rossy">Rossy</button>
+            <button data-r="Edwin">Edwin</button>
+          </div>
+        </div>
+
+        <button class="mm-save" id="pr-guardar" disabled>Registrar préstamo</button>
+        </div>
+
+        <div class="mm-field" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <label style="margin:0">Pendientes de devolución</label>
+            <span class="cat" id="pr-pend-resumen">—</span>
+          </div>
+          <div id="pr-pend-list"><div class="vc-empty">Cargando…</div></div>
+        </div>
+
+        </div>
+      </div>
+    </div>
     <div class="mm-ov hidden" id="rc-ov">
       <div class="mm-card">
         <div class="mm-head"><h3>📦 Recibir mercadería</h3></div>
@@ -1810,6 +1879,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
     <div class="mm-body">
       <div class="mas-quick">
         <button id="mas-q-merma"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><br>Merma</button>
+        <button id="mas-q-prestamos"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg><br>Préstamos<span class="mas-badge" id="prestamos-badge"></span></button>
         <button id="mas-q-insumos"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><line x1="19" y1="4" x2="10" y2="13"/><path d="M10 13 4 21l3-1 2 2 1-3 3-3"/><path d="M10 13l2-6"/></svg><br>Insumos</button>
         <button id="mas-q-llegadas"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><br>Avisos<span class="mas-badge" id="mas-badge"></span></button>
         <button id="mas-q-sincosto"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 3 22 20H2Z"/><line x1="12" y1="9" x2="12" y2="14"/><circle cx="12" cy="17.3" r="0.2" fill="currentColor" stroke-width="0"/></svg><br>Sin costo</button>
@@ -9520,6 +9590,168 @@ document.getElementById('in-guardar').onclick=async()=>{
   btn.disabled=false;btn.textContent='Guardar consumo';inValidar();
 };
 
+// ===================== PRÉSTAMOS ENTRE SUCURSALES (Los Cumpas) =====================
+const prState={item:null,dir:'salida',resp:''};
+function prAbrir(){
+  document.getElementById('mas-ov').classList.add('hidden');
+  prState.item=null;prState.dir='salida';prState.resp='';
+  document.getElementById('pr-search').value='';
+  document.getElementById('pr-results').innerHTML='';
+  document.getElementById('pr-picked').classList.remove('on');
+  document.getElementById('pr-detalle').classList.add('hidden');
+  document.getElementById('pr-cantidad').value='';
+  document.getElementById('pr-costo').value='';
+  document.getElementById('pr-costo-field').classList.add('hidden');
+  document.querySelectorAll('#pr-resp button').forEach(b=>b.classList.remove('sel'));
+  prSetDireccion('salida');
+  abrirModal('pr-ov');
+  prCargarPendientes();
+  setTimeout(()=>document.getElementById('pr-search').focus(),150);
+}
+function prSetDireccion(dir){
+  prState.dir=dir;
+  const salidaBtn=document.getElementById('pr-dir-salida'),entradaBtn=document.getElementById('pr-dir-entrada');
+  const activa='var(--wa-d)',activaBg='var(--wa-bg,var(--verde-bg))';
+  salidaBtn.classList.toggle('active',dir==='salida');
+  entradaBtn.classList.toggle('active',dir==='entrada');
+  salidaBtn.style.borderColor=dir==='salida'?activa:'var(--line)';
+  salidaBtn.style.background=dir==='salida'?activaBg:'#fff';
+  salidaBtn.style.color=dir==='salida'?activa:'var(--muted)';
+  entradaBtn.style.borderColor=dir==='entrada'?activa:'var(--line)';
+  entradaBtn.style.background=dir==='entrada'?activaBg:'#fff';
+  entradaBtn.style.color=dir==='entrada'?activa:'var(--muted)';
+  document.getElementById('pr-dir-hint').textContent=dir==='salida'
+    ?'Sale stock de Marín — se registra como deuda a favor, hasta que Los Cumpas lo devuelvan.'
+    :'Entra stock a Marín — se registra como deuda pendiente, hasta que se lo devuelvas a Los Cumpas.';
+}
+document.getElementById('pr-dir-salida').onclick=()=>prSetDireccion('salida');
+document.getElementById('pr-dir-entrada').onclick=()=>prSetDireccion('entrada');
+document.getElementById('pr-cerrar').onclick=()=>cerrarModal('pr-ov');
+document.getElementById('mas-q-prestamos').onclick=prAbrir;
+document.getElementById('pr-search').addEventListener('input',ev=>{
+  const q=ev.target.value;
+  const list=q.trim()?mmFindItems(q):[];
+  if(list.length){
+    document.getElementById('pr-results').innerHTML=list.map(it=>`<div class="mm-motivo" style="display:block;margin-bottom:6px;cursor:pointer" data-ref="${it.ref}">${it.nombre} <span style="color:var(--muted);font-weight:400">· ${it.prov}</span></div>`).join('');
+    document.querySelectorAll('#pr-results [data-ref]').forEach(el=>el.onclick=()=>prPick(el.dataset.ref));
+  }else{
+    document.getElementById('pr-results').innerHTML='';
+  }
+});
+document.getElementById('pr-mic').onclick=()=>voiceSearch(document.getElementById('pr-mic'),text=>{
+  document.getElementById('pr-search').value=text;
+  document.getElementById('pr-search').dispatchEvent(new Event('input',{bubbles:true}));
+});
+document.getElementById('pr-scan').onclick=()=>{
+  const reopen=()=>{document.getElementById('pr-ov').classList.remove('hidden');};
+  cerrarModal('pr-ov');
+  openScanner(code=>{
+    const codeNorm=String(code||'').trim();
+    const exacto=(DB.items||[]).filter(i=>String(i.barcode||'').trim()===codeNorm);
+    reopen();
+    if(exacto.length===1){prPick(exacto[0].ref);return;}
+    document.getElementById('pr-search').value=codeNorm;
+    document.getElementById('pr-search').dispatchEvent(new Event('input',{bubbles:true}));
+    if(exacto.length===0)showToast('No se encontró ningún producto con ese código');
+  },reopen);
+};
+function prPick(ref){
+  const it=(DB.items||[]).find(i=>i.ref===ref);
+  if(!it)return;
+  prState.item=it;
+  document.getElementById('pr-search').value=it.nombre;
+  document.getElementById('pr-results').innerHTML='';
+  document.getElementById('pr-nom').textContent=it.nombre;
+  document.getElementById('pr-stock').textContent='Stock actual: '+(it.stock!=null?it.stock:'s/c');
+  document.getElementById('pr-picked').classList.add('on');
+  document.getElementById('pr-unidad').textContent=it.peso?'kg':'u';
+  const costoField=document.getElementById('pr-costo-field');
+  if(!it.coste||it.coste<=0){costoField.classList.remove('hidden');}else{costoField.classList.add('hidden');document.getElementById('pr-costo').value='';}
+  document.getElementById('pr-detalle').classList.remove('hidden');
+  prValidar();
+}
+function prQtyMenos(){const i=document.getElementById('pr-cantidad');const st=prState.item&&prState.item.peso?0.05:1;i.value=Math.max(0,(Number(i.value)||0)-st).toFixed(prState.item&&prState.item.peso?3:0);prValidar();}
+function prQtyMas(){const i=document.getElementById('pr-cantidad');const st=prState.item&&prState.item.peso?0.05:1;i.value=((Number(i.value)||0)+st).toFixed(prState.item&&prState.item.peso?3:0);prValidar();}
+document.getElementById('pr-qty-menos').onclick=prQtyMenos;
+document.getElementById('pr-qty-mas').onclick=prQtyMas;
+document.getElementById('pr-cantidad').addEventListener('input',prValidar);
+document.getElementById('pr-costo').addEventListener('input',prValidar);
+document.querySelectorAll('#pr-resp button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#pr-resp button').forEach(x=>x.classList.remove('sel'));
+  b.classList.add('sel');prState.resp=b.dataset.r;prValidar();
+});
+function prValidar(){
+  const cant=Number(document.getElementById('pr-cantidad').value)||0;
+  const costoFieldVisible=!document.getElementById('pr-costo-field').classList.contains('hidden');
+  const costoOk=!costoFieldVisible||Number(document.getElementById('pr-costo').value)>0;
+  document.getElementById('pr-guardar').disabled=!(prState.item&&cant>0&&costoOk);
+}
+document.getElementById('pr-guardar').onclick=async()=>{
+  const btn=document.getElementById('pr-guardar');
+  btn.disabled=true;btn.textContent='Guardando…';
+  try{
+    const payload={
+      sku:prState.item.ref, direccion:prState.dir, cantidad:Number(document.getElementById('pr-cantidad').value)||0,
+      costoManual:Number(document.getElementById('pr-costo').value)||0, responsable:prState.resp
+    };
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'registrar_prestamo',payload})});
+    const j=await res.json();
+    if(j&&j.ok){
+      let msg=(prState.dir==='salida'?'📤 Salida registrada: ':'📥 Entrada registrada: ')+j.nombre+' · '+j.cantidad+(j.unidad||'');
+      if(j.avisoStock)msg+=' · '+j.avisoStock;
+      showToast(msg);
+      prState.item=null;
+      document.getElementById('pr-search').value='';
+      document.getElementById('pr-picked').classList.remove('on');
+      document.getElementById('pr-detalle').classList.add('hidden');
+      document.getElementById('pr-cantidad').value='';
+      document.getElementById('pr-costo').value='';
+      document.querySelectorAll('#pr-resp button').forEach(x=>x.classList.remove('sel'));
+      prState.resp='';
+      prCargarPendientes();
+      setTimeout(()=>document.getElementById('pr-search').focus(),150);
+    }else{showToast('Error: '+((j&&j.error)||'no se pudo guardar'));}
+  }catch(e){showToast('Error de conexión al registrar el préstamo');}
+  btn.disabled=false;btn.textContent='Registrar préstamo';prValidar();
+};
+async function prCargarPendientes(){
+  const box=document.getElementById('pr-pend-list');
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=historial_prestamos');
+    const j=await res.json();
+    if(!j||!j.ok){box.innerHTML='<div class="vc-empty">No se pudo cargar</div>';return;}
+    const pend=(j.prestamos||[]).filter(p=>p.estado==='pendiente');
+    document.getElementById('pr-pend-resumen').textContent=pend.length?pend.length+' pendiente'+(pend.length===1?'':'s'):'sin pendientes';
+    const pb=document.getElementById('prestamos-badge');
+    if(pb){pb.textContent=pend.length>99?'99+':String(pend.length);pb.classList.toggle('on',pend.length>0);}
+    if(!pend.length){box.innerHTML='<div class="vc-empty">No hay préstamos pendientes de devolución</div>';return;}
+    box.innerHTML=pend.map(p=>{
+      const dirTxt=p.direccion==='salida'?'📤 Le prestamos':'📥 Nos prestaron';
+      const costoTxt=p.costoTotal?(' · '+peso(p.costoTotal)):'';
+      return `<div class="pr-pend-row" data-id="${p.id}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:9px 11px;margin-bottom:6px">
+        <div style="min-width:0">
+          <div style="font-size:12.5px;font-weight:700;color:var(--ink)">${p.producto||p.sku}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:1px">${dirTxt} · ${p.cantidad}${p.unidad||''}${costoTxt} · ${p.fecha}</div>
+        </div>
+        <button type="button" class="pr-devolver-btn" data-id="${p.id}" style="flex:none;padding:7px 11px;border-radius:8px;border:none;background:var(--verde,#3a9d5c);color:#fff;font-weight:700;font-size:11.5px;cursor:pointer">✓ Devuelto</button>
+      </div>`;
+    }).join('');
+    document.querySelectorAll('.pr-devolver-btn').forEach(b=>b.onclick=()=>prDevolver(Number(b.dataset.id),b));
+  }catch(e){box.innerHTML='<div class="vc-empty">Error de conexión</div>';}
+}
+async function prDevolver(id,btn){
+  if(!confirm('¿Confirmas que este préstamo ya fue devuelto?\n\nEsto ajustará el stock en Loyverse de vuelta.'))return;
+  btn.disabled=true;btn.textContent='Guardando…';
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'devolver_prestamo',payload:{id}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      showToast('✓ Préstamo #'+id+' marcado como devuelto'+(j.avisoStock?' · '+j.avisoStock:''));
+      prCargarPendientes();
+    }else{showToast('Error: '+((j&&j.error)||'no se pudo guardar'));btn.disabled=false;btn.textContent='✓ Devuelto';}
+  }catch(e){showToast('Error de conexión');btn.disabled=false;btn.textContent='✓ Devuelto';}
+}
+
 // ===================== RECIBIR MERCADERÍA =====================
 const rcState={item:null,costoOriginal:0,precioOriginal:0,precioTocado:false,margenTocado:false,modo:'unidad',ivaModo:'con',precioPreview:null};
 // ---- Borrador de Recepción en curso (localStorage, con demora — no bloquea el toque) ----
@@ -10869,6 +11101,7 @@ if(new URLSearchParams(location.search).get('debug')==='1'){
 restore();retagAll();
 const _ui=restoreUI();
 render();renderProvDay();
+try{prCargarPendientes();}catch(e){} // badge de "Préstamos" en el menú Más — no debe interrumpir el arranque si falla
 if(_ui)restoreScroll(_ui);
 // FIX bug de descuadre del carrito en tablet: _actualizarLayout() ya se había llamado más
 // arriba, pero en ese momento .sticky-hdr (buscador/filtros/leyenda) todavía estaba vacío
