@@ -1231,16 +1231,12 @@ html.ocultar-contenido-pedido #tab-pedido .tablecard{display:none}
    AUSENCIA es "estoy en Pedidos"). */
 html:not(.modo-bliss):not(.carrito-fijo) .top:has(~#tab-inicio:not(.hidden)){display:none}
 html:not(.modo-bliss):not(.carrito-fijo):not(.ocultar-contenido-pedido) .top{display:none}
-/* Mismo criterio también en Tablet (.carrito-fijo) y BlissOS (.modo-bliss): antes esta barra
-   se dejaba siempre visible ahí porque Inicio en esos modos no tenía nada propio que la
-   duplicara — pero al ir a Inicio la pantalla quedaba con el encabezado grande de Pedidos
-   arriba y el carrito fijo aun ocupando toda la columna derecha, aunque no hubiera nada que
-   pedir en pantalla. Se oculta con el mismo mecanismo de arriba: 'ocultar-contenido-pedido'
-   AUSENTE = "estoy en Pedidos" (ver showScreen). */
-html.carrito-fijo:not(.ocultar-contenido-pedido) .top,
-html.modo-bliss:not(.ocultar-contenido-pedido) .top{display:flex}
-html.carrito-fijo.ocultar-contenido-pedido .top,
-html.modo-bliss.ocultar-contenido-pedido .top{display:none}
+/* Mismo criterio también en Tablet (.carrito-fijo) y BlissOS (.modo-bliss) — ahora en AMBAS
+   pestañas (Inicio y Pedidos), no solo Inicio: el buscador/filtros de #sticky-hdr ya cubren
+   la función de esta barra dentro de Pedidos, así que queda redundante ahí también, igual que
+   ya se resolvió antes para celular. Se oculta siempre en estos modos, punto. */
+html.carrito-fijo .top,
+html.modo-bliss .top{display:none}
 /* Carrito fijo (Tablet/BlissOS): igual que ya hace .overlay-open (ver más abajo), pero
    disparado por estar fuera de Pedidos en vez de por un modal encima — mismo efecto visual
    (se desliza fuera y su columna del grid deja de reservar ancho), para que Inicio ocupe la
