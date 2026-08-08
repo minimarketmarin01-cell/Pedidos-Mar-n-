@@ -1195,6 +1195,16 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
    vista-filas, carrito-fijo), solo que en sentido inverso porque celular es el modo base. */
 #tab-inicio{display:none}
 html.modo-celular #tab-inicio:not(.hidden){display:block}
+/* Bug de fondo, anterior a la adaptación de Inicio para Tablet/BlissOS: la regla de arriba
+   solo revelaba #tab-inicio bajo modo-celular — en carrito-fijo/modo-bliss quedaba oculto
+   SIEMPRE, sin importar la clase 'hidden' del elemento (showScreen la quita correctamente,
+   pero no había ninguna regla CSS que aprovechara eso fuera de celular). Antes esto pasaba
+   desapercibido porque la barra .top (siempre visible en esos modos hasta la sesión
+   anterior) tapaba visualmente el hueco; al ocultar .top en Inicio, la pantalla quedó
+   completamente en blanco y reveló el problema real. Mismo criterio que la regla de arriba,
+   solo que para los otros dos modos. */
+html.carrito-fijo #tab-inicio:not(.hidden),
+html.modo-bliss #tab-inicio:not(.hidden){display:block}
 /* Oculta el contenido propio de Pedidos (header de búsqueda + tarjetas de la tabla) cuando
    se está en Inicio — pero NUNCA los overlays (.mm-ov/.scan-ov), que viven como HERMANOS de
    esas tarjetas dentro del mismo div y se controlan siempre por su propia clase 'hidden'
@@ -1221,6 +1231,22 @@ html.ocultar-contenido-pedido #tab-pedido .tablecard{display:none}
    AUSENCIA es "estoy en Pedidos"). */
 html:not(.modo-bliss):not(.carrito-fijo) .top:has(~#tab-inicio:not(.hidden)){display:none}
 html:not(.modo-bliss):not(.carrito-fijo):not(.ocultar-contenido-pedido) .top{display:none}
+/* Mismo criterio también en Tablet (.carrito-fijo) y BlissOS (.modo-bliss): antes esta barra
+   se dejaba siempre visible ahí porque Inicio en esos modos no tenía nada propio que la
+   duplicara — pero al ir a Inicio la pantalla quedaba con el encabezado grande de Pedidos
+   arriba y el carrito fijo aun ocupando toda la columna derecha, aunque no hubiera nada que
+   pedir en pantalla. Se oculta con el mismo mecanismo de arriba: 'ocultar-contenido-pedido'
+   AUSENTE = "estoy en Pedidos" (ver showScreen). */
+html.carrito-fijo:not(.ocultar-contenido-pedido) .top,
+html.modo-bliss:not(.ocultar-contenido-pedido) .top{display:flex}
+html.carrito-fijo.ocultar-contenido-pedido .top,
+html.modo-bliss.ocultar-contenido-pedido .top{display:none}
+/* Carrito fijo (Tablet/BlissOS): igual que ya hace .overlay-open (ver más abajo), pero
+   disparado por estar fuera de Pedidos en vez de por un modal encima — mismo efecto visual
+   (se desliza fuera y su columna del grid deja de reservar ancho), para que Inicio ocupe la
+   pantalla completa en vez de dejar ese hueco vacío a la izquierda del carrito. */
+html.carrito-fijo.ocultar-contenido-pedido #tab-carrito{transform:translateX(100%)!important;opacity:0!important;pointer-events:none!important}
+html.carrito-fijo.ocultar-contenido-pedido #tab-pedido{grid-template-columns:minmax(0,1fr) 0}
 .in2-hdr-left{display:flex;align-items:center;gap:8px;min-width:0}
 .in2-logo{width:30px;height:30px;border-radius:8px;flex-shrink:0;object-fit:cover}
 .in2-hdr-txt{display:flex;flex-direction:column;line-height:1.2;min-width:0}
