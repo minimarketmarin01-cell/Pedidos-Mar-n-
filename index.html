@@ -377,6 +377,36 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .fp-badge.ambar{background:#FCF1D9;color:#B7791F}
 .fp-badge.verde{background:#E3F3E8;color:#1E7A3E}
 .fp-badge.gris{background:var(--gris-bg,#F3F1EA);color:var(--muted)}
+/* Barra de progreso discreta (1 Producto → 2 Unidad → 3 Precio → 4 Proveedores) — solo un
+   indicador visual de en qué parte larga del formulario se está, no bloquea ni exige llenar
+   nada en orden; el scroll libre sigue funcionando igual que siempre. */
+.fp-steps{flex-shrink:0;display:flex;align-items:center;gap:0;padding:10px 16px 8px;background:var(--card)}
+.fp-step-dot{flex:none;width:22px;height:22px;border-radius:50%;background:var(--gris-bg,#F3F1EA);color:var(--muted);font-size:11px;font-weight:800;font-family:'JetBrains Mono';display:flex;align-items:center;justify-content:center}
+.fp-step-dot.on{background:var(--verde);color:#fff}
+.fp-step-line{flex:1;height:2px;background:var(--line);margin:0 4px}
+/* Tarjeta compacta del producto (imagen + nombre + botón cambiar imagen) — reemplaza el
+   bloque grande de "Imagen" que antes vivía repetido al final del panel General. */
+.fp-prod-card{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px}
+.fp-prod-img-col{flex:none;display:flex;flex-direction:column;align-items:center;gap:6px;width:76px}
+.fp-prod-img-col img{width:72px;height:72px;object-fit:cover;border-radius:12px;border:1px solid var(--line);background:var(--paper)}
+.fp-prod-img-empty{width:72px;height:72px;border-radius:12px;border:1.5px dashed var(--line);background:var(--paper);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--muted)}
+.fp-prod-img-btn{width:100%;padding:5px 2px;border-radius:8px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:10px;cursor:pointer;text-align:center}
+.fp-prod-fields{flex:1;min-width:0}
+/* Indicadores compactos (Costo / Precio / Margen, y la calculadora) en grid de 3 columnas —
+   mismo lenguaje visual que .hm-summary pero pensado para 3 números lado a lado en vez de un
+   único par etiqueta/valor. */
+.fp-kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.fp-kpi{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:9px 8px;text-align:left}
+.fp-kpi .fp-kpi-lbl{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fp-kpi .fp-kpi-val{font-family:'JetBrains Mono';font-weight:800;font-size:15px;color:var(--ink)}
+.fp-kpi.destacado{background:var(--verde-bg,#E3F3E8);border-color:var(--verde)}
+.fp-kpi.destacado .fp-kpi-val{color:#1E7A3E}
+/* Chip de proveedor "También pedir a" — mismo lenguaje visual que los badges de estado, en
+   formato tag con su ✕ para quitar sin abandonar la tarjeta. */
+.fp-chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.fp-chip{display:inline-flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:5px 6px 5px 11px;font-size:12px;font-weight:600;color:var(--ink)}
+.fp-chip button{border:none;background:var(--gris-bg,#F3F1EA);color:var(--muted);width:18px;height:18px;border-radius:50%;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none}
+.fp-chip-principal{display:inline-flex;align-items:center;gap:5px;background:var(--verde-bg,#E3F3E8);color:#1E7A3E;border-radius:20px;padding:4px 10px;font-size:11px;font-weight:700;margin-top:6px}
 .rk-head{display:flex;gap:0;position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1.5px solid var(--line);margin-bottom:2px}
 .rk-hcol{flex:1;text-align:right;background:none;border:none;padding:8px 6px;font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .rk-hcol.l{text-align:left;flex:2}
@@ -1949,7 +1979,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
       <div class="cat" style="margin-bottom:10px;line-height:1.4">Productos <b>A</b> o <b>B</b> (los que más venden) con cobertura urgente o sin control de stock — es decir, alta rotación que se puede quedar sin vender por falta de reposición a tiempo.</div>
       <button type="button" id="rz-activar-push" style="width:100%;margin-bottom:10px;padding:10px;border-radius:10px;border:1.5px solid var(--azul);background:var(--azul-bg);color:var(--azul);font-weight:700;font-size:13px;cursor:pointer">🔔 Activar avisos en este celular (8 AM y 3 PM)</button>
       <div id="rz-push-estado" class="cat hidden" style="margin-bottom:10px"></div>
-      <div class="sm-filters" style="display:flex;gap:6px;margin-bottom:10px">
+      <div class="sm-filters" style="display:flex;gap:6px;margin-bottom:6px">
         <select id="rz-prov" style="flex:1;min-width:0;padding:8px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:12.5px">
           <option value="">📋 Todos los proveedores</option>
         </select>
@@ -1958,6 +1988,8 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <option value="A">Solo clase A</option>
         </select>
       </div>
+      <button type="button" id="rz-ver-excluidos" style="width:100%;margin-bottom:10px;padding:7px;border-radius:9px;border:1px dashed var(--line);background:transparent;color:var(--muted);font-weight:600;font-size:11.5px;cursor:pointer">🚫 Ver productos excluidos<span id="rz-excl-count"></span></button>
+      <div id="rz-excluidos-box" class="hidden" style="margin-bottom:10px"></div>
       <div id="rz-list"></div>
     </div>
   </div>
@@ -2044,21 +2076,25 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
     <div class="mm-body" id="fp-body">
       <div class="vc-empty" id="fp-loading">Cargando…</div>
       <div id="fp-content" class="hidden" style="display:flex;flex-direction:column;height:100%">
+        <div class="fp-steps" id="fp-steps">
+          <span class="fp-step-dot on">1</span><span class="fp-step-line"></span>
+          <span class="fp-step-dot">2</span><span class="fp-step-line"></span>
+          <span class="fp-step-dot">3</span><span class="fp-step-line"></span>
+          <span class="fp-step-dot">4</span>
+        </div>
         <div id="fp-scroll">
-          <div class="hm-summary" id="fp-resumen" style="flex-direction:column;align-items:flex-start;gap:4px"></div>
           <div id="fp-pane-general" class="fp-pane"></div>
-          <div class="fp-section-title">Inventario</div>
-          <div id="fp-pane-inventario" class="fp-pane"></div>
-          <div class="fp-section-title">Precios</div>
-          <div id="fp-pane-precios" class="fp-pane"></div>
-          <div class="fp-section-title">Proveedores</div>
-          <div id="fp-pane-proveedores" class="fp-pane"></div>
-          <div class="fp-section-title">Sector</div>
-          <div id="fp-pane-sector" class="fp-pane"></div>
           <div class="fp-section-title hidden" id="fp-section-lotes-title">Lotes</div>
           <div id="fp-pane-lotes" class="fp-pane hidden"></div>
-          <div class="fp-section-title">Avanzado</div>
-          <div id="fp-pane-avanzado" class="fp-pane"></div>
+          <div class="fp-section-title" data-step="2">Unidad</div>
+          <div id="fp-pane-unidad" class="fp-pane"></div>
+          <div class="fp-section-title" data-step="3">Precio actual</div>
+          <div id="fp-pane-precios-actual" class="fp-pane"></div>
+          <div class="fp-section-title">Calculadora de precio</div>
+          <div id="fp-pane-precios" class="fp-pane"></div>
+          <div class="fp-section-title" data-step="4">Clasificación y proveedores</div>
+          <div id="fp-pane-proveedores" class="fp-pane"></div>
+          <div id="fp-pane-sector" class="fp-pane"></div>
         </div>
         <div class="fp-actionbar">
           <button type="button" class="fp-btn-cancelar" id="fp-cerrar">Cancelar</button>
@@ -3526,6 +3562,9 @@ function setLastSync(t){localStorage.setItem('marin_last_sync',String(t));}
 // dashboard principal (no bloquea el render si falla) y se combina en
 // buildDBfromCloud() para que cada item tenga it.abc disponible.
 let ABC_BY_SKU={};
+// Skus excluidos a mano de "Riesgo de quiebre" (ver módulo rz*) — persistido en D1, llega en
+// cada sync/full como j.riesgoExcluidos (array de skus). Set para lookup O(1) desde rzCalcular().
+let RIESGO_EXCLUIDOS=new Set();
 async function cargarABC(){
   try{
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=abc');
@@ -3796,7 +3835,7 @@ async function cloudSync(silent,live,full,origen){
       if(esPollDeFondo&&editando)return true;
       _ultimoPayloadFirma=firma;
 
-      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra);
+      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);
       INVMAP=invMapFromItems(DB.items);
       SRC='nube · '+new Date().toLocaleString('es-CL');
       // FIX: antes esto era "state.edits={}" incondicional, así que CUALQUIER sync
@@ -3909,7 +3948,7 @@ async function pollFondo(){
     if(firma===_ultimoPayloadFirma)return; // nada cambió, no hay nada que repintar
     _ultimoPayloadFirma=firma;
 
-    DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra);
+    DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);
     INVMAP=invMapFromItems(DB.items);
     SRC='nube · '+new Date().toLocaleString('es-CL');
     setLastSync(Date.now());
@@ -4398,23 +4437,46 @@ function fpCancelarImagenPreview(){
 let fpEditState={soldByWeight:false,trackStock:false};
 function fpPintar(f){
   const p=f.producto;
-  document.getElementById('fp-resumen').innerHTML=
-    '<div style="font-weight:800;font-size:15px">'+p.nombre+'</div>'+
-    '<div style="font-size:12px;color:var(--muted)">REF '+p.sku+' · '+p.categoria+'</div>'+
-    '<div style="margin-top:4px">'+fpBadgeStock(p)+' '+(f.lotes&&f.lotes.some(l=>l.prioridad==='⚫')?'<span class="fp-badge rojo">Tiene lotes vencidos</span>':'')+'</div>';
   fpEditState={soldByWeight:!!p.soldByWeight,trackStock:!!p.trackStock};
   // Sección "Lotes" solo se muestra si el producto tiene lotes de vencimiento — "si aplica",
   // tal como se pidió (no tiene sentido para productos sin control de vencimientos).
   const hayLotes=!!(f.lotes&&f.lotes.length);
-  document.getElementById('fp-section-lotes-title').classList.toggle('hidden',!hayLotes);
+  const lotesTitle=document.getElementById('fp-section-lotes-title');
+  lotesTitle.textContent='Lotes ('+((f.lotes&&f.lotes.length)||0)+')';
+  lotesTitle.classList.toggle('hidden',!hayLotes);
   document.getElementById('fp-pane-lotes').classList.toggle('hidden',!hayLotes);
   fpPaneGeneral(f);
-  fpPaneInventario(f);
+  fpPaneUnidad(f);
+  fpPanePreciosActual(f);
   fpPanePrecios(f);
   fpPaneProveedores(f);
   fpPaneSector(f);
   if(hayLotes)fpPaneLotes(f);
-  fpPaneAvanzado(f);
+  fpWireSteps();
+}
+// Barra de progreso discreta: resalta el paso (1..4) según qué sección esté más cerca del
+// borde superior visible del scroll — puramente visual, no bloquea ni valida nada, el scroll
+// libre entre secciones sigue funcionando exactamente igual que antes.
+function fpWireSteps(){
+  const scrollEl=document.getElementById('fp-scroll');
+  const dots=document.querySelectorAll('#fp-steps .fp-step-dot');
+  if(!scrollEl||!dots.length)return;
+  const marcadores=[
+    document.getElementById('fp-pane-general'),
+    document.getElementById('fp-pane-unidad'),
+    document.getElementById('fp-pane-precios-actual'),
+    document.getElementById('fp-pane-proveedores')
+  ];
+  const actualizar=()=>{
+    const top=scrollEl.scrollTop+40;
+    let activo=0;
+    marcadores.forEach((el,i)=>{if(el&&el.offsetTop<=top)activo=i;});
+    dots.forEach((d,i)=>d.classList.toggle('on',i<=activo));
+  };
+  scrollEl.removeEventListener('scroll',scrollEl._fpStepsHandler||(()=>{}));
+  scrollEl._fpStepsHandler=actualizar;
+  scrollEl.addEventListener('scroll',actualizar,{passive:true});
+  actualizar();
 }
 function fpRow(k,v){return '<div class="fp-row"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>';}
 function fpCampo(label,inputHtml,nota){
@@ -4422,30 +4484,38 @@ function fpCampo(label,inputHtml,nota){
 }
 
 // ==== PESTAÑA GENERAL: nombre, código de barras, unidad, imagen ====
+// ==== SECCIÓN 1 — PRODUCTO + STOCK: tarjeta compacta (imagen+nombre), stock destacado,
+// resumen OK/Próximo/Vencido y recuento — reemplaza lo que antes eran dos pestañas separadas
+// (General e Inventario). El bloque de imagen (galería/cámara/quitar fondo/buscar por código)
+// sigue siendo exactamente el mismo, solo se abre/cierra bajo un botón único "Cambiar
+// imagen" en vez de mostrarse siempre desplegado y repetido al final del formulario. ====
 function fpPaneGeneral(f){
   const p=f.producto;
+  const v=f.ventas;
+  const hayLotes=!!(f.lotes&&f.lotes.length);
+  const ok=hayLotes?f.lotes.filter(l=>l.prioridad==='🟢'||l.prioridad==='—').length:0;
+  const proximo=hayLotes?f.lotes.filter(l=>l.prioridad==='🟠'||l.prioridad==='🟡'||l.prioridad==='🔴').length:0;
+  const vencido=hayLotes?f.lotes.filter(l=>l.prioridad==='⚫').length:0;
   const pane=document.getElementById('fp-pane-general');
   pane.innerHTML=
-    fpCampo('Nombre','<input id="fp-g-nombre" value="'+(p.nombre||'').replace(/"/g,'&quot;')+'" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">')+
-    fpCampo('Código de barras (opcional)',
-      '<div class="mm-search"><input id="fp-g-barcode" value="'+(p.barcode||'').replace(/"/g,'&quot;')+'" placeholder="Escanea o escribe" autocomplete="off" style="padding-right:58px">'+
-      '<button class="mm-scan cam-btn" id="fp-g-scan" type="button" aria-label="Escanear"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button></div>')+
-    fpRow('SKU / REF (no editable)',p.sku)+
-    '<div class="mm-field" style="margin:14px 0 10px"><label>Unidad</label>'+
-      '<div style="display:flex;gap:8px">'+
-        '<button type="button" id="fp-g-tipo-unidad" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:13px;cursor:pointer">📦 Unidad</button>'+
-        '<button type="button" id="fp-g-tipo-peso" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:13px;cursor:pointer">⚖️ Peso (kg)</button>'+
+    '<div class="fp-prod-card">'+
+      '<div class="fp-prod-img-col">'+
+        (p.imagen?'<img id="fp-img-actual" src="'+p.imagen+'">':'<div class="fp-prod-img-empty" id="fp-prod-img-empty">📦</div>')+
+        '<button type="button" class="fp-prod-img-btn" id="fp-img-toggle">📷 Cambiar</button>'+
       '</div>'+
-      '<div style="font-size:11px;color:var(--muted);margin-top:5px">Define si el precio y el costo son por unidad o por kilo.</div>'+
+      '<div class="fp-prod-fields">'+
+        fpCampo('Nombre del producto','<input id="fp-g-nombre" value="'+(p.nombre||'').replace(/"/g,'&quot;')+'" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">')+
+        '<div style="font-size:11px;color:var(--muted)">REF '+p.sku+(p.categoria?' · '+p.categoria:'')+'</div>'+
+      '</div>'+
     '</div>'+
-    fpCampo('Observaciones (opcional)','<textarea id="fp-g-desc" rows="3" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit;resize:vertical">'+(p.descripcion||'').replace(/</g,'&lt;')+'</textarea>')+
-    '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">'+
-      '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px">Imagen</div>'+
-      (p.imagen?'<img id="fp-img-actual" src="'+p.imagen+'" style="width:64px;height:64px;object-fit:cover;border-radius:9px;border:1px solid var(--line);margin-bottom:9px;display:block">':'<div style="font-size:12.5px;color:var(--muted);margin-bottom:9px">Este producto no tiene imagen en Loyverse.</div>')+
+    // Bloque de imagen — mismos botones/ids de siempre (buscar, galería, cámara, quitar
+    // fondo), solo colapsado tras "📷 Cambiar" para no repetir la sección de imagen ni
+    // ocupar espacio permanente cuando no se está editando la foto.
+    '<div id="fp-img-tools" class="hidden" style="margin:-4px 0 14px;padding:10px;border:1.5px dashed var(--line);border-radius:10px;background:var(--paper)">'+
       '<div style="display:flex;gap:8px">'+
-        '<button id="fp-img-camara-btn" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font-weight:700;font-size:13px;cursor:pointer">📷 Tomar foto</button>'+
-        '<button id="fp-img-galeria-btn" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font-weight:700;font-size:13px;cursor:pointer">📎 Galería</button>'+
-        '<button id="fp-img-buscar" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font-weight:700;font-size:13px;cursor:pointer">🔍 Buscar por código</button>'+
+        '<button id="fp-img-camara-btn" style="flex:1;padding:9px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12px;cursor:pointer">📷 Foto</button>'+
+        '<button id="fp-img-galeria-btn" style="flex:1;padding:9px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12px;cursor:pointer">📎 Galería</button>'+
+        '<button id="fp-img-buscar" style="flex:1;padding:9px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12px;cursor:pointer">🔍 Por código</button>'+
       '</div>'+
       '<input type="file" accept="image/*" id="fp-img-galeria" style="display:none">'+
       '<input type="file" accept="image/*" capture="environment" id="fp-img-camara" style="display:none">'+
@@ -4455,14 +4525,14 @@ function fpPaneGeneral(f){
         '<button type="button" id="fp-img-usar" style="background:var(--wa);border:none;color:#fff;font-weight:700;font-size:11.5px;padding:6px 10px;border-radius:7px;cursor:pointer">✓ Usar</button>'+
         '<button type="button" id="fp-img-cancelar" style="background:none;border:none;color:var(--muted);font-size:11px;text-decoration:underline;cursor:pointer">Cancelar</button>'+
       '</div>'+
-      '<div id="fp-camara-preview-box" class="hidden" style="margin-top:9px;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper)">'+
+      '<div id="fp-camara-preview-box" class="hidden" style="margin-top:9px;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:#fff">'+
         '<img id="fp-camara-preview-img" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#fff;display:block;margin-bottom:8px">'+
         '<div style="display:flex;gap:8px">'+
           '<button type="button" id="fp-camara-confirmar" style="flex:1;padding:9px;border-radius:9px;border:none;background:var(--wa);color:#fff;font-weight:700;font-size:12.5px;cursor:pointer">✓ Confirmar y quitar fondo</button>'+
           '<button type="button" id="fp-camara-repetir" style="padding:9px 14px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12.5px;cursor:pointer">↺ Repetir</button>'+
         '</div>'+
       '</div>'+
-      '<div id="fp-fondo-procesando" class="hidden" style="margin-top:9px;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);display:flex;align-items:center;gap:8px">'+
+      '<div id="fp-fondo-procesando" class="hidden" style="margin-top:9px;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:#fff;display:flex;align-items:center;gap:8px">'+
         '<span class="sync-ic spin" style="display:inline-flex">⟳</span>'+
         '<span style="font-size:12.5px;color:var(--muted)">Quitando el fondo con remove.bg…</span>'+
       '</div>'+
@@ -4473,27 +4543,68 @@ function fpPaneGeneral(f){
           '<button type="button" id="fp-fondo-descartar" style="padding:9px 14px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12.5px;cursor:pointer">Descartar</button>'+
         '</div>'+
       '</div>'+
+    '</div>'+
+    // Stock actual destacado + resumen de lotes (si el producto tiene vencimientos) +
+    // recontar — mismo contenido que antes vivía en la pestaña "Inventario" separada.
+    '<div class="fp-kpi-grid" style="grid-template-columns:1fr auto">'+
+      '<div class="fp-kpi destacado"><div class="fp-kpi-lbl">Stock actual</div><div class="fp-kpi-val">'+(p.trackStock&&p.stock!=null?fmt1(p.stock)+' unidades':'s/c')+'</div><div style="margin-top:4px">'+fpBadgeStock(p)+'</div></div>'+
+      '<button type="button" id="fp-i-recontar-toggle" style="align-self:stretch;padding:0 14px;border-radius:10px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12.5px;cursor:pointer;white-space:nowrap">🔄 Recontar stock</button>'+
+    '</div>'+
+    (hayLotes?('<div style="display:flex;gap:14px;font-size:12px;color:var(--muted);margin:-6px 0 12px;flex-wrap:wrap">'+
+      '<span>🟢 '+ok+' OK</span><span>🟠 '+proximo+' próximo a vencer</span><span>🔴 '+vencido+' vencido</span>'+
+    '</div>'):'')+
+    '<div id="fp-i-recontar-box" class="hidden" style="margin:-4px 0 14px">'+
+      '<div class="mm-field" style="margin-bottom:8px">'+
+        '<label>Seguir inventario</label>'+
+        '<div style="display:flex;gap:8px">'+
+          '<button type="button" id="fp-i-track-on" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:13px;cursor:pointer">✅ Activado</button>'+
+          '<button type="button" id="fp-i-track-off" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:13px;cursor:pointer">❌ Desactivado</button>'+
+        '</div>'+
+      '</div>'+
+      (p.trackStock?(
+        '<input id="fp-i-recuento" type="number" inputmode="decimal" placeholder="Nueva cantidad contada" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:\'JetBrains Mono\'">'+
+        '<button type="button" id="fp-i-recuento-guardar" style="width:100%;margin-top:8px;padding:10px;border-radius:10px;border:1.5px solid var(--gold);background:var(--gold-bg);color:var(--gold);font-weight:700;font-size:13px;cursor:pointer">✓ Guardar stock</button>'
+      ):'<div class="cat">Activa "Seguir inventario" para poder recontar.</div>')+
+      fpCampo('Stock mínimo (opcional)','<input id="fp-i-stockmin" type="number" inputmode="numeric" value="'+(p.stockMinimo!=null?p.stockMinimo:'')+'" placeholder="Ej: 5" style="width:100%;padding:9px 12px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;font-family:\'JetBrains Mono\';margin-top:10px">')+
     '</div>';
-  document.querySelectorAll('#fp-g-nombre,#fp-g-barcode,#fp-g-desc').forEach(el=>el.addEventListener('input',fpGuardarBorrador));
-  document.getElementById('fp-g-scan').onclick=()=>{
-    const reopen=()=>{document.getElementById('fp-ov').classList.remove('hidden');_sincronizarNav();};
-    document.getElementById('fp-ov').classList.add('hidden');
-    openScanner(code=>{reopen();document.getElementById('fp-g-barcode').value=code;},reopen);
-  };
-  const fpPintarTipoVenta=()=>{
-    const bU=document.getElementById('fp-g-tipo-unidad'),bP=document.getElementById('fp-g-tipo-peso');
-    bU.style.background=fpEditState.soldByWeight?'#fff':'var(--verde)';
-    bU.style.color=fpEditState.soldByWeight?'var(--text)':'#fff';
-    bU.style.borderColor=fpEditState.soldByWeight?'var(--line)':'var(--verde)';
-    bP.style.background=fpEditState.soldByWeight?'var(--verde)':'#fff';
-    bP.style.color=fpEditState.soldByWeight?'#fff':'var(--text)';
-    bP.style.borderColor=fpEditState.soldByWeight?'var(--verde)':'var(--line)';
-  };
-  document.getElementById('fp-g-tipo-unidad').onclick=()=>{fpEditState.soldByWeight=false;fpPintarTipoVenta();};
-  document.getElementById('fp-g-tipo-peso').onclick=()=>{fpEditState.soldByWeight=true;fpPintarTipoVenta();};
-  fpPintarTipoVenta();
+  document.querySelectorAll('#fp-g-nombre,#fp-g-barcode,#fp-g-desc').forEach(el=>el&&el.addEventListener('input',fpGuardarBorrador));
+  const stockMinInp=document.getElementById('fp-i-stockmin');
+  if(stockMinInp)stockMinInp.addEventListener('input',fpGuardarBorrador);
 
-  // ---- Imagen: buscar/subir/tomar foto — misma lógica de siempre, sin cambios ----
+  // ---- Recontar stock: colapsado por defecto, igual patrón que la imagen ----
+  const recontarBox=document.getElementById('fp-i-recontar-box');
+  document.getElementById('fp-i-recontar-toggle').onclick=()=>recontarBox.classList.toggle('hidden');
+  const fpPintarTrack=()=>{
+    const bOn=document.getElementById('fp-i-track-on'),bOff=document.getElementById('fp-i-track-off');
+    if(!bOn||!bOff)return;
+    bOn.style.background=fpEditState.trackStock?'var(--verde)':'#fff';
+    bOn.style.color=fpEditState.trackStock?'#fff':'var(--text)';
+    bOn.style.borderColor=fpEditState.trackStock?'var(--verde)':'var(--line)';
+    bOff.style.background=fpEditState.trackStock?'#fff':'var(--rojo)';
+    bOff.style.color=fpEditState.trackStock?'var(--text)':'#fff';
+    bOff.style.borderColor=fpEditState.trackStock?'var(--line)':'var(--rojo)';
+  };
+  document.getElementById('fp-i-track-on').onclick=()=>{
+    fpEditState.trackStock=true;fpPintarTrack();
+    if(!p.trackStock)showToast('Se activará al guardar — luego podrás hacer el recuento inicial');
+  };
+  document.getElementById('fp-i-track-off').onclick=()=>{fpEditState.trackStock=false;fpPintarTrack();};
+  fpPintarTrack();
+  const btnRecuento=document.getElementById('fp-i-recuento-guardar');
+  if(btnRecuento)btnRecuento.onclick=()=>fpGuardarRecuento(p.sku);
+
+  // ---- Bloque de imagen: colapsado tras "📷 Cambiar" ----
+  const imgTools=document.getElementById('fp-img-tools');
+  document.getElementById('fp-img-toggle').onclick=()=>imgTools.classList.toggle('hidden');
+  const fpBarcodeInp=document.getElementById('fp-g-barcode');
+  if(fpBarcodeInp){
+    const fpScanBtn=document.getElementById('fp-g-scan');
+    if(fpScanBtn)fpScanBtn.onclick=()=>{
+      const reopen=()=>{document.getElementById('fp-ov').classList.remove('hidden');_sincronizarNav();};
+      document.getElementById('fp-ov').classList.add('hidden');
+      openScanner(code=>{reopen();fpBarcodeInp.value=code;},reopen);
+    };
+  }
   document.getElementById('fp-img-buscar').onclick=()=>fpBuscarImagen(p);
   document.getElementById('fp-img-usar').onclick=()=>fpConfirmarImagen(p);
   document.getElementById('fp-img-cancelar').onclick=()=>fpCancelarImagenPreview();
@@ -4587,58 +4698,6 @@ function fpPaneGeneral(f){
     finally{btn.disabled=false;btn.textContent='✓ Aplicar al producto';}
   };
 }
-
-// ==== PESTAÑA INVENTARIO: seguir inventario, stock mínimo, recuento directo ====
-function fpPaneInventario(f){
-  const p=f.producto;
-  const v=f.ventas;
-  const pane=document.getElementById('fp-pane-inventario');
-  pane.innerHTML=
-    '<div class="mm-field" style="margin-bottom:10px"><label>Seguir inventario</label>'+
-      '<div style="display:flex;gap:8px">'+
-        '<button type="button" id="fp-i-track-on" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:13px;cursor:pointer">✅ Activado</button>'+
-        '<button type="button" id="fp-i-track-off" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:13px;cursor:pointer">❌ Desactivado</button>'+
-      '</div>'+
-      '<div style="font-size:11px;color:var(--muted);margin-top:5px">Con inventario desactivado, Loyverse no exige stock ni genera alertas de quiebre para este producto.</div>'+
-    '</div>'+
-    (p.trackStock?fpCampo('Recuento de inventario (ajusta el stock ahora)',
-      '<div style="display:flex;gap:8px;align-items:center">'+
-        '<span style="font-size:12px;color:var(--muted)">Stock actual: <b>'+(p.stock!=null?fmt1(p.stock):'0')+'</b></span>'+
-      '</div>'+
-      '<input id="fp-i-recuento" type="number" inputmode="decimal" placeholder="Nueva cantidad contada" style="width:100%;margin-top:8px;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:\'JetBrains Mono\'">'+
-      '<button type="button" id="fp-i-recuento-guardar" style="width:100%;margin-top:8px;padding:10px;border-radius:10px;border:1.5px solid var(--gold);background:var(--gold-bg);color:var(--gold);font-weight:700;font-size:13px;cursor:pointer">🔢 Guardar recuento</button>',
-      'Registra un ajuste de stock inmediato — igual acción que "Reconteo", pero sin salir de esta ficha.')
-      :'<div class="vc-empty" style="margin-bottom:10px">Activa "Seguir inventario" arriba para poder hacer un recuento.</div>')+
-    fpCampo('Stock mínimo (opcional)','<input id="fp-i-stockmin" type="number" inputmode="numeric" value="'+(p.stockMinimo!=null?p.stockMinimo:'')+'" placeholder="Ej: 5" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:\'JetBrains Mono\'">','Cuando el stock llegue a este número o menos, Loyverse genera la alerta de inventario bajo.')+
-    '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">'+
-      fpRow('Ventas 7 días',v?fmt1(v.u7):'—')+
-      fpRow('Ventas 14 días',v?fmt1(v.u14):'—')+
-      fpRow('Ventas 30 días',v?fmt1(v.u30):'—')+
-      fpRow('Ventas 90 días',v?fmt1(v.u90):'—')+
-      fpRow('Ingresos (30d, acumulado histórico)',v?peso(v.rev):'—')+
-      fpRow('Utilidad (30d, acumulado histórico)',v?peso(v.prof):'—')+
-      fpRow('Última modificación',p.ultimaModificacion||'Sin registros de cambios aún')+
-    '</div>';
-  const fpPintarTrack=()=>{
-    const bOn=document.getElementById('fp-i-track-on'),bOff=document.getElementById('fp-i-track-off');
-    bOn.style.background=fpEditState.trackStock?'var(--verde)':'#fff';
-    bOn.style.color=fpEditState.trackStock?'#fff':'var(--text)';
-    bOn.style.borderColor=fpEditState.trackStock?'var(--verde)':'var(--line)';
-    bOff.style.background=fpEditState.trackStock?'#fff':'var(--rojo)';
-    bOff.style.color=fpEditState.trackStock?'var(--text)':'#fff';
-    bOff.style.borderColor=fpEditState.trackStock?'var(--line)':'var(--rojo)';
-  };
-  document.getElementById('fp-i-track-on').onclick=()=>{
-    fpEditState.trackStock=true;fpPintarTrack();
-    if(!p.trackStock)showToast('Se activará al guardar — luego podrás hacer el recuento inicial');
-  };
-  document.getElementById('fp-i-track-off').onclick=()=>{fpEditState.trackStock=false;fpPintarTrack();};
-  fpPintarTrack();
-  const btnRecuento=document.getElementById('fp-i-recuento-guardar');
-  if(btnRecuento)btnRecuento.onclick=()=>fpGuardarRecuento(p.sku);
-  const stockMinInp=document.getElementById('fp-i-stockmin');
-  if(stockMinInp)stockMinInp.addEventListener('input',fpGuardarBorrador);
-}
 // Recuento de inventario SIN salir de la ficha — reutiliza la misma acción que ya usa
 // Reconteo de stock (rkGuardarFila / action:'ajustar_stock'), no una lógica nueva.
 async function fpGuardarRecuento(sku){
@@ -4662,34 +4721,104 @@ async function fpGuardarRecuento(sku){
       render();
     }else{
       showToast('❌ '+(j&&j.error?j.error:'No se pudo guardar'));
-      btn.disabled=false;btn.textContent='🔢 Guardar recuento';
+      btn.disabled=false;btn.textContent='✓ Guardar stock';
     }
   }catch(e){
     showToast('❌ Error de conexión al guardar');
-    btn.disabled=false;btn.textContent='🔢 Guardar recuento';
+    btn.disabled=false;btn.textContent='✓ Guardar stock';
   }
 }
+// ==== SECCIÓN 2 — UNIDAD: unidad vs. peso (kg), y observaciones opcionales ====
+function fpPaneUnidad(f){
+  const p=f.producto;
+  const pane=document.getElementById('fp-pane-unidad');
+  pane.innerHTML=
+    '<div class="mm-field" style="margin-bottom:10px">'+
+      '<div style="display:flex;gap:8px">'+
+        '<button type="button" id="fp-g-tipo-unidad" style="flex:1;padding:12px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:13px;cursor:pointer">📦 Unidad</button>'+
+        '<button type="button" id="fp-g-tipo-peso" style="flex:1;padding:12px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:13px;cursor:pointer">⚖️ Peso (kg)</button>'+
+      '</div>'+
+      '<div style="font-size:11px;color:var(--muted);margin-top:6px">Define si el precio y el costo son por unidad o por kilo.</div>'+
+    '</div>'+
+    fpCampo('Código de barras (opcional)',
+      '<div class="mm-search"><input id="fp-g-barcode" value="'+(p.barcode||'').replace(/"/g,'&quot;')+'" placeholder="Escanea o escribe" autocomplete="off" style="padding-right:58px">'+
+      '<button class="mm-scan cam-btn" id="fp-g-scan" type="button" aria-label="Escanear"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button></div>')+
+    fpCampo('Observaciones (opcional)','<textarea id="fp-g-desc" rows="2" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit;resize:vertical">'+(p.descripcion||'').replace(/</g,'&lt;')+'</textarea>');
+  document.querySelectorAll('#fp-g-barcode,#fp-g-desc').forEach(el=>el&&el.addEventListener('input',fpGuardarBorrador));
+  const fpBarcodeInp=document.getElementById('fp-g-barcode');
+  document.getElementById('fp-g-scan').onclick=()=>{
+    const reopen=()=>{document.getElementById('fp-ov').classList.remove('hidden');_sincronizarNav();};
+    document.getElementById('fp-ov').classList.add('hidden');
+    openScanner(code=>{reopen();fpBarcodeInp.value=code;},reopen);
+  };
+  const fpPintarTipoVenta=()=>{
+    const bU=document.getElementById('fp-g-tipo-unidad'),bP=document.getElementById('fp-g-tipo-peso');
+    bU.style.background=fpEditState.soldByWeight?'#fff':'var(--verde)';
+    bU.style.color=fpEditState.soldByWeight?'var(--text)':'#fff';
+    bU.style.borderColor=fpEditState.soldByWeight?'var(--line)':'var(--verde)';
+    bP.style.background=fpEditState.soldByWeight?'var(--verde)':'#fff';
+    bP.style.color=fpEditState.soldByWeight?'#fff':'var(--text)';
+    bP.style.borderColor=fpEditState.soldByWeight?'var(--verde)':'var(--line)';
+  };
+  document.getElementById('fp-g-tipo-unidad').onclick=()=>{fpEditState.soldByWeight=false;fpPintarTipoVenta();};
+  document.getElementById('fp-g-tipo-peso').onclick=()=>{fpEditState.soldByWeight=true;fpPintarTipoVenta();};
+  fpPintarTipoVenta();
+}
 
-// ==== PESTAÑA PRECIOS: misma calculadora que Crear producto (PriceCalc), sin toggle de IVA
-// porque acá el IVA ya está definido en el producto — solo se pide el costo CON IVA directo
-// (igual que Loyverse lo guarda), y el margen/precio se recalculan con la misma fórmula. ====
-let fpPState={precioTocado:false,precioPreview:null};
+// ==== SECCIÓN 3 — PRECIO ACTUAL: indicadores compactos de solo lectura (costo/precio/margen
+// ya guardados) — separado de la calculadora para que el estado actual se vea de un vistazo
+// antes de tocar nada. No agrega ni cambia ningún dato, solo lee p.costo/p.precio/p.margen. ====
+function fpPanePreciosActual(f){
+  const p=f.producto;
+  const pane=document.getElementById('fp-pane-precios-actual');
+  const margenTxt=p.margen!=null?p.margen.toFixed(0)+'%':'—';
+  pane.innerHTML=
+    '<div class="fp-kpi-grid">'+
+      '<div class="fp-kpi"><div class="fp-kpi-lbl">Costo (con IVA)</div><div class="fp-kpi-val">'+(p.costo!=null?peso(p.costo):'—')+'</div></div>'+
+      '<div class="fp-kpi"><div class="fp-kpi-lbl">Precio actual</div><div class="fp-kpi-val">'+(p.precio!=null?peso(p.precio):'—')+'</div></div>'+
+      '<div class="fp-kpi destacado"><div class="fp-kpi-lbl">Margen actual</div><div class="fp-kpi-val">'+margenTxt+'</div></div>'+
+    '</div>';
+}
+// ==== SECCIÓN 4 — CALCULADORA DE PRECIO: misma calculadora que Crear producto (PriceCalc),
+// sin toggle de IVA porque acá el IVA ya está definido en el producto — solo se pide el costo
+// CON IVA directo (igual que Loyverse lo guarda), y el margen/precio se recalculan con la
+// misma fórmula. El redondeo (Sin redondeo/50/90/00) es puramente de presentación — se aplica
+// SOLO al precio sugerido que se muestra/aplica, PriceCalc.precioDesdeMargen() sigue siendo
+// la única fuente del cálculo real, sin tocar su lógica. ====
+let fpPState={precioTocado:false,precioPreview:null,redondeo:'none'};
+function fpRedondear(precio,modo){
+  if(precio==null)return null;
+  if(modo==='none')return precio;
+  const term=modo==='50'?50:modo==='90'?90:0;
+  const base=Math.floor(precio/100)*100;
+  let candidato=base+term;
+  if(candidato<precio)candidato+=100;
+  return candidato;
+}
 function fpPanePrecios(f){
   const p=f.producto;
-  fpPState={precioTocado:false,precioPreview:null};
+  fpPState={precioTocado:false,precioPreview:null,redondeo:'none'};
   const hist=f.historialPrecios||[];
   const pane=document.getElementById('fp-pane-precios');
   pane.innerHTML=
     '<div class="mm-field" style="margin-bottom:8px">'+
-      '<label>Costo <span style="font-weight:400;color:var(--muted);text-transform:none">(con IVA — el que se guarda en Loyverse)</span></label>'+
+      '<label>Costo <span style="font-weight:400;color:var(--muted);text-transform:none">(con IVA)</span></label>'+
       '<input id="fp-pr-costo" type="number" inputmode="decimal" value="'+(p.costo!=null?p.costo:'')+'" placeholder="$" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:\'JetBrains Mono\'">'+
     '</div>'+
-    '<div class="mm-field" style="margin-bottom:8px"><label>Margen % objetivo</label>'+
+    '<div class="mm-field" style="margin-bottom:8px"><label>Margen objetivo (%)</label>'+
       '<input id="fp-pr-margen-obj" type="number" inputmode="decimal" value="'+(p.margen!=null?p.margen:30)+'" placeholder="Ej: 30" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:\'JetBrains Mono\'">'+
     '</div>'+
-    '<div id="fp-pr-precio-preview-box" class="hidden" style="margin-bottom:8px;padding:8px 10px;background:var(--paper);border:1.5px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:8px">'+
-      '<div><div style="font-size:10px;color:var(--muted);font-weight:700">PRECIO SUGERIDO (según margen)</div><span id="fp-pr-precio-preview-val" style="font-size:16px;font-weight:800;font-family:\'JetBrains Mono\'"></span></div>'+
-      '<button type="button" id="fp-pr-precio-aplicar" style="background:var(--wa);border:none;color:#fff;font-weight:700;font-size:11.5px;padding:7px 12px;border-radius:8px;cursor:pointer;white-space:nowrap">Aplicar precio</button>'+
+    '<div class="mm-field" style="margin-bottom:8px"><label>Redondear (opcional)</label>'+
+      '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
+        '<button type="button" class="fp-round-btn active" data-r="none" style="flex:1;min-width:70px;padding:8px 4px;border-radius:9px;border:1.5px solid var(--verde);background:var(--verde-bg,#E3F3E8);color:#1E7A3E;font-weight:700;font-size:11px;cursor:pointer">Sin redondeo</button>'+
+        '<button type="button" class="fp-round-btn" data-r="50" style="flex:1;min-width:70px;padding:8px 4px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--muted);font-weight:700;font-size:11px;cursor:pointer">Termina en 50</button>'+
+        '<button type="button" class="fp-round-btn" data-r="90" style="flex:1;min-width:70px;padding:8px 4px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--muted);font-weight:700;font-size:11px;cursor:pointer">Termina en 90</button>'+
+        '<button type="button" class="fp-round-btn" data-r="00" style="flex:1;min-width:70px;padding:8px 4px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--muted);font-weight:700;font-size:11px;cursor:pointer">Termina en 00</button>'+
+      '</div>'+
+    '</div>'+
+    '<div id="fp-pr-precio-preview-box" class="hidden" style="margin-bottom:8px;padding:10px 12px;background:var(--verde-bg,#E3F3E8);border:1.5px solid var(--verde);border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:8px">'+
+      '<div><div style="font-size:10px;color:#1E7A3E;font-weight:700">PRECIO SUGERIDO</div><span id="fp-pr-precio-preview-val" style="font-size:19px;font-weight:800;font-family:\'JetBrains Mono\';color:#1E7A3E"></span></div>'+
+      '<button type="button" id="fp-pr-precio-aplicar" style="background:var(--verde);border:none;color:#fff;font-weight:700;font-size:12px;padding:9px 14px;border-radius:9px;cursor:pointer;white-space:nowrap">✓ Aplicar precio</button>'+
     '</div>'+
     '<div class="mm-field" style="margin-bottom:8px">'+
       '<label>Precio de venta <span style="font-weight:400;color:var(--muted);text-transform:none">(este se guarda)</span></label>'+
@@ -4708,7 +4837,8 @@ function fpPanePrecios(f){
     return PriceCalc.costoBruto(document.getElementById('fp-pr-costo').value,'unidad',null,'con');
   }
   function fpPrRecalcularPreview(){
-    fpPState.precioPreview=PriceCalc.precioDesdeMargen(fpPrCostoBruto(),document.getElementById('fp-pr-margen-obj').value);
+    const base=PriceCalc.precioDesdeMargen(fpPrCostoBruto(),document.getElementById('fp-pr-margen-obj').value);
+    fpPState.precioPreview=fpRedondear(base,fpPState.redondeo);
     fpPrRenderPreview();
   }
   function fpPrRenderPreview(){
@@ -4719,8 +4849,18 @@ function fpPanePrecios(f){
     const actual=Number(document.getElementById('fp-pr-precio').value)||0;
     const btn=document.getElementById('fp-pr-precio-aplicar');
     if(actual===fpPState.precioPreview){btn.textContent='✓ Aplicado';btn.disabled=true;btn.style.opacity=.6;}
-    else{btn.textContent='Aplicar precio';btn.disabled=false;btn.style.opacity=1;}
+    else{btn.textContent='✓ Aplicar precio '+peso(fpPState.precioPreview);btn.disabled=false;btn.style.opacity=1;}
   }
+  document.querySelectorAll('.fp-round-btn').forEach(b=>b.onclick=()=>{
+    document.querySelectorAll('.fp-round-btn').forEach(x=>{
+      x.classList.remove('active');
+      x.style.background='#fff';x.style.color='var(--muted)';x.style.borderColor='var(--line)';
+    });
+    b.classList.add('active');
+    b.style.background='var(--verde-bg,#E3F3E8)';b.style.color='#1E7A3E';b.style.borderColor='var(--verde)';
+    fpPState.redondeo=b.dataset.r;
+    fpPrRecalcularPreview();
+  });
   document.getElementById('fp-pr-precio-aplicar').onclick=()=>{
     if(fpPState.precioPreview==null)return;
     document.getElementById('fp-pr-precio').value=fpPState.precioPreview;
@@ -4763,9 +4903,12 @@ function fpPaneProveedores(f){
   const pane=document.getElementById('fp-pane-proveedores');
   const extra=p.proveedoresIdsExtra||[];
   pane.innerHTML=
+    // Categoría de Loyverse — solo informativa (no se edita desde acá, ver nota en el
+    // comentario de arriba del archivo); mismo p.categoria que ya se usaba, sin tocar backend.
+    (p.categoria?fpRow('Categoría Loyverse',p.categoria):'')+
     fpCampo('Proveedor principal',
       '<div style="display:flex;gap:8px">'+
-        '<div class="cat-combo" id="fp-pv-prov-combo">'+
+        '<div class="cat-combo" id="fp-pv-prov-combo" style="flex:1">'+
           '<input id="fp-pv-prov-input" class="cat-combo-input" placeholder="Buscar proveedor…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">'+
           '<svg class="cat-combo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'+
           '<select id="fp-pv-prov" style="display:none"><option value="">Sin proveedor</option></select>'+
@@ -4773,21 +4916,21 @@ function fpPaneProveedores(f){
         '</div>'+
         '<button class="loadbtn" id="fp-pv-prov-nueva" type="button" style="white-space:nowrap">➕ Nuevo</button>'+
       '</div>'+
+      (p.proveedorId?'<span class="fp-chip-principal">★ Principal</span>':'')+
       '<div id="fp-pv-prov-nuevabox" class="hidden" style="display:flex;gap:8px;margin-top:8px">'+
         '<input id="fp-pv-prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">'+
         '<button class="btn-ok loadbtn" id="fp-pv-prov-crear" type="button" style="white-space:nowrap">Crear</button>'+
-      '</div>',
-      'Solo proveedores creados en la Web App. A quién se le pide este producto por defecto.')+
-    '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">'+
-      '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px">También pedir a</div>'+
-      '<div id="fp-provid-list">'+
+      '</div>')+
+    '<div style="margin-top:12px">'+
+      '<label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:6px">Otros proveedores del mismo producto</label>'+
+      '<div id="fp-provid-list" class="fp-chip-row">'+
         (extra.length
-          ?extra.map(pr=>'<div class="fp-row"><span class="k">'+pr.nombre+'</span><span class="v"><button type="button" class="fp-provid-quitar" data-id="'+pr.id+'" style="border:none;background:none;color:var(--rojo);font-weight:700;font-size:12px;cursor:pointer">✕ Quitar</button></span></div>').join('')
-          :'<div style="font-size:12px;color:var(--muted)">Este producto solo se pide al proveedor principal.</div>')+
+          ?extra.map(pr=>'<span class="fp-chip">'+pr.nombre+'<button type="button" class="fp-provid-quitar" data-id="'+pr.id+'" aria-label="Quitar">✕</button></span>').join('')
+          :'')+
       '</div>'+
       '<div style="display:flex;gap:8px;margin-top:8px">'+
-        '<select id="fp-provid-select" style="flex:1;padding:9px 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px"><option value="">Elige un proveedor…</option></select>'+
-        '<button class="loadbtn" id="fp-provid-add" type="button" style="white-space:nowrap">➕ Agregar</button>'+
+        '<select id="fp-provid-select" style="flex:1;padding:9px 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px"><option value="">Agregar proveedor…</option></select>'+
+        '<button class="loadbtn" id="fp-provid-add" type="button" style="white-space:nowrap">➕</button>'+
       '</div>'+
     '</div>';
 
@@ -4802,7 +4945,7 @@ function fpPaneProveedores(f){
     const sel=document.getElementById('fp-provid-select');
     if(sel){
       const yaAsignados=new Set([p.proveedorId,...extra.map(x=>x.id)].filter(Boolean).map(Number));
-      sel.innerHTML='<option value="">Elige un proveedor…</option>'+
+      sel.innerHTML='<option value="">Agregar proveedor…</option>'+
         _psProveedores.filter(pr=>!yaAsignados.has(Number(pr.id))).map(pr=>'<option value="'+pr.id+'">'+pr.nombre+'</option>').join('');
     }
   });
@@ -4860,7 +5003,7 @@ function fpPaneSector(f){
   const p=f.producto;
   const pane=document.getElementById('fp-pane-sector');
   pane.innerHTML=
-    '<div class="mm-field">'+
+    '<div class="mm-field" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">'+
       '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'+
         '<label style="margin:0">Sector</label>'+
         '<button class="loadbtn" id="fp-s-sugerir" type="button" style="white-space:nowrap">🤖 Sugerir con IA</button>'+
@@ -4912,24 +5055,6 @@ function fpPaneLotes(f){
   }
 }
 
-// ==== PESTAÑA AVANZADO: SKU/ID de Loyverse, movimientos/auditoría, eliminar ====
-function fpPaneAvanzado(f){
-  const p=f.producto;
-  const pane=document.getElementById('fp-pane-avanzado');
-  const movs=[
-    ...(f.movimientos||[]).map(m=>({fecha:m.fecha,texto:(m.motivo||m.accion),resp:m.responsable})),
-    ...(f.mermasRecientes||[]).map(m=>({fecha:m.fecha,texto:'Merma: '+fmt1(m.cantidad)+' u · '+m.motivo+' · '+peso(m.costoTotal),resp:m.responsable}))
-  ];
-  pane.innerHTML=
-    fpRow('SKU / REF',p.sku)+
-    fpRow('ID interno Loyverse',p.idLoyverse||'—')+
-    fpRow('Última modificación',p.ultimaModificacion||'Sin registros de cambios aún')+
-    '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">'+
-      '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px">Movimientos y auditoría</div>'+
-      (movs.length?movs.map(m=>`<div class="fp-row"><span class="k">${m.fecha||'—'}</span><span class="v" style="text-align:right;font-weight:600">${m.texto}${m.resp?' · '+m.resp:''}</span></div>`).join('')
-        :'<div class="vc-empty">Sin movimientos registrados todavía para este producto.</div>')+
-    '</div>';
-}
 function fpBadgeStock(p){
   if(!p.trackStock)return '<span class="fp-badge gris">Inventario desactivado</span>';
   if(p.stock==null||p.stock<=0)return '<span class="fp-badge rojo">Sin stock</span>';
@@ -8380,7 +8505,7 @@ async function recargarHistorial(){
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=recargar_historial');
     const j=await res.json();
     if(j&&j.ok){
-      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra);
+      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);
       INVMAP=invMapFromItems(DB.items);
       state.edits={};
       persist();render();
@@ -10378,6 +10503,7 @@ function rzCalcular(soloClaseA){
       if(!it.abc)return null; // sin clasificación ABC calculada todavía — no se puede saber si es alta rotación
       if(it.peso)return null; // vendido por peso (verdulería/carnicería suelta) — mismo motivo que las categorías excluidas: la cobertura no es comparable a un producto envasado
       if(rzCategoriaExcluida(it.prov))return null; // categoría de Loyverse frutas/verduras/huevos
+      if(RIESGO_EXCLUIDOS.has(it.ref))return null; // excluido a mano desde este mismo módulo (botón "🚫 Excluir")
       const clase=it.abc.clase;
       if(soloClaseA?clase!=='A':(clase!=='A'&&clase!=='B'))return null;
       const a=analyze(it);
@@ -10430,6 +10556,8 @@ function rzRender(){
   let lista=rzCalcular(soloA);
   if(provFiltro)lista=lista.filter(x=>(x.it.proveedorNombre||x.it.prov)===provFiltro);
   document.getElementById('rz-lbl').textContent=lista.length+' producto'+(lista.length===1?'':'s')+' en riesgo de quiebre';
+  const exclBtn=document.getElementById('rz-excl-count');
+  if(exclBtn)exclBtn.textContent=RIESGO_EXCLUIDOS.size?' ('+RIESGO_EXCLUIDOS.size+')':'';
   const box=document.getElementById('rz-list');
   if(!lista.length){box.innerHTML='<div class="vc-empty">🎉 Sin productos de alta rotación en riesgo ahora mismo.</div>';return;}
   box.innerHTML=lista.map(({it,a,clase})=>{
@@ -10449,6 +10577,7 @@ function rzRender(){
         <button type="button" class="loadbtn rz-guardar-stock" data-sku="${it.ref}" data-rid="${rid}" style="white-space:nowrap;padding:8px 12px;font-size:12.5px">✓ Guardar stock</button>
       </div>
       <button type="button" class="loadbtn rz-ir-pedido" data-prov="${(it.prov||'').replace(/"/g,'&quot;')}" style="width:100%;padding:8px;font-size:12.5px">🛒 Ir al pedido de ${it.prov}</button>
+      <button type="button" class="rz-excluir" data-sku="${it.ref}" data-nombre="${it.nombre.replace(/"/g,'&quot;')}" style="width:100%;padding:7px;font-size:11.5px;border-radius:9px;border:1px dashed var(--line);background:transparent;color:var(--muted);font-weight:600;cursor:pointer">🚫 Excluir de esta lista</button>
     </div>`;
   }).join('');
   box.querySelectorAll('.rz-ir-pedido').forEach(b=>b.onclick=()=>{
@@ -10456,6 +10585,60 @@ function rzRender(){
     pickProv(b.dataset.prov); // misma función que usa el selector de proveedores de siempre — no duplica lógica de navegación del catálogo
   });
   box.querySelectorAll('.rz-guardar-stock').forEach(b=>b.onclick=()=>rzGuardarStock(b.dataset.sku,b.dataset.rid));
+  box.querySelectorAll('.rz-excluir').forEach(b=>b.onclick=()=>rzExcluir(b.dataset.sku,b.dataset.nombre));
+}
+// Excluye el producto de Riesgo de quiebre de forma persistente (D1) — para artículos que el
+// negocio decidió que nunca va a controlar por acá (ej. "precio variable", productos sin
+// control de stock real). Confirma antes porque, a diferencia de corregir stock, esto cambia
+// qué se ve en la lista para siempre hasta que alguien lo reincluya a mano.
+async function rzExcluir(sku,nombre){
+  if(!confirm('¿Excluir "'+nombre+'" de Riesgo de quiebre?\n\nNo volverá a aparecer acá hasta que lo reincluyas desde "Ver productos excluidos".'))return;
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'excluir_riesgo',payload:{sku}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      RIESGO_EXCLUIDOS.add(sku);
+      showToast('🚫 Excluido: '+nombre);
+      rzRender();
+      try{rzActualizarBadge();}catch(e){}
+    }else{showToast('❌ '+((j&&j.error)||'No se pudo excluir'));}
+  }catch(e){showToast('❌ Error de conexión');}
+}
+function rzMostrarExcluidos(){
+  const box=document.getElementById('rz-excluidos-box');
+  const abrir=box.classList.contains('hidden');
+  box.classList.toggle('hidden',!abrir);
+  if(!abrir)return;
+  const skus=Array.from(RIESGO_EXCLUIDOS);
+  if(!skus.length){box.innerHTML='<div class="vc-empty">No hay productos excluidos.</div>';return;}
+  box.innerHTML=skus.map(sku=>{
+    const it=(DB.items||[]).find(i=>i.ref===sku);
+    const nombre=it?it.nombre:sku;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:8px 10px;margin-bottom:6px">
+      <span style="font-size:12.5px;font-weight:600;color:var(--ink);min-width:0">${nombre}</span>
+      <button type="button" class="rz-incluir" data-sku="${sku}" style="flex:none;padding:6px 10px;border-radius:8px;border:none;background:var(--verde,#3a9d5c);color:#fff;font-weight:700;font-size:11px;cursor:pointer">↩ Reincluir</button>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('.rz-incluir').forEach(b=>b.onclick=()=>rzIncluir(b.dataset.sku));
+}
+async function rzIncluir(sku){
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'incluir_riesgo',payload:{sku}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      RIESGO_EXCLUIDOS.delete(sku);
+      showToast('↩ Reincluido en Riesgo de quiebre');
+      // Repinta el bloque de excluidos sin usar el toggle (que abre/cierra según .hidden) —
+      // acá se quiere refrescar el contenido manteniéndolo visible tal como estaba.
+      const box=document.getElementById('rz-excluidos-box');
+      if(box&&!box.classList.contains('hidden')){
+        box.classList.add('hidden'); // fuerza que el próximo toggle "abra" con contenido fresco
+        rzMostrarExcluidos();
+      }
+      rzRender();
+      try{rzActualizarBadge();}catch(e){}
+    }else{showToast('❌ '+((j&&j.error)||'No se pudo reincluir'));}
+  }catch(e){showToast('❌ Error de conexión');}
 }
 // Corrige el stock directamente desde Riesgo de quiebre — mismo endpoint que ya usan Ficha
 // del producto (fpGuardarRecuento) e Insumos, sin lógica nueva del lado del servidor. Al
@@ -10491,6 +10674,7 @@ document.getElementById('mas-q-riesgo').onclick=()=>{document.getElementById('ma
 document.getElementById('rz-cerrar').onclick=()=>cerrarModal('rz-ov');
 document.getElementById('rz-prov').onchange=rzRender;
 document.getElementById('rz-clase').onchange=rzRender;
+document.getElementById('rz-ver-excluidos').onclick=rzMostrarExcluidos;
 
 // ===================== NOTIFICACIONES PUSH (avisos aunque la app esté cerrada) =====================
 // Flujo: 1) registrar el Service Worker (sw.js, dedicado solo a push) 2) pedir permiso al
