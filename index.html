@@ -3089,7 +3089,7 @@ function rowHTML(it,a,f){const cant=qOf(it,a);
         `<div class="fila-nombre-col">`+
           `<span class="fila-badge">${a.status==='urgente'?'🔴 URGENTE':a.status==='pedir'?'🟠 A PEDIR':''}</span>`+
           `<span class="fila-nombre prod-name">${it.nombre}</span>`+
-          `<span class="fila-prov">${it.prov}</span>`+pendBadge+extraProvBadge+
+          `<span class="fila-prov">${it.proveedorNombre||it.prov}</span>`+pendBadge+extraProvBadge+
         `</div>`+
         `<div class="fila-precios"><span class="fila-venta">${precioVal}</span><span class="fila-costo">${costoVal}</span><span class="fila-margen ${mgCls}">${mgVal}</span>${abcBadge}</div>`+
         `<div class="fila-col"><span class="fila-lbl">STK</span><span>${statStock}</span></div>`+
@@ -3104,7 +3104,7 @@ function rowHTML(it,a,f){const cant=qOf(it,a);
       `<div class="card-thumb-wrap">${thumb}</div>`+
       `<div class="card-main">`+
         `<div class="prod-name-wrap"><span class="prod-name">${it.nombre}</span></div>`+
-        `<div class="prod-meta">${it.prov}</div>`+pendBadge+extraProvBadge+
+        `<div class="prod-meta">${it.proveedorNombre||it.prov}</div>`+pendBadge+extraProvBadge+
         priceLine+
         `<div class="card-stats">`+
           `<span class="cstat cstat-stock"><span class="cstat-label">STK</span> ${statStock}</span>`+
@@ -4879,7 +4879,6 @@ async function fpGuardarTodo(){
   const costoBase=costoIngresado?PriceCalc.costoBruto(costoIngresado,'unidad',null,'con'):null;
   const costoFinal=costoBase?String(Math.round(costoBase)):'';
 
-  const scrollGuardado=document.getElementById('fp-scroll').scrollTop;
   btn.disabled=true;btn.textContent='Guardando…';
   try{
     // 1) Datos generales (nombre, categoría, descripción, unidad, proveedor, sector,
@@ -4924,9 +4923,12 @@ async function fpGuardarTodo(){
     if(sector)psGuardarAprendizaje(nombre.toUpperCase(),proveedorId||null,sector);
     persist();
     showToast('✅ Producto actualizado'+avisoBarcode+avisoPrecio);
-    // Recarga la ficha con los datos confirmados por el servidor, pero SIN cerrar ni perder
-    // el scroll — se restaura exactamente donde el usuario estaba en la pantalla.
-    await fpAbrir(sku,{scroll:scrollGuardado});
+    // Al guardar: cierra la ficha y vuelve directo al buscador de "Editar producto", listo
+    // para buscar o escanear el siguiente — antes reabría la misma ficha, obligando a salir
+    // a mano cada vez. edAbrir() ya limpia el buscador y enfoca el campo de búsqueda.
+    fpLimpiarBorrador();
+    cerrarModal('fp-ov');
+    edAbrir();
     render();
   }catch(e){
     showToast('❌ Error de conexión al guardar');
