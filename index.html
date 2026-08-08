@@ -590,8 +590,16 @@ input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .legend span{display:inline-flex;align-items:center;gap:5px}.ldot{width:9px;height:9px;border-radius:50%}
 .tablecard{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0;max-width:100%}
 @media(min-width:680px){#tab-pedido .tablecard{max-width:1520px;margin:0 auto}}
-.tbl-scroll{overflow-y:auto;overflow-x:auto;max-height:calc(100vh - 195px);max-height:calc(100dvh - 195px);-webkit-overflow-scrolling:touch;max-width:100%;transition:max-height .22s ease}
-.tbl-scroll.nav-hidden{max-height:calc(100vh - 125px);max-height:calc(100dvh - 125px)}
+/* Antes esto restaba números fijos (195px / 125px) que asumían un alto de header/nav
+   concreto. Al quitar la barra .top y el acordeón "Proveedores de hoy" del sticky-hdr de
+   Pedidos, el header real se achicó, pero el número fijo seguía restando el alto viejo — así
+   quedaba de sobra ese hueco vacío debajo de la tabla. --hdr-h/--nav-h ya las mide JS en
+   tiempo real (_actualizarAlturaTop, incluido en cada cambio de pestaña) — se usan acá en vez
+   de adivinar, así el alto de la tabla siempre calza exacto con lo que el header/nav miden de
+   verdad, sea cual sea su contenido. El +12px es el margen/padding de .wrap alrededor de la
+   tabla (mismo que ya existía implícito en los números fijos anteriores). */
+.tbl-scroll{overflow-y:auto;overflow-x:auto;max-height:calc(100vh - var(--hdr-h,130px) - var(--nav-h,78px) - 12px);max-height:calc(100dvh - var(--hdr-h,130px) - var(--nav-h,78px) - 12px);-webkit-overflow-scrolling:touch;max-width:100%;transition:max-height .22s ease}
+.tbl-scroll.nav-hidden{max-height:calc(100vh - var(--hdr-h,130px) - 12px);max-height:calc(100dvh - var(--hdr-h,130px) - 12px)}
 table{border-collapse:collapse;width:100%;table-layout:fixed}
 thead th{background:#F7F7F3;text-align:center;font-size:9.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:9px 7px;white-space:nowrap;cursor:pointer;user-select:none;position:sticky;top:0;z-index:6;border-bottom:1px solid var(--line2)}
 thead th:first-child{text-align:left;padding-left:12px;font-size:10.5px;letter-spacing:.01em}
