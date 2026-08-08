@@ -1257,6 +1257,44 @@ html:not(.modo-bliss):not(.carrito-fijo):not(.ocultar-contenido-pedido) .top{dis
 .in2-action-btn:active{background:var(--paper)}
 .in2-action-btn .ic{font-size:18px}
 @media (min-width:400px){.in2-card .lab{font-size:11px}}
+/* ==== Inicio en BlissOS (monitor fijo ~1024×684, sentado, mouse/touch de escritorio) ====
+   Mismo criterio que ya usa Pedidos en este modo: aprovechar el ancho horizontal con más
+   columnas por fila en vez de una sola columna larga con scroll infinito, y compensar la
+   poca altura disponible (684px) achicando el header sticky y los márgenes verticales entre
+   secciones — el contenido real (accesos, alertas, acciones) sube de tamaño de texto porque
+   acá se lee sentado y fijo, no caminando con el celular en la mano. */
+html.modo-bliss #tab-inicio{max-width:1400px;margin:0 auto}
+html.modo-bliss .in2-hdr{padding:8px 22px 6px}
+html.modo-bliss .in2-hdr-txt b{font-size:16px}
+html.modo-bliss .in2-hdr-txt span,html.modo-bliss .in2-live,html.modo-bliss .in2-hdr-sub{font-size:11.5px}
+html.modo-bliss .in2-body{padding:14px 22px 22px}
+html.modo-bliss .in2-section-title{margin:14px 0 8px;font-size:12.5px}
+html.modo-bliss .in2-section-title:first-child{margin-top:0}
+/* Accesos rápidos: de 3 a 6 columnas — mismas tarjetas, solo más por fila, así "Editar
+   producto", "Recepción", "Vencimientos", etc. caben en 1-2 filas en vez de 3+. */
+html.modo-bliss .in2-grid{grid-template-columns:repeat(6,1fr);gap:10px}
+html.modo-bliss .in2-card{min-height:96px;padding:14px 8px 12px;gap:6px}
+html.modo-bliss .in2-card .ic{font-size:26px}
+html.modo-bliss .in2-card .lab{font-size:12px}
+/* Requiere atención: 2 columnas en vez de 1 — con varias alertas a la vez (quiebres,
+   vencimientos, sin movimiento) no arrastra tanto scroll vertical hacia abajo. */
+html.modo-bliss .in2-atencion{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+html.modo-bliss .in2-att-row{padding:12px 14px}
+html.modo-bliss .in2-att-row .n{font-size:19px}
+html.modo-bliss .in2-att-row .t{font-size:13.5px}
+html.modo-bliss .in2-att-row .s{font-size:11.5px}
+/* Acciones rápidas: de 4 a 8 columnas, mismo criterio que los accesos de arriba. */
+html.modo-bliss .in2-actions{grid-template-columns:repeat(8,1fr);gap:10px}
+html.modo-bliss .in2-action-btn{padding:12px 4px}
+html.modo-bliss .in2-action-btn .ic{font-size:20px}
+html.modo-bliss .in2-action-btn{font-size:11px}
+/* El acordeón "Proveedores de hoy" vive dentro de Inicio (mismos #ids que Lotes en Editar
+   producto usa la clase genérica .prov-acc-toggle — acá se apunta por id específico para no
+   afectar ese otro uso). Mismo criterio: texto más grande, se lee sentado y fijo. */
+html.modo-bliss #prov-acc-toggle{padding:9px 14px;font-size:13px}
+html.modo-bliss #provday{padding:14px 16px;font-size:13px}
+html.modo-bliss #provday .pd-prov-nom{font-size:13.5px}
+html.modo-bliss #provday .pd-prov-sub{font-size:12px}
 /* Tablet (1000–1399px): el carrito fijo deja un hueco a la derecha de la tabla porque el
    padding/gap se pensó para BlissOS (>=1400px). Este bloque solo corrige eso en el rango de
    tablet — no toca nada fuera de este ancho, así que BlissOS queda exactamente igual. */
