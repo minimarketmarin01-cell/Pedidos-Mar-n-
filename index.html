@@ -1151,7 +1151,19 @@ html.modo-celular #tab-inicio:not(.hidden){display:block}
 html.ocultar-contenido-pedido #sticky-hdr,
 html.ocultar-contenido-pedido #tab-pedido .tablecard{display:none}
 #tab-inicio{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
-.in2-hdr{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;background:rgba(252,252,249,.94);backdrop-filter:saturate(180%) blur(14px);-webkit-backdrop-filter:saturate(180%) blur(14px);border-bottom:1px solid var(--line)}
+.in2-hdr{position:sticky;top:0;z-index:20;display:flex;flex-direction:column;gap:2px;padding:10px 14px 8px;background:rgba(252,252,249,.94);backdrop-filter:saturate(180%) blur(14px);-webkit-backdrop-filter:saturate(180%) blur(14px);border-bottom:1px solid var(--line)}
+.in2-hdr-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.in2-hdr-sub{font-size:10.5px;color:var(--muted);font-weight:600;padding-left:2px;font-family:'JetBrains Mono',monospace}
+.in2-icon-btn{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border:none;background:transparent;color:var(--ink2,#444);cursor:pointer;border-radius:8px;flex-shrink:0}
+.in2-icon-btn:active{background:var(--line2,#eee)}
+.in2-icon-btn.spinning svg{animation:in2-spin .8s linear infinite}
+@keyframes in2-spin{to{transform:rotate(360deg)}}
+/* En celular (no bliss, no tablet de dos paneles), la barra .top global queda redundante con
+   este header propio de Inicio (mismo logo "Marín", mismo indicador En vivo). Se oculta SOLO
+   ahí — Pedidos y el resto de módulos, que sí necesitan .top con sus botones de acción, no se
+   tocan. Tablet (.carrito-fijo) y BlissOS (.modo-bliss) mantienen .top siempre visible porque
+   no tienen este problema de duplicación (la vista Inicio no es la que ven ahí primero). */
+html:not(.modo-bliss):not(.carrito-fijo) .top:has(~#tab-inicio:not(.hidden)){display:none}
 .in2-hdr-left{display:flex;align-items:center;gap:8px;min-width:0}
 .in2-logo{width:30px;height:30px;border-radius:8px;flex-shrink:0;object-fit:cover}
 .in2-hdr-txt{display:flex;flex-direction:column;line-height:1.2;min-width:0}
@@ -1253,14 +1265,18 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
 <button class="cart-fab" id="cart-fab" aria-label="Ver carrito"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M3 4h2l2.2 11h9.6L19 8H6.4"/></svg><span class="cart-badge" id="cart-badge"></span></button>
 <div id="tab-inicio" class="hidden">
   <div class="in2-hdr">
-    <div class="in2-hdr-left">
-      <img class="in2-logo" src="icon-192.png" alt="" onerror="this.style.display='none'">
-      <div class="in2-hdr-txt"><b>Marín</b><span>Local 03</span></div>
+    <div class="in2-hdr-row">
+      <div class="in2-hdr-left">
+        <img class="in2-logo" src="icon-192.png" alt="" onerror="this.style.display='none'">
+        <div class="in2-hdr-txt"><b>Marín</b><span>Local 03</span></div>
+      </div>
+      <div class="in2-hdr-right">
+        <span id="in2-live" class="in2-live"><span class="in2-live-dot"></span>En vivo</span>
+        <button id="in2-sync-btn" class="in2-icon-btn" aria-label="Sincronizar" title="Respaldo manual — normalmente no hace falta, los datos llegan solos"><svg id="in2-sync-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.7-3"/><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.7 3"/><polyline points="21 3 21 9 15 9"/><polyline points="3 21 3 15 9 15"/></svg></button>
+        <button id="in2-notif-btn" class="in2-notif-btn" aria-label="Avisos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span id="in2-notif-badge" class="in2-notif-badge hidden"></span></button>
+      </div>
     </div>
-    <div class="in2-hdr-right">
-      <span id="in2-live" class="in2-live"><span class="in2-live-dot"></span>En vivo</span>
-      <button id="in2-notif-btn" class="in2-notif-btn" aria-label="Avisos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span id="in2-notif-badge" class="in2-notif-badge hidden"></span></button>
-    </div>
+    <div class="in2-hdr-sub" id="in2-hdr-sub"></div>
   </div>
   <div class="in2-body">
     <div class="in2-section-title">Accesos rápidos</div>
@@ -2700,6 +2716,26 @@ function itemsFor(p){return DB.items.filter(i=>(i.proveedorNombre?i.proveedorNom
 // un producto ya migrado a proveedor real (con nombre distinto a su categoría) desapareciera
 // de su categoría original.
 function itemsForCategoria(p){return DB.items.filter(i=>i.prov===p||(i.provsExtra&&i.provsExtra.includes(p)));}
+// Multi-proveedor REAL (WebApp) — un producto puede tener 2+ Proveedores asignados
+// (proveedorId principal + proveedorIdsExtra). Este filtro es el que debe usar cualquier
+// panel de pedidos que muestre "los productos de ESTE proveedor", porque incluye al producto
+// en TODOS los proveedores a los que está asignado, no solo en el principal.
+function itemsForProveedorId(proveedorId){
+  const id=Number(proveedorId);
+  if(!id)return[];
+  return DB.items.filter(i=>(i.proveedorIdsTodos||[]).includes(id));
+}
+// Estado de pedido compartido por producto — si YA se pidió (a cualquier proveedor), lo dice
+// pendienteDe(it) (por sku/barcode, ver más abajo). Esta función arma el texto de aviso para
+// mostrar en el panel de un proveedor DISTINTO al que ya se le pidió, para no volver a
+// solicitarlo por error: "Ya pedido a {proveedor}". nombreProveedorActual es opcional — si se
+// pasa y coincide con el proveedor del pedido pendiente, no se avisa (es "mi propio pedido").
+function avisoYaPedidoEnOtroProveedor(it,nombreProveedorActual){
+  const p=pendienteDe(it);
+  if(!p)return null;
+  if(nombreProveedorActual&&p.proveedor===nombreProveedorActual)return null;
+  return p.proveedor?('Ya pedido a '+p.proveedor):'Ya pedido';
+}
 // Normaliza texto para comparar sin tildes/mayúsculas ("Pingüino"≈"pinguino")
 function normTxt(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
 function currentItems(){if(state.search){const words=normTxt(state.search).trim().split(/\s+/).filter(Boolean);return DB.items.filter(i=>{const hay=normTxt(i.nombre);const ref=String(i.ref||'');const bc=i.barcode?String(i.barcode):'';return words.every(w=>hay.includes(w)||ref.includes(w)||bc.includes(w));});}if(state.allProv)return DB.items;return itemsFor(state.prov);}
@@ -2855,6 +2891,17 @@ async function renderInicio2(){
   const in2Live=document.getElementById('in2-live');
   if(in2Live)in2Live.querySelector('span:last-child') && (in2Live.lastChild.textContent=liveTxt?liveTxt.textContent:'En vivo');
 
+  // --- Línea secundaria discreta: "N productos · Última sincronización HH:MM" — mismo dato
+  // de DB.meta.nitems que ya usa updlabel en .top, sin el resto de ruido (rango de fechas,
+  // "nube", fecha completa) que ahí sí hace falta pero acá sobra. ---
+  const hdrSub=document.getElementById('in2-hdr-sub');
+  if(hdrSub){
+    const n=(DB&&DB.meta&&DB.meta.nitems)?fmt.format(DB.meta.nitems):'—';
+    const ts=lastSyncTime();
+    const hora=ts?new Date(ts).toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'}):'—';
+    hdrSub.textContent=`${n} productos · Última sincronización ${hora}`;
+  }
+
   // --- Cálculos base: quiebre/pedir (analyze), sin movimiento (smCalcular) ---
   let urg=0,ped=0;
   items.forEach(it=>{const a=analyze(it);if(a.status==='urgente')urg++;else if(a.status==='pedir')ped++;});
@@ -2879,8 +2926,10 @@ async function renderInicio2(){
   let riesgoNum=0;
   try{riesgoNum=(rzCalcular(false)||[]).length;}catch(e){}
 
-  // ---- 6 tarjetas de accesos rápidos ----
+  // ---- 7 tarjetas de accesos rápidos — "Editar producto" primero (acceso más pedido
+  // según feedback de uso diario), el resto mantiene el orden original ----
   const cards=[
+    {ic:'✏️',lab:'Editar producto',n:null,go:()=>{cerrarOverlays();try{edAbrir();}catch(e){}}},
     {ic:'📦',lab:'Recepción',n:null,go:()=>{cerrarOverlays();openRecibir();}},
     {ic:'🛒',lab:'Armar pedido',n:(urg+ped)||null,cls:(urg?'':'warn'),go:()=>{cerrarOverlays();showScreen('pedido');}},
     {ic:'📅',lab:'Vencimientos',n:(porVencer+vencidos)||null,cls:(vencidos?'':'warn'),go:()=>{cerrarOverlays();abrirModal('vc-ov');try{vcShowList();vcLoad();}catch(e){}}},
@@ -3517,7 +3566,7 @@ function renderABCResumen(){
 })();
 
 // Convierte los datos del endpoint (items + ventas) al formato DB que usa el dashboard
-function buildDBfromCloud(items, ventas, pendientes, provsExtra){
+function buildDBfromCloud(items, ventas, pendientes, provsExtra, provsIdsExtra){
   const itemRows=(items&&items.rows)?items.rows:{};
   const ventaRows=(ventas&&ventas.rows)?ventas.rows:{};
   const hoyRows=(ventas&&ventas.hoy&&ventas.hoy.rows)?ventas.hoy.rows:{};
@@ -3534,6 +3583,11 @@ function buildDBfromCloud(items, ventas, pendientes, provsExtra){
   // Proveedores extra (Opción A) — sku único en Loyverse, pero visible también al filtrar por
   // otro proveedor en Pedidos. Mapa sku → [proveedor,...].
   const provsExtraObj=provsExtra||{};
+  // Multi-proveedor REAL (WebApp): mapa sku → [proveedor_id,...] adicionales, aparte del
+  // proveedorId principal que ya trae cada fila (inv.proveedorId). Un producto puede estar
+  // asignado a 2+ Proveedores WebApp; proveedorIdsTodos junta principal + adicionales sin
+  // duplicar, para que el panel de pedidos de CADA proveedor asignado lo pueda mostrar.
+  const provsIdsExtraObj=provsIdsExtra||{};
 
   // Solo productos que EXISTEN en el catálogo actual (los eliminados en Loyverse no se muestran)
   const refs=new Set(Object.keys(itemRows));
@@ -3545,6 +3599,8 @@ function buildDBfromCloud(items, ventas, pendientes, provsExtra){
     const nombre=inv.nombre||v.nombre||ref;
     const prov=inv.prov||v.prov||'SIN CATEGORÍA';
     const t=tag(nombre,prov);
+    const idsExtra=provsIdsExtraObj[ref]||[];
+    const proveedorIdsTodos=inv.proveedorId?[inv.proveedorId,...idsExtra.filter(id=>id!==inv.proveedorId)]:idsExtra.slice();
     items_arr.push({
       ref:ref, nombre:nombre, prov:prov, provsExtra:provsExtraObj[ref]||[],
       id:inv.id||'', vid:inv.vid||'',
@@ -3559,7 +3615,8 @@ function buildDBfromCloud(items, ventas, pendientes, provsExtra){
       track:!!inv.track, barcode:inv.barcode||'', peso:!!inv.peso, creado:inv.creado||null, imagen:inv.imagen||'',
       fmt:t.fmt, min:t.min, scale:t.scale, role:t.role, word:t.word,
       hoyU:hoyU, abc:ABC_BY_SKU[ref]||null,
-      proveedorId:inv.proveedorId||null, proveedorNombre:inv.proveedorNombre||null
+      proveedorId:inv.proveedorId||null, proveedorNombre:inv.proveedorNombre||null,
+      proveedorIdsExtra:idsExtra, proveedorIdsTodos:proveedorIdsTodos
     });
   });
   items_arr.sort((a,b)=>b.u_all-a.u_all);
@@ -3622,7 +3679,7 @@ async function cloudSync(silent,live,full,origen){
       if(esPollDeFondo&&editando)return true;
       _ultimoPayloadFirma=firma;
 
-      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra);
+      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra);
       INVMAP=invMapFromItems(DB.items);
       SRC='nube · '+new Date().toLocaleString('es-CL');
       // FIX: antes esto era "state.edits={}" incondicional, así que CUALQUIER sync
@@ -3735,7 +3792,7 @@ async function pollFondo(){
     if(firma===_ultimoPayloadFirma)return; // nada cambió, no hay nada que repintar
     _ultimoPayloadFirma=firma;
 
-    DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra);
+    DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra);
     INVMAP=invMapFromItems(DB.items);
     SRC='nube · '+new Date().toLocaleString('es-CL');
     setLastSync(Date.now());
@@ -3772,6 +3829,15 @@ function actualizarIndicadorEnVivo(){
 }
 
 document.getElementById('btn-sync').onclick=()=>cloudSync(false,true,false,'sync');
+// Icono 🔄 del header de Inicio (celular) — mismo respaldo manual que el botón "Sincronizar"
+// de la barra .top, solo con un ícono en vez de texto para no ocupar espacio en esta pantalla.
+{
+  const in2SyncBtn=document.getElementById('in2-sync-btn');
+  if(in2SyncBtn)in2SyncBtn.onclick=async()=>{
+    in2SyncBtn.classList.add('spinning');
+    try{await cloudSync(false,true,false,'sync');}finally{in2SyncBtn.classList.remove('spinning');}
+  };
+}
 document.getElementById('btn-prices').onclick=()=>cloudSync(false,false,true,'prices');
 
 // ===================== EVENTOS =====================
@@ -4553,98 +4619,111 @@ function fpPanePrecios(f){
   fpPrRenderResumen();
 }
 
-// ==== PESTAÑA PROVEEDORES: 3 campos independientes —
-//   · Categoría: antiguo "proveedor de Loyverse" (it.prov / p.categoria). De acá sale el
-//     pedido sugerido por defecto — sigue siendo el mismo campo que siempre fue, solo
-//     renombrado en toda la interfaz para no confundirlo con el proveedor real.
-//   · Proveedor: el proveedor REAL de la WebApp (tabla `proveedores`, proveedor_id/nombre).
-//     Ya existía en el backend y en el sistema de sugerencia por IA, pero nunca se mostraba
-//     como campo editable ni se guardaba al tocar "Guardar cambios" — ahora sí, con el mismo
-//     combo (buscar + crear nuevo) que ya usa Crear producto, sin reescribir esa lógica.
-//   · "También se puede pedir a": proveedores extra de Loyverse — sigue funcionando exacto
-//     igual que antes, es un concepto aparte ligado a Categoría, no al Proveedor real.
+// ==== PESTAÑA PROVEEDORES ====
+// Solo Proveedor(es) de la WebApp — la "categoría" de Loyverse (it.prov/p.categoria) sigue
+// existiendo en el backend (de ahí sigue saliendo el pedido sugerido por defecto cuando un
+// producto aún no tiene proveedor real asignado, ver itemsFor()), pero ya NO se muestra ni se
+// edita desde acá para no mezclar los dos conceptos en la interfaz.
+// Un producto puede tener 2+ Proveedores: el principal (p.proveedorId, combo de arriba) más
+// los adicionales (p.proveedoresIdsExtra, chips de abajo — tabla producto_proveedor_id). El
+// producto aparece en el panel de pedidos de TODOS los proveedores asignados, y el estado
+// "pedido" es compartido por sku (pendienteDe/avisoYaPedidoEnOtroProveedor) — si ya se pidió a
+// uno, los demás paneles lo muestran marcado, no lo dejan pedir de nuevo por error.
 function fpPaneProveedores(f){
   const p=f.producto;
   const pane=document.getElementById('fp-pane-proveedores');
-  const opcionesCat=(DB.provs||[]).map(c=>`<option value="${c.prov}" ${c.prov===p.categoria?'selected':''}>${c.prov}</option>`).join('');
+  const extra=p.proveedoresIdsExtra||[];
   pane.innerHTML=
-    fpCampo('Categoría','<select id="fp-pv-cat" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;background:#fff">'+opcionesCat+'</select>','En esta app, "categoría" es el antiguo proveedor de Loyverse — de ahí sale el pedido sugerido por defecto.')+
+    fpCampo('Proveedor principal',
+      '<div style="display:flex;gap:8px">'+
+        '<div class="cat-combo" id="fp-pv-prov-combo">'+
+          '<input id="fp-pv-prov-input" class="cat-combo-input" placeholder="Buscar proveedor…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">'+
+          '<svg class="cat-combo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'+
+          '<select id="fp-pv-prov" style="display:none"><option value="">Sin proveedor</option></select>'+
+          '<div class="cat-combo-menu hidden" id="fp-pv-prov-menu" role="listbox"></div>'+
+        '</div>'+
+        '<button class="loadbtn" id="fp-pv-prov-nueva" type="button" style="white-space:nowrap">➕ Nuevo</button>'+
+      '</div>'+
+      '<div id="fp-pv-prov-nuevabox" class="hidden" style="display:flex;gap:8px;margin-top:8px">'+
+        '<input id="fp-pv-prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">'+
+        '<button class="btn-ok loadbtn" id="fp-pv-prov-crear" type="button" style="white-space:nowrap">Crear</button>'+
+      '</div>',
+      'Solo proveedores creados en la Web App. A quién se le pide este producto por defecto.')+
     '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">'+
-      '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px">También se puede pedir a</div>'+
-      '<div id="fp-provextra-list">'+
-        ((p.proveedoresExtra&&p.proveedoresExtra.length)
-          ?p.proveedoresExtra.map(pr=>'<div class="fp-row"><span class="k">'+pr+'</span><span class="v"><button type="button" class="fp-provextra-quitar" data-prov="'+pr+'" style="border:none;background:none;color:var(--rojo);font-weight:700;font-size:12px;cursor:pointer">✕ Quitar</button></span></div>').join('')
-          :'<div style="font-size:12px;color:var(--muted)">Solo se pide bajo su categoría ('+p.categoria+').</div>')+
+      '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px">También pedir a</div>'+
+      '<div id="fp-provid-list">'+
+        (extra.length
+          ?extra.map(pr=>'<div class="fp-row"><span class="k">'+pr.nombre+'</span><span class="v"><button type="button" class="fp-provid-quitar" data-id="'+pr.id+'" style="border:none;background:none;color:var(--rojo);font-weight:700;font-size:12px;cursor:pointer">✕ Quitar</button></span></div>').join('')
+          :'<div style="font-size:12px;color:var(--muted)">Este producto solo se pide al proveedor principal.</div>')+
       '</div>'+
       '<div style="display:flex;gap:8px;margin-top:8px">'+
-        '<select id="fp-provextra-select" style="flex:1;padding:9px 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px"><option value="">Elige una categoría…</option>'+
-          (DB.provs||[]).filter(c=>c.prov!==p.categoria&&!(p.proveedoresExtra||[]).includes(c.prov)).map(c=>'<option value="'+c.prov+'">'+c.prov+'</option>').join('')+
-        '</select>'+
-        '<button class="loadbtn" id="fp-provextra-add" type="button" style="white-space:nowrap">➕ Agregar</button>'+
+        '<select id="fp-provid-select" style="flex:1;padding:9px 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px"><option value="">Elige un proveedor…</option></select>'+
+        '<button class="loadbtn" id="fp-provid-add" type="button" style="white-space:nowrap">➕ Agregar</button>'+
       '</div>'+
-    '</div>'+
-    '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">'+
-      fpCampo('Proveedor',
-        '<div style="display:flex;gap:8px">'+
-          '<div class="cat-combo" id="fp-pv-prov-combo">'+
-            '<input id="fp-pv-prov-input" class="cat-combo-input" placeholder="Buscar proveedor…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">'+
-            '<svg class="cat-combo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'+
-            '<select id="fp-pv-prov" style="display:none"><option value="">Sin proveedor</option></select>'+
-            '<div class="cat-combo-menu hidden" id="fp-pv-prov-menu" role="listbox"></div>'+
-          '</div>'+
-          '<button class="loadbtn" id="fp-pv-prov-nueva" type="button" style="white-space:nowrap">➕ Nuevo</button>'+
-        '</div>'+
-        '<div id="fp-pv-prov-nuevabox" class="hidden" style="display:flex;gap:8px;margin-top:8px">'+
-          '<input id="fp-pv-prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">'+
-          '<button class="btn-ok loadbtn" id="fp-pv-prov-crear" type="button" style="white-space:nowrap">Crear</button>'+
-        '</div>',
-        'El proveedor real de este negocio — distinto de la Categoría de Loyverse. Se usa para clasificar y filtrar por quién realmente provee el producto.')+
     '</div>';
-  document.getElementById('fp-pv-cat').addEventListener('change',fpGuardarBorrador);
-  const fpPEAdd=document.getElementById('fp-provextra-add');
-  if(fpPEAdd)fpPEAdd.onclick=async()=>{
-    const sel=document.getElementById('fp-provextra-select');
-    const prov=sel&&sel.value;
-    if(!prov){showToast('Elige una categoría primero');return;}
-    fpPEAdd.disabled=true;
-    try{
-      const r=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'agregar_proveedor_extra',payload:{sku:p.sku,proveedor:prov}})});
-      const j=await r.json();
-      if(j&&j.ok){
-        p.proveedoresExtra=p.proveedoresExtra||[];p.proveedoresExtra.push(prov);
-        const itLocal=DB.items.find(x=>x.ref===p.sku);
-        if(itLocal){itLocal.provsExtra=itLocal.provsExtra||[];itLocal.provsExtra.push(prov);}
-        showToast('🔁 Ahora también se pide a '+prov);
-        fpPaneProveedores(f);render();
-      }else{showToast('⚠️ '+((j&&j.error)||'No se pudo agregar'));}
-    }catch(e){showToast('⚠️ Error de conexión');}
-    finally{fpPEAdd.disabled=false;}
-  };
-  document.querySelectorAll('.fp-provextra-quitar').forEach(b=>b.onclick=async()=>{
-    const prov=b.dataset.prov;
-    b.disabled=true;
-    try{
-      const r=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'quitar_proveedor_extra',payload:{sku:p.sku,proveedor:prov}})});
-      const j=await r.json();
-      if(j&&j.ok){
-        p.proveedoresExtra=(p.proveedoresExtra||[]).filter(x=>x!==prov);
-        const itLocal=DB.items.find(x=>x.ref===p.sku);
-        if(itLocal)itLocal.provsExtra=(itLocal.provsExtra||[]).filter(x=>x!==prov);
-        showToast('Quitado de '+prov);
-        fpPaneProveedores(f);render();
-      }else{showToast('⚠️ '+((j&&j.error)||'No se pudo quitar'));b.disabled=false;}
-    }catch(e){showToast('⚠️ Error de conexión');b.disabled=false;}
-  });
-  // Combo real de Proveedor — mismo componente (buscar + crear nuevo) que ya usa Crear
-  // producto, solo con IDs propios de esta pestaña (fp-pv-prov-*) para no chocar.
+
+  // Combo real de Proveedor principal — mismo componente (buscar + crear nuevo) que ya usa
+  // Crear producto, solo con IDs propios de esta pestaña (fp-pv-prov-*) para no chocar.
   psCargarListas().then(()=>{
     psLlenarSelects('fp-pv-prov','fp-pv-sector-dummy',p.proveedorId,null);
     psInitCombo('fp-pv-prov','fp-pv-prov-combo','fp-pv-prov-input','fp-pv-prov-menu','fp-pv-prov','proveedor',
       texto=>{const box=document.getElementById('fp-pv-prov-nuevabox');box.classList.remove('hidden');const inp=document.getElementById('fp-pv-prov-nuevonom');inp.value=texto;inp.focus();});
+    // Selector "También pedir a" — solo proveedores WebApp que no sean ya el principal ni
+    // estén ya en la lista de adicionales, para no ofrecer duplicados.
+    const sel=document.getElementById('fp-provid-select');
+    if(sel){
+      const yaAsignados=new Set([p.proveedorId,...extra.map(x=>x.id)].filter(Boolean).map(Number));
+      sel.innerHTML='<option value="">Elige un proveedor…</option>'+
+        _psProveedores.filter(pr=>!yaAsignados.has(Number(pr.id))).map(pr=>'<option value="'+pr.id+'">'+pr.nombre+'</option>').join('');
+    }
   });
   psWireNuevoProveedor('fp-pv-prov-nueva','fp-pv-prov-nuevabox','fp-pv-prov-nuevonom','fp-pv-prov-crear','fp-pv-prov','fp-pv-sector-dummy');
   const provSel=document.getElementById('fp-pv-prov');
   if(provSel)provSel.addEventListener('change',fpGuardarBorrador);
+
+  const fpPIAdd=document.getElementById('fp-provid-add');
+  if(fpPIAdd)fpPIAdd.onclick=async()=>{
+    const sel=document.getElementById('fp-provid-select');
+    const provId=sel&&sel.value;
+    if(!provId){showToast('Elige un proveedor primero');return;}
+    fpPIAdd.disabled=true;
+    try{
+      const r=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'agregar_proveedor_id_extra',payload:{sku:p.sku,proveedor_id:Number(provId)}})});
+      const j=await r.json();
+      if(j&&j.ok){
+        p.proveedoresIdsExtra=p.proveedoresIdsExtra||[];
+        p.proveedoresIdsExtra.push({id:Number(provId),nombre:j.proveedor_nombre});
+        const itLocal=DB.items.find(x=>x.ref===p.sku);
+        if(itLocal){
+          itLocal.proveedorIdsExtra=itLocal.proveedorIdsExtra||[];
+          itLocal.proveedorIdsExtra.push(Number(provId));
+          itLocal.proveedorIdsTodos=(itLocal.proveedorIdsTodos||[]).includes(Number(provId))
+            ?itLocal.proveedorIdsTodos:[...(itLocal.proveedorIdsTodos||[]),Number(provId)];
+        }
+        showToast('🔁 Ahora también se pide a '+j.proveedor_nombre);
+        fpPaneProveedores(f);render();
+      }else{showToast('⚠️ '+((j&&j.error)||'No se pudo agregar'));}
+    }catch(e){showToast('⚠️ Error de conexión');}
+    finally{fpPIAdd.disabled=false;}
+  };
+  document.querySelectorAll('.fp-provid-quitar').forEach(b=>b.onclick=async()=>{
+    const provId=Number(b.dataset.id);
+    b.disabled=true;
+    try{
+      const r=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'quitar_proveedor_id_extra',payload:{sku:p.sku,proveedor_id:provId}})});
+      const j=await r.json();
+      if(j&&j.ok){
+        p.proveedoresIdsExtra=(p.proveedoresIdsExtra||[]).filter(x=>x.id!==provId);
+        const itLocal=DB.items.find(x=>x.ref===p.sku);
+        if(itLocal){
+          itLocal.proveedorIdsExtra=(itLocal.proveedorIdsExtra||[]).filter(x=>x!==provId);
+          itLocal.proveedorIdsTodos=(itLocal.proveedorIdsTodos||[]).filter(x=>x!==provId);
+        }
+        showToast('Quitado de ese proveedor');
+        fpPaneProveedores(f);render();
+      }else{showToast('⚠️ '+((j&&j.error)||'No se pudo quitar'));b.disabled=false;}
+    }catch(e){showToast('⚠️ Error de conexión');b.disabled=false;}
+  });
 }
 
 // ==== PESTAÑA SECTOR ====
@@ -8141,7 +8220,7 @@ async function recargarHistorial(){
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=recargar_historial');
     const j=await res.json();
     if(j&&j.ok){
-      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra);
+      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra);
       INVMAP=invMapFromItems(DB.items);
       state.edits={};
       persist();render();
