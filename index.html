@@ -10250,7 +10250,16 @@ function openRecibir(){
   abrirModal('rc-ov');
   try{const d=rcCargarBorrador();if(d)rcAplicarBorrador(d);}catch(e){}
 }
-function closeRecibir(){cerrarModal('rc-ov');}
+// Al cancelar, se reinicia el formulario ANTES de cerrar — mismo criterio que ya usa el
+// guardado exitoso (rcReset() ahí abajo, tras "Guardar y sumar stock"). Antes esto solo
+// cerraba el modal sin limpiar rcState, así que la próxima vez que se abriera Recepción
+// (desde el botón de nav, Inicio, o el menú) seguía mostrando el producto ya cancelado con
+// su costo/margen/modo unidad-caja/IVA pegados, en vez de arrancar listo para escanear otro.
+function closeRecibir(){
+  rcReset();
+  rcLimpiarBorrador(); // se canceló a propósito — un F5 después no debe revivir este borrador
+  cerrarModal('rc-ov');
+}
 
 document.getElementById('btn-recibir').onclick=openRecibir;
 document.getElementById('rc-cancelar').onclick=closeRecibir;
