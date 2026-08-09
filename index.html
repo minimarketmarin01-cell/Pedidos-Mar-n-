@@ -407,6 +407,19 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .fp-chip{display:inline-flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:5px 6px 5px 11px;font-size:12px;font-weight:600;color:var(--ink)}
 .fp-chip button{border:none;background:var(--gris-bg,#F3F1EA);color:var(--muted);width:18px;height:18px;border-radius:50%;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none}
 .fp-chip-principal{display:inline-flex;align-items:center;gap:5px;background:var(--verde-bg,#E3F3E8);color:#1E7A3E;border-radius:20px;padding:4px 10px;font-size:11px;font-weight:700;margin-top:6px}
+/* ==== Calculadora de precio (PriceCalc) — reutilizado en Ficha de producto, Crear producto
+   y Recepción, prefijo "pc-" para no chocar con los ids propios de cada pantalla (fp-pr-*,
+   cp-*, rc-*). Fondo diferenciado del resto de la página, para que quede claro de un vistazo
+   dónde termina "información" y empieza "herramienta de cálculo". --gold/--gold-bg porque no
+   forma parte de los 5 colores de alerta reservados (rojo/ámbar/gris/verde/azul). ====*/
+.pc-calc-box{background:var(--gold-bg,#F3F0E2);border:1.5px solid var(--gold,#8A7A4E);border-radius:14px;padding:14px}
+.pc-calc-box .mm-field label{color:var(--gold,#8A7A4E)}
+/* Botón único de redondeo cíclico: cada toque avanza Sin redondeo → 50 → 90 → 100 → (vuelta
+   al inicio). Reemplaza los 4 botones separados que había antes — mismo resultado, menos
+   espacio y menos decisiones visuales de una vez. */
+.pc-round-cyclic{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:10px 14px;border-radius:10px;border:1.5px solid var(--gold,#8A7A4E);background:#fff;color:var(--gold,#8A7A4E);font-weight:700;font-size:13px;cursor:pointer}
+.pc-round-cyclic .pc-round-val{font-family:'JetBrains Mono';font-weight:800}
+.pc-round-cyclic:active{background:var(--gold-bg,#F3F0E2)}
 /* Acordeón de Lotes — plegado por defecto para que muchos lotes no empujen el resto del
    formulario hacia abajo. Mismo componente .prov-acc-toggle que ya usa "Proveedores de hoy",
    solo con un poco más de padding/tamaño porque acá muestra el resumen "Lotes (N) · stock
@@ -1823,9 +1836,9 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <div style="background:var(--azul-bg);border-radius:9px;padding:10px;color:var(--azul);font-size:12.5px;font-weight:600;line-height:1.35">Para registrar una recepción, primero activa "Seguir inventario".</div>
         </div>
 
-        <div class="mm-field" style="margin-bottom:8px">
+        <div class="mm-field pc-calc-box" style="margin-bottom:8px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-            <label style="margin:0">Costo y precio <span style="font-weight:400;color:var(--muted);text-transform:none">(opcional)</span></label>
+            <label style="margin:0;color:var(--gold,#8A7A4E)">Costo y precio <span style="font-weight:400;color:var(--muted);text-transform:none">(opcional)</span></label>
             <!-- Toggle compacto: reemplaza los 2 botones grandes de antes. Mismos IDs
                  (rc-iva-con / rc-iva-sin) y misma función rcSetIva() — solo cambió el
                  marcado visual a un interruptor de 2 posiciones. -->
@@ -1847,6 +1860,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
             </div>
           </div>
           <div id="rc-costo-explica" style="font-size:10px;color:var(--muted);margin-top:4px;line-height:1.3"></div>
+          <button type="button" class="pc-round-cyclic" id="rc-round-btn" data-r="none" style="margin-top:8px"><span>🔁 Redondeo</span><span class="pc-round-val" id="rc-round-val">Sin redondeo</span></button>
 
           <!-- Precio de venta: destacado, ocupa todo el ancho, justo debajo de costo/margen.
                Este campo es el precio ACTUAL/vigente — el que se guardará en Loyverse tal
@@ -2235,9 +2249,9 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         </div>
         <div class="cat" id="cp-stock-total-hint" style="margin-top:5px"></div>
       </div>
-      <div class="mm-field" style="margin-bottom:8px">
+      <div class="mm-field pc-calc-box" style="margin-bottom:8px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-          <label style="margin:0">Costo y precio <span style="font-weight:400;color:var(--muted);text-transform:none">(opcional)</span></label>
+          <label style="margin:0;color:var(--gold,#8A7A4E)">Costo y precio <span style="font-weight:400;color:var(--muted);text-transform:none">(opcional)</span></label>
           <div id="cp-costo-iva-toggle" style="display:flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;color:var(--muted)" role="group" aria-label="¿El costo incluye IVA?">
             <button type="button" class="rc-iva-btn active" id="cp-costo-iva-con" data-iva="con" style="padding:4px 9px;border-radius:20px 0 0 20px;border:1.5px solid var(--wa-d);border-right:none;background:var(--wa-bg,var(--verde-bg));color:var(--wa-d);cursor:pointer">Con IVA</button>
             <button type="button" class="rc-iva-btn" id="cp-costo-iva-sin" data-iva="sin" style="padding:4px 9px;border-radius:0 20px 20px 0;border:1.5px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;margin-left:-1px">Sin IVA</button>
@@ -2255,6 +2269,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           </div>
         </div>
         <div id="cp-costo-explica" style="font-size:10px;color:var(--muted);margin-top:4px;line-height:1.3"></div>
+        <button type="button" class="pc-round-cyclic" id="cp-round-btn" data-r="none" style="margin-top:8px"><span>🔁 Redondeo</span><span class="pc-round-val" id="cp-round-val">Sin redondeo</span></button>
         <div style="margin-top:8px;padding:8px 10px;background:var(--wa-bg,var(--verde-bg));border:1.5px solid var(--wa-d);border-radius:10px">
           <div style="font-size:10px;color:var(--wa-d);font-weight:700;margin-bottom:2px">PRECIO DE VENTA</div>
           <input id="cp-precio" inputmode="numeric" placeholder="$ · vacío = precio variable" autocomplete="off" style="width:100%;height:40px;padding:0;border:none;background:transparent;font-size:20px;font-weight:800;font-family:'JetBrains Mono';color:var(--ink)">
@@ -4866,60 +4881,100 @@ function fpPanePreciosActual(f){
 // misma fórmula. El redondeo (Sin redondeo/50/90/00) es puramente de presentación — se aplica
 // SOLO al precio sugerido que se muestra/aplica, PriceCalc.precioDesdeMargen() sigue siendo
 // la única fuente del cálculo real, sin tocar su lógica. ====
-let fpPState={precioTocado:false,precioPreview:null,redondeo:'none'};
-function fpRedondear(precio,modo){
+// ==== Redondeo cíclico de precio — reutilizado por Ficha de producto (fp-pr-*), Crear
+// producto (cp-*) y Recepción (rc-*). Puramente de presentación: se aplica SOLO al precio
+// sugerido que se muestra/aplica, PriceCalc.precioDesdeMargen() sigue siendo la única fuente
+// del cálculo real, sin tocar su lógica. 'none' → '50' → '90' → '100' → 'none'...
+const PC_ROUND_CICLO=['none','50','90','100'];
+const PC_ROUND_LABEL={none:'Sin redondeo',50:'Termina en 50',90:'Termina en 90',100:'Termina en 100'};
+function pcSiguienteRedondeo(actual){
+  const i=PC_ROUND_CICLO.indexOf(actual);
+  return PC_ROUND_CICLO[(i+1)%PC_ROUND_CICLO.length];
+}
+function pcRedondear(precio,modo){
   if(precio==null)return null;
   if(modo==='none')return precio;
-  const term=modo==='50'?50:modo==='90'?90:0;
+  const term=modo==='50'?50:modo==='90'?90:0; // '100' redondea al centenar exacto (term=0), igual que antes hacía '00'
   const base=Math.floor(precio/100)*100;
   let candidato=base+term;
   if(candidato<precio)candidato+=100;
   return candidato;
 }
+let fpPState={precioTocado:false,precioPreview:null,redondeo:'none'};
 function fpPanePrecios(f){
   const p=f.producto;
-  fpPState={precioTocado:false,precioPreview:null,redondeo:'none'};
+  fpPState={precioTocado:false,precioPreview:null,modo:'unidad',redondeo:'none'};
   const hist=f.historialPrecios||[];
   const pane=document.getElementById('fp-pane-precios');
   pane.innerHTML=
+    '<div class="pc-calc-box">'+
     '<div class="mm-field" style="margin-bottom:8px">'+
-      '<label>Costo <span style="font-weight:400;color:var(--muted);text-transform:none">(con IVA)</span></label>'+
+      '<label>Costo ingresado como</label>'+
+      '<div style="display:flex;gap:6px">'+
+        '<button type="button" class="rc-modo-btn active" id="fp-pr-modo-unidad" data-modo="unidad" style="flex:1;padding:8px;border-radius:9px;border:1.5px solid var(--gold,#8A7A4E);background:#fff;color:var(--gold,#8A7A4E);font-weight:700;font-size:12px;cursor:pointer">Por unidad</button>'+
+        '<button type="button" class="rc-modo-btn" id="fp-pr-modo-caja" data-modo="caja" style="flex:1;padding:8px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--muted);font-weight:700;font-size:12px;cursor:pointer">Por caja</button>'+
+      '</div>'+
+    '</div>'+
+    '<div class="mm-field" style="margin-bottom:8px">'+
+      '<label id="fp-pr-costo-lbl">Costo <span style="font-weight:400;color:var(--muted);text-transform:none">(con IVA)</span></label>'+
       '<input id="fp-pr-costo" type="number" inputmode="decimal" value="'+(p.costo!=null?p.costo:'')+'" placeholder="$" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:\'JetBrains Mono\'">'+
+    '</div>'+
+    '<div class="mm-field hidden" id="fp-pr-caja-campo" style="margin-bottom:8px">'+
+      '<label>Unidades por caja</label>'+
+      '<input id="fp-pr-unidades-caja" type="number" inputmode="numeric" placeholder="Ej: 24" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:\'JetBrains Mono\'">'+
     '</div>'+
     '<div class="mm-field" style="margin-bottom:8px"><label>Margen objetivo (%)</label>'+
       '<input id="fp-pr-margen-obj" type="number" inputmode="decimal" value="'+(p.margen!=null?p.margen:30)+'" placeholder="Ej: 30" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:\'JetBrains Mono\'">'+
     '</div>'+
     '<div class="mm-field" style="margin-bottom:8px"><label>Redondear (opcional)</label>'+
-      '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
-        '<button type="button" class="fp-round-btn active" data-r="none" style="flex:1;min-width:70px;padding:8px 4px;border-radius:9px;border:1.5px solid var(--verde);background:var(--verde-bg,#E3F3E8);color:#1E7A3E;font-weight:700;font-size:11px;cursor:pointer">Sin redondeo</button>'+
-        '<button type="button" class="fp-round-btn" data-r="50" style="flex:1;min-width:70px;padding:8px 4px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--muted);font-weight:700;font-size:11px;cursor:pointer">Termina en 50</button>'+
-        '<button type="button" class="fp-round-btn" data-r="90" style="flex:1;min-width:70px;padding:8px 4px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--muted);font-weight:700;font-size:11px;cursor:pointer">Termina en 90</button>'+
-        '<button type="button" class="fp-round-btn" data-r="00" style="flex:1;min-width:70px;padding:8px 4px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--muted);font-weight:700;font-size:11px;cursor:pointer">Termina en 00</button>'+
-      '</div>'+
+      '<button type="button" class="pc-round-cyclic" id="fp-pr-round-btn" data-r="none"><span>🔁 Redondeo</span><span class="pc-round-val" id="fp-pr-round-val">Sin redondeo</span></button>'+
     '</div>'+
     '<div id="fp-pr-precio-preview-box" class="hidden" style="margin-bottom:8px;padding:10px 12px;background:var(--verde-bg,#E3F3E8);border:1.5px solid var(--verde);border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:8px">'+
       '<div><div style="font-size:10px;color:#1E7A3E;font-weight:700">PRECIO SUGERIDO</div><span id="fp-pr-precio-preview-val" style="font-size:19px;font-weight:800;font-family:\'JetBrains Mono\';color:#1E7A3E"></span></div>'+
       '<button type="button" id="fp-pr-precio-aplicar" style="background:var(--verde);border:none;color:#fff;font-weight:700;font-size:12px;padding:9px 14px;border-radius:9px;cursor:pointer;white-space:nowrap">✓ Aplicar precio</button>'+
     '</div>'+
-    '<div class="mm-field" style="margin-bottom:8px">'+
+    '<div class="mm-field" style="margin-bottom:0">'+
       '<label>Precio de venta <span style="font-weight:400;color:var(--muted);text-transform:none">(este se guarda)</span></label>'+
       '<input id="fp-pr-precio" type="number" inputmode="decimal" value="'+(p.precio!=null?p.precio:'')+'" placeholder="$" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:16px;font-weight:800;font-family:\'JetBrains Mono\'">'+
     '</div>'+
-    '<div id="fp-pr-resumen" class="cat" style="margin-bottom:12px;padding:8px 10px;background:var(--paper);border-radius:9px;line-height:1.55;font-size:11.5px"></div>'+
+    '</div>'+
+    '<div id="fp-pr-resumen" class="cat" style="margin:12px 0;padding:8px 10px;background:var(--paper);border-radius:9px;line-height:1.55;font-size:11.5px"></div>'+
     '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">'+
       '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px">Historial de cambios</div>'+
       (hist.length?hist.map(h=>`<div class="fp-row"><span class="k">${h.fecha}</span><span class="v" style="text-align:right;font-weight:600">${peso(h.precioAntes)} → ${peso(h.precioDespues)} · costo ${peso(h.costoAntes)} → ${peso(h.costoDespues)}${h.responsable?' · '+h.responsable:''}</span></div>`).join('')
         :'<div class="vc-empty">Sin cambios de precio registrados todavía.</div>')+
     '</div>';
 
+  // ---- Toggle unidad/caja: si es "caja", el costo ingresado se divide por las unidades que
+  // trae (mismo PriceCalc.costoUnitario que ya usan Recepción y Crear producto). ----
+  function fpPrSetModo(modo){
+    fpPState.modo=modo;
+    const bU=document.getElementById('fp-pr-modo-unidad'),bC=document.getElementById('fp-pr-modo-caja');
+    bU.style.background=modo==='caja'?'#fff':'var(--gold-bg,#F3F0E2)';
+    bU.style.borderColor=modo==='caja'?'var(--line)':'var(--gold,#8A7A4E)';
+    bU.style.color=modo==='caja'?'var(--muted)':'var(--gold,#8A7A4E)';
+    bC.style.background=modo==='caja'?'var(--gold-bg,#F3F0E2)':'#fff';
+    bC.style.borderColor=modo==='caja'?'var(--gold,#8A7A4E)':'var(--line)';
+    bC.style.color=modo==='caja'?'var(--gold,#8A7A4E)':'var(--muted)';
+    document.getElementById('fp-pr-caja-campo').classList.toggle('hidden',modo!=='caja');
+    document.getElementById('fp-pr-costo-lbl').innerHTML=modo==='caja'
+      ?'Costo de la caja <span style="font-weight:400;color:var(--muted);text-transform:none">(con IVA)</span>'
+      :'Costo <span style="font-weight:400;color:var(--muted);text-transform:none">(con IVA)</span>';
+    fpPrRecalcularPreview();fpPrRenderResumen();
+  }
+  document.getElementById('fp-pr-modo-unidad').onclick=()=>fpPrSetModo('unidad');
+  document.getElementById('fp-pr-modo-caja').onclick=()=>fpPrSetModo('caja');
+  document.getElementById('fp-pr-unidades-caja').addEventListener('input',()=>{fpPrRecalcularPreview();fpPrRenderResumen();fpGuardarBorrador();});
+
   // ---- Misma calculadora que Recepción y Crear producto (PriceCalc) — costo con IVA es
-  // directamente la base (acá no hay toggle: el IVA ya está definido en el producto).
+  // directamente la base (acá no hay toggle de IVA: el IVA ya está definido en el producto),
+  // pero sí de unidad/caja — si es "caja", PriceCalc.costoBruto divide por unidades primero.
   function fpPrCostoBruto(){
-    return PriceCalc.costoBruto(document.getElementById('fp-pr-costo').value,'unidad',null,'con');
+    return PriceCalc.costoBruto(document.getElementById('fp-pr-costo').value,fpPState.modo,document.getElementById('fp-pr-unidades-caja').value,'con');
   }
   function fpPrRecalcularPreview(){
     const base=PriceCalc.precioDesdeMargen(fpPrCostoBruto(),document.getElementById('fp-pr-margen-obj').value);
-    fpPState.precioPreview=fpRedondear(base,fpPState.redondeo);
+    fpPState.precioPreview=pcRedondear(base,fpPState.redondeo);
     fpPrRenderPreview();
   }
   function fpPrRenderPreview(){
@@ -4932,16 +4987,11 @@ function fpPanePrecios(f){
     if(actual===fpPState.precioPreview){btn.textContent='✓ Aplicado';btn.disabled=true;btn.style.opacity=.6;}
     else{btn.textContent='✓ Aplicar precio '+peso(fpPState.precioPreview);btn.disabled=false;btn.style.opacity=1;}
   }
-  document.querySelectorAll('.fp-round-btn').forEach(b=>b.onclick=()=>{
-    document.querySelectorAll('.fp-round-btn').forEach(x=>{
-      x.classList.remove('active');
-      x.style.background='#fff';x.style.color='var(--muted)';x.style.borderColor='var(--line)';
-    });
-    b.classList.add('active');
-    b.style.background='var(--verde-bg,#E3F3E8)';b.style.color='#1E7A3E';b.style.borderColor='var(--verde)';
-    fpPState.redondeo=b.dataset.r;
+  document.getElementById('fp-pr-round-btn').onclick=()=>{
+    fpPState.redondeo=pcSiguienteRedondeo(fpPState.redondeo);
+    document.getElementById('fp-pr-round-val').textContent=PC_ROUND_LABEL[fpPState.redondeo];
     fpPrRecalcularPreview();
-  });
+  };
   document.getElementById('fp-pr-precio-aplicar').onclick=()=>{
     if(fpPState.precioPreview==null)return;
     document.getElementById('fp-pr-precio').value=fpPState.precioPreview;
@@ -6396,7 +6446,7 @@ document.getElementById('cp-ps-sugerir').onclick=()=>{
 // para evitar cualquier problema de orden de inicialización si esta línea llegara a
 // ejecutarse en un punto distinto al esperado del script (ver cpReset más abajo, que ya
 // depende de este objeto existiendo).
-var cpState={modo:'unidad',ivaModo:'con',precioTocado:false,margenTocado:false};
+var cpState={modo:'unidad',ivaModo:'con',precioTocado:false,margenTocado:false,redondeo:'none'};
 function cpReset(){
   ['cp-nombre','cp-precio','cp-costo','cp-barcode','cp-stock','cp-stock-min','cp-fecha-dd','cp-fecha-mm','cp-fecha-aaaa','cp-cat-nuevanom','cp-cantidad','cp-unidades-caja','cp-fecha'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   const track=document.getElementById('cp-track');if(track)track.checked=true;
@@ -6404,6 +6454,8 @@ function cpReset(){
   const activo=document.getElementById('cp-activo');if(activo)activo.checked=true;
   const catNuevabox=document.getElementById('cp-cat-nuevabox');if(catNuevabox)catNuevabox.classList.add('hidden');
   const margenObj=document.getElementById('cp-margen-obj');if(margenObj)margenObj.value='30';
+  cpState.redondeo='none';
+  {const b=document.getElementById('cp-round-val'); if(b)b.textContent='Sin redondeo';}
   _cpImagenUrl=null;_cpImagenBase64=null;_cpImagenContentType='image/jpeg';
   const imgElegida=document.getElementById('cp-img-elegida');if(imgElegida)imgElegida.classList.add('hidden');
   _cpFotoTomadaB64=null;_cpFondoResultadoB64=null;
@@ -6823,9 +6875,14 @@ function cpCostoBruto(){
 function cpRecalcularPrecioAuto(){
   const precioCalc=PriceCalc.precioDesdeMargen(cpCostoBruto(),document.getElementById('cp-margen-obj').value);
   if(precioCalc==null)return;
-  document.getElementById('cp-precio').value=precioCalc;
+  document.getElementById('cp-precio').value=pcRedondear(precioCalc,cpState.redondeo);
   cpState.precioTocado=false;
 }
+document.getElementById('cp-round-btn').onclick=()=>{
+  cpState.redondeo=pcSiguienteRedondeo(cpState.redondeo);
+  document.getElementById('cp-round-val').textContent=PC_ROUND_LABEL[cpState.redondeo];
+  cpRecalcularPrecioAuto();cpRenderResumen();
+};
 document.getElementById('cp-precio').oninput=()=>{cpState.precioTocado=true;cpRenderResumen();};
 document.getElementById('cp-costo').oninput=()=>{
   cpRecalcularPrecioAuto(); // el costo es la única fuente de verdad: descarta cualquier precio editado a mano
@@ -9961,7 +10018,7 @@ async function prDevolver(id,btn){
 }
 
 // ===================== RECIBIR MERCADERÍA =====================
-const rcState={item:null,costoOriginal:0,precioOriginal:0,precioTocado:false,margenTocado:false,modo:'unidad',ivaModo:'con',precioPreview:null};
+const rcState={item:null,costoOriginal:0,precioOriginal:0,precioTocado:false,margenTocado:false,modo:'unidad',ivaModo:'con',precioPreview:null,redondeo:'none'};
 // ---- Borrador de Recepción en curso (localStorage, con demora — no bloquea el toque) ----
 // Mismo patrón que el borrador de Insumos (IN_DRAFT_LS_KEY): así "Recibir mercadería"
 // sobrevive a un F5 o a que el navegador mate la pestaña en segundo plano, sin perder lo
@@ -10152,6 +10209,8 @@ function rcReset(){
   rcSetIva('sin');
   document.getElementById('rc-margen-obj').value='30';
   document.getElementById('rc-unidades-caja').value='';
+  rcState.redondeo='none';
+  {const b=document.getElementById('rc-round-val'); if(b)b.textContent='Sin redondeo';}
   rcSetModo('unidad');
   document.getElementById('rc-guardar').disabled=true;
   _rcSuprimirBorrador=false;
@@ -10357,9 +10416,15 @@ function rcBaseParaPrecio(){
 // escribe en #rc-precio. El precio que se guarda en Loyverse es el que está en #rc-precio,
 // y ese únicamente cambia si el usuario lo edita a mano o presiona "Aplicar precio".
 function rcRecalcularPrecioAuto(){
-  rcState.precioPreview=PriceCalc.precioDesdeMargen(rcBaseParaPrecio(),document.getElementById('rc-margen-obj').value);
+  const base=PriceCalc.precioDesdeMargen(rcBaseParaPrecio(),document.getElementById('rc-margen-obj').value);
+  rcState.precioPreview=pcRedondear(base,rcState.redondeo);
   rcRenderPrecioPreview();
 }
+document.getElementById('rc-round-btn').onclick=()=>{
+  rcState.redondeo=pcSiguienteRedondeo(rcState.redondeo);
+  document.getElementById('rc-round-val').textContent=PC_ROUND_LABEL[rcState.redondeo];
+  rcRecalcularPrecioAuto();
+};
 // Pinta (o esconde) la caja de vista previa y decide si el botón "Aplicar precio" está
 // habilitado. Si el precio vigente ya coincide con el calculado, se muestra como aplicado.
 function rcRenderPrecioPreview(){
