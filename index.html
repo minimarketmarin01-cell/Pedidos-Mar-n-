@@ -2769,7 +2769,7 @@ function tag(nm,prov){const n=(nm||'').toLowerCase();
 }
 
 function parseInventory(text){
-  const rows=parseCSV(text);if(rows.length<2){console.warn('[INV] CSV con menos de 2 filas: no hay datos.');return null;}
+  const rows=parseCSV(text);if(rows.length<2){return null;}
   const h=rows[0];
   const iRef=findCol(h,['REF','SKU']),
         iNom=findCol(h,['Nombre','Name']),
@@ -2779,10 +2779,6 @@ function parseInventory(text){
         iStk=findCol(h,['En inventario','En stock','In stock']),
         iTrk=findCol(h,['Seguir el Inventario','Seguir inventario','Track stock','Track inventory']),
         iBar=findCol(h,['Codigo de barras','Código de barras','Codigo barras','Código barras','Barcode']);
-  console.log('[INV] Cabecera del CSV:',h);
-  console.log('[INV] Columnas detectadas -> REF:',iRef,'("'+h[iRef]+'") | Coste:',iCos,'("'+h[iCos]+'") | Precio:',iPre,'("'+h[iPre]+'") | STOCK:',iStk,'("'+h[iStk]+'") | Track:',iTrk,'("'+h[iTrk]+'") | Barras:',iBar,'("'+h[iBar]+'")');
-  if(iRef<0)console.warn('[INV] ⚠ No se encontró la columna REF: no se podrá unir el inventario con las ventas.');
-  if(iStk<0)console.warn('[INV] ⚠ No se encontró la columna de stock ("En inventario"): el stock quedará vacío.');
   const cell=(row,i)=>i>-1?String(row[i]).trim():'';
   const numOrNull=(row,i)=>{if(i<0)return null;const v=String(row[i]).trim();return v===''?null:num(v);};
   const map={};
@@ -2790,8 +2786,6 @@ function parseInventory(text){
     const trk=iTrk>-1?String(row[iTrk]||'').trim().toUpperCase():'';
     map[cell(row,iRef)]={nombre:cell(row,iNom),prov:cell(row,iCat),coste:numOrNull(row,iCos),precio:numOrNull(row,iPre),stock:numOrNull(row,iStk),track:(trk[0]==='S'||trk[0]==='Y'||trk==='TRUE'||trk==='VERDAD'),barcode:iBar>-1?String(row[iBar]||'').trim():''};}
   const claves=Object.keys(map);
-  console.log('[INV] Filas de datos:',rows.length-1,'| Productos en el mapa:',claves.length);
-  console.log('[INV] Muestra de stock leído:',claves.slice(0,5).map(k=>({ref:k,stock:map[k].stock,track:map[k].track,precio:map[k].precio})));
   return map;
 }
 function parseSales(textArr){
@@ -3651,7 +3645,7 @@ async function cargarABC(){
       if(DB&&DB.items){DB.items.forEach(it=>{it.abc=ABC_BY_SKU[it.ref]||null;});render();}
       try{rzActualizarBadge();}catch(e){} // se protege con try/catch: si algo falla acá, no debe interrumpir la carga del ABC en sí
     }
-  }catch(e){console.warn('No se pudo cargar ABC:',e);}
+  }catch(e){}
 }
 // Dispara el recálculo en el servidor (agrupa ventas_diarias, corta 80/95/100)
 // y recarga el mapa local. periodoDias por defecto 30.
@@ -3946,7 +3940,7 @@ async function cloudSync(silent,live,full,origen){
       }
       return true;
     }else{if(!silent)showToast('La nube no devolvió datos');return false;}
-  }catch(e){if(!silent)showToast('Error al sincronizar: '+(e&&e.message?e.message:e));console.error('cloudSync falló:',e);return false;}
+  }catch(e){if(!silent)showToast('Error al sincronizar: '+(e&&e.message?e.message:e));return false;}
   finally{setSyncSpinning(false);}
 }
 // Ícono girando + botones deshabilitados mientras hay una sincronización en curso (evita doble toque)
@@ -4032,7 +4026,7 @@ async function pollFondo(){
     if(usuarioActivo()){_repintadoPendiente=true;return;} // se aplicará solo cuando se detenga
 
     aplicarRepintadoDiferido();
-  }catch(e){console.error('poll de fondo falló:',e);}
+  }catch(e){}
 }
 
 let _repintadoPendiente=false;
@@ -5457,7 +5451,6 @@ async function fpEliminarProducto(f){
       items:[{id:p.idLoyverse,sku:p.sku,nombre:p.nombre,categoria:p.categoria,stock:p.stock}]
     }})});
     const j=await res.json();
-    console.log('[fpEliminarProducto] respuesta completa del Worker:',j);
     const r=(j&&j.resultados&&j.resultados[0])||null;
     if(j&&j.ok&&r&&r.ok){
       DB.items=(DB.items||[]).filter(it=>it.ref!==p.sku);
@@ -5468,7 +5461,6 @@ async function fpEliminarProducto(f){
       try{render();}catch(_){}
       try{smRender();}catch(_){}
     }else{
-      console.warn('[fpEliminarProducto] error:',r);
       showToast(''+((r&&r.error)||(j&&j.error)||'No se pudo eliminar'));
       btn.disabled=false;btn.textContent='';
     }
@@ -5678,13 +5670,11 @@ async function smEliminar(){
       items:sel.map(p=>({id:p.id,sku:p.ref,nombre:p.nombre,categoria:p.prov,stock:p.stock}))
     }})});
     const j=await res.json();
-    console.log('[eliminar_productos] respuesta completa del Worker:',j);
     if(j&&j.ok){
       const okRefs=new Set((j.resultados||[]).filter(r=>r.ok).map(r=>r.sku));
       if(okRefs.size){DB.items=(DB.items||[]).filter(it=>!okRefs.has(it.ref));persist();}
       _smTodos=_smTodos.filter(p=>!okRefs.has(p.ref));_smSel={};
       const conError=(j.resultados||[]).filter(r=>!r.ok);
-      if(conError.length)console.warn('[eliminar_productos] productos con error:',conError);
       let m=''+j.eliminados+' producto'+(j.eliminados===1?'':'s')+' eliminado'+(j.eliminados===1?'':'s');
       if(conError.length)m+=' · '+conError.length+' con error: '+conError.map(r=>r.error).slice(0,2).join(' / ');
       showToast(m);smRender();
@@ -5990,15 +5980,16 @@ let _gpLista=[], _gpEliminarPendiente=null; // {id, nombre} — mientras se deci
 // (cerrarModal('fp-ov'), sea por Cancelar, Guardar o Eliminar) vuelva al Nivel 2 en vez de a
 // Pedidos — ver el bloque modificado dentro de cerrarModal() y el popstate más abajo.
 let _gpNivel='proveedores', _gpProvActual=null; // {id?, nombre} del proveedor cuyo Nivel 2 está abierto
+let _gpCargado=false; // true solo si gpCargar() terminó con éxito al menos una vez en esta sesión del modal
 let _fpVolverA=null; // 'gp' cuando la Ficha se abrió desde Gestionar proveedores Nivel 2 — ver cerrarModal()
 document.getElementById('mas-q-proveedores').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');gpAbrir();};
 document.getElementById('gp-cerrar').onclick=()=>cerrarModal('gp-ov');
 function gpAbrir(){
   document.getElementById('gp-reasignar-box').classList.add('hidden');
   _gpEliminarPendiente=null;
-  _gpMostrarNivel('proveedores');
+  _gpCargado=false;   // fuerza una carga fresca cada vez que se abre el módulo desde cero
   abrirModal('gp-ov');
-  gpCargar();
+  _gpMostrarNivel('proveedores');   // dispara gpCargar() sola, ver _gpMostrarNivel — evita la doble llamada que había antes
 }
 // Muestra un nivel y esconde el otro — un solo punto de verdad para el estado de _gpNivel,
 // así el botón Atrás (ver popstate) y los clics dentro del módulo quedan sincronizados igual.
@@ -6006,11 +5997,22 @@ function _gpMostrarNivel(nivel){
   _gpNivel=nivel;
   document.getElementById('gp-nivel-proveedores').classList.toggle('hidden',nivel!=='proveedores');
   document.getElementById('gp-nivel-productos').classList.toggle('hidden',nivel!=='productos');
+  // Si se vuelve a Nivel 1 y la carga inicial nunca llegó a completarse con éxito (red caída,
+  // timeout, etc.), reintenta sola en vez de dejar al usuario mirando el "Cargando…" viejo
+  // congelado desde el primer intento fallido — esto es lo que se reportó al volver de
+  // Editar producto con la red interrumpida a mitad de camino.
+  if(nivel==='proveedores'&&!_gpCargado)gpCargar();
 }
 async function gpCargar(){
   document.getElementById('gp-lista').innerHTML='<div class="vc-empty">Cargando…</div>';
   try{
-    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=proveedores');
+    // Timeout explícito: sin esto, si la red falla de forma silenciosa (fetch nunca resuelve
+    // ni rechaza), la pantalla se queda en "Cargando…" para siempre sin que el catch de abajo
+    // llegue a ejecutarse nunca — es justo lo que se reportó al volver de Editar producto.
+    const ctrl=new AbortController();
+    const to=setTimeout(()=>ctrl.abort(),12000);
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=proveedores',{signal:ctrl.signal});
+    clearTimeout(to);
     const j=await res.json();
     if(!j||!j.ok)throw new Error(j&&j.error);
     _gpLista=(j.proveedores||[]).slice().sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),'es'));
@@ -6019,8 +6021,14 @@ async function gpCargar(){
     // usuario entraba primero a "Gestionar proveedores", el combobox de Sector quedaba vacío para
     // siempre en esa sesión (psCargarListas ya no volvía a pedirlo, por el flag _psCargado).
     _psProveedores=_gpLista;_psSectores=j.sectores||_psSectores;_psCargado=true;
+    _gpCargado=true;
     gpRender();
-  }catch(e){document.getElementById('gp-lista').innerHTML='<div class="vc-empty">Error al cargar proveedores</div>';}
+  }catch(e){
+    _gpCargado=false;
+    document.getElementById('gp-lista').innerHTML='<div class="vc-empty">Error al cargar proveedores</div><button class="loadbtn" id="gp-reintentar" type="button" style="width:100%;margin-top:8px">Reintentar</button>';
+    const btn=document.getElementById('gp-reintentar');
+    if(btn)btn.onclick=gpCargar;
+  }
 }
 function gpRender(){
   const cont=document.getElementById('gp-lista');
@@ -6502,7 +6510,7 @@ document.getElementById('mas-q-crear').onclick=()=>{
     const masOv=document.getElementById('mas-ov');if(masOv)masOv.classList.add('hidden');
     _cpDesdeRecepcion=false;_rcPendiente=null;
     cpAbrir();
-  }catch(err){console.error('[mas-q-crear] error al abrir Crear producto:',err);showToast('Ocurrió un error al abrir Crear producto. Intenta de nuevo.');}
+  }catch(err){showToast('Ocurrió un error al abrir Crear producto. Intenta de nuevo.');}
 };
 document.getElementById('cp-cerrar').onclick=()=>{
   cerrarModal('cp-ov');
@@ -6515,17 +6523,17 @@ document.getElementById('cp-cerrar').onclick=()=>{
 // abrirModal() sin ejecutar, y la app quedaba "atascada" en la pantalla de fondo (Armar
 // pedido) sin ningún aviso — exactamente el bug reportado.
 function cpAbrir(){
-  try{cpReset();}catch(e){console.error('[cpAbrir] cpReset falló:',e);}
+  try{cpReset();}catch(e){}
   abrirModal('cp-ov'); // se ejecuta siempre, pase lo que pase arriba
-  try{cpCargarCatalogo();}catch(e){console.error('[cpAbrir] cpCargarCatalogo falló:',e);}
+  try{cpCargarCatalogo();}catch(e){}
   try{
     psCargarListas().then(()=>{
       psLlenarSelects('cp-proveedor','cp-sector',null,null);
       psInitCombo('cp-proveedor','cp-prov-combo','cp-proveedor-input','cp-prov-menu','cp-proveedor','proveedor',
         texto=>{const box=document.getElementById('cp-prov-nuevabox');box.classList.remove('hidden');const inp=document.getElementById('cp-prov-nuevonom');inp.value=texto;inp.focus();});
       psInitCombo('cp-sector','cp-sector-combo','cp-sector-input','cp-sector-menu','cp-sector','sector');
-    }).catch(e=>console.error('[cpAbrir] psCargarListas falló:',e));
-  }catch(e){console.error('[cpAbrir] psCargarListas falló:',e);}
+    }).catch(e=>{});
+  }catch(e){}
   try{psWireNuevoProveedor('cp-prov-nueva','cp-prov-nuevabox','cp-prov-nuevonom','cp-prov-crear','cp-proveedor','cp-sector');}catch(e){}
   try{psWireNuevoSector('cp-sector-nueva','cp-sector-nuevabox','cp-sector-nuevonom','cp-sector-crear','cp-proveedor','cp-sector');}catch(e){}
   const hint=document.getElementById('cp-ps-hint');if(hint)hint.classList.add('hidden');
@@ -6558,7 +6566,7 @@ function cpReset(){
   try{cpToggleStock();}catch(e){}
   try{cpValidar();}catch(e){}
   cpState.ivaModo='con';cpState.modo='unidad';cpState.precioTocado=false;
-  try{cpMontarPrecio();}catch(e){console.error('[cpReset] cpMontarPrecio falló:',e);}
+  try{cpMontarPrecio();}catch(e){}
   try{cpSetModoCantidad('unidad');}catch(e){}
   try{cpRenderResumen();}catch(e){}
 }
