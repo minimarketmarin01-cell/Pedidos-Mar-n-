@@ -224,6 +224,16 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .mm-ov{position:fixed;inset:0;background:rgba(21,25,31,.55);z-index:210;display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(70px + env(safe-area-inset-bottom))}
 .mm-ov.hidden{display:none}
 .mm-card{background:var(--card);width:100%;max-width:480px;max-height:92vh;border-radius:var(--radius-card) var(--radius-card) 0 0;display:flex;flex-direction:column;overflow:hidden}
+/* Niveles internos de Gestionar proveedores (gp-nivel-proveedores/gp-nivel-productos) — deben
+   participar del mismo layout flex en columna que .mm-card ya define para sus hijos directos
+   (.mm-head + .mm-body con flex:1;min-height:0 para el scroll interno). Antes de que estos
+   niveles existieran, .mm-head/.mm-body eran hijos DIRECTOS de .mm-card; al envolverlos en un
+   <div> intermedio sin su propio display:flex, .mm-body dejaba de recibir la altura disponible
+   real del modal (su padre flex ya no era .mm-card, sino este <div> normal), y la lista de
+   proveedores podía quedar comprimida a una altura menor de la esperada sin que el scroll
+   compensara correctamente en todos los dispositivos — dando la impresión de que faltaban
+   proveedores cuando en realidad estaban ahí, solo no visibles/alcanzables. */
+#gp-nivel-proveedores,#gp-nivel-productos{display:flex;flex-direction:column;flex:1;min-height:0}
 /* Recepción, Vencimientos y Más se muestran como página completa (fullscreen),
    no como hoja inferior. Se pisan solo estos 3 IDs — el resto de los modales
    (Merma, Insumos, Crear producto, Calculadora, etc.) sigue igual. */
@@ -4181,24 +4191,16 @@ function cerrarModal(id){
   const el=document.getElementById(id);
   if(el){el.classList.add('hidden');el.style.removeProperty('display');}
   // Caso especial: la Ficha de producto (fp-ov) fue abierta desde el Nivel 2 de Gestionar
-  // proveedores (Nivel 3 del flujo Proveedor → Productos → Editar producto) — al cerrarla,
-  // sea por Cancelar, Guardar cambios, Eliminar producto o el botón Atrás, debe reabrir el
-  // Nivel 2 en vez de caer a Pedidos. _fpVolverA se limpia enseguida para no afectar
-  // ninguna otra forma de abrir la Ficha (Editar productos, Riesgo de quiebre, Vencimientos,
-  // etc.), que siguen cerrando hacia Pedidos exactamente como antes.
+  // proveedores (Nivel 3 del flujo Proveedor → Productos → Editar producto). Se cierre por
+  // Cancelar, Guardar cambios, Eliminar producto o el botón Atrás, siempre debe consumir la
+  // entrada de historial de Nivel 3 (ver fpAbrir/history.pushState) — si no, esa entrada
+  // queda "huérfana" en el historial real del navegador, y el siguiente Atrás desde Nivel 2
+  // volvería a mostrar Editar producto en vez de retroceder a Nivel 1. history.back() dispara
+  // el popstate real, que ya sabe reabrir gp-ov en Nivel 2 al llegar a {marin:'gpNivel',
+  // nivel:2} — así que acá NO se duplica esa lógica, solo se dispara el mismo camino que ya
+  // usa el botón Atrás real.
   if(id==='fp-ov'&&typeof _fpVolverA!=='undefined'&&_fpVolverA==='gp'){
-    _fpVolverA=null;
-    abrirModal('gp-ov');
-    if(typeof _gpMostrarNivel==='function')_gpMostrarNivel('productos');
-    // Refresca la lista con DB.items actual — si el producto se editó o se eliminó desde la
-    // Ficha, DB.items ya quedó actualizado (ver el guardado/eliminado de fpGuardarTodo), así
-    // que basta con volver a filtrar por el mismo proveedor, sin pedir nada al backend.
-    if(_gpProvActual&&typeof itemsFor==='function'){
-      _gpProdListaCompleta=itemsFor(_gpProvActual.nombre).slice().sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),'es'));
-      document.getElementById('gp-prod-search').value='';
-      document.getElementById('gp-prod-x').style.display='none';
-      if(typeof gpRenderProductos==='function')gpRenderProductos(_gpProdListaCompleta);
-    }
+    history.back();
     return;
   }
   // Caso especial: Gestionar proveedores en Nivel 1 (Lista de proveedores) se cierra hacia la
@@ -4267,17 +4269,43 @@ function _actualizarVisibilidadFab(){
 let _salirArmado=false,_salirT=null;
 function _reponerTrampa(){history.pushState({marin:'nav'},'');}
 history.pushState({marin:'nav'},'');   // trampa inicial: le da algo que consumir al primer "Atrás"
-window.addEventListener('popstate',function(){
+window.addEventListener('popstate',function(ev){
+  // Estados reales de Gestionar proveedores (ver gpAbrir/gpAbrirProductos/fpAbrir) — se leen
+  // directamente de event.state, la fuente de verdad real del navegador, en vez de inferir el
+  // nivel desde una variable global (_gpNivel) que podía desincronizarse del historial real
+  // del WebView de Android en ciertos casos, dejando la app sin ninguna entrada de reserva a
+  // mitad del flujo Proveedores → Productos → Editar producto y cerrándose de golpe.
+  const st=ev.state;
+  if(st&&st.marin==='gpNivel'){
+    if(st.nivel===2){ // se llegó de vuelta a Nivel 2 (productos) — el usuario venía de Nivel 3 (Editar producto)
+      if(typeof _fpVolverA!=='undefined')_fpVolverA=null; // ya no hace falta: cerrarModal('fp-ov') no debe re-disparar su camino especial la próxima vez
+      document.getElementById('fp-ov').classList.add('hidden');
+      abrirModal('gp-ov');
+      _gpMostrarNivel('productos');
+      if(_gpProvActual&&typeof itemsFor==='function'){
+        _gpProdListaCompleta=itemsFor(_gpProvActual.nombre).slice().sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),'es'));
+        document.getElementById('gp-prod-search').value='';
+        document.getElementById('gp-prod-x').style.display='none';
+        gpRenderProductos(_gpProdListaCompleta);
+      }
+      _sincronizarNav();return;
+    }
+    if(st.nivel===1){ // se llegó de vuelta a Nivel 1 (proveedores) — el usuario venía de Nivel 2
+      abrirModal('gp-ov');
+      _gpMostrarNivel('proveedores');
+      _sincronizarNav();return;
+    }
+  }
+  // Se salió por completo de los 3 niveles de Proveedores (event.state ya no es de este
+  // flujo) — cierra gp-ov hacia la pantalla real de origen (Inicio o Pedidos), igual que
+  // cerrarModal('gp-ov') ya hacía, pero disparado desde acá porque no hay más pushState propio
+  // que consumir.
+  if(document.getElementById('gp-ov')&&!document.getElementById('gp-ov').classList.contains('hidden')){
+    cerrarModal('gp-ov');
+    _sincronizarNav();_reponerTrampa();return;
+  }
   const ov=_overlaySuperior();
   if(ov){                                       // 1) hay ventana abierta → ciérrala
-    // Caso especial: Gestionar proveedores en Nivel 2 (productos de un proveedor) — Atrás
-    // retrocede un nivel DENTRO del mismo modal en vez de cerrarlo entero, tal como pide el
-    // flujo Proveedor → Productos → Editar producto. Nivel 1 (gp-nivel-proveedores) sigue el
-    // camino normal de abajo: cierra gp-ov completo, como cualquier otro modal.
-    if(ov.id==='gp-ov'&&typeof _gpNivel!=='undefined'&&_gpNivel==='productos'){
-      _gpMostrarNivel('proveedores');
-      _sincronizarNav();_reponerTrampa();return;
-    }
     if(ov.id==='scan-ov'){try{closeScanner();}catch(e){ov.classList.add('hidden');}}
     else cerrarModal(ov.id);
     _sincronizarNav();_reponerTrampa();return;
@@ -4479,6 +4507,12 @@ async function fpAbrir(ref,restaurar){
   document.getElementById('fp-content').classList.add('hidden');
   document.getElementById('fp-loading').classList.remove('hidden');
   document.getElementById('fp-loading').textContent='Cargando…';
+  // Estado real de historial para Nivel 3 (Editar producto), SOLO cuando se llega desde
+  // Gestionar proveedores (_fpVolverA ya seteado por el llamador, ver gp-prod-lista) — el
+  // resto de los usos de fpAbrir (Editar productos, Riesgo de quiebre, Vencimientos, etc.)
+  // siguen sin pushState propio, exactamente como antes, porque ahí sí basta con la trampa
+  // genérica de 1 sola entrada que usa el resto de los modales de la app.
+  if(typeof _fpVolverA!=='undefined'&&_fpVolverA==='gp')history.pushState({marin:'gpNivel',nivel:3},'');
   abrirModal('fp-ov');
   try{
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=ficha_producto&sku='+encodeURIComponent(ref));
@@ -5993,12 +6027,12 @@ let _gpVolverA='pedido'; // 'inicio' o 'pedido' — pantalla de fondo real al mo
 let _gpCargado=false; // true solo si gpCargar() terminó con éxito al menos una vez en esta sesión del modal
 let _fpVolverA=null; // 'gp' cuando la Ficha se abrió desde Gestionar proveedores Nivel 2 — ver cerrarModal()
 document.getElementById('mas-q-proveedores').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');gpAbrir();};
-document.getElementById('gp-cerrar').onclick=()=>cerrarModal('gp-ov');
+document.getElementById('gp-cerrar').onclick=()=>{history.back();};
 function gpAbrir(){
   document.getElementById('gp-reasignar-box').classList.add('hidden');
   _gpEliminarPendiente=null;
   _gpCargado=false;   // fuerza una carga fresca cada vez que se abre el módulo desde cero
-  // Recuerda desde dónde se abrió el módulo (Inicio o Pedidos), para que el tercer retroceso
+  // Recuerda desde dónde se abrió el módulo (Inicio o Pedidos), para que el retroceso final
   // (Lista de proveedores → pantalla anterior) vuelva ahí — antes siempre caía a Pedidos sin
   // importar el origen real, porque cerrarModal() usa 'pedido' como destino genérico para
   // todos los modales de la app. Se captura ANTES de abrir gp-ov, que es el único momento en
@@ -6006,7 +6040,16 @@ function gpAbrir(){
   const inicioEl=document.getElementById('tab-inicio');
   _gpVolverA=(inicioEl&&!inicioEl.classList.contains('hidden'))?'inicio':'pedido';
   abrirModal('gp-ov');
-  _gpMostrarNivel('proveedores');   // dispara gpCargar() sola, ver _gpMostrarNivel — evita la doble llamada que había antes
+  _gpMostrarNivel('proveedores');
+  // Estado REAL de historial para este nivel — a diferencia de la trampa genérica de 1 sola
+  // entrada que usa el resto de la app (_reponerTrampa, pensada para "hay algo abierto sí/no"
+  // con un único nivel), acá se apila un pushState propio por cada nivel de Proveedores →
+  // Productos → Editar producto, y el popstate lee event.state directamente para saber a cuál
+  // volver. Esto es más robusto que depender de una sola trampa reponiéndose: el N° de
+  // entradas de historial siempre refleja la profundidad real de niveles abiertos, así que
+  // aunque el WebView de Android agote su buffer de reposición en algún punto intermedio, el
+  // historial real ya tiene las entradas correctas esperando.
+  history.pushState({marin:'gpNivel',nivel:1},'');
 }
 // Muestra un nivel y esconde el otro — un solo punto de verdad para el estado de _gpNivel,
 // así el botón Atrás (ver popstate) y los clics dentro del módulo quedan sincronizados igual.
@@ -6094,15 +6137,10 @@ function gpAbrirProductos(prov){
     ?itemsFor(prov.nombre).slice().sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),'es'))
     :[];
   _gpMostrarNivel('productos');
-  // Mismo mecanismo de "trampa" que usa el resto de la navegación (_reponerTrampa) — NO un
-  // pushState propio con datos extra: el popstate real de este flujo ya lee el estado lógico
-  // desde la variable global _gpNivel, no desde event.state, así que un pushState distinto
-  // acá solo agregaba una entrada de historial huérfana (sin su reposición correspondiente
-  // en el ciclo normal), que es justo lo que rompía el flujo Proveedores → Productos →
-  // Editar producto → Atrás×3: al llegar al fondo real del historial del navegador antes de
-  // agotar los niveles lógicos de la UI, el siguiente Atrás salía de la app en vez de
-  // retroceder un nivel más.
-  _reponerTrampa();
+  // Estado real de historial para Nivel 2 — ver el comentario extenso en gpAbrir() sobre por
+  // qué se apila un pushState propio por nivel en vez de depender de la trampa genérica de 1
+  // sola entrada (_reponerTrampa) que usa el resto de la app para modales de un solo nivel.
+  history.pushState({marin:'gpNivel',nivel:2},'');
   gpRenderProductos(_gpProdListaCompleta);
 }
 function gpRenderProductos(lista){
