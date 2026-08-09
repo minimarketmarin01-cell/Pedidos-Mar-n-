@@ -6094,7 +6094,15 @@ function gpAbrirProductos(prov){
     ?itemsFor(prov.nombre).slice().sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),'es'))
     :[];
   _gpMostrarNivel('productos');
-  history.pushState({marin:'nav',gpNivel:'productos'},'');   // un paso más de historial: el botón Atrás debe volver a Nivel 1, no salir del modal
+  // Mismo mecanismo de "trampa" que usa el resto de la navegación (_reponerTrampa) — NO un
+  // pushState propio con datos extra: el popstate real de este flujo ya lee el estado lógico
+  // desde la variable global _gpNivel, no desde event.state, así que un pushState distinto
+  // acá solo agregaba una entrada de historial huérfana (sin su reposición correspondiente
+  // en el ciclo normal), que es justo lo que rompía el flujo Proveedores → Productos →
+  // Editar producto → Atrás×3: al llegar al fondo real del historial del navegador antes de
+  // agotar los niveles lógicos de la UI, el siguiente Atrás salía de la app en vez de
+  // retroceder un nivel más.
+  _reponerTrampa();
   gpRenderProductos(_gpProdListaCompleta);
 }
 function gpRenderProductos(lista){
