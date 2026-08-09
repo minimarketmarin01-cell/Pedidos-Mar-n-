@@ -4201,6 +4201,15 @@ function cerrarModal(id){
     }
     return;
   }
+  // Caso especial: Gestionar proveedores en Nivel 1 (Lista de proveedores) se cierra hacia la
+  // pantalla real desde la que se abrió (Inicio o Pedidos) — antes siempre caía a Pedidos sin
+  // importar el origen, por el comportamiento genérico de abajo (guardarUltimaPantalla('pedido')
+  // + _sincronizarNav, que solo saben mostrar Pedidos, nunca reactivan Inicio). Ver _gpVolverA,
+  // capturado en gpAbrir() al momento real de abrir el módulo.
+  if(id==='gp-ov'&&typeof _gpVolverA!=='undefined'&&_gpVolverA==='inicio'&&typeof showScreen==='function'){
+    showScreen('inicio');
+    return;
+  }
   guardarUltimaPantalla('pedido');
   _sincronizarNav();
   _actualizarVisibilidadFab();
@@ -5980,6 +5989,7 @@ let _gpLista=[], _gpEliminarPendiente=null; // {id, nombre} — mientras se deci
 // (cerrarModal('fp-ov'), sea por Cancelar, Guardar o Eliminar) vuelva al Nivel 2 en vez de a
 // Pedidos — ver el bloque modificado dentro de cerrarModal() y el popstate más abajo.
 let _gpNivel='proveedores', _gpProvActual=null; // {id?, nombre} del proveedor cuyo Nivel 2 está abierto
+let _gpVolverA='pedido'; // 'inicio' o 'pedido' — pantalla de fondo real al momento de abrir Proveedores (ver gpAbrir), usada por cerrarModal() en el tercer retroceso
 let _gpCargado=false; // true solo si gpCargar() terminó con éxito al menos una vez en esta sesión del modal
 let _fpVolverA=null; // 'gp' cuando la Ficha se abrió desde Gestionar proveedores Nivel 2 — ver cerrarModal()
 document.getElementById('mas-q-proveedores').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');gpAbrir();};
@@ -5988,6 +5998,13 @@ function gpAbrir(){
   document.getElementById('gp-reasignar-box').classList.add('hidden');
   _gpEliminarPendiente=null;
   _gpCargado=false;   // fuerza una carga fresca cada vez que se abre el módulo desde cero
+  // Recuerda desde dónde se abrió el módulo (Inicio o Pedidos), para que el tercer retroceso
+  // (Lista de proveedores → pantalla anterior) vuelva ahí — antes siempre caía a Pedidos sin
+  // importar el origen real, porque cerrarModal() usa 'pedido' como destino genérico para
+  // todos los modales de la app. Se captura ANTES de abrir gp-ov, que es el único momento en
+  // que el estado de la pantalla de fondo (Inicio vs. Pedidos) sigue siendo el real.
+  const inicioEl=document.getElementById('tab-inicio');
+  _gpVolverA=(inicioEl&&!inicioEl.classList.contains('hidden'))?'inicio':'pedido';
   abrirModal('gp-ov');
   _gpMostrarNivel('proveedores');   // dispara gpCargar() sola, ver _gpMostrarNivel — evita la doble llamada que había antes
 }
@@ -6086,8 +6103,16 @@ function gpRenderProductos(lista){
   cont.innerHTML=lista.map(it=>`
     <div class="fp-row" data-gp-prod-ref="${it.ref}" style="cursor:pointer">
       <span class="k">${it.nombre}</span>
-      <span class="v" style="color:var(--muted);font-size:11.5px">REF ${it.ref}</span>
+      <span class="v" style="color:var(--muted);font-size:11.5px">${gpStockTxt(it)}</span>
     </div>`).join('');
+}
+// Stock actual del producto, mismo dato que ya usa toda la app (it.stock/it.track) — sin
+// pasar por el formateador regional de miles (fmt, es-CL) porque ese usa coma decimal
+// ("12,5") y acá se pidió explícitamente el formato con punto ("Stock: 12.5"). "s/c" (sin
+// control de inventario en Loyverse) se muestra igual que en el resto de la app.
+function gpStockTxt(it){
+  if(!it.track||it.stock==null)return 'Stock: s/c';
+  return 'Stock: '+String(Number(it.stock));
 }
 document.getElementById('gp-prod-lista').addEventListener('click',ev=>{
   const fila=ev.target.closest('[data-gp-prod-ref]');
