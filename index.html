@@ -374,6 +374,29 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .vc-row .btns button.btn-merma{background:var(--rojo)}
 .vc-row .btns button.btn-cambio{background:var(--azul)}
 .vc-row .btns button.btn-descuento{background:var(--gold)}
+/* ==== Revisión de vencimientos — acciones compactas (punto 4 del brief: "lo más pequeño y
+   compacto posible, preferentemente con iconos + tooltip/etiqueta corta"). Reemplaza los
+   botones grandes de antes (.btn-ok/.btn-merma/etc, con texto largo tipo "Vendido /
+   liquidado") por chips chicos ícono+texto corto, seis por fila en lugar de dos, sin perder
+   el mínimo táctil real (34px de alto ya es cómodo para un dedo en una fila de chips, el
+   propio ancho de .vc-btns-mini-grid limita cuántos entran por línea antes de saltar). */
+.vc-btns-mini{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.vc-mini{display:inline-flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:52px;border:1.5px solid var(--line);background:#fff;border-radius:9px;padding:5px 4px;font-size:9.5px;font-weight:700;color:var(--muted);cursor:pointer;line-height:1.1}
+.vc-mini svg{flex:none}
+.vc-mini span{white-space:nowrap}
+.vc-mini:active{background:var(--paper)}
+.vc-mini-verde{border-color:var(--verde);color:var(--verde)}
+.vc-mini-rojo{border-color:var(--rojo);color:var(--rojo)}
+/* Precio actual → sugerido → Aplicar (punto 6) — una sola línea compacta, sin ocupar el
+   espacio vertical de un bloque separado como antes hacía .accion con el precio pegado al
+   texto de la acción. */
+.vc-precio-linea{display:flex;align-items:center;gap:6px;margin-top:6px;padding:6px 8px;background:var(--verde-bg,#E9F1E5);border-radius:8px;flex-wrap:wrap;font-family:'JetBrains Mono';font-size:12px}
+.vc-precio-actual{color:var(--muted);text-decoration:line-through}
+.vc-precio-flecha{color:var(--muted);font-size:11px}
+.vc-precio-sug{font-weight:800;color:var(--verde)}
+.vc-aplicar-precio{margin-left:auto;flex:none;border:none;background:var(--verde);color:#fff;border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Manrope'}
+.vc-aplicar-precio:disabled{opacity:.6}
+.vc-aplicar-precio.vc-aplicado{background:var(--exito,var(--verde))}
 .vc-empty{padding:20px;text-align:center;color:var(--muted);font-size:13px}
 .vc-toprow{display:flex;gap:8px;margin-bottom:12px}
 .vc-toprow button{flex:1}
@@ -1649,14 +1672,13 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
     </div>
     <div class="mm-ov hidden" id="vc-ov">
       <div class="mm-card">
-        <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mm-head-ic"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>Vencimientos</h3></div>
+        <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mm-head-ic"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>Revisión de vencimientos</h3></div>
 
         <div id="vc-list-view">
           <div class="mm-topbar"><div class="vc-toprow"><button class="loadbtn acc" id="vc-add-btn" style="flex:1">+ Nuevo lote</button><button class="loadbtn" id="vc-cerrar" style="flex:1">Cerrar</button></div></div>
           <div class="mm-body">
           <div class="seg" id="vc-viewseg" style="display:flex;width:100%;margin:0 0 10px">
             <button type="button" data-view="lista" class="active" style="flex:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="4" width="16" height="17" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="17" x2="13" y2="17"/></svg> Lista</button>
-            <button type="button" data-view="gondola" style="flex:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M3 4h2l2.2 11h9.6L19 8H6.4"/></svg> Por góndola</button>
             <button type="button" data-view="pendientes" style="flex:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/></svg> Pendientes<span id="vc-pend-badge"></span></button>
           </div>
           <div id="vc-view-lista">
@@ -1666,19 +1688,23 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
             <button class="mm-mic" id="vc-lmic" type="button" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
             <button class="mm-scan cam-btn" id="vc-lscan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
           </div>
-          <select id="vc-provfilter" style="width:100%;margin:0 0 10px;padding:9px 10px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:12.5px"><option value=""><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="4" width="16" height="17" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="17" x2="13" y2="17"/></svg> Todos los proveedores</option></select>
+          <!-- Filtros rápidos por antigüedad — reemplazan el filtro de categoría que antes solo
+               existía en "Por góndola" (módulo eliminado, fusionado acá). "Todos" es el default. -->
+          <div class="seg" id="vc-diasfilter" style="display:flex;width:100%;margin:0 0 8px">
+            <button type="button" data-dias="7" style="flex:1">7 días</button>
+            <button type="button" data-dias="15" style="flex:1">15 días</button>
+            <button type="button" data-dias="30" style="flex:1">1 mes</button>
+            <button type="button" data-dias="0" class="active" style="flex:1">Todos</button>
+          </div>
+          <select id="vc-provfilter" style="width:100%;margin:0 0 8px;padding:9px 10px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:12.5px"><option value=""><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="4" width="16" height="17" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="17" x2="13" y2="17"/></svg> Todos los proveedores</option></select>
+          <!-- Barra de progreso de revisión — antes solo vivía en "Por góndola"; ahora es la
+               única vista, así que la barra cubre siempre todo lo visible según los filtros
+               activos (días + proveedor), no una categoría suelta. -->
+          <div class="gon-progress" style="margin-bottom:10px"><div class="gon-bar"><div id="vc-prog-fill"></div></div><span id="vc-prog-lbl">0/0 revisados</span></div>
           <div id="vc-list"><div class="vc-empty">Cargando…</div></div>
           </div>
-          <div id="vc-view-gondola" class="hidden">
-            <div class="gon-top">
-              <input id="gon-revisor" placeholder="Revisor (tu nombre)" autocomplete="off">
-              <select id="gon-catfilter"><option value="">Todas las categorías</option></select>
-            </div>
-            <div class="gon-progress"><div class="gon-bar"><div id="gon-bar-fill"></div></div><span id="gon-prog-lbl">0/0 revisados</span></div>
-            <div id="gon-list"></div>
-          </div>
           <div id="vc-view-pendientes" class="hidden">
-            <div class="vc-empty" id="vc-pend-intro" style="text-align:left;color:var(--muted);font-size:12px;margin-bottom:8px">Ya se retiraron de la góndola — esperando que el proveedor los cambie, o falta confirmar si son merma.</div>
+            <div class="vc-empty" id="vc-pend-intro" style="text-align:left;color:var(--muted);font-size:12px;margin-bottom:8px">Ya se retiraron de la revisión — esperando que el proveedor los cambie, o falta confirmar si son merma.</div>
             <div id="vc-pend-list"></div>
           </div>
           </div>
@@ -9023,18 +9049,42 @@ document.getElementById('mm-save').onclick=async()=>{
 // ===================== VENCIMIENTOS =====================
 const vcNew={item:null};
 let _vcTodos=[];   // lista completa de lotes cargada; el buscador filtra sobre esta copia (sin volver a pedir al servidor)
+let _vcDiasFiltro=0; // 0 = Todos, 7/15/30 = filtro rápido de días para vencer (incluye vencidos siempre)
+let _vcProgTotal=0; // total de lotes pendientes al momento de aplicar el filtro actual (días/proveedor) — la barra de progreso mide contra ESTE número, no se resetea con cada repintado tras una acción, solo cuando el propio filtro cambia (punto 7: "el estado debe mantenerse al cambiar... y volver al módulo" se refiere a la sesión completa, no a cada fila resuelta)
+// Recalcula el punto de partida de la barra de progreso — se llama SOLO cuando cambia el
+// filtro real (días, proveedor, o al cargar el módulo por primera vez), nunca en cada
+// repintado tras marcar un lote, para que la barra avance en vez de resetearse a 0 cada vez.
+function vcRecalcularProgTotal(){
+  const provFiltro=document.getElementById('vc-provfilter').value;
+  let base=provFiltro?_vcTodos.filter(l=>l.categoria===provFiltro):_vcTodos;
+  if(_vcDiasFiltro>0)base=base.filter(l=>{const d=_diasVenc(l.fechaVencimiento);return d==null||d<0||d<=_vcDiasFiltro;});
+  _vcProgTotal=base.length;
+}
 function vcAplicarFiltro(){
   const inp=document.getElementById('vc-lsearch');
   const q=(inp?inp.value:'').toLowerCase().trim();
   const provFiltro=document.getElementById('vc-provfilter').value;
   const x=document.getElementById('vc-lx'); if(x)x.style.display=q?'block':'none';
   if(!q){
-    const base=provFiltro?_vcTodos.filter(l=>l.categoria===provFiltro):_vcTodos;
-    vcRender(base);   // sin texto → lista normal de vencimientos activos, filtrada por proveedor si corresponde
+    let base=provFiltro?_vcTodos.filter(l=>l.categoria===provFiltro):_vcTodos;
+    // Filtro rápido de días (7/15/30/Todos) — reemplaza el filtro de categoría que antes solo
+    // vivía en "Por góndola" (eliminado, fusionado acá). Los vencidos SIEMPRE se muestran sin
+    // importar el filtro: son lo más urgente, nunca deberían quedar ocultos por accidente.
+    if(_vcDiasFiltro>0){
+      base=base.filter(l=>{const d=_diasVenc(l.fechaVencimiento);return d==null||d<0||d<=_vcDiasFiltro;});
+    }
+    vcRender(base);   // sin texto → lista normal de vencimientos activos, filtrada por proveedor/días si corresponde
     return;
   }
   vcBuscarCatalogo(q,provFiltro);                 // con texto → busca en TODO el catálogo, combinable con el proveedor
 }
+document.querySelectorAll('#vc-diasfilter button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#vc-diasfilter button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  _vcDiasFiltro=Number(b.dataset.dias)||0;
+  vcRecalcularProgTotal();
+  vcAplicarFiltro();
+});
 // Puebla el filtro de proveedor SOLO con los que realmente tienen lotes de vencimiento
 // activos (no todo el catálogo de proveedores) — mismo criterio que ya usan otros filtros de
 // la app, para no llenar el selector de opciones sin resultados.
@@ -9045,7 +9095,7 @@ function vcPoblarFiltroProveedor(){
   sel.innerHTML='<option value=""><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="4" width="16" height="17" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="17" x2="13" y2="17"/></svg> Todos los proveedores</option>'+provs.map(p=>`<option value="${p}">${p}</option>`).join('');
   if(provs.includes(actual))sel.value=actual;
 }
-document.getElementById('vc-provfilter').onchange=vcAplicarFiltro;
+document.getElementById('vc-provfilter').onchange=()=>{vcRecalcularProgTotal();vcAplicarFiltro();};
 // Busca en el catálogo completo (no solo en lotes activos) por nombre, código de
 // barras o SKU. Muestra los lotes registrados del producto reutilizando vcRender
 // (todos sus botones siguen funcionando) y, si el producto no tiene lote/fecha,
@@ -9063,7 +9113,7 @@ function vcBuscarCatalogo(q,provFiltro){
   const lotesPorSku={};_vcTodos.forEach(l=>{(lotesPorSku[l.sku]=lotesPorSku[l.sku]||[]).push(l);});
   const lotesMatch=[], sinLote=[];
   prods.forEach(p=>{const ls=lotesPorSku[p.ref]; if(ls&&ls.length)ls.forEach(l=>lotesMatch.push(l)); else sinLote.push(p);});
-  if(lotesMatch.length)vcRender(lotesMatch); else box.innerHTML='';   // reutiliza el render de lotes
+  if(lotesMatch.length)vcRender(lotesMatch,null,true); else box.innerHTML='';   // reutiliza el render de lotes
   if(sinLote.length){
     const cards=sinLote.map(p=>{
       const nom=(p.nombre||'').replace(/"/g,'&quot;');
@@ -9084,8 +9134,7 @@ function vcNuevoLoteDe(ref){
   vcPick(ref);
 }
 
-// ===================== REVISIÓN POR GÓNDOLA =====================
-let _gonTotalInicial=0, _gonRevisados=0;
+// ===================== REVISIÓN DE VENCIMIENTOS =====================
 function _diasVenc(f){
   if(!f)return null;const p=String(f).split('/');if(p.length!==3)return null;
   const d=new Date(+p[2],+p[1]-1,+p[0]);if(isNaN(d.getTime()))return null;
@@ -9103,14 +9152,12 @@ function _gonBucket(dias){
 function vcSetView(v){
   document.querySelectorAll('#vc-viewseg button').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
   document.getElementById('vc-view-lista').classList.toggle('hidden',v!=='lista');
-  document.getElementById('vc-view-gondola').classList.toggle('hidden',v!=='gondola');
   document.getElementById('vc-view-pendientes').classList.toggle('hidden',v!=='pendientes');
-  if(v==='gondola')gonIniciar();
-  else if(v==='pendientes')vcRenderPendientes();
-  else vcAplicarFiltro();   // refresca la lista por si se retiró algo en góndola
+  if(v==='pendientes')vcRenderPendientes();
+  else vcAplicarFiltro();   // refresca la lista por si se retiró algo
 }
 document.querySelectorAll('#vc-viewseg button').forEach(b=>b.onclick=()=>vcSetView(b.dataset.view));
-// "Pendientes" = productos ya retirados de la góndola (estado 'Retirado') esperando que el
+// "Pendientes" = productos ya retirados de la revisión (estado 'Retirado') esperando que el
 // proveedor los cambie o que se confirme que son merma. Reutiliza vcRender (misma lógica de
 // botones por categoría cambio/normal) apuntando al contenedor propio de esta pestaña.
 function vcRenderPendientes(){
@@ -9123,11 +9170,12 @@ function vcUpdatePendBadge(n){
   if(!b)return;
   b.textContent=n>0?(' '+(n>99?'99+':n)):'';
 }
-// Refresca la vista que esté activa en ese momento (Lista, Pendientes o Góndola) después de
-// resolver un lote — antes siempre refrescaba Lista aunque la acción viniera de otra pestaña,
-// y Góndola en particular quedaba sin repintar (mostraba datos viejos hasta que el usuario
-// cambiaba de vista y volvía). Recarga _vcTodos desde el servidor antes de repintar, para que
-// la fecha/estado recién editado se refleje de inmediato en cualquiera de las tres vistas.
+// Refresca la vista que esté activa en ese momento (Lista o Pendientes) después de resolver un
+// lote — antes había una tercera vista ("Por góndola") con su propio ciclo de repintado; se
+// fusionó dentro de Lista (ver vcRender, agrupación por proveedor + barra de progreso), así
+// que ahora solo hay dos vistas para sincronizar. Recarga _vcTodos desde el servidor antes de
+// repintar, para que la fecha/estado recién editado se refleje de inmediato en cualquiera de
+// las dos.
 async function vcRefreshCurrentView(){
   try{
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=vencimientos');
@@ -9138,151 +9186,8 @@ async function vcRefreshCurrentView(){
   const activo=document.querySelector('#vc-viewseg button.active');
   const v=activo?activo.dataset.view:'lista';
   if(v==='pendientes')vcRenderPendientes();
-  else if(v==='gondola')gonRender();
   else vcAplicarFiltro();
   vcUpdatePendBadge(_vcTodos.filter(l=>l.estado==='Retirado').length);
-}
-function gonIniciar(){
-  const rev=_vcTodos.filter(l=>l.estado!=='Retirado'&&l.estado!=='Revisado'&&_gonBucket(_diasVenc(l.fechaVencimiento))!=null);
-  _gonTotalInicial=rev.length;_gonRevisados=0;
-  const cats=[...new Set(rev.map(l=>l.categoria))].sort((a,b)=>String(a).localeCompare(String(b)));
-  const sel=document.getElementById('gon-catfilter');const prev=sel.value;
-  sel.innerHTML='<option value="">Todas las categorías</option>'+cats.map(c=>`<option value="${c}">${c}</option>`).join('');
-  if(prev&&cats.indexOf(prev)>=0)sel.value=prev;
-  try{const r=localStorage.getItem('gon_revisor');if(r&&!document.getElementById('gon-revisor').value)document.getElementById('gon-revisor').value=r;}catch(_){}
-  gonRender();
-}
-document.getElementById('gon-catfilter').onchange=gonRender;
-function gonRender(){
-  const box=document.getElementById('gon-list');
-  const filtroCat=document.getElementById('gon-catfilter').value;
-  const rev=_vcTodos.filter(l=>l.estado!=='Retirado'&&l.estado!=='Revisado').map(l=>{const dv=_diasVenc(l.fechaVencimiento);const bk=_gonBucket(dv);return bk?Object.assign({_dias:dv,_bk:bk},l):null;}).filter(Boolean);
-  const lista=filtroCat?rev.filter(l=>l.categoria===filtroCat):rev;
-  const pct=_gonTotalInicial?Math.round(_gonRevisados/_gonTotalInicial*100):0;
-  document.getElementById('gon-bar-fill').style.width=pct+'%';
-  document.getElementById('gon-prog-lbl').textContent=_gonRevisados+'/'+_gonTotalInicial+' revisados';
-  if(!lista.length){box.innerHTML='<div class="gon-empty">'+(_gonTotalInicial?'Nada pendiente en esta categoría':'Nada por revisar (sin vencidos ni próximos a 7 días)')+'</div>';return;}
-  const grupos={};lista.forEach(l=>{(grupos[l.categoria]=grupos[l.categoria]||[]).push(l);});
-  const cats=Object.keys(grupos).sort((a,b)=>{
-    const ma=Math.min.apply(null,grupos[a].map(x=>x._bk.ord));
-    const mb=Math.min.apply(null,grupos[b].map(x=>x._bk.ord));
-    return ma-mb || grupos[b].length-grupos[a].length || String(a).localeCompare(String(b));
-  });
-  box.innerHTML=cats.map(cat=>{
-    const items=grupos[cat].sort((a,b)=>a._bk.ord-b._bk.ord||a._dias-b._dias);
-    const c={v:0,h:0,d3:0,d7:0};items.forEach(x=>c[x._bk.k]++);
-    const badges=[c.v?`<span class="gon-badge v">${c.v} vencido${c.v>1?'s':''}</span>`:'',
-                  c.h?`<span class="gon-badge h">${c.h} hoy</span>`:'',
-                  c.d3?`<span class="gon-badge d3">${c.d3} en 1-3d</span>`:'',
-                  c.d7?`<span class="gon-badge d7">${c.d7} en 4-7d</span>`:''].filter(Boolean).join('');
-    const filas=items.map(l=>{
-      const nom=(l.nombre||'').replace(/"/g,'&quot;');
-      return `<div class="gon-row" style="flex-direction:column;align-items:stretch;gap:6px">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-          <div class="gon-info"><div class="nom">${l.prioridad} ${l.nombre}</div>
-          <div class="meta">${l._bk.lbl} · vence ${l.fechaVencimiento} · ${l.cantidad} ${l.unidad}${l.lote?' · lote '+l.lote:''}</div>
-          ${l.accion&&l.accion!=='—'?`<div class="accion">${l.accion}${l.precioRecomendado?(' → '+peso(l.precioRecomendado)+(l.costoOrigen==='estimado'?' <span class="est">(costo estimado)</span>':'')):''}</div>`:''}</div>
-        </div>
-        <div style="display:flex;gap:6px">
-          <button class="gon-vendido" data-fi="${l.filaIndex}" data-nom="${nom}" style="flex:1;padding:9px;border-radius:9px;border:1.5px solid var(--verde);background:var(--verde-bg,#E9F1E5);color:var(--verde);font-weight:700;font-size:12.5px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg> Vendido</button>
-          <button class="gon-retirar" data-fi="${l.filaIndex}" data-nom="${nom}" style="flex:1">Retirar</button>
-        </div>
-        <div style="display:flex;justify-content:flex-end">
-          <button type="button" class="btn-editfecha" data-editf="${l.filaIndex}" data-fv="${l.fechaVencimiento}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Editar fecha</button>
-        </div>
-        <div class="vc-editbox hidden" data-editbox="${l.filaIndex}">
-          <span class="vc-editlbl">Nueva fecha de vencimiento:</span>
-          <div class="fecha-wrap">
-            <input id="gon-ef-dd-${l.filaIndex}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="DD" autocomplete="off">
-            <span class="fecha-sep">/</span>
-            <input id="gon-ef-mm-${l.filaIndex}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="off">
-            <span class="fecha-sep">/</span>
-            <input id="gon-ef-aaaa-${l.filaIndex}" class="fecha-seg fecha-seg-y" inputmode="numeric" maxlength="4" placeholder="AAAA" autocomplete="off">
-            <button type="button" class="btn-ok vc-ef-save" data-savef="${l.filaIndex}" style="white-space:nowrap">Guardar</button>
-          </div>
-        </div>
-      </div>`;
-    }).join('');
-    return `<div class="gon-cat"><div class="gon-cat-head"><span class="cat-nom">${cat}</span><span class="gon-counts">${badges}</span></div>${filas}</div>`;
-  }).join('');
-  box.querySelectorAll('.gon-retirar').forEach(b=>b.onclick=()=>gonRetirar(b.dataset.fi,b.dataset.nom,b));
-  box.querySelectorAll('.gon-vendido').forEach(b=>b.onclick=()=>gonMarcarVendido(b.dataset.fi,b.dataset.nom,b));
-  // Editar fecha en Góndola: mismo mini-formulario y misma función vcEditarFecha que ya usa
-  // la lista principal de Vencimientos — solo cambian los IDs (prefijo gon- en vez de vc-)
-  // para no chocar si ambas vistas llegaran a estar montadas en el DOM a la vez.
-  box.querySelectorAll('[data-editf]').forEach(b=>b.onclick=()=>{
-    const fi=b.dataset.editf;
-    const bx=box.querySelector(`[data-editbox="${fi}"]`);
-    if(!bx)return;
-    const wasHidden=bx.classList.contains('hidden');
-    bx.classList.toggle('hidden');
-    if(wasHidden){
-      const p=(b.dataset.fv||'').split('/');
-      if(p.length===3){
-        document.getElementById('gon-ef-dd-'+fi).value=p[0];
-        document.getElementById('gon-ef-mm-'+fi).value=p[1];
-        document.getElementById('gon-ef-aaaa-'+fi).value=p[2];
-      }
-    }
-  });
-  box.querySelectorAll('[data-savef]').forEach(b=>{
-    const fi=b.dataset.savef;
-    document.getElementById('gon-ef-dd-'+fi).addEventListener('keydown',e=>{if(e.key==='Enter')b.click();});
-    document.getElementById('gon-ef-mm-'+fi).addEventListener('keydown',e=>{if(e.key==='Enter')b.click();});
-    document.getElementById('gon-ef-aaaa-'+fi).addEventListener('keydown',e=>{if(e.key==='Enter')b.click();});
-    b.onclick=()=>{
-      const dd=document.getElementById('gon-ef-dd-'+fi).value;
-      const mm=document.getElementById('gon-ef-mm-'+fi).value;
-      const aaaa=document.getElementById('gon-ef-aaaa-'+fi).value;
-      if(dd.length!==2||mm.length!==2||aaaa.length!==4){showToast('Completa día, mes y año');return;}
-      vcEditarFecha(fi,dd+'/'+mm+'/'+aaaa);
-    };
-  });
-}
-async function gonRetirar(fi,nombre,btn){
-  const revisor=(document.getElementById('gon-revisor').value||'').trim();
-  try{localStorage.setItem('gon_revisor',revisor);}catch(_){}
-  if(btn){btn.disabled=true;btn.textContent='…';}
-  try{
-    // Reutiliza el endpoint revisar_lote: marca el lote como revisado/retirado y
-    // registra fecha, hora y responsable en la hoja de vencimientos.
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'revisar_lote',payload:{
-      filaIndex:Number(fi),revisadoPor:revisor,resultado:'retirado'
-    }})});
-    const j=await res.json();
-    if(j&&j.ok){
-      // Antes se borraba de _vcTodos — desaparecía de Góndola (bien) pero también de Lista
-      // y de la nueva pestaña Pendientes (mal, seguía "perdido" como Retirado en el server
-      // pero invisible en la app). Ahora solo se actualiza su estado; gonRender() ya lo
-      // excluye del recorrido por el filtro de estado.
-      const l=_vcTodos.find(x=>String(x.filaIndex)===String(fi));
-      if(l)l.estado='Retirado';
-      _gonRevisados++;
-      showToast('Retirado: '+nombre+' · pasa a Pendientes');
-      gonRender();
-      vcUpdatePendBadge(_vcTodos.filter(x=>x.estado==='Retirado').length);
-    }else{showToast('Error: '+((j&&j.error)||'no se pudo marcar'));if(btn){btn.disabled=false;btn.textContent='Retirar';}}
-  }catch(e){showToast('Error de conexión');if(btn){btn.disabled=false;btn.textContent='Retirar';}}
-}
-// "✓ Vendido" en Góndola — antes solo existía en la vista Lista (vcRevisar con
-// resultado='vendido'). Se reutiliza la misma función/endpoint: el lote pasa a "Revisado" y
-// deja de mostrarse en las próximas vueltas de Góndola, sin pasar por Pendientes (a
-// diferencia de "Retirar", que sí espera cambio con proveedor).
-async function gonMarcarVendido(fi,nombre,btn){
-  if(btn){btn.disabled=true;btn.textContent='…';}
-  try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'revisar_lote',payload:{
-      filaIndex:Number(fi),revisadoPor:(document.getElementById('gon-revisor').value||'').trim(),resultado:'vendido'
-    }})});
-    const j=await res.json();
-    if(j&&j.ok){
-      const l=_vcTodos.find(x=>String(x.filaIndex)===String(fi));
-      if(l)l.estado='Revisado';
-      _gonRevisados++;
-      showToast('Vendido / liquidado: '+nombre);
-      gonRender();
-    }else{showToast('Error: '+((j&&j.error)||'no se pudo marcar'));if(btn){btn.disabled=false;btn.textContent='Vendido';}}
-  }catch(e){showToast('Error de conexión');if(btn){btn.disabled=false;btn.textContent='Vendido';}}
 }
 function fmtDateInputToDDMMAAAA(v){ // "YYYY-MM-DD" → "DD/MM/AAAA"
   const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v||'');
@@ -9335,10 +9240,10 @@ wireFechaSegmentada('cp-fecha-dd','cp-fecha-mm','cp-fecha-aaaa','cp-fecha','cp-f
 async function vcLoad(){
   const box=document.getElementById('vc-list');
   box.innerHTML='<div class="vc-empty">Cargando…</div>';
-  // Al abrir/recargar, la vista arranca en "Lista" (el modo Góndola se elige a mano)
+  // Al abrir/recargar, la vista arranca en "Lista" (el modo Góndola se eliminó — su
+  // funcionamiento quedó fusionado dentro de esta misma vista, ver vcRender)
   document.querySelectorAll('#vc-viewseg button').forEach(b=>b.classList.toggle('active',b.dataset.view==='lista'));
   document.getElementById('vc-view-lista').classList.remove('hidden');
-  document.getElementById('vc-view-gondola').classList.add('hidden');
   document.getElementById('vc-view-pendientes').classList.add('hidden');
   if(!CATEGORIAS_CAMBIO.length)await cargarConfigCambio();   // asegura tener la lista antes de decidir qué botones mostrar
   try{
@@ -9346,33 +9251,109 @@ async function vcLoad(){
     const j=await res.json();
     _vcTodos=(j&&j.ok)?j.lotes:[];
     vcPoblarFiltroProveedor();
+    vcRecalcularProgTotal();   // punto de partida de la barra de progreso para esta sesión del módulo
     vcAplicarFiltro();   // pinta ya filtrado por lo que haya escrito en el buscador y/o el proveedor elegido
     vcUpdatePendBadge(_vcTodos.filter(l=>l.estado==='Retirado').length);
   }catch(e){box.innerHTML='<div class="vc-empty">Error al cargar. Intenta de nuevo.</div>';}
 }
-function vcRender(lotes,containerId){
+// Nombre de proveedor a mostrar/agrupar por lote: prioriza el proveedor real de la WebApp
+// (mismo campo que usa itemsFor en Armar pedido) y cae a la categoría de Loyverse si el
+// producto todavía no tiene proveedor real asignado — así ningún lote queda "sin grupo".
+function vcProveedorDe(l){
+  const it=(DB.items||[]).find(x=>x.ref===l.sku);
+  return (it&&it.proveedorNombre)||l.categoria||'Sin proveedor';
+}
+function vcPrecioActualDe(l){
+  const it=(DB.items||[]).find(x=>x.ref===l.sku);
+  return it&&it.precio!=null?it.precio:null;
+}
+function vcRender(lotes,containerId,esBusqueda){
   const box=document.getElementById(containerId||'vc-list');
-  if(!lotes.length){box.innerHTML='<div class="vc-empty">'+(containerId==='vc-pend-list'?'Sin productos pendientes de reposición':'Sin lotes activos por vencer')+'</div>';return;}
-  box.innerHTML=lotes.map(l=>{
-    const esCambio=esCategoriaCambio(l.categoria);
-    let botones, notaExtra='';
-    if(esCambio && l.estado==='Retirado'){
-      botones=`<button class="btn-cambio" data-actm="cambiado" data-i="${l.filaIndex}" data-nom="${l.nombre.replace(/"/g,'&quot;')}" data-cant="${l.cantidad}" data-unidad="${l.unidad}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg> Marcar como cambiado</button>
-         <button class="btn-descuento" data-actm="descuento" data-i="${l.filaIndex}" data-nom="${l.nombre.replace(/"/g,'&quot;')}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Descuento en factura</button>`;
-      notaExtra='<div class="cat" style="color:var(--azul);font-weight:700">📤 Ya se retiró y se descontó del stock — esperando al proveedor</div>';
-    }else if(esCambio){
-      botones='';   // aún no vence: se resuelve solo (se descuenta y avisa apenas venza, de un día para otro)
+  const esPendientes=containerId==='vc-pend-list';
+  // Barra de progreso — solo en la vista principal (Lista) y solo fuera de modo búsqueda: con
+  // texto escrito, "lotes" son los resultados de esa búsqueda, no el conjunto real filtrado
+  // por días/proveedor, así que un porcentaje ahí no representaría el progreso real de
+  // revisión (mostraría algo como "3/45" con solo 3 resultados en pantalla). "Revisado" = ya
+  // no está en la lista visible (estado Revisado o Retirado, ver vcRevisar/vcEliminarLote) —
+  // el total de referencia es el recuento hecho al aplicar el filtro actual (_vcProgTotal).
+  if(!esPendientes){
+    const fill=document.getElementById('vc-prog-fill');
+    const lbl=document.getElementById('vc-prog-lbl');
+    if(esBusqueda){
+      if(fill)fill.style.width='0%';
+      if(lbl)lbl.textContent=lotes.length+' resultado'+(lotes.length===1?'':'s')+' para la búsqueda';
     }else{
-      botones=`<button class="btn-ok" data-act="ok" data-i="${l.filaIndex}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg> Vendido / liquidado</button>
-         <button class="btn-merma" data-act="merma" data-i="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" data-lote="${l.lote||''}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg> Es merma</button>`;
+      const total=_vcProgTotal||lotes.length;
+      const pendientesAhora=lotes.length;
+      const hechos=Math.max(0,total-pendientesAhora);
+      const pct=total?Math.round(hechos/total*100):0;
+      if(fill)fill.style.width=pct+'%';
+      if(lbl){
+        const provFiltro=document.getElementById('vc-provfilter').value;
+        lbl.textContent=hechos+'/'+total+' revisados — '+pct+'%'+(provFiltro?' · '+provFiltro:'');
+      }
     }
-    return `
-    <div class="vc-row">
+  }
+  if(!lotes.length){box.innerHTML='<div class="vc-empty">'+(esPendientes?'Sin productos pendientes de reposición':'Nada por revisar con este filtro')+'</div>';return;}
+  // Agrupación por proveedor (punto 1: nunca por sector/góndola) — Pendientes se mantiene como
+  // lista plana sin agrupar, ya que ahí la cantidad de filas suele ser chica y agrupar no
+  // aporta. Dentro de cada grupo, ordenados por fecha de vencimiento (más próximo primero).
+  const gruposHtml=(()=>{
+    if(esPendientes)return lotes.map(l=>vcFilaHtml(l)).join('');
+    const grupos={};
+    lotes.forEach(l=>{const p=vcProveedorDe(l);(grupos[p]=grupos[p]||[]).push(l);});
+    const provs=Object.keys(grupos).sort((a,b)=>String(a).localeCompare(String(b),'es'));
+    return provs.map(p=>{
+      const items=grupos[p].sort((a,b)=>{
+        const da=_diasVenc(a.fechaVencimiento),db=_diasVenc(b.fechaVencimiento);
+        if(da==null)return 1; if(db==null)return -1;
+        return da-db;
+      });
+      return `<div class="gon-cat"><div class="gon-cat-head"><span class="cat-nom">${p}</span><span class="gon-counts">${items.length} lote${items.length===1?'':'s'}</span></div>${items.map(l=>vcFilaHtml(l)).join('')}</div>`;
+    }).join('');
+  })();
+  box.innerHTML=gruposHtml;
+  vcWireFilas(box);
+}
+// Arma el HTML de una sola fila de lote — compacta, con acciones ícono+etiqueta corta (punto 4
+// del brief: "lo más pequeño y compacto posible"). Reutiliza exactamente los mismos data-*
+// que ya usan vcRevisar/vcEliminarLote/vcEditarFecha/vcMarcarCambiado/vcMarcarDescuento, sin
+// tocar esas funciones — solo cambia cómo se ven los botones.
+function vcFilaHtml(l){
+  const esCambio=esCategoriaCambio(l.categoria);
+  const nom=(l.nombre||'').replace(/"/g,'&quot;');
+  let botones,notaExtra='';
+  if(esCambio && l.estado==='Retirado'){
+    botones=`<button class="vc-mini" data-actm="cambiado" data-i="${l.filaIndex}" data-nom="${nom}" data-cant="${l.cantidad}" data-unidad="${l.unidad}" title="Marcar como cambiado"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Cambiado</span></button>
+       <button class="vc-mini" data-actm="descuento" data-i="${l.filaIndex}" data-nom="${nom}" title="Descuento en factura"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span>Descuento</span></button>`;
+    notaExtra='<div class="cat" style="color:var(--azul);font-weight:700;font-size:11px">Ya se retiró y se descontó del stock — esperando al proveedor</div>';
+  }else if(esCambio){
+    botones='';   // aún no vence: se resuelve solo (se descuenta y avisa apenas venza, de un día para otro)
+  }else{
+    botones=`<button class="vc-mini vc-mini-verde" data-act="ok" data-i="${l.filaIndex}" title="Vendido"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Vendido</span></button>
+       <button class="vc-mini vc-mini-rojo" data-act="merma" data-i="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" data-lote="${l.lote||''}" title="Merma"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><span>Merma</span></button>
+       <button class="vc-mini" data-act="revisado" data-i="${l.filaIndex}" title="Solo marcar como revisado, sin venta ni merma"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>Revisado</span></button>
+       <button class="vc-mini" data-act="retirar" data-i="${l.filaIndex}" title="Retirar de la góndola (sin eliminar el lote)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/></svg><span>Retirar</span></button>`;
+  }
+  const precioActual=vcPrecioActualDe(l);
+  // Precio actual → sugerido con descuento → Aplicar (punto 6) — solo si hay recomendación
+  // real y precio actual conocido; si no, se sigue mostrando el texto de acción tal cual
+  // (ej. "Vencido — retirar y registrar merma", que no tiene precio asociado).
+  const bloquePrecio=(l.precioRecomendado&&precioActual!=null)
+    ?`<div class="vc-precio-linea">
+        <span class="vc-precio-actual">${peso(precioActual)}</span>
+        <span class="vc-precio-flecha">→</span>
+        <span class="vc-precio-sug">${peso(l.precioRecomendado)}${l.costoOrigen==='estimado'?' <span class="est">(costo estimado)</span>':''}</span>
+        <button type="button" class="vc-aplicar-precio" data-aplicar="${l.filaIndex}" data-sku="${l.sku}" data-precio="${l.precioRecomendado}">Aplicar</button>
+      </div>`
+    :(l.accion&&l.accion!=='—'?`<div class="accion">${l.accion}</div>`:'');
+  return `
+    <div class="vc-row" data-fi-row="${l.filaIndex}">
       <div class="nom">${l.prioridad} ${l.nombre}</div>
-      <div class="cat">${l.categoria} · ${l.fechaVencimiento?('vence '+l.fechaVencimiento):'sin vencimiento'} · ${l.cantidad} ${l.unidad}${l.lote?' · lote '+l.lote:''}</div>
-      <div class="accion">${l.accion}${l.precioRecomendado?(' → '+peso(l.precioRecomendado)+(l.costoOrigen==='estimado'?' <span class="est">(costo estimado)</span>':'')):''}</div>
+      <div class="cat">${l.fechaVencimiento?('vence '+l.fechaVencimiento):'sin vencimiento'} · ${l.cantidad} ${l.unidad}${l.lote?' · lote '+l.lote:''}</div>
+      ${bloquePrecio}
       ${notaExtra}
-      <div class="btns">${botones||''}<button class="btn-editfecha" data-editf="${l.filaIndex}" data-fv="${l.fechaVencimiento}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Editar fecha</button><button class="btn-elim" data-elim="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" data-nom="${(l.nombre||'').replace(/"/g,'&quot;')}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Eliminar lote</button></div>
+      <div class="btns vc-btns-mini">${botones||''}<button class="vc-mini" data-editf="${l.filaIndex}" data-fv="${l.fechaVencimiento}" title="Editar fecha"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>Fecha</span></button><button class="vc-mini vc-mini-rojo" data-elim="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" data-nom="${nom}" title="Eliminar lote"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>Eliminar</span></button></div>
       <div class="vc-editbox hidden" data-editbox="${l.filaIndex}">
         <span class="vc-editlbl">Nueva fecha de vencimiento:</span>
         <div class="fecha-wrap">
@@ -9385,8 +9366,13 @@ function vcRender(lotes,containerId){
         </div>
       </div>
     </div>`;
-  }).join('');
+}
+// Cablea los botones de un lote de filas recién pintadas — separado de vcFilaHtml para no
+// repetir este bloque en cada llamada de vcRender (agrupada o plana).
+function vcWireFilas(box){
   box.querySelectorAll('[data-act="ok"]').forEach(b=>b.onclick=()=>vcRevisar(b.dataset.i,'vendido'));
+  box.querySelectorAll('[data-act="revisado"]').forEach(b=>b.onclick=()=>vcRevisar(b.dataset.i,'revisado'));
+  box.querySelectorAll('[data-act="retirar"]').forEach(b=>b.onclick=()=>vcRevisar(b.dataset.i,'retirado'));
   box.querySelectorAll('[data-act="merma"]').forEach(b=>b.onclick=()=>{
     vcRevisar(b.dataset.i,'merma',false);   // marca revisado sin pedir responsable extra
     closeVenc();
@@ -9396,6 +9382,7 @@ function vcRender(lotes,containerId){
   box.querySelectorAll('[data-actm="cambiado"]').forEach(b=>b.onclick=()=>vcMarcarCambiado(b.dataset.i,b.dataset.nom,b.dataset.cant,b.dataset.unidad));
   box.querySelectorAll('[data-actm="descuento"]').forEach(b=>b.onclick=()=>vcMarcarDescuento(b.dataset.i,b.dataset.nom));
   box.querySelectorAll('[data-elim]').forEach(b=>b.onclick=()=>vcEliminarLote(b.dataset.elim,b.dataset.sku,b.dataset.cant,b.dataset.nom));
+  box.querySelectorAll('[data-aplicar]').forEach(b=>b.onclick=()=>vcAplicarPrecio(b));
   // Editar fecha: abre el mini-formulario con la fecha actual precargada en los 3 campos
   box.querySelectorAll('[data-editf]').forEach(b=>b.onclick=()=>{
     const fi=b.dataset.editf;
@@ -9428,6 +9415,33 @@ function vcRender(lotes,containerId){
       vcEditarFecha(fi,dd+'/'+mm+'/'+aaaa);
     };
   });
+}
+// Aplica el precio sugerido por vencimiento al producto — reutiliza el mismo endpoint
+// editar_producto que ya usa la Ficha completa para cambiar precio (mismo patrón seguro
+// leer→cambiar→reenviar→verificar en el Worker, con sincronización real a Loyverse). No crea
+// ninguna integración nueva (punto 6 del brief).
+async function vcAplicarPrecio(btn){
+  const sku=btn.dataset.sku,precio=Number(btn.dataset.precio);
+  if(!sku||!precio)return;
+  const original=btn.textContent;
+  btn.disabled=true;btn.textContent='…';
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_producto',payload:{sku:sku,precio:precio}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      const it=(DB.items||[]).find(x=>x.ref===sku);
+      if(it){it.precio=precio;persist();}
+      btn.textContent='✓ Aplicado';
+      btn.classList.add('vc-aplicado');
+      showToast('Precio actualizado y sincronizado con Loyverse');
+    }else{
+      btn.disabled=false;btn.textContent=original;
+      showToast('No se pudo aplicar el precio: '+((j&&j.error)||'error desconocido'));
+    }
+  }catch(e){
+    btn.disabled=false;btn.textContent=original;
+    showToast('Error de conexión al aplicar el precio — no se marcó como aplicado');
+  }
 }
 async function vcEditarFecha(filaIndex,nuevaFecha){
   if(!/^\d{2}\/\d{2}\/\d{4}$/.test(nuevaFecha)){showToast('Escribe la fecha como DD/MM/AAAA');return;}
@@ -9506,13 +9520,21 @@ async function vcRevisar(filaIndex,resultado,recargar){
     const j=await res.json();
     if(j&&j.ok){
       if(recargar){
-        showToast('Lote revisado');
-        // Ya no es un lote activo: se quita de la lista en memoria y se repinta,
-        // sin volver a pedir toda la lista al servidor.
-        _vcTodos=_vcTodos.filter(l=>String(l.filaIndex)!==String(filaIndex));
+        const msgs={vendido:'Marcado como vendido/liquidado',merma:'Registrado como merma',revisado:'Marcado como revisado',retirado:'Retirado — pasa a Pendientes'};
+        showToast(msgs[resultado]||'Lote revisado');
+        // 'retirado' NO se saca de _vcTodos — sigue existiendo (estado='Retirado'), solo se
+        // mueve visualmente a la pestaña Pendientes. Los demás cierres ('vendido'/'merma'/
+        // 'revisado') sí se quitan de la lista en memoria: ya no vuelven a aparecer en
+        // ninguna vista, sin volver a pedir toda la lista al servidor.
+        if(resultado==='retirado'){
+          const l=_vcTodos.find(x=>String(x.filaIndex)===String(filaIndex));
+          if(l)l.estado='Retirado';
+        }else{
+          _vcTodos=_vcTodos.filter(l=>String(l.filaIndex)!==String(filaIndex));
+        }
         vcRefreshCurrentView();
       }else{
-        // resultado='merma' con recargar=false (viene de "🗑️ Es merma"): el lote pasa a
+        // resultado='merma' con recargar=false (viene de "Merma"): el lote pasa a
         // Revisado pero seguimos usando su cantidad/lote localmente para abrir el form de
         // merma — igual actualizamos su estado en memoria para que no siga en "Pendientes".
         const l=_vcTodos.find(x=>String(x.filaIndex)===String(filaIndex));
