@@ -4903,7 +4903,7 @@ function pcRedondear(precio,modo){
 let fpPState={precioTocado:false,precioPreview:null,redondeo:'none'};
 function fpPanePrecios(f){
   const p=f.producto;
-  fpPState={precioTocado:false,precioPreview:null,modo:'unidad',redondeo:'none'};
+  fpPState={precioTocado:false,precioPreview:null,modo:'unidad',redondeo:'none',ivaModo:'con'};
   const hist=f.historialPrecios||[];
   const pane=document.getElementById('fp-pane-precios');
   pane.innerHTML=
@@ -4916,7 +4916,14 @@ function fpPanePrecios(f){
       '</div>'+
     '</div>'+
     '<div class="mm-field" style="margin-bottom:8px">'+
-      '<label id="fp-pr-costo-lbl">Costo <span style="font-weight:400;color:var(--muted);text-transform:none">(con IVA)</span></label>'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">'+
+        '<label id="fp-pr-costo-lbl" style="margin:0">Costo</label>'+
+        '<div id="fp-pr-iva-toggle" style="display:flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;color:var(--muted)" role="group" aria-label="¿El costo incluye IVA?">'+
+          '<button type="button" class="rc-iva-btn active" id="fp-pr-iva-con" data-iva="con" style="padding:4px 9px;border-radius:20px 0 0 20px;border:1.5px solid var(--wa-d);border-right:none;background:var(--wa-bg,var(--verde-bg));color:var(--wa-d);cursor:pointer">Con IVA</button>'+
+          '<button type="button" class="rc-iva-btn" id="fp-pr-iva-sin" data-iva="sin" style="padding:4px 9px;border-radius:0 20px 20px 0;border:1.5px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;margin-left:-1px">Sin IVA</button>'+
+          '<span title="El precio se calcula sobre el costo con IVA (el mismo valor que se guarda en Loyverse). Si eliges \'Sin IVA\', se le suma 19% automáticamente." style="cursor:help;color:var(--muted);font-size:13px;line-height:1">ⓘ</span>'+
+        '</div>'+
+      '</div>'+
       '<input id="fp-pr-costo" type="number" inputmode="decimal" value="'+(p.costo!=null?p.costo:'')+'" placeholder="$" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:\'JetBrains Mono\'">'+
     '</div>'+
     '<div class="mm-field hidden" id="fp-pr-caja-campo" style="margin-bottom:8px">'+
@@ -4957,20 +4964,34 @@ function fpPanePrecios(f){
     bC.style.borderColor=modo==='caja'?'var(--gold,#8A7A4E)':'var(--line)';
     bC.style.color=modo==='caja'?'var(--gold,#8A7A4E)':'var(--muted)';
     document.getElementById('fp-pr-caja-campo').classList.toggle('hidden',modo!=='caja');
-    document.getElementById('fp-pr-costo-lbl').innerHTML=modo==='caja'
-      ?'Costo de la caja <span style="font-weight:400;color:var(--muted);text-transform:none">(con IVA)</span>'
-      :'Costo <span style="font-weight:400;color:var(--muted);text-transform:none">(con IVA)</span>';
+    document.getElementById('fp-pr-costo-lbl').textContent=modo==='caja'?'Costo de la caja':'Costo';
     fpPrRecalcularPreview();fpPrRenderResumen();
   }
   document.getElementById('fp-pr-modo-unidad').onclick=()=>fpPrSetModo('unidad');
   document.getElementById('fp-pr-modo-caja').onclick=()=>fpPrSetModo('caja');
   document.getElementById('fp-pr-unidades-caja').addEventListener('input',()=>{fpPrRecalcularPreview();fpPrRenderResumen();fpGuardarBorrador();});
 
+  // ---- Toggle Con IVA / Sin IVA — mismo patrón visual y misma función que rcSetIva/cpSetIva. ----
+  function fpPrSetIva(modo){
+    fpPState.ivaModo=modo;
+    const btnCon=document.getElementById('fp-pr-iva-con'),btnSin=document.getElementById('fp-pr-iva-sin');
+    btnCon.style.background=modo==='con'?'var(--wa-bg,var(--verde-bg))':'#fff';
+    btnCon.style.color=modo==='con'?'var(--wa-d)':'var(--muted)';
+    btnCon.style.borderColor=modo==='con'?'var(--wa-d)':'var(--line)';
+    btnSin.style.background=modo==='sin'?'var(--wa-bg,var(--verde-bg))':'#fff';
+    btnSin.style.color=modo==='sin'?'var(--wa-d)':'var(--muted)';
+    btnSin.style.borderColor=modo==='sin'?'var(--wa-d)':'var(--line)';
+    fpPrRecalcularPreview();fpPrRenderResumen();
+  }
+  document.getElementById('fp-pr-iva-con').onclick=()=>fpPrSetIva('con');
+  document.getElementById('fp-pr-iva-sin').onclick=()=>fpPrSetIva('sin');
+
   // ---- Misma calculadora que Recepción y Crear producto (PriceCalc) — costo con IVA es
-  // directamente la base (acá no hay toggle de IVA: el IVA ya está definido en el producto),
-  // pero sí de unidad/caja — si es "caja", PriceCalc.costoBruto divide por unidades primero.
+  // Toggle de IVA (Con IVA / Sin IVA) — mismo criterio que Recepción y Crear producto: el
+  // costo con IVA es el que se guarda en Loyverse, así que "Sin IVA" le suma 19% antes de
+  // calcular. Ver fpPrSetIva más abajo.
   function fpPrCostoBruto(){
-    return PriceCalc.costoBruto(document.getElementById('fp-pr-costo').value,fpPState.modo,document.getElementById('fp-pr-unidades-caja').value,'con');
+    return PriceCalc.costoBruto(document.getElementById('fp-pr-costo').value,fpPState.modo,document.getElementById('fp-pr-unidades-caja').value,fpPState.ivaModo);
   }
   function fpPrRecalcularPreview(){
     const base=PriceCalc.precioDesdeMargen(fpPrCostoBruto(),document.getElementById('fp-pr-margen-obj').value);
@@ -5263,7 +5284,14 @@ async function fpGuardarTodo(){
   const stockMinRaw=document.getElementById('fp-i-stockmin')?document.getElementById('fp-i-stockmin').value.trim():'';
   const costoIngresado=document.getElementById('fp-pr-costo')?document.getElementById('fp-pr-costo').value.trim():'';
   const precioIngresado=document.getElementById('fp-pr-precio')?document.getElementById('fp-pr-precio').value.trim():'';
-  const costoBase=costoIngresado?PriceCalc.costoBruto(costoIngresado,'unidad',null,'con'):null;
+  // Usa el modo real elegido en la calculadora (unidad/caja + con/sin IVA) — antes esto
+  // quedaba fijo en 'unidad'/'con' sin importar lo que el usuario hubiera elegido en los
+  // toggles, así que un costo "por caja" o "sin IVA" se guardaba mal (crudo, sin dividir por
+  // unidades ni sumar el 19%).
+  const fpPrModo=(typeof fpPState!=='undefined'&&fpPState.modo)?fpPState.modo:'unidad';
+  const fpPrIvaModo=(typeof fpPState!=='undefined'&&fpPState.ivaModo)?fpPState.ivaModo:'con';
+  const fpPrUnidadesCaja=document.getElementById('fp-pr-unidades-caja')?document.getElementById('fp-pr-unidades-caja').value:null;
+  const costoBase=costoIngresado?PriceCalc.costoBruto(costoIngresado,fpPrModo,fpPrUnidadesCaja,fpPrIvaModo):null;
   const costoFinal=costoBase?String(Math.round(costoBase)):'';
 
   btn.disabled=true;btn.textContent='Guardando…';
