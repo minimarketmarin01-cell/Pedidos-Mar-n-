@@ -321,7 +321,9 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .vc-row .nom{font-weight:700;font-size:13.5px}
 .vc-row .cat{font-size:11.5px;color:var(--muted);margin-top:2px}
 .vc-row .accion{font-size:12.5px;font-weight:700;margin-top:6px}
+.gon-row .accion{font-size:12.5px;font-weight:700;margin-top:2px}
 .vc-row .accion .est{font-weight:600;color:var(--muted);margin-left:4px}
+.gon-row .accion .est{font-weight:600;color:var(--muted);margin-left:4px}
 .vc-row .btns{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
 .vc-row .btn-elim{color:var(--rojo);border-color:var(--rojo);background:var(--card)}
 .vc-row .btn-elim:active{background:var(--paper)}
@@ -9178,7 +9180,8 @@ function gonRender(){
       return `<div class="gon-row" style="flex-direction:column;align-items:stretch;gap:6px">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
           <div class="gon-info"><div class="nom">${l.prioridad} ${l.nombre}</div>
-          <div class="meta">${l._bk.lbl} · vence ${l.fechaVencimiento} · ${l.cantidad} ${l.unidad}${l.lote?' · lote '+l.lote:''}</div></div>
+          <div class="meta">${l._bk.lbl} · vence ${l.fechaVencimiento} · ${l.cantidad} ${l.unidad}${l.lote?' · lote '+l.lote:''}</div>
+          ${l.accion&&l.accion!=='—'?`<div class="accion">${l.accion}${l.precioRecomendado?(' → '+peso(l.precioRecomendado)+(l.costoOrigen==='estimado'?' <span class="est">(costo estimado)</span>':'')):''}</div>`:''}</div>
         </div>
         <div style="display:flex;gap:6px">
           <button class="gon-vendido" data-fi="${l.filaIndex}" data-nom="${nom}" style="flex:1;padding:9px;border-radius:9px;border:1.5px solid var(--verde);background:var(--verde-bg,#E9F1E5);color:var(--verde);font-weight:700;font-size:12.5px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg> Vendido</button>
