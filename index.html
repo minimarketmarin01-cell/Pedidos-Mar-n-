@@ -9180,7 +9180,7 @@ async function vcRefreshCurrentView(){
   try{
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=vencimientos');
     const j=await res.json();
-    _vcTodos=(j&&j.ok)?j.lotes:_vcTodos;
+    if(j&&j.ok)_vcTodos=j.lotes.filter(l=>!!l.fechaVencimiento);   // mismo filtro que vcLoad — solo lotes con fecha registrada
   }catch(e){/* si falla la recarga, se repinta igual con los datos que ya había en memoria */}
   vcPoblarFiltroProveedor();
   const activo=document.querySelector('#vc-viewseg button.active');
@@ -9249,7 +9249,12 @@ async function vcLoad(){
   try{
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=vencimientos');
     const j=await res.json();
-    _vcTodos=(j&&j.ok)?j.lotes:[];
+    // Solo artículos con fecha de vencimiento realmente registrada — un lote sin fecha (creado,
+    // por ejemplo, desde Recepción sin completar ese campo opcional) no tiene nada que revisar
+    // acá todavía, así que no debe aparecer en "Revisión de vencimientos" hasta que se le
+    // cargue una fecha real. Sigue existiendo en la base de datos, solo queda fuera de esta
+    // vista mientras tanto.
+    _vcTodos=(j&&j.ok)?j.lotes.filter(l=>!!l.fechaVencimiento):[];
     vcPoblarFiltroProveedor();
     vcRecalcularProgTotal();   // punto de partida de la barra de progreso para esta sesión del módulo
     vcAplicarFiltro();   // pinta ya filtrado por lo que haya escrito en el buscador y/o el proveedor elegido
