@@ -34,6 +34,12 @@
   /* Acción / confirmar (Guardar, carrito, checks). Salvia oscuro para que el texto
      blanco encima siga siendo legible. */
   --wa:#8FA67B;--wa-d:#6E8659;--gold:#8A7A4E;--gold-bg:#F3F0E2;
+  /* Éxito/confirmado (badge "Liquidado", chip "Principal", KPI destacado) — verde vivo
+     DISTINTO de --verde (que es uno de los 5 colores de alerta de stock reservados,
+     "saludable"; ver nota más arriba). Antes escrito como hex suelto (dos versiones casi
+     idénticas del mismo verde, con solo unos pocos puntos de diferencia en RGB) repartido
+     en 7 lugares del archivo. */
+  --exito:#1E7A3E;--exito-bg:#E3F3E8;
 
   /* ===== MARCA =====
      Salvia y lavanda pastel. Sin degradados oscuros: la barra superior debe pesar poco. */
@@ -50,6 +56,13 @@
   --shadow-brand:0 2px 10px rgba(143,166,123,.28);
 
   --radius-card:18px;--radius-btn:12px;
+  /* Escala de radios ya en uso consistente en la práctica (campos de formulario 8-10px,
+     chips/badges tipo píldora 20px, tarjetas grandes 18px) — se documentan acá como
+     referencia para futuros componentes; los ~200 usos ya existentes en el archivo siguen
+     esta misma progresión aunque todavía no usen estas variables directamente, así que no
+     se tocaron para evitar un cambio masivo de bajo beneficio real (ver nota del brief:
+     "mínimos cambios estructurales"). */
+  --radius-field:9px;--radius-chip:20px;
   --ciruela:#7A6490;--ciruela-hi:#8E76A4;--ciruela-tint:#EEE6F6;
   --oliva:#8FA67B;--oliva-hi:#AFC5A1;--oliva-tint:#E9F1E5;
   --magenta:#7A6490;--focus-ring:0 0 0 3px rgba(143,166,123,.30);
@@ -281,6 +294,16 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .mm-resp button{flex:1;border:1.5px solid var(--line);background:var(--card);border-radius:10px;padding:9px;font-size:13px;font-weight:600;cursor:pointer}
 .mm-resp button.sel{background:var(--azul);color:#fff;border-color:var(--azul)}
 .mm-save{width:100%;background:var(--brand-grad);color:#fff;border:none;border-radius:var(--radius-btn);padding:13px;font-size:15px;font-weight:700;font-family:'Manrope';cursor:pointer;margin-top:4px;box-shadow:var(--shadow-brand)}
+/* Input de texto genérico de formulario — antes repetido con el mismo style="..." inline en
+   varios campos de distintos módulos (Vencimientos, Crear producto, Renombrar, Ficha de
+   producto); centralizado acá para que un cambio de diseño futuro no requiera editar cada
+   campo por separado. */
+.mm-input{width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:var(--radius-field,10px);font-size:14px}
+/* Botón de confirmación secundaria (usar/confirmar foto o fondo procesado) — antes repetido
+   con el mismo style="..." inline en 4 botones distintos (Crear producto y Ficha de
+   producto); centralizado acá para que un cambio de diseño futuro se aplique a los cuatro
+   a la vez, en vez de editar cada uno por separado. */
+.btn-confirmar-img{flex:1;padding:9px;border-radius:9px;border:none;background:var(--wa);color:#fff;font-weight:700;font-size:12.5px;cursor:pointer}
 .mm-save:disabled{background:var(--gris);box-shadow:none;opacity:.6}
 .mm-save:disabled{opacity:.45;cursor:not-allowed}
 .mm-save.saving{opacity:.7}
@@ -319,7 +342,7 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .gon-badge.v{background:#fdecec;color:#b42318}
 .gon-badge.h{background:#fff2e0;color:#b54708}
 .gon-badge.d3{background:#fff8e1;color:#8a6d00}
-.gon-badge.d7{background:#eaf7ee;color:#217a3b}
+.gon-badge.d7{background:var(--exito-bg);color:var(--exito)}
 .gon-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:7px;background:var(--card)}
 .gon-row .gon-info{flex:1;min-width:0}
 .gon-row .nom{font-weight:700;font-size:13px;line-height:1.25}
@@ -376,7 +399,7 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .fp-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
 .fp-badge.rojo{background:#FCE9E7;color:var(--rojo)}
 .fp-badge.ambar{background:#FCF1D9;color:#B7791F}
-.fp-badge.verde{background:#E3F3E8;color:#1E7A3E}
+.fp-badge.verde{background:var(--exito-bg);color:var(--exito)}
 .fp-badge.gris{background:var(--gris-bg,#F3F1EA);color:var(--muted)}
 /* Barra de progreso discreta (1 Producto → 2 Unidad → 3 Precio → 4 Proveedores) — solo un
    indicador visual de en qué parte larga del formulario se está, no bloquea ni exige llenar
@@ -401,13 +424,13 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .fp-kpi .fp-kpi-lbl{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fp-kpi .fp-kpi-val{font-family:'JetBrains Mono';font-weight:800;font-size:15px;color:var(--ink)}
 .fp-kpi.destacado{background:var(--verde-bg,#E3F3E8);border-color:var(--verde)}
-.fp-kpi.destacado .fp-kpi-val{color:#1E7A3E}
+.fp-kpi.destacado .fp-kpi-val{color:var(--exito)}
 /* Chip de proveedor "También pedir a" — mismo lenguaje visual que los badges de estado, en
    formato tag con su ✕ para quitar sin abandonar la tarjeta. */
 .fp-chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .fp-chip{display:inline-flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:5px 6px 5px 11px;font-size:12px;font-weight:600;color:var(--ink)}
 .fp-chip button{border:none;background:var(--gris-bg,#F3F1EA);color:var(--muted);width:18px;height:18px;border-radius:50%;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none}
-.fp-chip-principal{display:inline-flex;align-items:center;gap:5px;background:var(--verde-bg,#E3F3E8);color:#1E7A3E;border-radius:20px;padding:4px 10px;font-size:11px;font-weight:700;margin-top:6px}
+.fp-chip-principal{display:inline-flex;align-items:center;gap:5px;background:var(--verde-bg,#E3F3E8);color:var(--exito);border-radius:20px;padding:4px 10px;font-size:11px;font-weight:700;margin-top:6px}
 /* ==== Calculadora de precio (PcWidget) — componente global único, reutilizado en Ficha de
    producto, Crear producto y Recepción. Fondo diferenciado del resto de la página para que
    quede claro de un vistazo dónde termina "información" y empieza "herramienta de cálculo".
@@ -423,9 +446,16 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .pc-hint{font-size:10px;color:var(--muted);margin-top:4px;line-height:1.3;min-height:13px}
 .pc-row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start}
 .pc-modo-btn{flex:1;padding:8px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--muted);font-weight:700;font-size:12px;cursor:pointer}
+/* Toggle de 2 posiciones (Por unidad/Por caja, Salida/Entrada) — usado en Préstamos,
+   Recepción y Crear producto. Antes cada uno de los 6 botones llevaba el mismo estilo
+   repetido inline con un padding inconsistente entre sí (8px en uno, 6px en los otros dos);
+   unificado acá con el valor más generoso de los dos para mejor ergonomía táctil. El color
+   activo/inactivo (verde vs. gris) sigue siendo inline por fila, ya que cambia según qué
+   opción esté seleccionada en cada momento. */
+.rc-modo-btn{flex:1;padding:8px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--muted);font-weight:700;font-size:11.5px;cursor:pointer}
 .pc-modo-btn.active{border-color:var(--gold,#8A7A4E);background:#fff;color:var(--gold,#8A7A4E)}
 .pc-iva-btn{flex:1;padding:9px 4px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--muted);font-weight:700;font-size:12px;cursor:pointer}
-.pc-iva-btn.active{border-color:var(--verde);background:var(--verde-bg,#E3F3E8);color:#1E7A3E}
+.pc-iva-btn.active{border-color:var(--verde);background:var(--verde-bg,#E3F3E8);color:var(--exito)}
 /* Precio calculado: vista previa automática, deliberadamente MENOS protagonista que el precio
    de venta final (letra más chica, sin fondo destacado) — es solo referencia. */
 .pc-calculado{margin-top:10px;padding:9px 12px;border:1px dashed var(--gold,#8A7A4E);border-radius:10px;background:rgba(255,255,255,.5)}
@@ -437,14 +467,14 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
    redondeo/50/90/00" que había antes. */
 .pc-round-row{display:flex;gap:6px;flex-wrap:wrap}
 .pc-round-chip{padding:8px 12px;border-radius:20px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12.5px;font-family:'JetBrains Mono';cursor:pointer;white-space:nowrap}
-.pc-round-chip.active{border-color:var(--verde);background:var(--verde-bg,#E3F3E8);color:#1E7A3E}
+.pc-round-chip.active{border-color:var(--verde);background:var(--verde-bg,#E3F3E8);color:var(--exito)}
 .pc-round-chip-sin{font-family:'Inter';font-weight:600;font-size:11.5px;color:var(--muted)}
 /* Precio de venta: el dato con más peso visual de todo el bloque — más grande que el precio
    calculado, con su botón Aplicar al lado cuando el ancho alcanza (Recepción/Ficha), o debajo
    en pantallas angostas. Editable directo, sin botón "Editar" aparte. */
 .pc-venta-box{background:var(--verde-bg,#E3F3E8);border:1.5px solid var(--verde);border-radius:12px;padding:11px 13px}
 .pc-venta-top{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.pc-venta-lbl{font-size:10.5px;font-weight:700;color:#1E7A3E;text-transform:uppercase;letter-spacing:.02em}
+.pc-venta-lbl{font-size:10.5px;font-weight:700;color:var(--exito);text-transform:uppercase;letter-spacing:.02em}
 .pc-venta-lbl span{font-weight:400;text-transform:none}
 .pc-venta-input{width:100%;min-width:110px;border:none;background:transparent;padding:0;font-size:23px;font-weight:800;font-family:'JetBrains Mono';color:var(--ink)}
 .pc-aplicar-btn{flex:none;background:var(--verde);border:none;color:#fff;font-weight:700;font-size:12.5px;padding:11px 16px;border-radius:10px;cursor:pointer;white-space:nowrap}
@@ -484,7 +514,11 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .hm-row .nom{font-weight:700;font-size:13px}
 .hm-row .costo{font-family:'JetBrains Mono';font-weight:700;font-size:13px;white-space:nowrap}
 .hm-row .meta{font-size:11.5px;color:var(--muted);margin-top:2px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.hm-badge{display:inline-block;padding:1.5px 7px;border-radius:20px;font-size:10.5px;font-weight:700}
+/* Misma geometría de píldora que .fp-badge (Ficha de producto) — antes redefinida acá con
+   valores casi idénticos (1px de diferencia de padding), quedan unificados en un solo lugar
+   para que un cambio de forma futuro no requiera editar los dos. Los colores siguen siendo
+   propios de este badge (estados de merma), por eso .hm-badge no se renombra a .fp-badge. */
+.hm-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700}
 .hm-badge.liquidado{background:var(--verde-bg);color:var(--verde)}
 .hm-badge.vencido{background:var(--gold-bg);color:var(--gold)}
 .hm-badge.dañado,.hm-badge.robo{background:var(--rojo-bg);color:var(--rojo)}
@@ -725,9 +759,13 @@ html.modo-bliss .fila-prov{display:block;font-size:13px;color:var(--ink2);font-w
 html.vista-filas .fila-lbl{display:none}
 /* Venta/Costo/Margen empaquetados en un solo contenedor flex (fila-precios) — así se
    quedan pegados y a la izquierda, en vez de que cada uno se estire por su propia
-   columna de grid (eso era lo que los separaba tanto en pantallas anchas). */
+   columna de grid (eso era lo que los separaba tanto en pantallas anchas).
+   Jerarquía: el PRECIO DE VENTA es el dato que determina una decisión de compra
+   inmediata (ver principio de diseño del proyecto) — antes tenía el mismo tamaño y
+   color apagado que costo/margen, sin distinguirse de la información secundaria. */
 html.vista-filas .fila-precios{display:flex;align-items:baseline;gap:6px;min-width:0;overflow:hidden}
-html.vista-filas .fila-venta,html.vista-filas .fila-costo,html.vista-filas .fila-margen{flex:0 0 auto;font-family:'JetBrains Mono';font-weight:700;font-size:10px;color:var(--muted);white-space:nowrap}
+html.vista-filas .fila-venta{flex:0 0 auto;font-family:'JetBrains Mono';font-weight:800;font-size:12.5px;color:var(--ink);white-space:nowrap}
+html.vista-filas .fila-costo,html.vista-filas .fila-margen{flex:0 0 auto;font-family:'JetBrains Mono';font-weight:700;font-size:10px;color:var(--muted);white-space:nowrap}
 html.vista-filas .fila-costo::before{content:'C ';opacity:.7}
 html.vista-filas .fila-margen::before{content:'M ';opacity:.7}
 html.vista-filas .fila-margen.mg-hi{color:var(--verde)}
@@ -790,7 +828,9 @@ html.modo-bliss .fila-row{grid-template-columns:52px minmax(0,1fr) 100px 64px 66
 html.modo-bliss .fila-thumb{width:52px;height:52px;border-radius:9px}
 html.modo-bliss .fila-thumb .card-thumb,html.modo-bliss .fila-thumb .card-thumb-empty{width:52px;height:52px;font-size:22px}
 html.modo-bliss .fila-nombre{font-size:18.5px;line-height:1.18}
-html.modo-bliss .fila-precios,html.modo-bliss .fila-venta,html.modo-bliss .fila-costo,html.modo-bliss .fila-margen{font-size:13px}
+html.modo-bliss .fila-precios{font-size:13px}
+html.modo-bliss .fila-venta{font-size:15px;font-weight:800}
+html.modo-bliss .fila-costo,html.modo-bliss .fila-margen{font-size:12px}
 html.modo-bliss .fila-col{font-size:15.5px}
 html.modo-bliss .ptable-head{column-gap:8px}
 html.modo-bliss .ptable-head>*{font-size:13.5px;padding:8px 4px}
@@ -1055,9 +1095,9 @@ html.modo-bliss .fila-pedir .qword{text-align:center;max-width:100px;font-size:9
 .fc-hist-sync.ok{color:var(--wa-d)}
 .qstep{display:inline-flex;align-items:center;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
 .qstep.has{border-color:var(--salvia-2);box-shadow:0 0 0 2px var(--salvia-tint)}
-.qbtn{border:none;background:#F4F3EE;width:23px;height:32px;font-size:16px;font-weight:700;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;user-select:none;-webkit-user-select:none}
+.qbtn{border:none;background:#F4F3EE;width:30px;height:40px;font-size:17px;font-weight:700;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;user-select:none;-webkit-user-select:none}
 .qbtn:active{background:var(--wa);color:#fff}
-.qty-in{width:27px;text-align:center;font-family:'JetBrains Mono';font-weight:700;padding:6px 1px;border:none;border-left:1px solid var(--line);border-right:1px solid var(--line);font-size:13.5px}
+.qty-in{width:30px;text-align:center;font-family:'JetBrains Mono';font-weight:700;padding:9px 1px;border:none;border-left:1px solid var(--line);border-right:1px solid var(--line);font-size:14.5px}
 .qty-in:focus{outline:none;background:#F1FBF5}
 .qword{font-size:9.5px;color:var(--muted);font-weight:600;font-family:'Manrope';white-space:normal;text-align:right;max-width:78px}
 .qword.gold{color:var(--gold)}
@@ -1604,7 +1644,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <div class="mm-body">
           <div class="seg" id="vc-viewseg" style="display:flex;width:100%;margin:0 0 10px">
             <button type="button" data-view="lista" class="active" style="flex:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="4" width="16" height="17" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="17" x2="13" y2="17"/></svg> Lista</button>
-            <button type="button" data-view="gondola" style="flex:1">🛒 Por góndola</button>
+            <button type="button" data-view="gondola" style="flex:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M3 4h2l2.2 11h9.6L19 8H6.4"/></svg> Por góndola</button>
             <button type="button" data-view="pendientes" style="flex:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/></svg> Pendientes<span id="vc-pend-badge"></span></button>
           </div>
           <div id="vc-view-lista">
@@ -1660,7 +1700,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
 
           <div class="mm-field">
             <label>Lote (opcional)</label>
-            <input id="vc-lote" placeholder="Código de lote, si tiene" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+            <input id="vc-lote" placeholder="Código de lote, si tiene" class="mm-input">
           </div>
 
           <div class="mm-field">
@@ -1756,8 +1796,8 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <div class="mm-field" style="margin-bottom:8px">
           <label>Dirección</label>
           <div style="display:flex;gap:6px">
-            <button type="button" class="rc-modo-btn active" id="pr-dir-salida" data-dir="salida" style="flex:1;padding:8px;border-radius:9px;border:1.5px solid var(--wa-d);background:var(--wa-bg,var(--verde-bg));color:var(--wa-d);font-weight:700;font-size:11.5px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M4 12h13"/><polyline points="13 6 19 12 13 18"/><path d="M19 4v16"/></svg> Le presto a Los Cumpas</button>
-            <button type="button" class="rc-modo-btn" id="pr-dir-entrada" data-dir="entrada" style="flex:1;padding:8px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--muted);font-weight:700;font-size:11.5px;cursor:pointer">📥 Los Cumpas me prestan</button>
+            <button type="button" class="rc-modo-btn active" id="pr-dir-salida" data-dir="salida" style="border-color:var(--wa-d);background:var(--wa-bg,var(--verde-bg));color:var(--wa-d)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M4 12h13"/><polyline points="13 6 19 12 13 18"/><path d="M19 4v16"/></svg> Le presto a Los Cumpas</button>
+            <button type="button" class="rc-modo-btn" id="pr-dir-entrada" data-dir="entrada"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M20 12H7"/><polyline points="11 6 5 12 11 18"/><path d="M5 4v16"/></svg> Los Cumpas me prestan</button>
           </div>
           <div class="cat" id="pr-dir-hint" style="margin-top:6px">Sale stock de Marín — se registra como deuda a favor, hasta que Los Cumpas lo devuelvan.</div>
         </div>
@@ -1848,8 +1888,8 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <div class="mm-field" id="rc-cantidad-field" style="margin-bottom:8px">
           <label>Cantidad recibida</label>
           <div style="display:flex;gap:6px;margin-bottom:6px">
-            <button type="button" class="rc-modo-btn active" id="rc-modo-unidad" data-modo="unidad" style="flex:1;padding:6px;border-radius:9px;border:1.5px solid var(--wa-d);background:var(--wa-bg,var(--verde-bg));color:var(--wa-d);font-weight:700;font-size:11.5px;cursor:pointer">Por unidad</button>
-            <button type="button" class="rc-modo-btn" id="rc-modo-caja" data-modo="caja" style="flex:1;padding:6px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--muted);font-weight:700;font-size:11.5px;cursor:pointer">Por caja</button>
+            <button type="button" class="rc-modo-btn active" id="rc-modo-unidad" data-modo="unidad" style="border-color:var(--wa-d);background:var(--wa-bg,var(--verde-bg));color:var(--wa-d)">Por unidad</button>
+            <button type="button" class="rc-modo-btn" id="rc-modo-caja" data-modo="caja">Por caja</button>
           </div>
           <div class="mm-qty" style="height:38px">
             <button class="qbtn rc-qty-hold" id="rc-qty-menos" type="button" style="height:100%">−</button>
@@ -1988,7 +2028,6 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <button id="mas-q-reconteo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="10" y1="4" x2="8" y2="20"/><line x1="16" y1="4" x2="14" y2="20"/></svg><br>Reconteo stock</button>
         <button id="mas-q-crear"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><br>Crear producto</button>
         <button id="mas-q-proveedores"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg><br>Proveedores</button>
-        <button id="mas-q-clasificar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 5V3M12 21v-2M5 12H3M21 12h-2M6.6 6.6 5.2 5.2M18.8 18.8l-1.4-1.4M6.6 17.4l-1.4 1.4M18.8 5.2l-1.4 1.4"/></svg><br>Clasificar catálogo</button>
         <button id="mas-q-editar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><br>Editar productos</button>
         <button id="mas-q-categorias"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg><br>Mapeo de categorías</button>
         <button id="mas-q-recargar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="20" x2="5" y2="11"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="19" y1="20" x2="19" y2="14"/></svg><br>Recargar historial</button>
@@ -2047,7 +2086,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
     <div class="mm-body">
       <div class="hm-summary"><span class="lbl" id="rz-lbl">—</span></div>
       <div class="cat" style="margin-bottom:10px;line-height:1.4">Productos <b>A</b> o <b>B</b> (los que más venden) con cobertura urgente o sin control de stock — es decir, alta rotación que se puede quedar sin vender por falta de reposición a tiempo.</div>
-      <button type="button" id="rz-activar-push" style="width:100%;margin-bottom:10px;padding:10px;border-radius:10px;border:1.5px solid var(--azul);background:var(--azul-bg);color:var(--azul);font-weight:700;font-size:13px;cursor:pointer">🔔 Activar avisos en este celular (8 AM y 3 PM)</button>
+      <button type="button" id="rz-activar-push" style="width:100%;margin-bottom:10px;padding:10px;border-radius:10px;border:1.5px solid var(--azul);background:var(--azul-bg);color:var(--azul);font-weight:700;font-size:13px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Activar avisos en este celular (8 AM y 3 PM)</button>
       <div id="rz-push-estado" class="cat hidden" style="margin-bottom:10px"></div>
       <div class="sm-filters" style="display:flex;gap:6px;margin-bottom:6px">
         <select id="rz-prov" style="flex:1;min-width:0;padding:8px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:12.5px">
@@ -2134,7 +2173,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
     <div class="mm-body">
       <div id="pv-cuerpo" style="font-size:13.5px;color:var(--ink2);line-height:1.5;margin-bottom:16px"></div>
       <button class="mm-save" id="pv-sugeridos" style="margin-bottom:8px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.7-3"/><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.7 3"/><polyline points="21 3 21 9 15 9"/><polyline points="3 21 3 15 9 15"/></svg> Usar sugeridos</button>
-      <button class="loadbtn" id="pv-mantener" style="width:100%;margin-bottom:8px">✋ Mantener mi pedido</button>
+      <button class="loadbtn" id="pv-mantener" style="width:100%;margin-bottom:8px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-4.53a1.98 1.98 0 0 1 .28-2.65v0a1.98 1.98 0 0 1 2.66.13L6 15"/></svg> Mantener mi pedido</button>
       <button type="button" id="pv-cancelar" style="width:100%;background:none;border:none;color:var(--muted);font-size:12.5px;text-decoration:underline;cursor:pointer;padding:6px">Cancelar</button>
     </div>
   </div>
@@ -2171,7 +2210,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <div class="fp-actionbar">
           <button type="button" class="fp-btn-cancelar" id="fp-cerrar">Cancelar</button>
           <button type="button" class="fp-btn-eliminar" id="fp-eliminar-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
-          <button type="button" class="fp-btn-guardar" id="fp-guardar-btn">💾 Guardar cambios</button>
+          <button type="button" class="fp-btn-guardar" id="fp-guardar-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar cambios</button>
         </div>
       </div>
     </div>
@@ -2194,7 +2233,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
       </div>
       <div class="mm-field">
         <label>Nombre *</label>
-        <input id="cp-nombre" placeholder="Ej: 7 up 2.0L" autocomplete="off" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+        <input id="cp-nombre" placeholder="Ej: 7 up 2.0L" autocomplete="off" class="mm-input">
       </div>
       <div class="mm-field">
         <label>Categoría *</label>
@@ -2220,8 +2259,8 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
       <div class="mm-field" id="cp-cantidad-field" style="margin-bottom:8px">
         <label>Cantidad inicial (opcional)</label>
         <div style="display:flex;gap:6px;margin-bottom:6px">
-          <button type="button" class="rc-modo-btn active" id="cp-modo-unidad" data-modo="unidad" style="flex:1;padding:6px;border-radius:9px;border:1.5px solid var(--wa-d);background:var(--wa-bg,var(--verde-bg));color:var(--wa-d);font-weight:700;font-size:11.5px;cursor:pointer">Por unidad</button>
-          <button type="button" class="rc-modo-btn" id="cp-modo-caja" data-modo="caja" style="flex:1;padding:6px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--muted);font-weight:700;font-size:11.5px;cursor:pointer">Por caja</button>
+          <button type="button" class="rc-modo-btn active" id="cp-modo-unidad" data-modo="unidad" style="border-color:var(--wa-d);background:var(--wa-bg,var(--verde-bg));color:var(--wa-d)">Por unidad</button>
+          <button type="button" class="rc-modo-btn" id="cp-modo-caja" data-modo="caja">Por caja</button>
         </div>
         <div class="mm-qty" style="height:38px">
           <button class="qbtn cp-qty-hold" id="cp-qty-menos" type="button" style="height:100%">−</button>
@@ -2276,12 +2315,12 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
       </div>
       <div class="mm-field hidden" id="cp-stock-field">
         <label>Stock inicial</label>
-        <input id="cp-stock" inputmode="decimal" placeholder="0" autocomplete="off" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+        <input id="cp-stock" inputmode="decimal" placeholder="0" autocomplete="off" class="mm-input">
         <div style="font-size:11px;color:var(--muted);margin-top:4px">Se completa solo desde "Cantidad inicial" arriba.</div>
       </div>
       <div class="mm-field" id="cp-stock-min-field">
         <label>Inventario bajo / Stock mínimo</label>
-        <input id="cp-stock-min" inputmode="decimal" placeholder="Ej: 5" autocomplete="off" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+        <input id="cp-stock-min" inputmode="decimal" placeholder="Ej: 5" autocomplete="off" class="mm-input">
         <div style="font-size:11px;color:var(--muted);margin-top:4px">Cuando el stock llegue a este número o menos, Loyverse genera la alerta de inventario bajo.</div>
       </div>
       <div class="mm-field" id="cp-fecha-field">
@@ -2312,7 +2351,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <div style="font-size:11px;color:var(--muted);margin-top:4px">Si el código de barras tiene imagen en el catálogo (OpenFoodFacts/UPCitemdb), se precarga sola abajo.</div>
         <input type="file" accept="image/*" id="cp-img-galeria" style="display:none">
         <input type="file" accept="image/*" capture="environment" id="cp-img-camara" style="display:none">
-        <div id="cp-img-elegida" class="hidden" style="margin-top:9px;display:flex;align-items:center;gap:10px;padding:8px 10px;border:1.5px solid var(--wa);border-radius:10px;background:#F1FBF5">
+        <div id="cp-img-elegida" class="hidden" style="margin-top:9px;display:flex;align-items:center;gap:10px;padding:8px 10px;border:1.5px solid var(--wa);border-radius:10px;background:var(--exito-bg)">
           <img id="cp-img-preview" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0">
           <span style="font-size:12px;color:var(--wa-d);font-weight:700;flex:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg> Imagen lista — se sube al crear el producto</span>
           <button type="button" id="cp-img-quitar" style="background:none;border:none;color:var(--muted);font-size:11px;text-decoration:underline;cursor:pointer">Quitar</button>
@@ -2322,7 +2361,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <div id="cp-camara-preview-box" class="hidden" style="margin-top:9px;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper)">
           <img id="cp-camara-preview-img" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#fff;display:block;margin-bottom:8px">
           <div style="display:flex;gap:8px">
-            <button type="button" id="cp-camara-confirmar" style="flex:1;padding:9px;border-radius:9px;border:none;background:var(--wa);color:#fff;font-weight:700;font-size:12.5px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg> Confirmar y quitar fondo</button>
+            <button type="button" id="cp-camara-confirmar" class="btn-confirmar-img"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg> Confirmar y quitar fondo</button>
             <button type="button" id="cp-camara-repetir" style="padding:9px 14px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12.5px;cursor:pointer">↺ Repetir</button>
           </div>
         </div>
@@ -2333,10 +2372,10 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <!-- Resultado con fondo blanco: al tocar "Usar esta imagen" queda como la imagen del
              producto (en _cpImagenBase64) — se sube recién al crear el producto, igual que
              cualquier otra imagen elegida aquí; no se sube por su cuenta a Loyverse. -->
-        <div id="cp-fondo-resultado-box" class="hidden" style="margin-top:9px;padding:10px;border:1.5px solid var(--wa);border-radius:10px;background:#F1FBF5">
+        <div id="cp-fondo-resultado-box" class="hidden" style="margin-top:9px;padding:10px;border:1.5px solid var(--wa);border-radius:10px;background:var(--exito-bg)">
           <img id="cp-fondo-resultado-img" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#fff;display:block;margin-bottom:8px;border:1px solid var(--line)">
           <div style="display:flex;gap:8px">
-            <button type="button" id="cp-fondo-usar" style="flex:1;padding:9px;border-radius:9px;border:none;background:var(--wa);color:#fff;font-weight:700;font-size:12.5px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg> Usar esta imagen</button>
+            <button type="button" id="cp-fondo-usar" class="btn-confirmar-img"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg> Usar esta imagen</button>
             <button type="button" id="cp-fondo-descartar" style="padding:9px 14px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12.5px;cursor:pointer">Descartar</button>
           </div>
         </div>
@@ -2350,57 +2389,46 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
 
 <div class="mm-ov hidden" id="gp-ov">
   <div class="mm-card">
-    <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mm-head-ic"><path d="M20.6 12.1 12.7 4.2a2 2 0 0 0-1.4-.6H5a1 1 0 0 0-1 1v6.3c0 .5.2 1 .6 1.4l7.9 7.9a2 2 0 0 0 2.8 0l5.3-5.3a2 2 0 0 0 0-2.8Z"/><circle cx="8" cy="8.5" r="1.5"/></svg>Gestionar proveedores</h3></div>
-    <div class="mm-body">
-      <div style="display:flex;gap:8px;margin-bottom:12px">
-        <input id="gp-nuevo-nombre" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
-        <button class="btn-ok loadbtn" id="gp-nuevo-crear" type="button" style="white-space:nowrap"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Crear</button>
-      </div>
-      <div id="gp-lista"><div class="vc-empty">Cargando…</div></div>
-      <div id="gp-reasignar-box" class="hidden" style="margin-top:12px;padding:12px;border:1.5px solid var(--ambar);border-radius:10px;background:var(--ambar-bg)">
-        <div id="gp-reasignar-msg" style="font-size:13px;font-weight:700;margin-bottom:10px"></div>
-        <select id="gp-reasignar-select" style="width:100%;padding:10px;border:1.5px solid var(--line);border-radius:10px;font-size:13.5px;background:#fff;margin-bottom:10px"></select>
-        <div style="display:flex;gap:8px">
-          <button class="loadbtn" id="gp-reasignar-ir" style="flex:1">Reasignar a este proveedor</button>
-          <button class="loadbtn" id="gp-reasignar-null" style="flex:1">Dejar sin proveedor</button>
+    <!-- Nivel 1 — Proveedores: lista + crear/eliminar/renombrar. Tocar un proveedor NO lo
+         edita directo: abre el Nivel 2 (gp-nivel-productos) con solo sus productos. -->
+    <div id="gp-nivel-proveedores">
+      <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mm-head-ic"><path d="M20.6 12.1 12.7 4.2a2 2 0 0 0-1.4-.6H5a1 1 0 0 0-1 1v6.3c0 .5.2 1 .6 1.4l7.9 7.9a2 2 0 0 0 2.8 0l5.3-5.3a2 2 0 0 0 0-2.8Z"/><circle cx="8" cy="8.5" r="1.5"/></svg>Gestionar proveedores</h3></div>
+      <div class="mm-body">
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <input id="gp-nuevo-nombre" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+          <button class="btn-ok loadbtn" id="gp-nuevo-crear" type="button" style="white-space:nowrap"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Crear</button>
         </div>
-        <button class="loadbtn" id="gp-reasignar-cancelar" style="width:100%;margin-top:8px">Cancelar</button>
+        <div id="gp-lista"><div class="vc-empty">Cargando…</div></div>
+        <div id="gp-reasignar-box" class="hidden" style="margin-top:12px;padding:12px;border:1.5px solid var(--ambar);border-radius:10px;background:var(--ambar-bg)">
+          <div id="gp-reasignar-msg" style="font-size:13px;font-weight:700;margin-bottom:10px"></div>
+          <select id="gp-reasignar-select" style="width:100%;padding:10px;border:1.5px solid var(--line);border-radius:10px;font-size:13.5px;background:#fff;margin-bottom:10px"></select>
+          <div style="display:flex;gap:8px">
+            <button class="loadbtn" id="gp-reasignar-ir" style="flex:1">Reasignar a este proveedor</button>
+            <button class="loadbtn" id="gp-reasignar-null" style="flex:1">Dejar sin proveedor</button>
+          </div>
+          <button class="loadbtn" id="gp-reasignar-cancelar" style="width:100%;margin-top:8px">Cancelar</button>
+        </div>
+      </div>
+      <div class="mm-body" style="padding-top:0">
+        <button class="loadbtn" id="gp-cerrar" style="width:100%">Cerrar</button>
       </div>
     </div>
-    <div class="mm-body" style="padding-top:0">
-      <button class="loadbtn" id="gp-cerrar" style="width:100%">Cerrar</button>
-    </div>
-  </div>
-</div>
-
-<div class="mm-ov hidden" id="cc-ov">
-  <div class="mm-card">
-    <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mm-head-ic"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>Clasificar catálogo</h3></div>
-    <div class="mm-body">
-      <div id="cc-intro">
-        <p style="font-size:13px;color:var(--muted);margin:0 0 12px;line-height:1.5">Analiza todos los productos que todavía no tienen proveedor ni sector, usando su nombre y la categoría de Loyverse. Los casos dudosos <b>no se adivinan</b>: quedan marcados como pendientes de revisión.</p>
-        <button class="mm-save" id="cc-iniciar">Iniciar análisis</button>
-        <button class="loadbtn" id="cc-reintentar-error" style="width:100%;margin-top:8px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.7-3"/><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.7 3"/><polyline points="21 3 21 9 15 9"/><polyline points="3 21 3 15 9 15"/></svg> Reintentar los que fallaron por error técnico</button>
-        <p style="font-size:11px;color:var(--muted);margin:8px 0 0;line-height:1.4">Solo libera los pendientes marcados por error de conexión o cuota — no toca los que quedaron pendientes por ser genuinamente ambiguos.</p>
+    <!-- Nivel 2 — Productos del proveedor seleccionado. Reutiliza itemsFor(nombre) (la misma
+         función que ya filtra el catálogo por proveedor en Armar pedido) — no se pide nada
+         nuevo al backend, DB.items ya está cargado en memoria. Tocar un producto abre su
+         Ficha completa (fpAbrir), el mismo editor que usa toda la app. -->
+    <div id="gp-nivel-productos" class="hidden">
+      <div class="mm-head">
+        <button type="button" id="gp-prod-volver" aria-label="Volver a proveedores" style="background:none;border:none;padding:4px;margin-right:2px;cursor:pointer;color:var(--ink);display:flex"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <h3 id="gp-prod-titulo" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Productos</h3>
       </div>
-      <div id="cc-progreso" class="hidden">
-        <div style="font-size:13px;font-weight:700;margin-bottom:6px" id="cc-progreso-txt">Procesando…</div>
-        <div style="height:10px;border-radius:6px;background:var(--paper);overflow:hidden;margin-bottom:10px">
-          <div id="cc-progreso-barra" style="height:100%;width:0%;background:var(--wa);transition:width .2s"></div>
+      <div class="mm-body">
+        <div class="mm-search" style="margin:0 0 10px">
+          <input id="gp-prod-search" placeholder="Buscar en estos productos…" autocomplete="off" style="padding-right:44px">
+          <button class="mm-x" id="gp-prod-x" type="button" aria-label="Limpiar" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>
-        <div style="display:flex;gap:14px;font-size:12px;color:var(--muted)">
-          <span>✅ Asignados: <b id="cc-cont-asignados">0</b></span>
-          <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Pendientes: <b id="cc-cont-pendientes">0</b></span>
-        </div>
-        <button class="loadbtn" id="cc-detener" style="width:100%;margin-top:12px">Detener</button>
+        <div id="gp-prod-lista"></div>
       </div>
-      <div id="cc-resumen" class="hidden">
-        <div style="font-size:13px;font-weight:700;margin-bottom:10px" id="cc-resumen-titulo"></div>
-        <div id="cc-resumen-pendientes"></div>
-      </div>
-    </div>
-    <div class="mm-body" style="padding-top:0">
-      <button class="loadbtn" id="cc-cerrar" style="width:100%">Cerrar</button>
     </div>
   </div>
 </div>
@@ -2605,7 +2633,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         </div>
       </div>
       <div class="scalecard hidden" id="fc-hist-card" style="margin-top:14px">
-        <div class="scale-head" id="fc-hist-head"><div><div class="t">🗂️ Historial de facturas calculadas</div><div class="s" id="fc-hist-sub">0 guardadas en esta sesión</div></div><svg class="accordion-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+        <div class="scale-head" id="fc-hist-head"><div><div class="t"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg> Historial de facturas calculadas</div><div class="s" id="fc-hist-sub">0 guardadas en esta sesión</div></div><svg class="accordion-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
         <div class="scale-body accordion-body collapsed" id="fc-hist-body"></div>
       </div>
       <button class="loadbtn" id="fc-cerrar" style="width:100%;margin-top:8px">Cerrar</button>
@@ -3261,7 +3289,7 @@ function rowHTML(it,a,f){const cant=qOf(it,a);
     :'';
   // Aviso de "ya pedido a otro proveedor" — evita pedidos duplicados (ver marcarPedidoRealizado).
   const pend=pendienteDe(it);
-  const pendBadge=pend?`<span class="pend-badge" title="Pedido a ${pend.proveedor||'otro proveedor'} el ${pend.fecha||''} · ${fmt.format(pend.cantidad||0)} u">🕓 Ya pedido a ${pend.proveedor||'?'}</span>`:'';
+  const pendBadge=pend?`<span class="pend-badge" title="Pedido a ${pend.proveedor||'otro proveedor'} el ${pend.fecha||''} · ${fmt.format(pend.cantidad||0)} u"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg> Ya pedido a ${pend.proveedor||'?'}</span>`:'';
   // El carrito ya no se autocompleta con el sugerido (ver qOf) — este hint mantiene visible
   // la recomendación aunque el stepper esté en 0, para no perder esa información de un vistazo.
   const sugHint=(a.sug>0&&cant===0)?`<span class="sug-hint">Sugerido: ${fmt.format(a.sug)}</span>`:'';
@@ -4158,6 +4186,27 @@ function abrirModal(id){
 function cerrarModal(id){
   const el=document.getElementById(id);
   if(el){el.classList.add('hidden');el.style.removeProperty('display');}
+  // Caso especial: la Ficha de producto (fp-ov) fue abierta desde el Nivel 2 de Gestionar
+  // proveedores (Nivel 3 del flujo Proveedor → Productos → Editar producto) — al cerrarla,
+  // sea por Cancelar, Guardar cambios, Eliminar producto o el botón Atrás, debe reabrir el
+  // Nivel 2 en vez de caer a Pedidos. _fpVolverA se limpia enseguida para no afectar
+  // ninguna otra forma de abrir la Ficha (Editar productos, Riesgo de quiebre, Vencimientos,
+  // etc.), que siguen cerrando hacia Pedidos exactamente como antes.
+  if(id==='fp-ov'&&typeof _fpVolverA!=='undefined'&&_fpVolverA==='gp'){
+    _fpVolverA=null;
+    abrirModal('gp-ov');
+    if(typeof _gpMostrarNivel==='function')_gpMostrarNivel('productos');
+    // Refresca la lista con DB.items actual — si el producto se editó o se eliminó desde la
+    // Ficha, DB.items ya quedó actualizado (ver el guardado/eliminado de fpGuardarTodo), así
+    // que basta con volver a filtrar por el mismo proveedor, sin pedir nada al backend.
+    if(_gpProvActual&&typeof itemsFor==='function'){
+      _gpProdListaCompleta=itemsFor(_gpProvActual.nombre).slice().sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),'es'));
+      document.getElementById('gp-prod-search').value='';
+      document.getElementById('gp-prod-x').style.display='none';
+      if(typeof gpRenderProductos==='function')gpRenderProductos(_gpProdListaCompleta);
+    }
+    return;
+  }
   guardarUltimaPantalla('pedido');
   _sincronizarNav();
   _actualizarVisibilidadFab();
@@ -4218,6 +4267,14 @@ history.pushState({marin:'nav'},'');   // trampa inicial: le da algo que consumi
 window.addEventListener('popstate',function(){
   const ov=_overlaySuperior();
   if(ov){                                       // 1) hay ventana abierta → ciérrala
+    // Caso especial: Gestionar proveedores en Nivel 2 (productos de un proveedor) — Atrás
+    // retrocede un nivel DENTRO del mismo modal en vez de cerrarlo entero, tal como pide el
+    // flujo Proveedor → Productos → Editar producto. Nivel 1 (gp-nivel-proveedores) sigue el
+    // camino normal de abajo: cierra gp-ov completo, como cualquier otro modal.
+    if(ov.id==='gp-ov'&&typeof _gpNivel!=='undefined'&&_gpNivel==='productos'){
+      _gpMostrarNivel('proveedores');
+      _sincronizarNav();_reponerTrampa();return;
+    }
     if(ov.id==='scan-ov'){try{closeScanner();}catch(e){ov.classList.add('hidden');}}
     else cerrarModal(ov.id);
     _sincronizarNav();_reponerTrampa();return;
@@ -4563,7 +4620,7 @@ function fpPaneGeneral(f){
         '<button type="button" class="fp-prod-img-btn" id="fp-img-toggle"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg> Cambiar</button>'+
       '</div>'+
       '<div class="fp-prod-fields">'+
-        fpCampo('Nombre del producto','<input id="fp-g-nombre" value="'+(p.nombre||'').replace(/"/g,'&quot;')+'" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">')+
+        fpCampo('Nombre del producto','<input id="fp-g-nombre" value="'+(p.nombre||'').replace(/"/g,'&quot;')+'" class="mm-input">')+
         '<div style="font-size:11px;color:var(--muted)">REF '+p.sku+(p.categoria?' · '+p.categoria:'')+'</div>'+
       '</div>'+
     '</div>'+
@@ -4574,11 +4631,11 @@ function fpPaneGeneral(f){
       '<div style="display:flex;gap:8px">'+
         '<button id="fp-img-camara-btn" style="flex:1;padding:9px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg> Foto</button>'+
         '<button id="fp-img-galeria-btn" style="flex:1;padding:9px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21.44 11.05l-9.19 9.19a5 5 0 0 1-7.07-7.07l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95l-9.2 9.19a1.5 1.5 0 0 1-2.12-2.12l8.49-8.48"/></svg> Galería</button>'+
-        '<button id="fp-img-buscar" style="flex:1;padding:9px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12px;cursor:pointer">🔍 Por código</button>'+
+        '<button id="fp-img-buscar" style="flex:1;padding:9px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Por código</button>'+
       '</div>'+
       '<input type="file" accept="image/*" id="fp-img-galeria" style="display:none">'+
       '<input type="file" accept="image/*" capture="environment" id="fp-img-camara" style="display:none">'+
-      '<div id="fp-img-preview-box" class="hidden" style="margin-top:9px;display:flex;align-items:center;gap:10px;padding:8px 10px;border:1.5px solid var(--wa);border-radius:10px;background:#F1FBF5">'+
+      '<div id="fp-img-preview-box" class="hidden" style="margin-top:9px;display:flex;align-items:center;gap:10px;padding:8px 10px;border:1.5px solid var(--wa);border-radius:10px;background:var(--exito-bg)">'+
         '<img id="fp-img-preview-img" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0">'+
         '<span style="font-size:12px;color:var(--wa-d);font-weight:700;flex:1">¿Usar esta imagen?</span>'+
         '<button type="button" id="fp-img-usar" style="background:var(--wa);border:none;color:#fff;font-weight:700;font-size:11.5px;padding:6px 10px;border-radius:7px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg> Usar</button>'+
@@ -4587,7 +4644,7 @@ function fpPaneGeneral(f){
       '<div id="fp-camara-preview-box" class="hidden" style="margin-top:9px;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:#fff">'+
         '<img id="fp-camara-preview-img" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#fff;display:block;margin-bottom:8px">'+
         '<div style="display:flex;gap:8px">'+
-          '<button type="button" id="fp-camara-confirmar" style="flex:1;padding:9px;border-radius:9px;border:none;background:var(--wa);color:#fff;font-weight:700;font-size:12.5px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg> Confirmar y quitar fondo</button>'+
+          '<button type="button" id="fp-camara-confirmar" class="btn-confirmar-img"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg> Confirmar y quitar fondo</button>'+
           '<button type="button" id="fp-camara-repetir" style="padding:9px 14px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12.5px;cursor:pointer">↺ Repetir</button>'+
         '</div>'+
       '</div>'+
@@ -4595,10 +4652,10 @@ function fpPaneGeneral(f){
         '<span class="sync-ic spin" style="display:inline-flex">⟳</span>'+
         '<span style="font-size:12.5px;color:var(--muted)">Quitando el fondo con remove.bg…</span>'+
       '</div>'+
-      '<div id="fp-fondo-resultado-box" class="hidden" style="margin-top:9px;padding:10px;border:1.5px solid var(--wa);border-radius:10px;background:#F1FBF5">'+
+      '<div id="fp-fondo-resultado-box" class="hidden" style="margin-top:9px;padding:10px;border:1.5px solid var(--wa);border-radius:10px;background:var(--exito-bg)">'+
         '<img id="fp-fondo-resultado-img" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#fff;display:block;margin-bottom:8px;border:1px solid var(--line)">'+
         '<div style="display:flex;gap:8px">'+
-          '<button type="button" id="fp-fondo-aplicar" style="flex:1;padding:9px;border-radius:9px;border:none;background:var(--wa);color:#fff;font-weight:700;font-size:12.5px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg> Aplicar al producto</button>'+
+          '<button type="button" id="fp-fondo-aplicar" class="btn-confirmar-img"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg> Aplicar al producto</button>'+
           '<button type="button" id="fp-fondo-descartar" style="padding:9px 14px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12.5px;cursor:pointer">Descartar</button>'+
         '</div>'+
       '</div>'+
@@ -4619,7 +4676,7 @@ function fpPaneGeneral(f){
         '<label>Seguir inventario</label>'+
         '<div style="display:flex;gap:8px">'+
           '<button type="button" id="fp-i-track-on" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:13px;cursor:pointer">✅ Activado</button>'+
-          '<button type="button" id="fp-i-track-off" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:13px;cursor:pointer">❌ Desactivado</button>'+
+          '<button type="button" id="fp-i-track-off" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:13px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Desactivado</button>'+
         '</div>'+
       '</div>'+
       (p.trackStock?(
@@ -5107,7 +5164,7 @@ function fpPaneProveedores(f){
         '</div>'+
         '<button class="loadbtn" id="fp-pv-prov-nueva" type="button" style="white-space:nowrap"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nuevo</button>'+
       '</div>'+
-      (p.proveedorId?'<span class="fp-chip-principal">★ Principal</span>':'')+
+      (p.proveedorId?'<span class="fp-chip-principal"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" style="vertical-align:-1px"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"/></svg> Principal</span>':'')+
       '<div id="fp-pv-prov-nuevabox" class="hidden" style="display:flex;gap:8px;margin-top:8px">'+
         '<input id="fp-pv-prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">'+
         '<button class="btn-ok loadbtn" id="fp-pv-prov-crear" type="button" style="white-space:nowrap">Crear</button>'+
@@ -5926,13 +5983,29 @@ function psGuardarAprendizaje(patron,proveedorId,sector){
 
 // ===================== GESTIONAR PROVEEDORES =====================
 let _gpLista=[], _gpEliminarPendiente=null; // {id, nombre} — mientras se decide reasignar/null
+// ==== Navegación por niveles dentro de Gestionar proveedores ====
+// _gpNivel: 'proveedores' (Nivel 1) | 'productos' (Nivel 2). El Nivel 3 (Editar producto) NO
+// vive acá — es fp-ov de siempre, reutilizado tal cual vía fpAbrir(). Lo único que cambia es
+// que fpAbrir recuerda que vino de acá (_fpVolverA='gp'), para que al cerrar la Ficha
+// (cerrarModal('fp-ov'), sea por Cancelar, Guardar o Eliminar) vuelva al Nivel 2 en vez de a
+// Pedidos — ver el bloque modificado dentro de cerrarModal() y el popstate más abajo.
+let _gpNivel='proveedores', _gpProvActual=null; // {id?, nombre} del proveedor cuyo Nivel 2 está abierto
+let _fpVolverA=null; // 'gp' cuando la Ficha se abrió desde Gestionar proveedores Nivel 2 — ver cerrarModal()
 document.getElementById('mas-q-proveedores').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');gpAbrir();};
 document.getElementById('gp-cerrar').onclick=()=>cerrarModal('gp-ov');
 function gpAbrir(){
   document.getElementById('gp-reasignar-box').classList.add('hidden');
   _gpEliminarPendiente=null;
+  _gpMostrarNivel('proveedores');
   abrirModal('gp-ov');
   gpCargar();
+}
+// Muestra un nivel y esconde el otro — un solo punto de verdad para el estado de _gpNivel,
+// así el botón Atrás (ver popstate) y los clics dentro del módulo quedan sincronizados igual.
+function _gpMostrarNivel(nivel){
+  _gpNivel=nivel;
+  document.getElementById('gp-nivel-proveedores').classList.toggle('hidden',nivel!=='proveedores');
+  document.getElementById('gp-nivel-productos').classList.toggle('hidden',nivel!=='productos');
 }
 async function gpCargar(){
   document.getElementById('gp-lista').innerHTML='<div class="vc-empty">Cargando…</div>';
@@ -5953,21 +6026,81 @@ function gpRender(){
   const cont=document.getElementById('gp-lista');
   if(!_gpLista.length){cont.innerHTML='<div class="vc-empty">Todavía no hay proveedores creados.</div>';return;}
   cont.innerHTML=_gpLista.map(p=>`
-    <div class="fp-row" data-gp-id="${p.id}">
+    <div class="fp-row" data-gp-id="${p.id}" style="cursor:pointer">
       <span class="k">${p.nombre}</span>
       <span class="v" style="display:flex;align-items:center;gap:8px">
         <span style="color:var(--muted);font-size:11.5px">${p.productos||0} producto${p.productos===1?'':'s'}</span>
-        <button class="loadbtn" data-gp-del="${p.id}" style="padding:5px 9px;font-size:11px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
+        <button class="loadbtn" data-gp-ren="${p.id}" title="Renombrar" style="padding:5px 9px;font-size:11px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+        <button class="loadbtn" data-gp-del="${p.id}" title="Eliminar" style="padding:5px 9px;font-size:11px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
       </span>
     </div>`).join('');
 }
 document.getElementById('gp-lista').addEventListener('click',ev=>{
-  const btn=ev.target.closest('[data-gp-del]');
-  if(!btn)return;
-  const id=Number(btn.dataset.gpDel);
-  const prov=_gpLista.find(p=>p.id===id);
-  if(prov)gpEliminar(prov);
+  const btnDel=ev.target.closest('[data-gp-del]');
+  if(btnDel){
+    const prov=_gpLista.find(p=>p.id===Number(btnDel.dataset.gpDel));
+    if(prov)gpEliminar(prov);
+    return;
+  }
+  const btnRen=ev.target.closest('[data-gp-ren]');
+  if(btnRen){
+    const prov=_gpLista.find(p=>p.id===Number(btnRen.dataset.gpRen));
+    if(prov)abrirModalRenombrar('proveedor',prov.id,prov.nombre,nuevoNombre=>{prov.nombre=nuevoNombre;gpRender();});
+    return;
+  }
+  // Cualquier otro punto de la fila (Nivel 1 → Nivel 2): abre solo los productos de este
+  // proveedor, sin editarlo directo — tal como pide el flujo por niveles.
+  const fila=ev.target.closest('[data-gp-id]');
+  if(fila){
+    const prov=_gpLista.find(p=>p.id===Number(fila.dataset.gpId));
+    if(prov)gpAbrirProductos(prov);
+  }
 });
+// ==== Nivel 2 — Productos del proveedor ====
+// Reutiliza itemsFor(nombre), la misma función que ya usa Armar pedido para filtrar el
+// catálogo por proveedor — DB.items ya está en memoria, no se pide nada nuevo al backend.
+let _gpProdListaCompleta=[];
+function gpAbrirProductos(prov){
+  _gpProvActual=prov;
+  document.getElementById('gp-prod-titulo').textContent=prov.nombre;
+  document.getElementById('gp-prod-search').value='';
+  document.getElementById('gp-prod-x').style.display='none';
+  _gpProdListaCompleta=(typeof itemsFor==='function'&&typeof DB!=='undefined'&&DB.items)
+    ?itemsFor(prov.nombre).slice().sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),'es'))
+    :[];
+  _gpMostrarNivel('productos');
+  history.pushState({marin:'nav',gpNivel:'productos'},'');   // un paso más de historial: el botón Atrás debe volver a Nivel 1, no salir del modal
+  gpRenderProductos(_gpProdListaCompleta);
+}
+function gpRenderProductos(lista){
+  const cont=document.getElementById('gp-prod-lista');
+  if(!lista.length){cont.innerHTML='<div class="vc-empty">Este proveedor todavía no tiene productos asociados.</div>';return;}
+  cont.innerHTML=lista.map(it=>`
+    <div class="fp-row" data-gp-prod-ref="${it.ref}" style="cursor:pointer">
+      <span class="k">${it.nombre}</span>
+      <span class="v" style="color:var(--muted);font-size:11.5px">REF ${it.ref}</span>
+    </div>`).join('');
+}
+document.getElementById('gp-prod-lista').addEventListener('click',ev=>{
+  const fila=ev.target.closest('[data-gp-prod-ref]');
+  if(!fila)return;
+  // Nivel 2 → Nivel 3: reutiliza fpAbrir/fp-ov tal cual (mismo editor que el resto de la
+  // app) — solo se marca de dónde viene, para que Atrás/Cancelar/Guardar/Eliminar en la
+  // Ficha regresen acá en vez de a Pedidos (ver cerrarModal()).
+  _fpVolverA='gp';
+  fpAbrir(fila.dataset.gpProdRef);
+});
+document.getElementById('gp-prod-volver').onclick=()=>{history.back();};
+document.getElementById('gp-prod-search').addEventListener('input',ev=>{
+  const q=normTxt((ev.target.value||'').trim());
+  document.getElementById('gp-prod-x').style.display=q?'flex':'none';
+  gpRenderProductos(q?_gpProdListaCompleta.filter(it=>normTxt(it.nombre).includes(q)):_gpProdListaCompleta);
+});
+document.getElementById('gp-prod-x').onclick=()=>{
+  document.getElementById('gp-prod-search').value='';
+  document.getElementById('gp-prod-x').style.display='none';
+  gpRenderProductos(_gpProdListaCompleta);
+};
 async function gpEliminar(prov){
   if(!confirm('¿Eliminar el proveedor "'+prov.nombre+'"?'))return;
   try{
@@ -6027,118 +6160,13 @@ document.getElementById('gp-nuevo-crear').onclick=async()=>{
   finally{btn.disabled=false;}
 };
 
-// ===================== CLASIFICAR CATÁLOGO (masivo) =====================
-let _ccCancelado=false,_ccTotal=0,_ccProcesados=0,_ccAsignados=[],_ccPendientes=[];
-document.getElementById('mas-q-clasificar').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');ccAbrir();};
-document.getElementById('cc-cerrar').onclick=()=>{_ccCancelado=true;cerrarModal('cc-ov');};
-document.getElementById('cc-detener').onclick=()=>{_ccCancelado=true;};
-document.getElementById('cc-iniciar').onclick=ccIniciar;
-document.getElementById('cc-reintentar-error').onclick=async()=>{
-  const btn=document.getElementById('cc-reintentar-error');
-  btn.disabled=true;const txtOriginal=btn.textContent;btn.textContent='Reintentando…';
-  try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'reintentar_pendientes_error'})});
-    const j=await res.json();
-    if(!j||!j.ok)throw new Error((j&&j.error)||'No se pudo reintentar');
-    showToast(''+j.liberados+' producto(s) liberado(s) — iniciando análisis…');
-    ccIniciar();
-  }catch(e){
-    showToast(''+e.message);
-  }finally{
-    btn.disabled=false;btn.textContent=txtOriginal;
-  }
-};
-function ccAbrir(){
-  document.getElementById('cc-intro').classList.remove('hidden');
-  document.getElementById('cc-progreso').classList.add('hidden');
-  document.getElementById('cc-resumen').classList.add('hidden');
-  abrirModal('cc-ov');
-}
-async function ccIniciar(){
-  _ccCancelado=false;_ccProcesados=0;_ccAsignados=[];_ccPendientes=[];
-  document.getElementById('cc-intro').classList.add('hidden');
-  document.getElementById('cc-resumen').classList.add('hidden');
-  document.getElementById('cc-progreso').classList.remove('hidden');
-  document.getElementById('cc-progreso-txt').textContent='Cargando catálogo…';
-  document.getElementById('cc-progreso-barra').style.width='0%';
-  document.getElementById('cc-cont-asignados').textContent='0';
-  document.getElementById('cc-cont-pendientes').textContent='0';
-  let productos=[];
-  try{
-    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=productos_sin_clasificar');
-    const j=await res.json();
-    if(!j||!j.ok)throw new Error((j&&j.error)||'respuesta inválida');
-    productos=j.productos||[];
-  }catch(e){
-    document.getElementById('cc-progreso-txt').textContent='Error al cargar el catálogo: '+e.message;
-    return;
-  }
-  _ccTotal=productos.length;
-  if(!_ccTotal){document.getElementById('cc-progreso').classList.add('hidden');ccMostrarResumen();return;}
-
-  const TAM_LOTE=10;
-  for(let i=0;i<productos.length;i+=TAM_LOTE){
-    if(_ccCancelado)break;
-    const loteProductos=productos.slice(i,i+TAM_LOTE);
-    const loteSkus=loteProductos.map(p=>p.sku);
-    document.getElementById('cc-progreso-txt').textContent='Analizando '+Math.min(i+TAM_LOTE,_ccTotal)+' de '+_ccTotal+'…';
-    try{
-      const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'clasificar_lote',payload:{skus:loteSkus}})});
-      const texto=await res.text();
-      let j=null;
-      try{j=JSON.parse(texto);}catch(_){/* respuesta no era JSON — se maneja abajo con el texto crudo */}
-      if(j&&j.ok){
-        _ccAsignados.push(...(j.asignados||[]));
-        _ccPendientes.push(...(j.pendientes||[]));
-      }else{
-        const detalle=j&&j.error?j.error:('HTTP '+res.status+' — '+texto.slice(0,140).replace(/\s+/g,' '));
-        _ccPendientes.push(...loteProductos.map(p=>({sku:p.sku,nombre:p.nombre,motivo:'Error al procesar el lote: '+detalle})));
-      }
-    }catch(e){
-      _ccPendientes.push(...loteProductos.map(p=>({sku:p.sku,nombre:p.nombre,motivo:'Error de conexión: '+e.message})));
-    }
-    _ccProcesados+=loteSkus.length;
-    document.getElementById('cc-progreso-barra').style.width=Math.round(_ccProcesados/_ccTotal*100)+'%';
-    document.getElementById('cc-cont-asignados').textContent=_ccAsignados.length;
-    document.getElementById('cc-cont-pendientes').textContent=_ccPendientes.length;
-  }
-  document.getElementById('cc-progreso').classList.add('hidden');
-  ccMostrarResumen();
-}
-function ccMostrarResumen(){
-  const res=document.getElementById('cc-resumen');
-  res.classList.remove('hidden');
-  document.getElementById('cc-resumen-titulo').textContent=
-    (_ccCancelado?'Análisis detenido — ':'Análisis completo — ')+
-    _ccAsignados.length+' asignado'+(_ccAsignados.length===1?'':'s')+' automáticamente, '+
-    _ccPendientes.length+' pendiente'+(_ccPendientes.length===1?'':'s')+' de revisión'+
-    (_ccTotal?' (de '+_ccTotal+' analizados)':'');
-  const cont=document.getElementById('cc-resumen-pendientes');
-  if(!_ccPendientes.length){
-    cont.innerHTML=_ccTotal?'<div class="vc-empty">No quedaron productos pendientes de revisión.</div>':'<div class="vc-empty">No había productos sin clasificar.</div>';
-    return;
-  }
-  cont.innerHTML='<div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px">Pendientes de revisión — toca uno para abrir su Ficha:</div>'+
-    _ccPendientes.map(p=>`
-      <div class="fp-row" data-cc-sku="${p.sku}" style="cursor:pointer">
-        <span class="k">${p.nombre}</span>
-        <span class="v" style="font-size:11px;color:var(--muted);text-align:right;font-weight:600">${p.motivo}</span>
-      </div>`).join('');
-}
-document.getElementById('cc-resumen-pendientes').addEventListener('click',ev=>{
-  const row=ev.target.closest('[data-cc-sku]');
-  if(!row)return;
-  cerrarModal('cc-ov');
-  fpAbrir(row.dataset.ccSku);
-});
-
 // ===================== EDITAR PRODUCTOS =====================
 // Reemplaza al antiguo módulo "Revisión de productos" (proveedor/sector faltante). En vez de
 // una lista con edición inline limitada a esos dos campos, este módulo es solo un buscador:
 // al elegir o escanear un producto se abre su Ficha completa (fp-ov / fpAbrir), que YA trae
 // todos los campos editables, además de Guardar cambios (fp-guardar-btn), Eliminar
 // (fp-eliminar-btn) y Cancelar (fp-cerrar) — cero lógica de edición duplicada, se reutiliza
-// tal cual el Editor de artículo que ya usan Clasificar catálogo, Vencimientos, etc.
+// tal cual el Editor de artículo que ya usan Vencimientos y otros módulos.
 document.getElementById('mas-q-editar').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');edAbrir();};
 document.getElementById('ed-cerrar').onclick=()=>cerrarModal('ed-ov');
 function edAbrir(){
@@ -6244,7 +6272,7 @@ async function mcCargarCategorias(){
     mcRenderChips();
     if(_mcCategorias.length)mcSeleccionarCategoria(_mcCategorias[0].categoria);
   }catch(e){
-    document.getElementById('mc-lista').innerHTML='<div class="vc-empty">❌ Error al cargar: '+e.message+'</div>';
+    document.getElementById('mc-lista').innerHTML='<div class="vc-empty">Error al cargar: '+e.message+'</div>';
   }
 }
 function mcPintarDesglose(d){
@@ -6283,7 +6311,7 @@ async function mcSeleccionarCategoria(categoria){
     _mcProductos=j.productos||[];
     mcRenderLista(document.getElementById('mc-detalle-buscar').value);
   }catch(e){
-    cont.innerHTML='<div class="vc-empty">❌ '+e.message+'</div>';
+    cont.innerHTML='<div class="vc-empty">'+e.message+'</div>';
   }
   _mcCargando=false;
 }
@@ -7388,7 +7416,7 @@ function fcRenderResultados(){
         </div>
       </div>
       <div class="fc-caja-row">
-        <label><input type="checkbox" data-f="viene_por_caja"${it.viene_por_caja?' checked':''}> 📦 Viene por caja</label>
+        <label><input type="checkbox" data-f="viene_por_caja"${it.viene_por_caja?' checked':''}> <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/></svg> Viene por caja</label>
       </div>
       <div class="fc-field${it.viene_por_caja?'':' hidden'}" data-caja-wrap style="margin-bottom:8px">
         <label>Unidades por caja</label>
@@ -7400,7 +7428,7 @@ function fcRenderResultados(){
         <div class="fc-field fc-out"><label>Precio venta exacto</label><input inputmode="numeric" value="${Math.round(venta)}" data-f="venta" readonly></div>
         <div class="fc-field fc-out fc-psico"><label>Precio final</label><input inputmode="numeric" value="${precioFinal}" data-f="psico"></div>
       </div>
-      <button class="fc-manual-btn" type="button">✎ Corregir manualmente (costo/margen leídos por la IA)</button>
+      <button class="fc-manual-btn" type="button"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Corregir manualmente (costo/margen leídos por la IA)</button>
       <div class="fc-row-margin-real">Margen real con este precio: <b>${margenReal.toFixed(1)}%</b></div>
       <div class="fc-row-meta">${meta.join(' · ')}</div>
       <div class="fc-field" style="margin-top:8px">
@@ -7420,12 +7448,12 @@ function fcRenderResultados(){
         <label><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/></svg> Cantidad recibida (opcional — suma el stock en Loyverse al guardar)</label>
         <input inputmode="numeric" placeholder="Ej: 12" data-f="cantidad_recibida">
         <div class="fc-track-warn hidden" data-track-warn>
-          ⚠️ Este producto tiene el seguimiento de inventario <b>desactivado</b> en Loyverse: la cantidad recibida no sumará stock hasta activarlo.
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Este producto tiene el seguimiento de inventario <b>desactivado</b> en Loyverse: la cantidad recibida no sumará stock hasta activarlo.
           <button type="button" class="loadbtn" data-track-on><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 7.5-2"/></svg> Activar inventario</button>
         </div>
       </div>
       <div class="fc-link">
-        <button class="fc-link-btn" type="button">🔗 Asociar a producto existente</button>
+        <button class="fc-link-btn" type="button"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Asociar a producto existente</button>
         <button class="fc-link-btn" type="button" data-crear="1" style="margin-top:6px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Crear producto nuevo con estos datos</button>
         <div class="fc-link-body hidden"></div>
         <div class="fc-crear-body hidden"></div>
@@ -7636,7 +7664,7 @@ async function fcAutocompletarDesdeProducto(row,ref){
       ' · <b>Proveedor:</b> '+(p.proveedor||'—')+
       ' · <b>Sector:</b> '+(p.sector||'—')+
       (lote&&lote.fechaVencimiento?' · <b>Vence:</b> '+lote.fechaVencimiento:'')+
-      '<br>💲 <b>Actual en Loyverse:</b> costo '+peso(costoActual)+' · precio '+peso(precioActual)+
+      '<br><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> <b>Actual en Loyverse:</b> costo '+peso(costoActual)+' · precio '+peso(precioActual)+
       (costoActual>0||precioActual>0?'<button type="button" class="loadbtn" data-usar-actuales="'+id+'">Usar costo/precio actuales en vez de los calculados</button>':'');
   }catch(e){
     caja.textContent='No se pudieron cargar los datos del producto (se vinculó igual).';
@@ -9078,7 +9106,7 @@ function gonRender(){
           <button class="gon-retirar" data-fi="${l.filaIndex}" data-nom="${nom}" style="flex:1">Retirar</button>
         </div>
         <div style="display:flex;justify-content:flex-end">
-          <button type="button" class="btn-editfecha" data-editf="${l.filaIndex}" data-fv="${l.fechaVencimiento}">✏️ Editar fecha</button>
+          <button type="button" class="btn-editfecha" data-editf="${l.filaIndex}" data-fv="${l.fechaVencimiento}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Editar fecha</button>
         </div>
         <div class="vc-editbox hidden" data-editbox="${l.filaIndex}">
           <span class="vc-editlbl">Nueva fecha de vencimiento:</span>
@@ -9248,7 +9276,7 @@ function vcRender(lotes,containerId){
     let botones, notaExtra='';
     if(esCambio && l.estado==='Retirado'){
       botones=`<button class="btn-cambio" data-actm="cambiado" data-i="${l.filaIndex}" data-nom="${l.nombre.replace(/"/g,'&quot;')}" data-cant="${l.cantidad}" data-unidad="${l.unidad}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg> Marcar como cambiado</button>
-         <button class="btn-descuento" data-actm="descuento" data-i="${l.filaIndex}" data-nom="${l.nombre.replace(/"/g,'&quot;')}">💰 Descuento en factura</button>`;
+         <button class="btn-descuento" data-actm="descuento" data-i="${l.filaIndex}" data-nom="${l.nombre.replace(/"/g,'&quot;')}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Descuento en factura</button>`;
       notaExtra='<div class="cat" style="color:var(--azul);font-weight:700">📤 Ya se retiró y se descontó del stock — esperando al proveedor</div>';
     }else if(esCambio){
       botones='';   // aún no vence: se resuelve solo (se descuenta y avisa apenas venza, de un día para otro)
@@ -9262,7 +9290,7 @@ function vcRender(lotes,containerId){
       <div class="cat">${l.categoria} · ${l.fechaVencimiento?('vence '+l.fechaVencimiento):'sin vencimiento'} · ${l.cantidad} ${l.unidad}${l.lote?' · lote '+l.lote:''}</div>
       <div class="accion">${l.accion}${l.precioRecomendado?(' → '+peso(l.precioRecomendado)+(l.costoOrigen==='estimado'?' <span class="est">(costo estimado)</span>':'')):''}</div>
       ${notaExtra}
-      <div class="btns">${botones||''}<button class="btn-editfecha" data-editf="${l.filaIndex}" data-fv="${l.fechaVencimiento}">✏️ Editar fecha</button><button class="btn-elim" data-elim="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" data-nom="${(l.nombre||'').replace(/"/g,'&quot;')}">❌ Eliminar lote</button></div>
+      <div class="btns">${botones||''}<button class="btn-editfecha" data-editf="${l.filaIndex}" data-fv="${l.fechaVencimiento}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Editar fecha</button><button class="btn-elim" data-elim="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" data-nom="${(l.nombre||'').replace(/"/g,'&quot;')}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Eliminar lote</button></div>
       <div class="vc-editbox hidden" data-editbox="${l.filaIndex}">
         <span class="vc-editlbl">Nueva fecha de vencimiento:</span>
         <div class="fecha-wrap">
@@ -9667,7 +9695,7 @@ function hmPintar(items){
           <span class="hm-badge ${mkey}">${MOTIVO_LBL[mkey]}</span>
           ${it.responsable?('· '+it.responsable):''}
           ${warn?'<span style="color:var(--rojo);font-weight:700"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> costo sin confirmar</span>':''}
-          <button class="hm-fix" data-fi="${it.filaIndex}" data-mot="${it.motivo}">✏️ Corregir</button>
+          <button class="hm-fix" data-fi="${it.filaIndex}" data-mot="${it.motivo}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Corregir</button>
           <button class="hm-fix hm-del" data-fi="${it.filaIndex}" data-nombre="${(it.nombre||'').replace(/"/g,'&quot;')}" style="color:var(--rojo);border-color:var(--rojo)">🗑 Eliminar</button>
         </div>
         <div class="hm-fixbox hidden" data-fibox="${it.filaIndex}">
@@ -10683,7 +10711,7 @@ function rzRender(){
         <input id="${rid}-stock" type="number" inputmode="decimal" placeholder="Corregir stock" value="${it.track&&it.stock!=null?it.stock:''}" style="flex:1;min-width:0;padding:8px 10px;border:1.5px solid var(--line);border-radius:9px;font-size:12.5px;font-family:'JetBrains Mono'">
         <button type="button" class="loadbtn rz-guardar-stock" data-sku="${it.ref}" data-rid="${rid}" style="white-space:nowrap;padding:8px 12px;font-size:12.5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg> Guardar stock</button>
       </div>
-      <button type="button" class="loadbtn rz-ir-pedido" data-prov="${(it.prov||'').replace(/"/g,'&quot;')}" style="width:100%;padding:8px;font-size:12.5px">🛒 Ir al pedido de ${it.prov}</button>
+      <button type="button" class="loadbtn rz-ir-pedido" data-prov="${(it.prov||'').replace(/"/g,'&quot;')}" style="width:100%;padding:8px;font-size:12.5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M3 4h2l2.2 11h9.6L19 8H6.4"/></svg> Ir al pedido de ${it.prov}</button>
       <button type="button" class="rz-excluir" data-sku="${it.ref}" data-nombre="${it.nombre.replace(/"/g,'&quot;')}" style="width:100%;padding:7px;font-size:11.5px;border-radius:9px;border:1px dashed var(--line);background:transparent;color:var(--muted);font-weight:600;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><circle cx="12" cy="12" r="9"/><line x1="5.5" y1="5.5" x2="18.5" y2="18.5"/></svg> Excluir de esta lista</button>
     </div>`;
   }).join('');
