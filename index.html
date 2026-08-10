@@ -1686,6 +1686,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <div class="seg" id="vc-viewseg" style="display:flex;width:100%;margin:0 0 10px">
             <button type="button" data-view="lista" class="active" style="flex:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="4" width="16" height="17" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="17" x2="13" y2="17"/></svg> Lista</button>
             <button type="button" data-view="pendientes" style="flex:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/></svg> Pendientes<span id="vc-pend-badge"></span></button>
+            <button type="button" data-view="descuentos" style="flex:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M20.59 13.41 13 21l-9-9 7.59-7.59A2 2 0 0 1 13 4h6a2 2 0 0 1 2 2v6a2 2 0 0 1-.41 1.41Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg> Descuentos<span id="vc-desc-badge"></span></button>
           </div>
           <div id="vc-view-lista">
           <div class="mm-search" style="margin:0 0 10px">
@@ -1712,6 +1713,10 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <div id="vc-view-pendientes" class="hidden">
             <div class="vc-empty" id="vc-pend-intro" style="text-align:left;color:var(--muted);font-size:12px;margin-bottom:8px">Ya se retiraron de la revisión — esperando que el proveedor los cambie, o falta confirmar si son merma.</div>
             <div id="vc-pend-list"></div>
+          </div>
+          <div id="vc-view-descuentos" class="hidden">
+            <div class="vc-empty" id="da-intro" style="text-align:left;color:var(--muted);font-size:12px;margin-bottom:8px">Productos con descuento ya aplicado y sincronizado con Loyverse. Anota lo vendido y lo que se va a merma — al completarse la cantidad total, el lote pasa solo a Historial. Si llega la fecha de vencimiento sin agotarse, el precio normal se restaura solo.</div>
+            <div id="da-list"><div class="vc-empty">Cargando…</div></div>
           </div>
           </div>
         </div>
@@ -1764,20 +1769,6 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <button class="mm-save" id="vc-guardar" disabled>Guardar lote</button>
           <button class="loadbtn" id="vc-cancelar" style="width:100%;margin-top:8px">Cancelar</button>
           </div>
-        </div>
-      </div>
-    </div>
-    <!-- Descuentos activos (punto 1 del pedido): lotes con precio ya rebajado y sincronizado con
-         Loyverse (ver accionAplicarDescuentoVencimiento en el Worker). Viven acá, separados de
-         Vencimientos, hasta que se gestionan por completo (vendido+merma) o vencen sin venderse
-         (revertidos automáticamente por el cron de las 06:00 — ver chequearYRevertirDescuentosVencidos). -->
-    <div class="mm-ov hidden" id="da-ov">
-      <div class="mm-card">
-        <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mm-head-ic"><path d="M20.59 13.41 13 21l-9-9 7.59-7.59A2 2 0 0 1 13 4h6a2 2 0 0 1 2 2v6a2 2 0 0 1-.41 1.41Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>Descuentos activos</h3></div>
-        <div class="mm-topbar"><div class="vc-toprow"><button class="loadbtn" id="da-cerrar" style="flex:1">Cerrar</button></div></div>
-        <div class="mm-body">
-          <div class="vc-empty" id="da-intro" style="text-align:left;color:var(--muted);font-size:12px;margin-bottom:8px">Productos con descuento ya aplicado y sincronizado con Loyverse. Anota lo vendido y lo que se va a merma — al completarse la cantidad total, el lote pasa solo a Historial. Si llega la fecha de vencimiento sin agotarse, el precio normal se restaura solo.</div>
-          <div id="da-list"><div class="vc-empty">Cargando…</div></div>
         </div>
       </div>
     </div>
@@ -2091,7 +2082,6 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <button id="mas-q-recargar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="20" x2="5" y2="11"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="19" y1="20" x2="19" y2="14"/></svg><br>Recargar historial</button>
         <button id="mas-q-factura"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="10" y2="12"/><line x1="13" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="10" y2="16"/><line x1="13" y1="16" x2="16" y2="16"/></svg><br>Calculadora de precios</button>
         <button id="mas-q-riesgo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><br>Riesgo de quiebre<span class="mas-badge" id="riesgo-badge"></span></button>
-        <button id="mas-q-descuentos"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 13 21l-9-9 7.59-7.59A2 2 0 0 1 13 4h6a2 2 0 0 1 2 2v6a2 2 0 0 1-.41 1.41Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg><br>Descuentos activos<span class="mas-badge" id="da-badge"></span></button>
         <button id="mas-q-abc"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg><br>Clasificación ABC</button>
       </div>
       <div class="method" style="margin:0;padding:16px 18px">
@@ -9228,7 +9218,14 @@ function vcSetView(v){
   document.querySelectorAll('#vc-viewseg button').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
   document.getElementById('vc-view-lista').classList.toggle('hidden',v!=='lista');
   document.getElementById('vc-view-pendientes').classList.toggle('hidden',v!=='pendientes');
+  document.getElementById('vc-view-descuentos').classList.toggle('hidden',v!=='descuentos');
   if(v==='pendientes')vcRenderPendientes();
+  // "Descuentos" solo recarga del servidor la primera vez que se visita en esta sesión del
+  // modal (daCargarBadgeSolo, llamado desde vcLoad, ya la marca _daInicializado=true de
+  // entrada) — en visitas siguientes se repinta con lo que ya hay en memoria, que
+  // vcAplicarPrecio mantiene al día en tiempo real. Evita un parpadeo de "Cargando…" y una
+  // llamada de red de más cada vez que el usuario va y vuelve entre pestañas.
+  else if(v==='descuentos'){if(_daInicializado)daRender();else daCargar();}
   else vcAplicarFiltro();   // refresca la lista por si se retiró algo
 }
 document.querySelectorAll('#vc-viewseg button').forEach(b=>b.onclick=()=>vcSetView(b.dataset.view));
@@ -9320,6 +9317,7 @@ async function vcLoad(){
   document.querySelectorAll('#vc-viewseg button').forEach(b=>b.classList.toggle('active',b.dataset.view==='lista'));
   document.getElementById('vc-view-lista').classList.remove('hidden');
   document.getElementById('vc-view-pendientes').classList.add('hidden');
+  document.getElementById('vc-view-descuentos').classList.add('hidden');
   if(!CATEGORIAS_CAMBIO.length)await cargarConfigCambio();   // asegura tener la lista antes de decidir qué botones mostrar
   try{
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=vencimientos');
@@ -9335,6 +9333,21 @@ async function vcLoad(){
     vcAplicarFiltro();   // pinta ya filtrado por lo que haya escrito en el buscador y/o el proveedor elegido
     vcUpdatePendBadge(_vcTodos.filter(l=>l.estado==='Retirado').length);
   }catch(e){box.innerHTML='<div class="vc-empty">Error al cargar. Intenta de nuevo.</div>';}
+  // Carga el badge de "Descuentos" en paralelo, sin esperar a que el usuario entre a esa
+  // pestaña — así el número ya está visible desde que se abre el módulo, igual que "Pendientes".
+  daCargarBadgeSolo();
+}
+// Trae solo el conteo para el badge de la pestaña "Descuentos" sin pintar da-list (que sigue
+// oculto en este momento) — evita que dos cargas completas (la de vcLoad y una futura al
+// entrar a la pestaña) compitan por escribir "Cargando…" en el mismo contenedor a la vez.
+async function daCargarBadgeSolo(){
+  try{
+    const res=await fetch(SYNC_URL+'?action=descuentos_activos');
+    const j=await res.json();
+    _daLotes=(j&&j.ok&&Array.isArray(j.lotes))?j.lotes:[];
+    _daInicializado=true;
+    daActualizarBadge();
+  }catch(e){/* si falla, el badge simplemente se queda vacío hasta que se entre a la pestaña */}
 }
 // Nombre de proveedor a mostrar/agrupar por lote: prioriza el proveedor real de la WebApp
 // (mismo campo que usa itemsFor en Armar pedido) y cae a la categoría de Loyverse si el
@@ -9514,6 +9527,7 @@ function vcWireFilas(box){
 async function vcAplicarPrecio(btn){
   const filaIndex=btn.dataset.aplicar,sku=btn.dataset.sku,precio=Number(btn.dataset.precio);
   if(!filaIndex||!sku||!precio)return;
+  const loteOriginal=_vcTodos.find(l=>String(l.filaIndex)===String(filaIndex));   // se captura ANTES de filtrar _vcTodos más abajo — lo necesito para construir la fila de "Descuentos" sin esperar una recarga del servidor
   const original=btn.textContent;
   btn.disabled=true;btn.textContent='…';
   try{
@@ -9521,6 +9535,7 @@ async function vcAplicarPrecio(btn){
     const j=await res.json();
     if(j&&j.ok){
       const it=(DB.items||[]).find(x=>x.ref===sku);
+      const precioOriginal=it?it.precio:null;
       if(it){it.precio=j.precioAplicado!=null?j.precioAplicado:precio;persist();}
       btn.textContent='✓ Aplicado';
       showToast(j.advertencia?j.advertencia:'Precio aplicado y sincronizado — pasó a Descuentos activos');
@@ -9532,6 +9547,26 @@ async function vcAplicarPrecio(btn){
       _vcTodos=_vcTodos.filter(l=>String(l.filaIndex)!==String(filaIndex));
       vcRecalcularProgTotal();
       vcAplicarFiltro();
+      // Agrega el lote directo a _daLotes en memoria, con los datos que ya se tienen a mano
+      // (loteOriginal, capturado antes de filtrar _vcTodos, + lo que confirmó el servidor) —
+      // así el badge y la pestaña "Descuentos" quedan al día de inmediato, sin depender de una
+      // recarga completa ni de que el usuario haya entrado antes a esa pestaña.
+      if(loteOriginal){
+        _daLotes=_daLotes.filter(l=>String(l.filaIndex)!==String(filaIndex));   // por si ya estaba (no debería, pero evita duplicar)
+        _daLotes.push({
+          filaIndex, sku, nombre:loteOriginal.nombre, categoria:loteOriginal.categoria,
+          unidad:loteOriginal.unidad, lote:loteOriginal.lote, cantidad:loteOriginal.cantidad,
+          fechaVencimiento:loteOriginal.fechaVencimiento,
+          precioOriginal:precioOriginal!=null?precioOriginal:precio,
+          precioAplicado:j.precioAplicado!=null?j.precioAplicado:precio,
+          cantVendida:0, cantMerma:0
+        });
+      }
+      _daInicializado=true;
+      // Si la pestaña "Descuentos" está activa ahora mismo, repinta ya mismo para que el lote
+      // aparezca sin que el usuario tenga que salir y volver a entrar a la pestaña.
+      const vistaActiva=document.querySelector('#vc-viewseg button.active');
+      if(vistaActiva&&vistaActiva.dataset.view==='descuentos')daRender();
       daActualizarBadge();
     }else{
       btn.disabled=false;btn.textContent=original;
@@ -9549,7 +9584,7 @@ async function vcAplicarPrecio(btn){
 // agotar la cantidad del lote (auto-cierre en el Worker), (b) toca "Cerrar gestión" a mano, o
 // (c) el cron de las 06:00 detecta que venció sin agotarse y lo cierra solo, restaurando el
 // precio normal en Loyverse (chequearYRevertirDescuentosVencidos, sin intervención de esta UI).
-let _daLotes=[];
+let _daLotes=[],_daInicializado=false;
 async function daCargar(){
   const box=document.getElementById('da-list');
   box.innerHTML='<div class="vc-empty">Cargando…</div>';
@@ -9557,6 +9592,7 @@ async function daCargar(){
     const res=await fetch(SYNC_URL+'?action=descuentos_activos');
     const j=await res.json();
     _daLotes=(j&&j.ok&&Array.isArray(j.lotes))?j.lotes:[];
+    _daInicializado=true;
   }catch(e){
     _daLotes=[];
     box.innerHTML='<div class="vc-empty">No se pudo cargar Descuentos activos. Revisa tu conexión.</div>';
@@ -9564,10 +9600,6 @@ async function daCargar(){
   }
   daRender();
   daActualizarBadge();
-}
-function daAbrir(){
-  abrirModal('da-ov');
-  daCargar();
 }
 function daRender(){
   const box=document.getElementById('da-list');
@@ -9640,15 +9672,14 @@ async function daCerrar(filaIndex){
     showToast('Error de conexión al cerrar la gestión');
   }
 }
+// Badge de la pestaña "Descuentos" dentro de Revisión de vencimientos — mismo formato que
+// vcUpdatePendBadge (pestaña "Pendientes"), para verse consistente entre ambas.
 function daActualizarBadge(){
-  const b=document.getElementById('da-badge');
+  const b=document.getElementById('vc-desc-badge');
   if(!b)return;
   const n=_daLotes.length;
-  b.textContent=n?String(n):'';
-  b.classList.toggle('on',n>0);
+  b.textContent=n>0?(' '+(n>99?'99+':n)):'';
 }
-document.getElementById('mas-q-descuentos').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');daAbrir();};
-document.getElementById('da-cerrar').onclick=()=>cerrarModal('da-ov');
 
 async function vcEditarFecha(filaIndex,nuevaFecha){
   if(!/^\d{2}\/\d{2}\/\d{4}$/.test(nuevaFecha)){showToast('Escribe la fecha como DD/MM/AAAA');return;}
