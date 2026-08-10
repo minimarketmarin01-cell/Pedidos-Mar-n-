@@ -5217,9 +5217,19 @@ function fpPaneProveedores(f){
   const pane=document.getElementById('fp-pane-proveedores');
   const extra=p.proveedoresIdsExtra||[];
   pane.innerHTML=
-    // Categoría de Loyverse — solo informativa (no se edita desde acá, ver nota en el
-    // comentario de arriba del archivo); mismo p.categoria que ya se usaba, sin tocar backend.
-    (p.categoria?fpRow('Categoría Loyverse',p.categoria):'')+
+    // Categoría de Loyverse — ahora editable con el mismo combo con búsqueda que ya usa
+    // "Proveedor principal" (mismo patrón .cat-combo). accionEditarProducto ya soportaba
+    // payload.categoria desde el backend; solo faltaba exponerlo en esta pestaña — fpGuardarTodo
+    // ya buscaba #fp-pv-cat (con fallback a p.categoria si no existe), así que basta con montar
+    // el campo con ese id para que el guardado funcione sin tocar el backend ni duplicar lógica.
+    fpCampo('Categoría Loyverse',
+      '<div class="cat-combo" id="fp-pv-cat-combo">'+
+        '<input id="fp-pv-cat-input" class="cat-combo-input" placeholder="Buscar categoría…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox" value="'+(p.categoria?String(p.categoria).replace(/"/g,'&quot;'):'')+'">'+
+        '<svg class="cat-combo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'+
+        '<select id="fp-pv-cat" style="display:none"></select>'+
+        '<div class="cat-combo-menu hidden" id="fp-pv-cat-menu" role="listbox"></div>'+
+      '</div>'
+    )+
     fpCampo('Proveedor principal',
       '<div style="display:flex;gap:8px">'+
         '<div class="cat-combo" id="fp-pv-prov-combo" style="flex:1">'+
@@ -5248,6 +5258,21 @@ function fpPaneProveedores(f){
       '</div>'+
     '</div>';
 
+  // Combo de Categoría Loyverse — reutiliza _cpCats/cpCargarCatalogo (mismo endpoint
+  // action=catalogo_crear que ya usa Crear producto) y el combobox genérico catComboWire.
+  // Preselecciona por nombre (p.categoria) buscando su id en _cpCats — accionEditarProducto
+  // en el backend recibe el NOMBRE (no id), así que el <select> solo sirve de estado interno
+  // del combo; fpGuardarTodo sigue leyendo #fp-pv-cat.value tal cual ya hacía.
+  cpCargarCatalogo().then(()=>{
+    const sel=document.getElementById('fp-pv-cat'),input=document.getElementById('fp-pv-cat-input');
+    if(!sel)return;
+    sel.innerHTML='<option value="">'+(p.categoria||'')+'</option>'+_cpCats.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
+    const actual=_cpCats.find(c=>String(c.name)===String(p.categoria));
+    sel.value=actual?actual.name:(p.categoria||'');
+    if(input)input.value=p.categoria||'';
+    catComboWire('fp-pv');
+    if(sel)sel.addEventListener('change',fpGuardarBorrador);
+  });
   // Combo real de Proveedor principal — mismo componente (buscar + crear nuevo) que ya usa
   // Crear producto, solo con IDs propios de esta pestaña (fp-pv-prov-*) para no chocar.
   psCargarListas().then(()=>{
@@ -7137,38 +7162,49 @@ document.getElementById('cp-cat-crear').onclick=async()=>{
   }catch(e){showToast('Error de conexión');}
   finally{btn.disabled=false;}
 };
-// ---- Combobox de categoría con búsqueda (Crear producto) ----
-// El <select> #cp-cat original queda oculto en el DOM como única fuente de verdad:
-// cpValidar(), cpLlenarSelect() y el flujo de "crear categoría nueva" siguen intactos.
-// Este bloque solo lee _cpCats, escribe sel.value y dispara 'change'. El desplegable se
-// monta en <body> (portal) mientras está abierto — igual que el buscador de proveedor —
-// para no quedar recortado por .mm-card{overflow:hidden} ni por el scroll de .mm-body.
-let _catComboHome=null;
+// ---- Combobox de categoría con búsqueda (reutilizable: Crear producto y Ficha/Proveedores) ----
+// Generalizado por prefijo para no duplicar esta lógica entre "cp-cat*" (Crear producto) y
+// "fp-pv-cat*" (Ficha, pestaña Proveedores) — mismo patrón que psInitCombo ya usa para
+// proveedor/sector. El <select> oculto de cada prefijo sigue siendo la única fuente de verdad:
+// quien la use (cpValidar, fpGuardarTodo) sigue leyendo su .value igual que antes.
+// catComboIds resuelve los ids reales del DOM para cada prefijo — "cp" es un caso especial
+// porque su combo/menu no siguen el patrón "prefijo-cat-combo"/"prefijo-cat-menu" (se llaman
+// "cat-combo"/"cat-combo-menu" a secas, por ser los primeros en existir); todo prefijo nuevo
+// (como "fp-pv") sí sigue el patrón regular. Resolverlo una sola vez acá evita el fallback
+// ambiguo que antes mezclaba el menú de un prefijo con el de otro.
+const _catComboState={}; // { [prefix]: {home:null} }
+function catComboIds(prefix){
+  return prefix==='cp'
+    ? {combo:'cat-combo',menu:'cat-combo-menu',input:prefix+'-cat-input',sel:prefix+'-cat'}
+    : {combo:prefix+'-cat-combo',menu:prefix+'-cat-menu',input:prefix+'-cat-input',sel:prefix+'-cat'};
+}
 function catComboItems(){return _cpCats.slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),'es'));}
-function catComboPosition(){
-  const anchor=document.getElementById('cat-combo'),menu=document.getElementById('cat-combo-menu');
+function catComboPosition(prefix){
+  const ids=catComboIds(prefix),anchor=document.getElementById(ids.combo),menu=document.getElementById(ids.menu);
   if(!anchor||!menu||menu.classList.contains('hidden'))return;
   const r=anchor.getBoundingClientRect();
   menu.style.left=r.left+'px';menu.style.top=(r.bottom+4)+'px';menu.style.width=r.width+'px';
 }
-function catComboMount(){
-  const menu=document.getElementById('cat-combo-menu');
-  if(!menu||_catComboHome)return;
-  _catComboHome={parent:menu.parentNode,next:menu.nextSibling};
+function catComboMount(prefix){
+  const ids=catComboIds(prefix),menu=document.getElementById(ids.menu);
+  const st=_catComboState[prefix]=_catComboState[prefix]||{home:null};
+  if(!menu||st.home)return;
+  st.home={parent:menu.parentNode,next:menu.nextSibling};
   document.body.appendChild(menu);
   menu.style.position='fixed';
-  catComboPosition();
+  catComboPosition(prefix);
 }
-function catComboUnmount(){
-  const menu=document.getElementById('cat-combo-menu');
-  if(!menu||!_catComboHome)return;
+function catComboUnmount(prefix){
+  const ids=catComboIds(prefix),menu=document.getElementById(ids.menu);
+  const st=_catComboState[prefix];
+  if(!menu||!st||!st.home)return;
   menu.style.position='';menu.style.left='';menu.style.top='';menu.style.width='';
-  const{parent,next}=_catComboHome;
+  const{parent,next}=st.home;
   if(next&&next.parentNode===parent)parent.insertBefore(menu,next);else parent.appendChild(menu);
-  _catComboHome=null;
+  st.home=null;
 }
-function catComboRender(query){
-  const menu=document.getElementById('cat-combo-menu');
+function catComboRender(prefix,query){
+  const ids=catComboIds(prefix),menu=document.getElementById(ids.menu);
   if(!menu)return;
   const q=normTxt(query||'');
   const items=catComboItems().filter(c=>!q||normTxt(c.name).indexOf(q)>-1);
@@ -7178,55 +7214,64 @@ function catComboRender(query){
   html+=`<div class="cat-opt cat-opt-new" data-new="1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nueva categoría${query?` "${query.trim()}"`:''}</div>`;
   menu.innerHTML=html;
 }
-function catComboOpen(){
-  const menu=document.getElementById('cat-combo-menu'),input=document.getElementById('cp-cat-input');
+function catComboOpen(prefix){
+  const ids=catComboIds(prefix),menu=document.getElementById(ids.menu),input=document.getElementById(ids.input);
   if(!menu||!input)return;
-  catComboRender(input.value);
+  catComboRender(prefix,input.value);
   menu.classList.remove('hidden');
   input.setAttribute('aria-expanded','true');
-  catComboMount();
+  catComboMount(prefix);
 }
-function catComboClose(){
-  const menu=document.getElementById('cat-combo-menu'),input=document.getElementById('cp-cat-input');
+function catComboClose(prefix){
+  const ids=catComboIds(prefix),menu=document.getElementById(ids.menu),input=document.getElementById(ids.input);
   if(!menu)return;
   menu.classList.add('hidden');
   if(input)input.setAttribute('aria-expanded','false');
-  catComboUnmount();
+  catComboUnmount(prefix);
 }
-function catComboChoose(id,name){
-  const sel=document.getElementById('cp-cat');
-  sel.value=id;
+function catComboChoose(prefix,id,name){
+  const ids=catComboIds(prefix),sel=document.getElementById(ids.sel);
+  // cp-cat necesita el category_id real de Loyverse (crear producto llama a Loyverse con ese
+  // id). fp-pv-cat en cambio alimenta accionEditarProducto, que recibe el NOMBRE de categoría
+  // (busca por nombre en D1, ver comentario en fpPaneProveedores) — por eso guarda name, no id.
+  sel.value=(prefix==='cp')?id:name;
   sel.dispatchEvent(new Event('change'));
-  document.getElementById('cp-cat-input').value=name;
-  catComboClose();
+  document.getElementById(ids.input).value=name;
+  catComboClose(prefix);
 }
-(function(){
-  const input=document.getElementById('cp-cat-input'),menu=document.getElementById('cat-combo-menu');
+// data-new (crear categoría) solo se resuelve si el prefijo tiene su propio flujo de "nueva
+// categoría" en el DOM (hoy solo cp-cat lo tiene) — en prefijos sin ese flujo (fp-pv-cat) la
+// opción simplemente no se ofrece, para no fallar por elementos inexistentes.
+function catComboWire(prefix){
+  const ids=catComboIds(prefix),input=document.getElementById(ids.input),menu=document.getElementById(ids.menu);
   if(!input||!menu)return;
-  input.addEventListener('focus',catComboOpen);
-  input.addEventListener('click',()=>{if(menu.classList.contains('hidden'))catComboOpen();});
-  input.addEventListener('input',()=>{catComboRender(input.value);if(menu.classList.contains('hidden')){menu.classList.remove('hidden');catComboMount();}else catComboPosition();});
+  input.addEventListener('focus',()=>catComboOpen(prefix));
+  input.addEventListener('click',()=>{if(menu.classList.contains('hidden'))catComboOpen(prefix);});
+  input.addEventListener('input',()=>{catComboRender(prefix,input.value);if(menu.classList.contains('hidden')){menu.classList.remove('hidden');catComboMount(prefix);}else catComboPosition(prefix);});
   menu.addEventListener('click',ev=>{
     const opt=ev.target.closest('.cat-opt');
     if(!opt||opt.classList.contains('cat-opt-empty'))return;
     if(opt.dataset.new){
-      catComboClose();
-      document.getElementById('cp-cat-nuevabox').classList.remove('hidden');
-      const nombreInp=document.getElementById('cp-cat-nuevanom');
+      const nuevabox=document.getElementById(prefix+'-cat-nuevabox');
+      if(!nuevabox){catComboClose(prefix);return;} // este prefijo no tiene flujo de "nueva categoría"
+      catComboClose(prefix);
+      nuevabox.classList.remove('hidden');
+      const nombreInp=document.getElementById(prefix+'-cat-nuevanom');
       nombreInp.value=input.value.trim();
       nombreInp.focus();
       return;
     }
-    catComboChoose(opt.dataset.id,opt.dataset.name);
+    catComboChoose(prefix,opt.dataset.id,opt.dataset.name);
   });
   document.addEventListener('pointerdown',ev=>{
     if(menu.classList.contains('hidden'))return;
     if(input.contains(ev.target)||menu.contains(ev.target))return;
-    catComboClose();
+    catComboClose(prefix);
   });
-  window.addEventListener('resize',()=>{if(_catComboHome)catComboPosition();});
-  window.addEventListener('scroll',()=>{if(_catComboHome)catComboPosition();},true);
-})();
+  window.addEventListener('resize',()=>{if(_catComboState[prefix]&&_catComboState[prefix].home)catComboPosition(prefix);});
+  window.addEventListener('scroll',()=>{if(_catComboState[prefix]&&_catComboState[prefix].home)catComboPosition(prefix);},true);
+}
+catComboWire('cp');
 // ---- Autocompletar producto nuevo por código de barras (APIs públicas y gratuitas) ----
 // Cadena de proveedores: se intenta el primero, si no responde o no tiene el producto se
 // prueba el siguiente. Para agregar o cambiar de API más adelante, solo hay que sumar o
