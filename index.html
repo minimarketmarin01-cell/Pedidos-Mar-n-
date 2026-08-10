@@ -397,6 +397,7 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .vc-aplicar-precio{margin-left:auto;flex:none;border:none;background:var(--verde);color:#fff;border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Manrope'}
 .vc-aplicar-precio:disabled{opacity:.6}
 .vc-aplicar-precio.vc-aplicado{background:var(--exito,var(--verde))}
+.vc-pct-off{margin-top:2px;font-size:10.5px;font-weight:800;color:var(--verde);font-family:'JetBrains Mono'}
 .vc-empty{padding:20px;text-align:center;color:var(--muted);font-size:13px}
 .vc-toprow{display:flex;gap:8px;margin-bottom:12px}
 .vc-toprow button{flex:1}
@@ -9056,7 +9057,10 @@ let _vcProgTotal=0; // total de lotes pendientes al momento de aplicar el filtro
 // repintado tras marcar un lote, para que la barra avance en vez de resetearse a 0 cada vez.
 function vcRecalcularProgTotal(){
   const provFiltro=document.getElementById('vc-provfilter').value;
-  let base=provFiltro?_vcTodos.filter(l=>l.categoria===provFiltro):_vcTodos;
+  // FIX: el total de referencia de la barra de progreso debe contar lo mismo que Lista
+  // realmente muestra — sin los lotes Retirado (esos viven en Pendientes).
+  let base=_vcTodos.filter(l=>l.estado!=='Retirado');
+  if(provFiltro)base=base.filter(l=>l.categoria===provFiltro);
   if(_vcDiasFiltro>0)base=base.filter(l=>{const d=_diasVenc(l.fechaVencimiento);return d==null||d<0||d<=_vcDiasFiltro;});
   _vcProgTotal=base.length;
 }
@@ -9066,7 +9070,11 @@ function vcAplicarFiltro(){
   const provFiltro=document.getElementById('vc-provfilter').value;
   const x=document.getElementById('vc-lx'); if(x)x.style.display=q?'block':'none';
   if(!q){
-    let base=provFiltro?_vcTodos.filter(l=>l.categoria===provFiltro):_vcTodos;
+    // FIX: un lote "Retirado" ya se movió a la pestaña Pendientes — no debe seguir viéndose
+    // también en Lista. _vcTodos trae ambos (el backend solo excluye 'Revisado'), así que acá
+    // se filtra el resto: Lista = todo lo que no esté Retirado ni Revisado.
+    let base=_vcTodos.filter(l=>l.estado!=='Retirado');
+    if(provFiltro)base=base.filter(l=>l.categoria===provFiltro);
     // Filtro rápido de días (7/15/30/Todos) — reemplaza el filtro de categoría que antes solo
     // vivía en "Por góndola" (eliminado, fusionado acá). Los vencidos SIEMPRE se muestran sin
     // importar el filtro: son lo más urgente, nunca deberían quedar ocultos por accidente.
@@ -9110,7 +9118,9 @@ function vcBuscarCatalogo(q,provFiltro){
   if(provFiltro)prods=prods.filter(it=>it.prov===provFiltro); // it.prov = categoría/proveedor propio de la WebApp, igual campo que l.categoria en los lotes
   prods=prods.slice(0,80);
   if(!prods.length){box.innerHTML='<div class="vc-empty">Sin coincidencias en el catálogo.</div>';return;}
-  const lotesPorSku={};_vcTodos.forEach(l=>{(lotesPorSku[l.sku]=lotesPorSku[l.sku]||[]).push(l);});
+  // FIX: mismo criterio que vcAplicarFiltro — un lote Retirado vive en Pendientes, no en la
+  // búsqueda de Lista.
+  const lotesPorSku={};_vcTodos.filter(l=>l.estado!=='Retirado').forEach(l=>{(lotesPorSku[l.sku]=lotesPorSku[l.sku]||[]).push(l);});
   const lotesMatch=[], sinLote=[];
   prods.forEach(p=>{const ls=lotesPorSku[p.ref]; if(ls&&ls.length)ls.forEach(l=>lotesMatch.push(l)); else sinLote.push(p);});
   if(lotesMatch.length)vcRender(lotesMatch,null,true); else box.innerHTML='';   // reutiliza el render de lotes
@@ -9343,13 +9353,17 @@ function vcFilaHtml(l){
   // Precio actual → sugerido con descuento → Aplicar (punto 6) — solo si hay recomendación
   // real y precio actual conocido; si no, se sigue mostrando el texto de acción tal cual
   // (ej. "Vencido — retirar y registrar merma", que no tiene precio asociado).
+  // % OFF real, calculado a partir de ambos precios (no aproximado) — solo se muestra si el
+  // precio actual es mayor a 0 y el sugerido implica una rebaja real.
+  const pctOff=(l.precioRecomendado&&precioActual>0&&l.precioRecomendado<precioActual)
+    ?Math.round((1-(l.precioRecomendado/precioActual))*100):null;
   const bloquePrecio=(l.precioRecomendado&&precioActual!=null)
     ?`<div class="vc-precio-linea">
         <span class="vc-precio-actual">${peso(precioActual)}</span>
         <span class="vc-precio-flecha">→</span>
         <span class="vc-precio-sug">${peso(l.precioRecomendado)}${l.costoOrigen==='estimado'?' <span class="est">(costo estimado)</span>':''}</span>
         <button type="button" class="vc-aplicar-precio" data-aplicar="${l.filaIndex}" data-sku="${l.sku}" data-precio="${l.precioRecomendado}">Aplicar</button>
-      </div>`
+      </div>${pctOff!=null?`<div class="vc-pct-off">${pctOff}% OFF</div>`:''}`
     :(l.accion&&l.accion!=='—'?`<div class="accion">${l.accion}</div>`:'');
   return `
     <div class="vc-row" data-fi-row="${l.filaIndex}">
