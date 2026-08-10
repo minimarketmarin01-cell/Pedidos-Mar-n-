@@ -10549,6 +10549,26 @@ document.getElementById('rc-qty-mas').onclick=rcQtyMas;
 document.getElementById('rc-cantidad').oninput=()=>{rcValidar();rcRenderResumen();};
 document.getElementById('rc-fecha').oninput=()=>{rcValidar();rcGuardarBorrador();};
 
+// FIX: esta función se llamaba desde varios puntos (rcShowPicked→rcSetModo, rcQtyMenos/Mas,
+// el oninput de rc-cantidad/rc-unidades-caja) pero nunca quedó definida tras la migración a
+// PcWidget — el ReferenceError abortaba todo rcPick a mitad de camino, así que rc-detalle
+// nunca llegaba a mostrarse (el bug reportado). Mismo patrón que ya usa cpRenderResumen: el
+// costo/margen ya los resuelve PcWidget internamente (pc-resumen-mini) — acá solo falta el
+// hint de "cuántas unidades entran en total si se compró por caja", igual que hacía antes.
+function rcRenderResumen(){
+  const cant=Number(document.getElementById('rc-cantidad').value)||0;
+  const uCaja=Number(document.getElementById('rc-unidades-caja').value)||0;
+  const hint=document.getElementById('rc-stock-total-hint');
+  if(!hint)return;
+  if(rcState.modo==='caja'&&cant>0&&uCaja>0){
+    hint.innerHTML=''+cant+' caja'+(cant===1?'':'s')+' × '+uCaja+' u/caja = <b>'+(cant*uCaja)+' unidades</b> se sumarán al stock.';
+  }else if(rcState.modo==='caja'&&cant>0&&!uCaja){
+    hint.innerHTML='<span style="color:var(--rojo)">Escribe las unidades por caja para calcular el total.</span>';
+  }else{
+    hint.textContent='';
+  }
+}
+
 // ---- Selector Unidad / Caja ----
 // Toggle claro Con IVA / Sin IVA — reemplaza el checkbox anterior, que dejaba ambigüedad
 // sobre qué significa "activado". Con botones explícitos no hay que interpretar nada.
