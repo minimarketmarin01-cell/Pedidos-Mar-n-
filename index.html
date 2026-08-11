@@ -1958,6 +1958,11 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
             <div class="cat" id="rc-costo-actual" style="margin-top:2px">Costo actual: —</div>
             <div class="cat" id="rc-precio-actual" style="margin-top:2px">Precio actual: —</div>
             <div class="cat" id="rc-margen-actual" style="margin-top:2px">Margen actual: —</div>
+            <div class="cat" id="rc-proveedores" style="margin-top:6px;font-weight:700;color:var(--ink)">Proveedor(es): —</div>
+            <div style="display:flex;gap:6px;margin-top:6px">
+              <select id="rc-provid-select" style="flex:1;min-width:0;padding:7px 9px;border:1.5px solid var(--line);border-radius:8px;font-size:12px"><option value="">Agregar proveedor…</option></select>
+              <button class="loadbtn" id="rc-provid-add" type="button" style="white-space:nowrap;padding:7px 10px;font-size:12px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Agregar</button>
+            </div>
           </div>
           <div id="rc-results"></div>
           <button id="rc-activar-inv" class="hidden" type="button" style="width:100%;margin:8px 0 0;padding:8px 10px;border-radius:9px;border:1.5px solid var(--azul);background:var(--azul-bg);color:var(--azul);font-weight:700;font-size:12.5px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 7.5-2"/></svg> Activar inventario</button>
@@ -10629,7 +10634,49 @@ function rcShowPicked(it){
   const pIdx=document.getElementById('rc-precio');if(pIdx){pIdx.value=rcState.precioOriginal||'';pIdx.dispatchEvent(new Event('input',{bubbles:true}));}
   rcSetModo('unidad');
   rcRenderResumen();
+  rcRenderProveedores(it);
 }
+// Asignar un proveedor adicional (WebApp, no la categoría de Loyverse) directo desde Recepción
+// — para el caso típico de recibir un producto que llegó de un proveedor nuevo que todavía no
+// tiene asignado (reportado: "pedí un producto que aún no tiene el proveedor nuevo asignado").
+// Reutiliza EXACTO el mismo mecanismo que ya usa la pestaña Proveedores de la Ficha del
+// producto (fpPaneProveedores/agregar_proveedor_id_extra) — no se duplica esa lógica, solo se
+// expone un atajo más corto acá.
+function rcRenderProveedores(it){
+  const txt=document.getElementById('rc-proveedores');
+  const sel=document.getElementById('rc-provid-select');
+  if(!txt||!sel)return;
+  const nombres=[it.proveedorNombre,...(it.proveedorNombresExtra||[])].filter(Boolean);
+  txt.textContent='Proveedor(es): '+(nombres.length?nombres.join(', '):'sin asignar (usa categoría "'+it.prov+'")');
+  psCargarListas().then(()=>{
+    const asignados=new Set((it.proveedorIdsTodos||[]).map(Number));
+    sel.innerHTML='<option value="">Agregar proveedor…</option>'+
+      _psProveedores.filter(p=>!asignados.has(Number(p.id))).map(p=>'<option value="'+p.id+'">'+p.nombre+'</option>').join('');
+  });
+}
+document.getElementById('rc-provid-add').onclick=async()=>{
+  const it=rcState.item; if(!it)return;
+  const sel=document.getElementById('rc-provid-select');
+  const provId=sel&&sel.value;
+  if(!provId){showToast('Elige un proveedor primero');return;}
+  const btn=document.getElementById('rc-provid-add');
+  btn.disabled=true;
+  try{
+    const r=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'agregar_proveedor_id_extra',payload:{sku:it.ref,proveedor_id:Number(provId)}})});
+    const j=await r.json();
+    if(j&&j.ok){
+      it.proveedorIdsExtra=it.proveedorIdsExtra||[];
+      if(!it.proveedorIdsExtra.includes(Number(provId)))it.proveedorIdsExtra.push(Number(provId));
+      it.proveedorIdsTodos=(it.proveedorIdsTodos||[]).includes(Number(provId))?it.proveedorIdsTodos:[...(it.proveedorIdsTodos||[]),Number(provId)];
+      it.proveedorNombresExtra=it.proveedorNombresExtra||[];
+      if(!it.proveedorNombresExtra.includes(j.proveedor_nombre))it.proveedorNombresExtra.push(j.proveedor_nombre);
+      showToast('Ahora también se pide a '+j.proveedor_nombre);
+      rcRenderProveedores(it);
+      render();
+    }else{showToast(''+((j&&j.error)||'No se pudo agregar'));}
+  }catch(e){showToast('Error de conexión');}
+  finally{btn.disabled=false;}
+};
 function rcPick(ref){
   const it=(DB.items||[]).find(i=>i.ref===ref);
   if(!it)return;
