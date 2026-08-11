@@ -1210,6 +1210,9 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
 .order-head .t{font-family:'Manrope';font-weight:800;font-size:15px;display:flex;align-items:center;gap:8px}
 .order-head .s{color:#aab0ba;font-size:12px;margin-top:3px}
 .wa-ico{width:20px;height:20px;background:var(--wa);border-radius:5px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:800;font-family:'Manrope'}
+.pedido-confirmado-banner{margin:10px 14px 0;padding:9px 11px;background:var(--paper);border:1px solid var(--line);border-left:3px solid var(--gold,#c68a1b);border-radius:9px;font-size:12px;line-height:1.5;color:var(--ink2);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.pedido-confirmado-banner b{color:var(--ink)}
+.pedido-confirmado-banner .pcb-btn{flex:none;background:var(--lavanda-tint);border:1px solid #DFD2EC;color:#5A4A6E;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:700;font-family:'Manrope';cursor:pointer;white-space:nowrap}
 .order-body{padding:12px 14px;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .oline{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px dashed var(--line2);font-size:13px}
 .oline-prov-tag{font-weight:800;font-size:10.5px;text-transform:uppercase;letter-spacing:.02em;margin-right:5px}
@@ -2021,14 +2024,15 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
       <button class="loadbtn" id="cart-back" style="margin-bottom:12px">← Volver a Pedidos</button>
       <div class="order">
         <div class="order-head"><div class="t"><span class="wa-ico">W</span>Carrito del pedido</div><div class="s" id="order-sub">Proveedor —</div></div>
+        <div class="pedido-confirmado-banner hidden" id="pedido-confirmado-banner"></div>
         <div class="order-body" id="order-body"></div>
         <div class="order-foot">
           <div class="order-row-main">
             <div class="tot-compact"><span class="l">Total</span><span class="v mono" id="tot-cost">$0</span></div>
             <button class="oact-btn" id="btn-resugerir" aria-label="Volver a sugerir" title="Vuelve a calcular la sugerencia de pedido y reemplaza el carrito del proveedor actual"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.7-3"/><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.7 3"/><polyline points="21 3 21 9 15 9"/><polyline points="3 21 3 15 9 15"/></svg><span class="oact-lbl">Sugerir</span></button>
             <button class="oact-btn oact-danger" id="btn-clear" aria-label="Vaciar carrito" title="Vaciar todo el carrito (todos los proveedores, no solo el que estás viendo)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg><span class="oact-lbl">Vaciar</span></button>
-            <button class="oact-btn" id="btn-marcar-presencial" aria-label="Marcar pedido como realizado (presencial)" title="Marcar como realizado (pedido hecho por teléfono o en persona, sin copiar a WhatsApp)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span class="oact-lbl">Confirmar</span></button>
-            <button class="btn btn-wa btn-wa-compact" id="btn-copy" title="Copiar pedido para WhatsApp"><span class="wa-ico">W</span><span class="oact-lbl" style="color:#fff">Copiar</span></button>
+            <button class="oact-btn" id="btn-marcar-presencial" aria-label="Confirmar pedido presencial" title="Confirmar pedido presencial (por teléfono o en persona, sin copiar a WhatsApp) — pide fecha de llegada"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="oact-lbl">Presencial</span></button>
+            <button class="btn btn-wa btn-wa-compact" id="btn-copy" title="Confirmar pedido y copiar para WhatsApp — pide fecha de llegada"><span class="wa-ico"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span><span class="oact-lbl" style="color:#fff">Confirmar</span></button>
           </div>
         </div>
       </div>
@@ -3123,6 +3127,11 @@ function pvAbrir(providerName,editedCount,onKeepSuggested,onKeepCurrent,onCancel
 // algo de OTRO proveedor, no se autocarga nada — se respeta tal cual esté.
 function pickProv(target){
   const carritoVacioAntes=currentOrder().length===0;
+  // Cambiar de proveedor cierra cualquier edición de "pedido confirmado" que estuviera en
+  // curso (ver cargarPedidoConfirmadoEnCarrito) — si quedaba algo cargado sin reconfirmar, sus
+  // cantidades siguen en state.edits (no se pierden), solo se deja de rastrear como "edición de
+  // un pedido ya confirmado" para no eliminar por error SKUs de OTRO proveedor al reconfirmar.
+  if(typeof _limpiarPedidoConfirmadoCargado==='function')_limpiarPedidoConfirmadoCargado();
   if(target==='__ALL__'){state.allProv=true;}else{state.allProv=false;state.prov=target;state.sort='rate';state.dir=-1;}
   state.search='';const sx=document.getElementById('prov-x');if(sx)sx.classList.remove('on');const menu=document.getElementById('prov-menu');if(menu)menu.classList.add('hidden');const sel=document.getElementById('prov-all');if(sel)sel.blur();setProvInputValue();
   // "Todos los proveedores" no autocarga nada — no hay un único proveedor nuevo al que
@@ -3143,7 +3152,7 @@ function render(){
   document.getElementById('order-sub').textContent=allMode?'Todos los proveedores':'Proveedor · '+state.prov;
   const thRate=document.getElementById('th-rate');
   if(thRate&&thRate.childNodes[0])thRate.childNodes[0].nodeValue='Vta '+state.basis+'d ';
-  renderTable();renderScale();renderOrder();
+  renderTable();renderScale();renderOrder();renderBannerPedidoConfirmado();
 }
 // ===================== INICIO (pantalla de accesos rápidos — solo modo celular) =====================
 // Reutiliza SIEMPRE la lógica de cálculo que ya existe en otros módulos — no reinventa nada:
@@ -11363,6 +11372,15 @@ async function marcarPedidoRealizado(lines,canal,fechaLlegadaEstimada){
       const fechaHoy=new Date().toLocaleString('es-CL');
       DB.pendBySku=DB.pendBySku||{};DB.pendByBarcode=DB.pendByBarcode||{};
       items.forEach(x=>{
+        // Cantidad 0 = producto sacado de un pedido confirmado (ver
+        // lineasEliminadasDePedidoConfirmado) — el backend lo borra de pedidos_pendientes en
+        // vez de dejarlo en cero, así que acá se refleja igual: se elimina, no se guarda un
+        // registro vacío que seguiría contando como "producto pendiente".
+        if(x.cantidad<=0){
+          delete DB.pendBySku[x.sku];
+          if(x.barcode)delete DB.pendByBarcode[x.barcode];
+          return;
+        }
         const costoTotal=x.costoUnitario*x.cantidad;
         const rec={sku:x.sku,barcode:x.barcode,nombre:x.nombre,proveedor:x.proveedor,cantidad:x.cantidad,canal:canal,fecha:fechaHoy,
           costo_unitario:x.costoUnitario,costo_total:costoTotal,fecha_llegada_estimada:fechaLlegadaEstimada||'',estado:'confirmado'};
@@ -11397,6 +11415,66 @@ function estimarFechaLlegada(provNombre){
 }
 // 'YYYY-MM-DD' en horario local (evita el corrimiento de día de toISOString, que usa UTC).
 function isoLocalDate(d){const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
+
+// ===================== Retomar/editar un pedido ya confirmado desde el carrito =====================
+// pedidos_pendientes (D1) guarda una sola fila por SKU — así que "el pedido confirmado a un
+// proveedor" ya ES, en los hechos, lo que hoy está pendiente (DB.pendBySku) para los productos
+// de ese proveedor. No hace falta un concepto ni una pantalla nueva: alcanza con poder volver a
+// cargar esos valores al carrito de siempre (state.edits) para editarlos con los controles que
+// ya existen, y reconfirmar. Mientras dura esa edición, se recuerda qué SKUs se cargaron y con
+// qué fecha, para poder detectar si el usuario sacó alguno (lo dejó en 0) al reconfirmar.
+let _pedidoConfirmadoRefsCargados=[];
+let _fechaPedidoConfirmadoCargado=null;
+function _limpiarPedidoConfirmadoCargado(){_pedidoConfirmadoRefsCargados=[];_fechaPedidoConfirmadoCargado=null;}
+// Productos del proveedor actual con un pedido CONFIRMADO en curso (pendienteDe ya excluye los
+// 'recibido' — solo cuenta lo que sigue en camino). Reutiliza itemsFor()/pendienteDe(), no
+// agrega ninguna fuente de datos nueva.
+function itemsPedidoConfirmadoActual(){
+  if(state.search||state.allProv)return [];
+  return itemsFor(state.prov).filter(it=>pendienteDe(it));
+}
+function renderBannerPedidoConfirmado(){
+  const el=document.getElementById('pedido-confirmado-banner'); if(!el)return;
+  const items=itemsPedidoConfirmadoActual();
+  if(!items.length){el.classList.add('hidden');el.innerHTML='';return;}
+  let total=0,fecha=null;
+  items.forEach(it=>{const p=pendienteDe(it);total+=Number(p.costo_total)||0;if(!fecha&&p.fecha_llegada_estimada)fecha=p.fecha_llegada_estimada;});
+  el.innerHTML='<span>📦 Ya pediste a <b>'+state.prov+'</b>: '+items.length+' producto'+(items.length===1?'':'s')+(total>0?' · '+peso(total):'')+(fecha?' · Llega '+fmtDateInputToDDMMAAAA(fecha):'')+'</span>'+
+    '<button type="button" class="pcb-btn" id="pcb-editar-btn">Editar pedido</button>';
+  el.classList.remove('hidden');
+  document.getElementById('pcb-editar-btn').onclick=cargarPedidoConfirmadoEnCarrito;
+}
+// Vuelca las cantidades ya confirmadas del proveedor actual a state.edits (mismo mecanismo que
+// ya usan las sugerencias y la edición manual — no crea un carrito paralelo), para que el
+// usuario las vea/edite/agregue productos con los controles normales del carrito.
+function cargarPedidoConfirmadoEnCarrito(){
+  const items=itemsPedidoConfirmadoActual();
+  let cargados=0;
+  _pedidoConfirmadoRefsCargados=[];
+  _fechaPedidoConfirmadoCargado=null;
+  items.forEach(it=>{
+    const p=pendienteDe(it);
+    if(p&&p.cantidad>0){
+      state.edits[it.ref]=p.cantidad;
+      _pedidoConfirmadoRefsCargados.push(it.ref);
+      cargados++;
+      if(!_fechaPedidoConfirmadoCargado&&p.fecha_llegada_estimada)_fechaPedidoConfirmadoCargado=p.fecha_llegada_estimada;
+    }
+  });
+  render();persistUI();
+  showToast(cargados?('Pedido confirmado cargado · '+cargados+' producto'+(cargados===1?'':'s')+' — editalo y volvé a confirmar'):'No hay pedido confirmado para este proveedor');
+}
+// Al reconfirmar, los SKUs que se cargaron desde un pedido confirmado pero que el usuario dejó
+// en 0 (los sacó) no aparecen en currentOrderVisible() — hay que armarles una línea aparte en
+// cantidad 0 para que marcarPedidoRealizado() sepa que hay que BORRARLOS, no que simplemente no
+// se tocaron.
+function lineasEliminadasDePedidoConfirmado(){
+  return _pedidoConfirmadoRefsCargados
+    .filter(ref=>!(state.edits[ref]>0))
+    .map(ref=>{const it=DB.items.find(i=>i.ref===ref);return it?{it,nombre:it.nombre,q:0,packs:0,cost:0,word:it.word}:null;})
+    .filter(Boolean);
+}
+
 // ===================== Modal de confirmación genérico =====================
 // Reutiliza el patrón visual .mm-ov/.mm-card ya usado en toda la app. Un solo
 // nodo en el DOM, se repuebla en cada llamada. Bloquea doble clic deshabilitando
@@ -11446,11 +11524,15 @@ function confirmarAccion({titulo,mensaje,textoConfirmar,textoCancelar,peligro,on
   _sincronizarNav();
 }
 
-// Modal dedicado para "Confirmar pedido" (btn-marcar-presencial): además de confirmar, pide la
-// fecha estimada de llegada (prellenada con estimarFechaLlegada, editable) antes de guardar —
-// el guardado en sí lo sigue haciendo marcarPedidoRealizado(), no se duplica esa lógica acá.
-// Mismo patrón visual mm-ov/mm-card que confirmarAccion() y el resto de los modales de la app.
-function abrirConfirmarPedido({provNombre,lines,onConfirm}){
+// Modal dedicado para "Confirmar pedido" — lo usan por igual btn-copy (WhatsApp) y
+// btn-marcar-presencial (presencial), ver confirmarPedidoConCanal. Pide la fecha estimada de
+// llegada antes de guardar — el guardado en sí lo sigue haciendo marcarPedidoRealizado(), no se
+// duplica esa lógica acá. Mismo patrón visual mm-ov/mm-card que confirmarAccion() y el resto de
+// los modales de la app.
+// fechaSugerida (opcional): si se está retomando un pedido ya confirmado (ver
+// cargarPedidoConfirmadoEnCarrito), se prellena con la fecha YA acordada con el proveedor en
+// vez de recalcularla de cero con estimarFechaLlegada — así no se pisa sin querer.
+function abrirConfirmarPedido({provNombre,lines,fechaSugerida,notaExtra,onConfirm}){
   let modal=document.getElementById('cp2-ov');
   if(!modal){
     modal=document.createElement('div');
@@ -11470,9 +11552,9 @@ function abrirConfirmarPedido({provNombre,lines,onConfirm}){
     document.body.appendChild(modal);
   }
   const totalCosto=lines.reduce((s,l)=>s+l.cost,0);
-  document.getElementById('cp2-resumen').textContent='Confirma que ya llamaste o le pediste a '+provNombre+': '+lines.length+' producto'+(lines.length===1?'':'s')+' · '+peso(totalCosto)+'. Esto evita que el pedido se duplique si vuelves a mirar estos productos.';
+  document.getElementById('cp2-resumen').textContent='Vas a confirmar el pedido a '+provNombre+': '+lines.length+' producto'+(lines.length===1?'':'s')+' · '+peso(totalCosto)+'. Esto evita que el pedido se duplique si vuelves a mirar estos productos.'+(notaExtra?(' '+notaExtra):'');
   const fechaInp=document.getElementById('cp2-fecha');
-  fechaInp.value=isoLocalDate(estimarFechaLlegada(provNombre));
+  fechaInp.value=fechaSugerida||isoLocalDate(estimarFechaLlegada(provNombre));
 
   let btnOk=document.getElementById('cp2-btn-ok');
   let btnCancel=document.getElementById('cp2-btn-cancel');
@@ -11481,7 +11563,7 @@ function abrirConfirmarPedido({provNombre,lines,onConfirm}){
   const nuevoCancel=btnCancel.cloneNode(true);btnCancel.parentNode.replaceChild(nuevoCancel,btnCancel);btnCancel=nuevoCancel;
   btnOk.onclick=()=>{
     btnOk.disabled=true; // evita doble ejecución si se toca dos veces seguidas
-    const fecha=document.getElementById('cp2-fecha').value||isoLocalDate(estimarFechaLlegada(provNombre));
+    const fecha=document.getElementById('cp2-fecha').value||fechaSugerida||isoLocalDate(estimarFechaLlegada(provNombre));
     modal.classList.add('hidden');_sincronizarNav();
     onConfirm&&onConfirm(fecha);
   };
@@ -11543,93 +11625,86 @@ document.getElementById('btn-clear').onclick=()=>{
     peligro:true,
     onConfirm:()=>{
       state.edits={};
+      _limpiarPedidoConfirmadoCargado();
       render();persistUI();
       showToast('Carrito vaciado ('+n+' producto'+(n===1?'':'s')+' · todo en 0)');
     }
   });
 };
-document.getElementById('btn-copy').onclick=()=>{
-  // El carrito ahora puede acumular productos de varios proveedores a la vez (ver
-  // currentOrder). Para WhatsApp eso no sirve — cada proveedor tiene su propio número y
-  // necesita su propio mensaje — así que acá se filtra solo lo del proveedor que se está
-  // viendo (currentOrderVisible, mismo filtro que ya se ve en pantalla). En "todos los
-  // proveedores" o con búsqueda activa se manda todo junto, igual que ya funcionaba antes
-  // (ahí "(varios)" ya era el comportamiento esperado).
-  const lines=currentOrderVisible();
-  const cambiosMap={};
-  currentCambios().forEach(c=>{cambiosMap[c.it.ref]=c.cambio;});
-  const refsConPedido=new Set(lines.map(l=>l.it.ref));
-  // Productos con cambio pendiente pero sin nada que pedir (q=0) — también van en el mensaje,
-  // como pide el requisito ("incluso si la cantidad a pedir es 0").
-  const soloCambio=Object.keys(cambiosMap)
-    .filter(ref=>!refsConPedido.has(ref))
-    .map(ref=>{const it=DB.items.find(i=>i.ref===ref);return it?{it,nombre:it.nombre}:null;})
-    .filter(Boolean);
-  if(!lines.length&&!soloCambio.length){showToast('No hay productos en el pedido');return;}
-  lines.sort((a,b)=>b.q-a.q);
-  const uds=lines.reduce((s,l)=>s+l.q,0);
-  const prov=(state.search||state.allProv)?'(varios)':state.prov;
-  let txt=`*Inversiones Salazar Requejo SpA*\nRUT: 77.493.967-9\n\n*Proveedor: ${prov}*\nFecha: ${new Date().toLocaleDateString('es-CL')}\n\n`;
-  lines.forEach(l=>{
-    const cambio=cambiosMap[l.it.ref]||0;
-    if(cambio>0){
-      // Pedir y Cambio nunca se mezclan en una sola línea — cada uno con su propia etiqueta.
-      txt+=`• ${l.nombre}\n  📦 Pedir: ${l.q} unidades\n  🔄 Cambio: ${cambio} unidades\n`;
-    }else{
-      txt+=l.it.fmt>1?`• ${l.nombre} — ${l.packs} ${plural(l.word,l.packs)} (${l.q} u)\n`:`• ${l.nombre} — ${l.q} und\n`;
-    }
-  });
-  if(soloCambio.length){
-    txt+=`\n*Solo cambio (sin pedido nuevo):*\n`;
-    soloCambio.forEach(c=>{txt+=`• ${c.nombre}\n  🔄 Cambio: ${cambiosMap[c.it.ref]} unidades\n`;});
-  }
-  if(state.prov==='CCU'&&!state.search&&!state.allProv){const p=ccuMixedPacks();if(p>0)txt+=`\n(Retornables 2.5L: ${p} packs → -${SCALES.ccu_ret.dtoG[ccuTierIdx(p)]}%)`;}
-  // A pedido: copiar a WhatsApp también cuenta como "confirmar" el pedido, y ahora vacía TODO
-  // el carrito (todos los proveedores) — como es un cambio de comportamiento más fuerte que
-  // antes (antes no vaciaba nada), se pide confirmación previa, igual que ya hace "Confirmar".
-  confirmarAccion({
-    titulo:'Copiar pedido y confirmar',
-    mensaje:'Se copiará el mensaje para WhatsApp y se marcará el pedido como solicitado. Al confirmar, se vaciará todo el carrito (de todos los proveedores).',
-    textoConfirmar:'Copiar y confirmar',
-    onConfirm:()=>{
-      if(lines.length)marcarPedidoRealizado(lines,'whatsapp',isoLocalDate(estimarFechaLlegada(prov)));
-      // Punto 2 del pedido: el pedido queda registrado (marcarPedidoRealizado ya corrió) —
-      // recién ahora se vacía TODO el carrito. No se cargan sugeridos de inmediato después
-      // (eso solo pasa la próxima vez que se elija un proveedor con el carrito ya vacío, ver
-      // pickProv).
-      if(lines.length){state.edits={};render();}
-      const ok=()=>{showToast('Pedido copiado ✓ Pégalo en WhatsApp'+(lines.length?' · carrito vaciado':''));const b=document.getElementById('btn-copy');b.classList.add('copied');setTimeout(()=>b.classList.remove('copied'),1400);};
-      if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok,()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();ok();});
-      else{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();ok();}
-      persistUI();
-    }
-  });
-};
-document.getElementById('btn-marcar-presencial').onclick=async()=>{
-  // Mismo criterio que btn-copy: si el carrito tiene varios proveedores mezclados, "marcar
-  // como realizado" solo REGISTRA el pedido del proveedor que se está viendo — pero, a pedido,
-  // "Confirmar" siempre vacía TODO el carrito al terminar, sin importar de qué proveedores sea
-  // (ver state.edits={} más abajo). Si quedaba algo de otro proveedor sin pedir todavía, se
-  // pierde de esta lista: es la consecuencia esperada de la regla "confirmar vacía todo".
+// Botón WhatsApp ("Confirmar y copiar") y botón "Presencial" comparten toda esta lógica —
+// la única diferencia real entre ambos es si arman y copian el mensaje de WhatsApp
+// (canal==='whatsapp') o no. Antes cada botón tenía su propia copia casi idéntica de este
+// flujo (uno con el modal de fecha, el otro sin) — de ahí que "parecieran lo mismo" pero con
+// detalles distintos (uno pedía fecha, el otro no). Ahora hay una sola implementación; lo que
+// cambia por botón es el ícono, el canal, y si copia al portapapeles.
+function confirmarPedidoConCanal(canal){
   const soloEsteProv=!state.search&&!state.allProv;
   const lines=currentOrderVisible();
-  if(!lines.length){showToast('No hay productos en el pedido de este proveedor');return;} // edge case
+  const provNombre=soloEsteProv?state.prov:(canal==='whatsapp'?'(varios)':'el proveedor');
+  let txt=null;
+  if(canal==='whatsapp'){
+    const cambiosMap={};
+    currentCambios().forEach(c=>{cambiosMap[c.it.ref]=c.cambio;});
+    const refsConPedido=new Set(lines.map(l=>l.it.ref));
+    // Productos con cambio pendiente pero sin nada que pedir (q=0) — también van en el mensaje,
+    // como pide el requisito ("incluso si la cantidad a pedir es 0").
+    const soloCambio=Object.keys(cambiosMap)
+      .filter(ref=>!refsConPedido.has(ref))
+      .map(ref=>{const it=DB.items.find(i=>i.ref===ref);return it?{it,nombre:it.nombre}:null;})
+      .filter(Boolean);
+    if(!lines.length&&!soloCambio.length){showToast('No hay productos en el pedido');return;}
+    const ordenadas=[...lines].sort((a,b)=>b.q-a.q);
+    txt=`*Inversiones Salazar Requejo SpA*\nRUT: 77.493.967-9\n\n*Proveedor: ${provNombre}*\nFecha: ${new Date().toLocaleDateString('es-CL')}\n\n`;
+    ordenadas.forEach(l=>{
+      const cambio=cambiosMap[l.it.ref]||0;
+      if(cambio>0){
+        // Pedir y Cambio nunca se mezclan en una sola línea — cada uno con su propia etiqueta.
+        txt+=`• ${l.nombre}\n  📦 Pedir: ${l.q} unidades\n  🔄 Cambio: ${cambio} unidades\n`;
+      }else{
+        txt+=l.it.fmt>1?`• ${l.nombre} — ${l.packs} ${plural(l.word,l.packs)} (${l.q} u)\n`:`• ${l.nombre} — ${l.q} und\n`;
+      }
+    });
+    if(soloCambio.length){
+      txt+=`\n*Solo cambio (sin pedido nuevo):*\n`;
+      soloCambio.forEach(c=>{txt+=`• ${c.nombre}\n  🔄 Cambio: ${cambiosMap[c.it.ref]} unidades\n`;});
+    }
+    if(state.prov==='CCU'&&soloEsteProv){const p=ccuMixedPacks();if(p>0)txt+=`\n(Retornables 2.5L: ${p} packs → -${SCALES.ccu_ret.dtoG[ccuTierIdx(p)]}%)`;}
+  }else if(!lines.length){
+    showToast('No hay productos en el pedido de este proveedor');return; // edge case
+  }
+  const btnId=canal==='whatsapp'?'btn-copy':'btn-marcar-presencial';
   abrirConfirmarPedido({
-    provNombre:soloEsteProv?state.prov:'el proveedor',
-    lines:lines,
-    onConfirm:async(fechaLlegadaEstimada)=>{
-      const btn=document.getElementById('btn-marcar-presencial');
-      btn.disabled=true;
-      await marcarPedidoRealizado(lines,'presencial',fechaLlegadaEstimada);
-      // Punto 2 del pedido: el pedido queda guardado (marcarPedidoRealizado ya corrió) —
-      // recién ahora se vacía TODO el carrito, no cargar sugeridos de inmediato después.
+    provNombre,
+    lines,
+    fechaSugerida:_fechaPedidoConfirmadoCargado,
+    notaExtra:canal==='whatsapp'?'Además se copiará el mensaje para pegarlo en WhatsApp.':null,
+    onConfirm:async(fecha)=>{
+      const btn=document.getElementById(btnId);
+      if(btn)btn.disabled=true;
+      // Los productos que se sacaron de un pedido confirmado que se estaba editando (ver
+      // cargarPedidoConfirmadoEnCarrito) no aparecen en `lines` (quedaron en 0) — hay que
+      // avisarle a marcarPedidoRealizado que hay que BORRARLOS, no solo que no se tocaron.
+      const lineasAGuardar=[...lines,...lineasEliminadasDePedidoConfirmado()];
+      await marcarPedidoRealizado(lineasAGuardar,canal,fecha);
+      // El pedido ya quedó guardado (marcarPedidoRealizado ya corrió) — recién ahora se vacía
+      // TODO el carrito, sin cargar sugeridos de inmediato después (eso solo pasa la próxima
+      // vez que se elija un proveedor con el carrito ya vacío, ver pickProv).
       state.edits={};
+      _limpiarPedidoConfirmadoCargado();
       render();persistUI();
-      btn.disabled=false;
-      showToast('Pedido marcado como realizado ('+lines.length+' producto'+(lines.length===1?'':'s')+') · carrito vaciado');
+      if(btn)btn.disabled=false;
+      if(canal==='whatsapp'){
+        const ok=()=>{showToast('Pedido copiado ✓ Pégalo en WhatsApp'+(lines.length?' · carrito vaciado':''));btn.classList.add('copied');setTimeout(()=>btn.classList.remove('copied'),1400);};
+        if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok,()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();ok();});
+        else{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();ok();}
+      }else{
+        showToast('Pedido marcado como realizado ('+lines.length+' producto'+(lines.length===1?'':'s')+') · carrito vaciado');
+      }
     }
   });
-};
+}
+document.getElementById('btn-copy').onclick=()=>confirmarPedidoConCanal('whatsapp');
+document.getElementById('btn-marcar-presencial').onclick=()=>confirmarPedidoConCanal('presencial');
 // (Carga manual de CSV eliminada — los datos llegan automáticamente del script)
 
 // listeners delegados (no reconstruyen la tabla -> el teclado no se cierra)
