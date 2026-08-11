@@ -320,6 +320,8 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .vc-row{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
 .vc-row .nom{font-weight:700;font-size:13.5px}
 .vc-row .cat{font-size:11.5px;color:var(--muted);margin-top:2px}
+.vc-row .vc-stock-actual{color:var(--ink2);font-weight:600}
+.vc-row .vc-stock-actual b{color:var(--ink);font-family:'JetBrains Mono',monospace}
 .vc-row .accion{font-size:12.5px;font-weight:700;margin-top:6px}
 .gon-row .accion{font-size:12.5px;font-weight:700;margin-top:2px}
 .vc-row .accion .est{font-weight:600;color:var(--muted);margin-left:4px}
@@ -2031,8 +2033,10 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
             <div class="tot-compact"><span class="l">Total</span><span class="v mono" id="tot-cost">$0</span></div>
             <button class="oact-btn" id="btn-resugerir" aria-label="Volver a sugerir" title="Vuelve a calcular la sugerencia de pedido y reemplaza el carrito del proveedor actual"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.7-3"/><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.7 3"/><polyline points="21 3 21 9 15 9"/><polyline points="3 21 3 15 9 15"/></svg><span class="oact-lbl">Sugerir</span></button>
             <button class="oact-btn oact-danger" id="btn-clear" aria-label="Vaciar carrito" title="Vaciar todo el carrito (todos los proveedores, no solo el que estás viendo)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg><span class="oact-lbl">Vaciar</span></button>
-            <button class="oact-btn" id="btn-marcar-presencial" aria-label="Confirmar pedido presencial" title="Confirmar pedido presencial (por teléfono o en persona, sin copiar a WhatsApp) — pide fecha de llegada"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="oact-lbl">Presencial</span></button>
-            <button class="btn btn-wa btn-wa-compact" id="btn-copy" title="Confirmar pedido y copiar para WhatsApp — pide fecha de llegada"><span class="wa-ico"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span><span class="oact-lbl" style="color:#fff">Confirmar</span></button>
+            <button class="btn btn-wa btn-wa-compact" id="btn-copy" title="Confirmar pedido (WhatsApp o presencial) y copiar mensaje para WhatsApp — pide fecha de llegada">
+              <span class="wa-ico"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span>
+              <span class="oact-lbl" style="color:#fff">Confirmar</span>
+            </button>
           </div>
         </div>
       </div>
@@ -9409,6 +9413,14 @@ function vcPrecioActualDe(l){
   const it=(DB.items||[]).find(x=>x.ref===l.sku);
   return it&&it.precio!=null?it.precio:null;
 }
+// Stock TOTAL actual del producto (todo lo que hay en el catálogo/Loyverse ahora mismo, no solo
+// lo de este lote) — para poder comparar a simple vista contra la cantidad y fecha del lote: si
+// coincide, probablemente sigue siendo este lote; si no, es señal de que llegó mercadería nueva
+// y esta fecha puede estar desactualizada. Null si el producto no lleva control de stock.
+function vcStockActualDe(l){
+  const it=(DB.items||[]).find(x=>x.ref===l.sku);
+  return (it&&it.track&&it.stock!=null)?it.stock:null;
+}
 function vcRender(lotes,containerId,esBusqueda){
   const box=document.getElementById(containerId||'vc-list');
   const esPendientes=containerId==='vc-pend-list';
@@ -9492,10 +9504,15 @@ function vcFilaHtml(l){
         <button type="button" class="vc-aplicar-precio" data-aplicar="${l.filaIndex}" data-sku="${l.sku}" data-precio="${l.precioRecomendado}">Aplicar</button>
       </div>${pctOff!=null?`<div class="vc-pct-off">${pctOff}% OFF</div>`:''}`
     :(l.accion&&l.accion!=='—'?`<div class="accion">${l.accion}</div>`:'');
+  const stockActual=vcStockActualDe(l);
+  const stockLinea=stockActual!=null
+    ?`<div class="cat vc-stock-actual">📦 Stock actual: <b>${fmt.format(stockActual)}</b> ${l.unidad||'un'}</div>`
+    :'';
   return `
     <div class="vc-row" data-fi-row="${l.filaIndex}">
       <div class="nom">${l.prioridad} ${l.nombre}</div>
       <div class="cat">${l.fechaVencimiento?('vence '+l.fechaVencimiento):'sin vencimiento'} · ${l.cantidad} ${l.unidad}${l.lote?' · lote '+l.lote:''}</div>
+      ${stockLinea}
       ${bloquePrecio}
       ${notaExtra}
       <div class="btns vc-btns-mini">${botones||''}<button class="vc-mini" data-editf="${l.filaIndex}" data-fv="${l.fechaVencimiento}" title="Editar fecha"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>Fecha</span></button><button class="vc-mini vc-mini-rojo" data-elim="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" data-nom="${nom}" title="Eliminar lote"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>Eliminar lote</span></button></div>
@@ -11524,11 +11541,11 @@ function confirmarAccion({titulo,mensaje,textoConfirmar,textoCancelar,peligro,on
   _sincronizarNav();
 }
 
-// Modal dedicado para "Confirmar pedido" — lo usan por igual btn-copy (WhatsApp) y
-// btn-marcar-presencial (presencial), ver confirmarPedidoConCanal. Pide la fecha estimada de
-// llegada antes de guardar — el guardado en sí lo sigue haciendo marcarPedidoRealizado(), no se
-// duplica esa lógica acá. Mismo patrón visual mm-ov/mm-card que confirmarAccion() y el resto de
-// los modales de la app.
+// Modal dedicado para "Confirmar pedido" — lo abre el único botón del carrito (btn-copy, ver
+// confirmarPedidoConCanal), que sirve tanto para WhatsApp como para pedidos presenciales. Pide
+// la fecha estimada de llegada antes de guardar — el guardado en sí lo sigue haciendo
+// marcarPedidoRealizado(), no se duplica esa lógica acá. Mismo patrón visual mm-ov/mm-card que
+// confirmarAccion() y el resto de los modales de la app.
 // fechaSugerida (opcional): si se está retomando un pedido ya confirmado (ver
 // cargarPedidoConfirmadoEnCarrito), se prellena con la fecha YA acordada con el proveedor en
 // vez de recalcularla de cero con estimarFechaLlegada — así no se pisa sin querer.
@@ -11672,7 +11689,7 @@ function confirmarPedidoConCanal(canal){
   }else if(!lines.length){
     showToast('No hay productos en el pedido de este proveedor');return; // edge case
   }
-  const btnId=canal==='whatsapp'?'btn-copy':'btn-marcar-presencial';
+  const btnId='btn-copy'; // único botón del carrito, ver comentario junto a su wiring más abajo
   abrirConfirmarPedido({
     provNombre,
     lines,
@@ -11703,8 +11720,13 @@ function confirmarPedidoConCanal(canal){
     }
   });
 }
+// Único botón del carrito (WhatsApp + presencial fusionados a pedido del usuario) — siempre usa
+// el canal 'whatsapp': arma y copia el mensaje además de guardar el pedido, sirva o no
+// realmente para WhatsApp (si el pedido se hizo por teléfono, el mensaje copiado también sirve
+// como respaldo de lo pedido). confirmarPedidoConCanal sigue aceptando 'presencial' por si en
+// el futuro hiciera falta un segundo punto de entrada — no se borró esa rama, solo dejó de
+// tener botón propio.
 document.getElementById('btn-copy').onclick=()=>confirmarPedidoConCanal('whatsapp');
-document.getElementById('btn-marcar-presencial').onclick=()=>confirmarPedidoConCanal('presencial');
 // (Carga manual de CSV eliminada — los datos llegan automáticamente del script)
 
 // listeners delegados (no reconstruyen la tabla -> el teclado no se cierra)
