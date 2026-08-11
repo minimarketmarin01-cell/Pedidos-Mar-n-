@@ -110,7 +110,6 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
 .shc-mini input{width:23px;height:24px;padding:0 1px;border:1.5px solid var(--line);border-radius:6px;font-family:'JetBrains Mono';font-size:11.5px;text-align:center;box-sizing:border-box}
 .seg.sm{flex-shrink:0;height:36px}
 .seg.sm button{padding:0 10px;font-size:11px;height:100%;box-sizing:border-box}
-.shc-row .resug-btn{height:36px;padding:0 10px;font-size:11px;flex-shrink:0;white-space:nowrap;box-sizing:border-box;margin:0}
 .legend.sm{gap:8px;margin-top:5px;font-size:10px}
 .legend.sm .ldot{width:6px;height:6px}
 .row-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;flex:none}
@@ -1552,7 +1551,6 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
     <div class="shc-row shc-wrap">
       <div class="prov-combo" id="prov-combo"><span class="prov-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13.5 13.5 20a1.5 1.5 0 0 1-2.1 0L4 12.6V4h8.6l7.4 7.4a1.5 1.5 0 0 1 0 2.1Z"/><circle cx="8.3" cy="8.3" r="1.3"/></svg></span><input class="prov-all" id="prov-all" placeholder="Proveedor o producto… escribe o toca" autocomplete="off" inputmode="text"><button class="prov-mic" id="prov-mic" type="button" tabindex="-1" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button><button class="prov-scan cam-btn" id="prov-scan" type="button" tabindex="-1" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button><button class="prov-x" id="prov-x" type="button" tabindex="-1" aria-label="Borrar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
       <div class="seg sm" id="seg-basis"><button data-b="7" class="active">7d</button><button data-b="14">14d</button><button data-b="30">30d</button><button data-b="90">90d</button></div>
-      <button class="loadbtn resug-btn" id="btn-resugerir" type="button" aria-label="Volver a sugerir" title="Vuelve a calcular la sugerencia de pedido y reemplaza el carrito actual">↻ Volver a sugerir</button>
       <div class="shc-mini"><label>Ent.</label><input type="number" id="lead" value="3" min="0" max="30"></div>
       <div class="shc-mini"><label>Cob.</label><input type="number" id="cover" value="10" min="1" max="60"></div>
     </div>
@@ -2027,6 +2025,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <div class="order-foot">
           <div class="order-row-main">
             <div class="tot-compact"><span class="l">Total</span><span class="v mono" id="tot-cost">$0</span></div>
+            <button class="oact-btn" id="btn-resugerir" aria-label="Volver a sugerir" title="Vuelve a calcular la sugerencia de pedido y reemplaza el carrito del proveedor actual"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.7-3"/><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.7 3"/><polyline points="21 3 21 9 15 9"/><polyline points="3 21 3 15 9 15"/></svg><span class="oact-lbl">Sugerir</span></button>
             <button class="oact-btn oact-danger" id="btn-clear" aria-label="Vaciar carrito" title="Vaciar todo el carrito (todos los proveedores, no solo el que estás viendo)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg><span class="oact-lbl">Vaciar</span></button>
             <button class="oact-btn" id="btn-marcar-presencial" aria-label="Marcar pedido como realizado (presencial)" title="Marcar como realizado (pedido hecho por teléfono o en persona, sin copiar a WhatsApp)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span class="oact-lbl">Confirmar</span></button>
             <button class="btn btn-wa btn-wa-compact" id="btn-copy" title="Copiar pedido para WhatsApp"><span class="wa-ico">W</span><span class="oact-lbl" style="color:#fff">Copiar</span></button>
@@ -11504,12 +11503,20 @@ function aplicarSugeridos(items){
 // "Volver a sugerir" (botón manual) y el cambio de días de venta (#seg-basis) hacen exactamente
 // lo mismo: recalculan la sugerencia con los parámetros actuales (state.basis/lead/cover, ya
 // aplicados por analyze()) y REEMPLAZAN el carrito de lo que se está viendo — nunca lo
-// acumulan. Solo toca currentItems() (proveedor actual, o el resultado de la búsqueda, o todo
-// el catálogo en "todos los proveedores"): las cantidades de otros proveedores en state.edits
-// no se tocan, igual que ya hace el resto del carrito (ver currentOrder). Los pedidos YA
-// confirmados no viven en state.edits (marcarPedidoRealizado los vacía al confirmar), así que
-// jamás se pueden sobrescribir por esto.
+// acumulan. Solo toca currentItems() (proveedor actual, o el resultado de la búsqueda): las
+// cantidades de otros proveedores en state.edits no se tocan, igual que ya hace el resto del
+// carrito (ver currentOrder). Los pedidos YA confirmados no viven en state.edits
+// (marcarPedidoRealizado los vacía al confirmar), así que jamás se pueden sobrescribir por esto.
+// En "todos los proveedores" NO se autocarga el carrito con el catálogo entero de una sola vez
+// (cientos de líneas, lento y nada útil de golpe) — mismo criterio que ya usa pickProv con
+// target==='__ALL__' ("mezclar sugeridos de todo el catálogo no es lo que se pidió"); acá solo
+// se refresca la tabla con los nuevos parámetros y se avisa que hace falta elegir proveedor.
 function regenerarSugerencia(){
+  if(state.allProv){
+    render();persistUI();
+    showToast('Elige un proveedor para regenerar su carrito · tabla actualizada');
+    return;
+  }
   const items=currentItems();
   items.forEach(it=>{delete state.edits[it.ref];});
   const agregados=aplicarSugeridos(items);
