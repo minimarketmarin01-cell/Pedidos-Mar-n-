@@ -2020,7 +2020,6 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <div class="order-foot">
           <div class="order-row-main">
             <div class="tot-compact"><span class="l">Total</span><span class="v mono" id="tot-cost">$0</span></div>
-            <button class="oact-btn" id="btn-suggest" aria-label="Agregar sugeridos al carrito" title="Agregar todos los productos sugeridos de este proveedor al carrito (no borra lo que ya tengas)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg><span class="oact-lbl">Ingresar<br>sugeridos</span></button>
             <button class="oact-btn oact-danger" id="btn-clear" aria-label="Vaciar carrito" title="Vaciar todo el carrito (todos los proveedores, no solo el que estás viendo)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg><span class="oact-lbl">Vaciar</span></button>
             <button class="oact-btn" id="btn-marcar-presencial" aria-label="Marcar pedido como realizado (presencial)" title="Marcar como realizado (pedido hecho por teléfono o en persona, sin copiar a WhatsApp)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span class="oact-lbl">Confirmar</span></button>
             <button class="btn btn-wa btn-wa-compact" id="btn-copy" title="Copiar pedido para WhatsApp"><span class="wa-ico">W</span><span class="oact-lbl" style="color:#fff">Copiar</span></button>
@@ -3103,11 +3102,23 @@ function pvAbrir(providerName,editedCount,onKeepSuggested,onKeepCurrent,onCancel
 // El modal pv-ov (pvAbrir) queda como pieza reutilizable por si hace falta más adelante,
 // pero YA NO se dispara al cambiar de proveedor: ahora navegar el catálogo (state.prov) y
 // el carrito (state.edits, ver qOf/currentOrder) están completamente desacoplados — cambiar
-// de proveedor nunca vuelve a tocar ni una sola cantidad automáticamente, así que no hay
-// nada que "pisar" y por lo tanto nada que confirmar.
+// de proveedor nunca vuelve a tocar ni una sola cantidad automáticamente si el carrito tiene
+// productos, así que no hay nada que "pisar" y por lo tanto nada que confirmar.
+//
+// Única excepción, a pedido: si el carrito está VACÍO (currentOrder().length===0, mismo
+// criterio que ya usa btn-clear) al cambiar de proveedor, se autocargan los sugeridos del
+// proveedor nuevo — mismo camino que usaba el botón manual "Ingresar sugeridos" (eliminado de
+// la interfaz por quedar redundante con esto), vía aplicarSugeridos(). Si el carrito ya tiene
+// algo de OTRO proveedor, no se autocarga nada — se respeta tal cual esté.
 function pickProv(target){
+  const carritoVacioAntes=currentOrder().length===0;
   if(target==='__ALL__'){state.allProv=true;}else{state.allProv=false;state.prov=target;state.sort='rate';state.dir=-1;}
-  state.search='';const sx=document.getElementById('prov-x');if(sx)sx.classList.remove('on');const menu=document.getElementById('prov-menu');if(menu)menu.classList.add('hidden');const sel=document.getElementById('prov-all');if(sel)sel.blur();setProvInputValue();render();persistUI();
+  state.search='';const sx=document.getElementById('prov-x');if(sx)sx.classList.remove('on');const menu=document.getElementById('prov-menu');if(menu)menu.classList.add('hidden');const sel=document.getElementById('prov-all');if(sel)sel.blur();setProvInputValue();
+  // "Todos los proveedores" no autocarga nada — no hay un único proveedor nuevo al que
+  // aplicarle sugeridos, y mezclar sugeridos de todo el catálogo de una sola vez no es lo que
+  // se pidió (el punto 3/4 habla de "el nuevo proveedor" en singular).
+  if(carritoVacioAntes&&target!=='__ALL__')aplicarSugeridos(currentItems());
+  render();persistUI();
 }
 function commitProv(val){const key=(val||'').trim().toLowerCase();if(!key)return false;if(key.indexOf('todos')===0||key.indexOf('')===0){pickProv('__ALL__');return true;}let hit=(DB.provsReal||[]).find(p=>p.prov.toLowerCase()===key);if(!hit&&key.length>=2)hit=(DB.provsReal||[]).find(p=>p.prov.toLowerCase().indexOf(key)>-1);if(hit){pickProv(hit.prov);return true;}return false;}
 function updGlob(){let q=0;DB.items.forEach(it=>{if(it.track&&it.stock!=null&&it.stock<=0&&it.u30>0)q++;});document.getElementById('glob-quiebre').textContent='● '+q+' en quiebre';
@@ -3601,9 +3612,8 @@ function renderOverview(){
   const tb=document.getElementById('ovbody');tb.innerHTML='';
   rows.forEach(r=>{const tr=document.createElement('tr');tr.innerHTML=`<td class="l"><span class="ov-prov" data-p="${r.prov}">${r.prov}</span></td><td class="num">${r.n}</td><td class="num">${fmt1(r.u30/30)}</td><td class="num">${r.dow?DIAS[r.peak]:'—'}</td><td class="num" style="color:${r.urg>0?'var(--rojo)':'var(--muted)'};font-weight:700">${r.urg||'—'}</td><td class="num" style="color:${r.ped>0?'var(--ambar)':'var(--muted)'};font-weight:700">${r.ped||'—'}</td><td class="num">${r.cost>0?peso(r.cost):'—'}</td><td class="num">${peso(r.prof)}</td>`;tb.appendChild(tr);});
   tb.querySelectorAll('.ov-prov').forEach(el=>el.onclick=()=>{
-    state.prov=el.dataset.p;state.allProv=false;state.search='';state.sort='rate';state.dir=-1;
-    const pa=document.getElementById('prov-all');if(pa)pa.value='';
-    document.querySelector('.tab[data-tab="pedido"]').click();setProvInputValue();render();persistUI();
+    document.querySelector('.tab[data-tab="pedido"]').click();
+    pickProv(el.dataset.p);   // mismo camino que el selector de proveedor normal — hereda el autocargado de sugeridos si el carrito está vacío, sin duplicar esa lógica acá
   });
   renderInsumosChart();
 }
@@ -11376,27 +11386,19 @@ function confirmarAccion({titulo,mensaje,textoConfirmar,textoCancelar,peligro,on
   _sincronizarNav();
 }
 
-// Antes: borraba las ediciones para volver a mostrar el sugerido (que igual se autocargaba
-// solo). Ahora que nada se autocarga, este botón es la única forma de meter los sugeridos
-// al carrito — agrega TODOS los sugeridos del proveedor/vista actual de una vez (sin
-// checkboxes previos), sin tocar lo que ya había de otros proveedores. Lo que no se quiera
-// se saca con el tacho de cada fila, como cualquier otro producto del carrito.
-document.getElementById('btn-suggest').onclick=()=>{
-  confirmarAccion({
-    titulo:'Agregar sugeridos',
-    mensaje:'Se agregarán al carrito las cantidades sugeridas de los productos que estás viendo. Si algún producto ya tenía una cantidad puesta a mano, se reemplaza por la sugerida.',
-    textoConfirmar:'Agregar sugeridos',
-    onConfirm:()=>{
-      let agregados=0;
-      currentItems().forEach(it=>{
-        const a=analyze(it);
-        if(a.sug>0){state.edits[it.ref]=a.sug;agregados++;}
-      });
-      render();persistUI();
-      showToast(agregados?(''+agregados+' producto'+(agregados===1?'':'s')+' sugerido'+(agregados===1?'':'s')+' agregado'+(agregados===1?'':'s')+' al carrito'):'No hay sugeridos para agregar ahora mismo');
-    }
+// Lógica compartida de "agregar sugeridos" — la usa el autocargado de pickProv (carrito
+// vacío + cambio de proveedor). Antes también la usaba el botón manual "Ingresar sugeridos",
+// eliminado de la interfaz por quedar redundante: con el autocargado, el único caso que cubría
+// (carrito CON productos + agregar sugeridos de otro proveedor sin reemplazar nada) se resuelve
+// escribiendo la cantidad a mano fila por fila, como cualquier otro producto del carrito.
+function aplicarSugeridos(items){
+  let agregados=0;
+  items.forEach(it=>{
+    const a=analyze(it);
+    if(a.sug>0){state.edits[it.ref]=a.sug;agregados++;}
   });
-};
+  return agregados;
+}
 // Antes vaciaba solo currentItems() (el proveedor que se estaba viendo) — como el carrito
 // ahora es global entre proveedores (ver currentOrder), eso dejaba productos de OTROS
 // proveedores con cantidad > 0 mientras el toast igual decía "todo en 0" (bug reportado).
@@ -11453,28 +11455,50 @@ document.getElementById('btn-copy').onclick=()=>{
     soloCambio.forEach(c=>{txt+=`• ${c.nombre}\n  🔄 Cambio: ${cambiosMap[c.it.ref]} unidades\n`;});
   }
   if(state.prov==='CCU'&&!state.search&&!state.allProv){const p=ccuMixedPacks();if(p>0)txt+=`\n(Retornables 2.5L: ${p} packs → -${SCALES.ccu_ret.dtoG[ccuTierIdx(p)]}%)`;}
-  if(lines.length)marcarPedidoRealizado(lines,'whatsapp');
-  const ok=()=>{showToast('Pedido copiado ✓ Pégalo en WhatsApp');const b=document.getElementById('btn-copy');b.classList.add('copied');setTimeout(()=>b.classList.remove('copied'),1400);};
-  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok,()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();ok();});
-  else{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();ok();}
+  // A pedido: copiar a WhatsApp también cuenta como "confirmar" el pedido, y ahora vacía TODO
+  // el carrito (todos los proveedores) — como es un cambio de comportamiento más fuerte que
+  // antes (antes no vaciaba nada), se pide confirmación previa, igual que ya hace "Confirmar".
+  confirmarAccion({
+    titulo:'Copiar pedido y confirmar',
+    mensaje:'Se copiará el mensaje para WhatsApp y se marcará el pedido como solicitado. Al confirmar, se vaciará todo el carrito (de todos los proveedores).',
+    textoConfirmar:'Copiar y confirmar',
+    onConfirm:()=>{
+      if(lines.length)marcarPedidoRealizado(lines,'whatsapp');
+      // Punto 2 del pedido: el pedido queda registrado (marcarPedidoRealizado ya corrió) —
+      // recién ahora se vacía TODO el carrito. No se cargan sugeridos de inmediato después
+      // (eso solo pasa la próxima vez que se elija un proveedor con el carrito ya vacío, ver
+      // pickProv).
+      if(lines.length){state.edits={};render();}
+      const ok=()=>{showToast('Pedido copiado ✓ Pégalo en WhatsApp'+(lines.length?' · carrito vaciado':''));const b=document.getElementById('btn-copy');b.classList.add('copied');setTimeout(()=>b.classList.remove('copied'),1400);};
+      if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok,()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();ok();});
+      else{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();ok();}
+      persistUI();
+    }
+  });
 };
 document.getElementById('btn-marcar-presencial').onclick=async()=>{
   // Mismo criterio que btn-copy: si el carrito tiene varios proveedores mezclados, "marcar
-  // como realizado" acá solo cierra el del proveedor que se está viendo — no se puede asumir
-  // que llamaste a TODOS los proveedores del carrito solo porque tocaste este botón una vez.
+  // como realizado" solo REGISTRA el pedido del proveedor que se está viendo — pero, a pedido,
+  // "Confirmar" siempre vacía TODO el carrito al terminar, sin importar de qué proveedores sea
+  // (ver state.edits={} más abajo). Si quedaba algo de otro proveedor sin pedir todavía, se
+  // pierde de esta lista: es la consecuencia esperada de la regla "confirmar vacía todo".
   const soloEsteProv=!state.search&&!state.allProv;
   const lines=soloEsteProv?currentOrder().filter(l=>l.it.prov===state.prov):currentOrder();
   if(!lines.length){showToast('No hay productos en el pedido de este proveedor');return;} // edge case
   confirmarAccion({
     titulo:'Marcar pedido como solicitado',
-    mensaje:'Confirma que ya llamaste o le pediste a '+(soloEsteProv?state.prov:'el proveedor')+'. Esto evita que el pedido se duplique si vuelves a mirar estos productos.',
+    mensaje:'Confirma que ya llamaste o le pediste a '+(soloEsteProv?state.prov:'el proveedor')+'. Esto evita que el pedido se duplique si vuelves a mirar estos productos. Al confirmar, se vaciará todo el carrito (de todos los proveedores).',
     textoConfirmar:'Sí, ya lo pedí',
     onConfirm:async()=>{
       const btn=document.getElementById('btn-marcar-presencial');
       btn.disabled=true;
       await marcarPedidoRealizado(lines,'presencial');
+      // Punto 2 del pedido: el pedido queda guardado (marcarPedidoRealizado ya corrió) —
+      // recién ahora se vacía TODO el carrito, no cargar sugeridos de inmediato después.
+      state.edits={};
+      render();persistUI();
       btn.disabled=false;
-      showToast('Pedido marcado como realizado ('+lines.length+' producto'+(lines.length===1?'':'s')+')');
+      showToast('Pedido marcado como realizado ('+lines.length+' producto'+(lines.length===1?'':'s')+') · carrito vaciado');
     }
   });
 };
