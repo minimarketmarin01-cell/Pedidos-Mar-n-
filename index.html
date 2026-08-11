@@ -221,7 +221,15 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .scan-frame{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:82%;max-width:440px;height:0;border:none;border-top:2px solid rgba(255,255,255,.35);box-shadow:none;z-index:1;pointer-events:none}
 .scan-frame::after{content:"";position:absolute;top:-1px;left:0;right:0;height:2px;background:#ff2d2d;box-shadow:0 0 8px 1px rgba(255,45,45,.7)}
 .scan-hint{position:absolute;bottom:26px;left:0;right:0;text-align:center;color:#fff;font-size:13px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.7);z-index:2}
-.mm-ov{position:fixed;inset:0;background:rgba(21,25,31,.55);z-index:210;display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(70px + env(safe-area-inset-bottom))}
+/* z-index 251, no 210: cualquier modal .mm-ov (confirmarAccion, abrirConfirmarPedido, merma,
+   etc.) puede dispararse con el carrito ya abierto en celular (#tab-carrito, z-index 250) —
+   los botones "Cancelar pedido"/"Vaciar"/"Confirmar" viven ADENTRO del carrito. Con 210 el
+   modal quedaba pintado por detrás del carrito, invisible, aunque técnicamente estuviera
+   abierto — el usuario tocaba el botón y no pasaba nada en apariencia (reportado: "los
+   mensajes salían atrás, tenía que volver a Armar pedido para verlos"). Se sube apenas lo
+   necesario para quedar arriba de #tab-carrito sin tocar su relación con el resto de las capas
+   (toast/prov-menu 260, cart-fab 270, bottom-nav 300, scan-ov 320 siguen todas por encima, igual que antes). */
+.mm-ov{position:fixed;inset:0;background:rgba(21,25,31,.55);z-index:251;display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(70px + env(safe-area-inset-bottom))}
 .mm-ov.hidden{display:none}
 .mm-card{background:var(--card);width:100%;max-width:480px;max-height:92vh;border-radius:var(--radius-card) var(--radius-card) 0 0;display:flex;flex-direction:column;overflow:hidden}
 /* Niveles internos de Gestionar proveedores (gp-nivel-proveedores/gp-nivel-productos) — deben
@@ -4249,6 +4257,9 @@ function toggleCarrito(forzar){
   if(abrir===_carritoAbierto)return;
   _carritoAbierto=abrir;
   panel.classList.toggle('cart-open',abrir);
+  // El FAB es justo el botón para ABRIR el carrito — no tiene sentido que siga mostrándose (y
+  // tapando el botón "Confirmar") una vez que el carrito ya está abierto.
+  if(typeof _actualizarVisibilidadFab==='function')_actualizarVisibilidadFab();
 }
 function playTabAnim(name){
   const el=document.getElementById('tab-'+name);
@@ -4355,7 +4366,10 @@ function _actualizarVisibilidadFab(){
   // ni a ningún módulo del menú "Más" — solo desaparecía si además había un overlay abierto.
   const enPedidos=!document.documentElement.classList.contains('ocultar-contenido-pedido');
   const hayModal=!!_overlaySuperior();
-  fab.classList.toggle('fab-oculto',!enPedidos||hayModal);
+  // El carrito (#tab-carrito, ver toggleCarrito) no es un overlay .mm-ov/.scan-ov, así que
+  // _overlaySuperior() nunca lo detecta — sin esto, el FAB seguía mostrándose (y tapando el
+  // botón "Confirmar") con el carrito ya abierto, reportado en captura de pantalla.
+  fab.classList.toggle('fab-oculto',!enPedidos||hayModal||_carritoAbierto);
 }
 // Botón físico "Atrás" de Android: cierra SOLO la ventana abierta; si no hay
 // ninguna y estás en el carrito, vuelve a Pedidos; y solo sale de la app cuando
