@@ -2965,7 +2965,12 @@ const SO={urgente:0,pedir:1,sinstock:2,ok:3,sobre:4};const SL={urgente:'Urgente'
 // real asignado (sigue en migración) y coincide por categoría de Loyverse (it.prov) o por
 // alguna de sus categorías EXTRA legacy (provsExtra), fallback reservado solo para productos
 // sin proveedor real todavía.
-function itemsFor(p){return DB.items.filter(i=>i.proveedorNombre?(i.proveedorNombre===p||(i.proveedorNombresExtra&&i.proveedorNombresExtra.includes(p))):(i.prov===p||(i.provsExtra&&i.provsExtra.includes(p))));}
+// Extraído a función propia (antes vivía inline dentro de itemsFor) para poder reusar EXACTO
+// el mismo criterio al filtrar el carrito visible (currentOrderVisible) — usar solo it.prov
+// ahí escondía del carrito los productos ya migrados a proveedor real con nombre distinto de
+// su categoría de Loyverse (el pedido se guardaba en state.edits pero no se veía).
+function esDelProveedor(it,p){return it.proveedorNombre?(it.proveedorNombre===p||(it.proveedorNombresExtra&&it.proveedorNombresExtra.includes(p))):(it.prov===p||(it.provsExtra&&it.provsExtra.includes(p)));}
+function itemsFor(p){return DB.items.filter(i=>esDelProveedor(i,p));}
 // Variante ESTRICTA solo por categoría de Loyverse (sin el fallback de proveedor real) — la
 // usa "Proveedores de hoy" (calendario/dow), que está indexado por categoría y se rompería si
 // un producto ya migrado a proveedor real (con nombre distinto a su categoría) desapareciera
@@ -3480,7 +3485,7 @@ function currentOrder(){const lines=[];DB.items.forEach(it=>{const a=analyze(it)
 // siguen funcionando exactamente igual que antes.
 function currentOrderVisible(){
   const soloEsteProv=!state.search&&!state.allProv;
-  return soloEsteProv?currentOrder().filter(l=>l.it.prov===state.prov):currentOrder();
+  return soloEsteProv?currentOrder().filter(l=>esDelProveedor(l.it,state.prov)):currentOrder();
 }
 // Productos con unidades pendientes de "cambio con proveedor" (a.vencido, ya usado en la
 // columna STK), separado de currentOrder() a propósito: un producto puede necesitar cambio
@@ -11607,7 +11612,7 @@ document.getElementById('btn-marcar-presencial').onclick=async()=>{
   // (ver state.edits={} más abajo). Si quedaba algo de otro proveedor sin pedir todavía, se
   // pierde de esta lista: es la consecuencia esperada de la regla "confirmar vacía todo".
   const soloEsteProv=!state.search&&!state.allProv;
-  const lines=soloEsteProv?currentOrder().filter(l=>l.it.prov===state.prov):currentOrder();
+  const lines=currentOrderVisible();
   if(!lines.length){showToast('No hay productos en el pedido de este proveedor');return;} // edge case
   abrirConfirmarPedido({
     provNombre:soloEsteProv?state.prov:'el proveedor',
