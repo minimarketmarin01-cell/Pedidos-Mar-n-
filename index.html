@@ -734,6 +734,19 @@ input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .provday .pd-prov-txt{flex:1;min-width:0}
 .provday .pd-prov-nom{display:block;font-size:12.5px;font-weight:700;color:var(--ink)}
 .provday .pd-prov-sub{display:block;font-size:11px;color:var(--muted);margin-top:1px}
+/* Fila de "Pedidos confirmados que llegan el..." clickeable — despliega la lista real de
+   productos de ESE pedido (ver renderProvHoyReal/itemsPedidoConfirmadoPorProveedorFecha), en
+   vez de ser solo un resumen sin poder ver qué incluye. */
+.provday .pd-prov-row-clickable{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.provday .pd-prov-row-clickable:active{background:var(--paper)}
+.provday .pd-prov-caret{flex:none;font-size:11px;color:var(--muted);transition:transform .15s ease}
+.provday .pd-prov-row-open .pd-prov-caret{transform:rotate(180deg)}
+.provday .pd-prov-detalle{background:var(--paper);border:1px solid var(--line);border-top:none;border-radius:0 0 9px 9px;margin:-6px 0 6px;padding:2px 10px 6px}
+.provday .pd-prov-detalle:last-child{margin-bottom:0}
+.provday .pd-prod-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed var(--line2);font-size:11.5px}
+.provday .pd-prod-row:last-child{border-bottom:none}
+.provday .pd-prod-nom{color:var(--ink2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.provday .pd-prod-cant{flex:none;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:11px}
 .provday .pd-note{margin-top:7px;font-size:11px;color:var(--gold);border-top:1px dashed var(--line);padding-top:7px;line-height:1.5}
 .price-mg{font-weight:700}
 .price-mg.mg-hi{color:var(--verde)}
@@ -11887,6 +11900,14 @@ function calcularProveedoresHoyReal(fechaISO){
   });
   return Object.values(grupos).sort((a,b)=>a.proveedor.localeCompare(b.proveedor,'es'));
 }
+// Productos de UN pedido confirmado (proveedor+fecha), para el detalle desplegable de cada
+// fila de renderProvHoyReal — mismo DB.pendBySku, sin pedir nada nuevo al servidor.
+function itemsPedidoConfirmadoPorProveedorFecha(proveedor,fechaISO){
+  const pend=DB&&DB.pendBySku?DB.pendBySku:{};
+  return Object.values(pend)
+    .filter(p=>p&&p.proveedor===proveedor&&p.fecha_llegada_estimada===fechaISO)
+    .sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||''),'es'));
+}
 function renderProvHoyReal(){
   const el=document.getElementById('provday-real'); if(!el)return;
   const inp=document.getElementById('provday-fecha');
@@ -11897,7 +11918,30 @@ function renderProvHoyReal(){
     el.innerHTML='<div class="pd-empty-row">Sin pedidos confirmados para esa fecha</div>';
     return;
   }
-  el.innerHTML=filas.map(f=>`<div class="pd-prov-row"><span class="pd-prov-ic">📦</span><span class="pd-prov-txt"><span class="pd-prov-nom">${f.proveedor}</span><span class="pd-prov-sub">${f.productos} producto${f.productos===1?'':'s'} · ${peso(f.costoTotal)} · Llega: ${fmtDateInputToDDMMAAAA(f.fechaLlegada)} · ${f.estado==='recibido'?'Recibido':'Confirmado'}</span></span></div>`).join('');
+  // Cada fila es clickeable: despliega la lista real de productos de ESE pedido (proveedor +
+  // fecha), leyendo directo de DB.pendBySku — no hace falta ir al carrito ni pedir nada nuevo
+  // al servidor solo para VER qué incluye el pedido.
+  el.innerHTML=filas.map(f=>`<div class="pd-prov-row pd-prov-row-clickable" data-prov="${String(f.proveedor).replace(/"/g,'&quot;')}" data-fecha="${f.fechaLlegada}">
+      <span class="pd-prov-ic">📦</span>
+      <span class="pd-prov-txt"><span class="pd-prov-nom">${f.proveedor}</span><span class="pd-prov-sub">${f.productos} producto${f.productos===1?'':'s'} · ${peso(f.costoTotal)} · Llega: ${fmtDateInputToDDMMAAAA(f.fechaLlegada)} · ${f.estado==='recibido'?'Recibido':'Confirmado'}</span></span>
+      <span class="pd-prov-caret">▾</span>
+    </div>
+    <div class="pd-prov-detalle hidden"></div>`).join('');
+  el.querySelectorAll('.pd-prov-row-clickable').forEach(row=>{
+    row.onclick=()=>{
+      const detalle=row.nextElementSibling;
+      const abrir=detalle.classList.contains('hidden');
+      // Un solo pedido desplegado a la vez — cierra cualquier otro que hubiera quedado abierto.
+      el.querySelectorAll('.pd-prov-detalle').forEach(d=>d.classList.add('hidden'));
+      el.querySelectorAll('.pd-prov-row-clickable').forEach(r=>r.classList.remove('pd-prov-row-open'));
+      if(!abrir)return; // ya estaba abierto: con cerrarlo (arriba) alcanza
+      const items=itemsPedidoConfirmadoPorProveedorFecha(row.dataset.prov,row.dataset.fecha);
+      detalle.innerHTML=items.map(it=>`<div class="pd-prod-row"><span class="pd-prod-nom">${it.nombre||it.sku}</span><span class="pd-prod-cant">${fmt.format(it.cantidad||0)} u · ${peso(it.costo_total||0)}</span></div>`).join('')
+        ||'<div class="pd-empty-row">Sin detalle disponible</div>';
+      detalle.classList.remove('hidden');
+      row.classList.add('pd-prov-row-open');
+    };
+  });
 }
 document.getElementById('prov-acc-toggle').onclick=()=>{
   const t=document.getElementById('prov-acc-toggle'), pd=document.getElementById('provday'), pdr=document.getElementById('provday-real-wrap');
