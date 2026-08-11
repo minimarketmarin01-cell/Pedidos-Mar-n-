@@ -9147,6 +9147,10 @@ document.getElementById('mm-save').onclick=async()=>{
       if(j.fila.avisoStock)msg+=' · '+j.fila.avisoStock;
       showToast(msg);
       closeMerma();
+      // Esta merma viene de "Merma" en Vencimientos (ver mmPrefill/vcWireFilas) — recién ahora
+      // que se guardó de verdad (con stock ya descontado) se cierra el lote. Si se cancela el
+      // formulario, nunca se llega hasta acá y el lote sigue pendiente, como corresponde.
+      if(mmState.vencFilaIndex)vcRevisar(mmState.vencFilaIndex,'merma');
     }else{
       showToast('Error: '+((j&&j.error)||'no se pudo guardar'));
     }
@@ -9535,7 +9539,12 @@ function vcWireFilas(box){
   box.querySelectorAll('[data-act="ok"]').forEach(b=>b.onclick=()=>vcRevisar(b.dataset.i,'vendido'));
   box.querySelectorAll('[data-act="retirar"]').forEach(b=>b.onclick=()=>vcRevisar(b.dataset.i,'retirado'));
   box.querySelectorAll('[data-act="merma"]').forEach(b=>b.onclick=()=>{
-    vcRevisar(b.dataset.i,'merma',false);   // marca revisado sin pedir responsable extra
+    // El lote de vencimiento YA NO se cierra acá — antes se marcaba 'Revisado' apenas se
+    // tocaba este botón, así que si el usuario cancelaba el formulario de merma que se abre a
+    // continuación, el lote quedaba cerrado sin que la merma real se hubiera registrado (sin
+    // descontar stock, sin costo, nada) y desaparecía de la lista como si ya estuviera
+    // resuelto. Ahora el cierre se hace recién cuando la merma se guarda de verdad (ver
+    // mm-save, que usa mmState.vencFilaIndex) — si se cancela, el lote sigue pendiente.
     closeVenc();
     mmPrefill(b.dataset.sku,b.dataset.cant,b.dataset.lote,b.dataset.i);
     openMerma(true);
