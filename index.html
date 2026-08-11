@@ -11382,43 +11382,53 @@ document.getElementById('btn-llegadas').onclick=()=>{document.getElementById('ll
 document.getElementById('ll-cerrar').onclick=()=>document.getElementById('ll-ov').classList.add('hidden');
 
 // Marca cada línea del pedido como "pedido realizado" en D1 (evita duplicados con otro
-// proveedor — ver pendienteDe). No bloquea el flujo si falla: el pedido ya se copió/hizo
-// igual, solo no queda registrado el aviso hasta el próximo intento.
+// proveedor — ver pendienteDe). Devuelve true/false según si realmente se guardó — antes
+// fallaba en silencio (sin aviso ni valor de retorno) y los llamadores igual mostraban "listo"
+// y vaciaban el carrito aunque el guardado hubiera fallado (reportado: "presiono cancelar
+// pedido y no se cancela" — el pedido seguía ahí porque el guardado había fallado sin que se
+// notara). Ahora quien llama debe revisar el resultado antes de asumir éxito.
 // Además guarda costo unitario/total (tierCostUn, misma función que ya usa currentOrder()
 // para calcular el total del carrito) y la fecha estimada de llegada — con esto el pedido
 // confirmado deja de ser "solo un aviso de duplicado" y pasa a ser un registro real de
 // historial que "Proveedores de hoy" puede listar por fecha (ver calcularProveedoresHoyReal).
 async function marcarPedidoRealizado(lines,canal,fechaLlegadaEstimada){
-  if(!lines||!lines.length)return;
+  if(!lines||!lines.length)return false;
   const items=lines.map(l=>{const costoUnitario=tierCostUn(l.it);return{sku:l.it.ref,barcode:l.it.barcode||'',nombre:l.it.nombre,proveedor:l.it.prov,cantidad:l.q,costoUnitario:costoUnitario};});
+  let j;
   try{
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'marcar_pedido_realizado',payload:{items:items,canal:canal,fechaLlegadaEstimada:fechaLlegadaEstimada||''}})});
-    const j=await res.json();
-    if(j&&j.ok){
-      // Refleja el aviso al instante en la copia local (sin esperar al próximo sync) para
-      // que si se vuelve a buscar el producto ya aparezca "ya pedido".
-      const fechaHoy=new Date().toLocaleString('es-CL');
-      DB.pendBySku=DB.pendBySku||{};DB.pendByBarcode=DB.pendByBarcode||{};
-      items.forEach(x=>{
-        // Cantidad 0 = producto sacado de un pedido confirmado (ver
-        // lineasEliminadasDePedidoConfirmado) — el backend lo borra de pedidos_pendientes en
-        // vez de dejarlo en cero, así que acá se refleja igual: se elimina, no se guarda un
-        // registro vacío que seguiría contando como "producto pendiente".
-        if(x.cantidad<=0){
-          delete DB.pendBySku[x.sku];
-          if(x.barcode)delete DB.pendByBarcode[x.barcode];
-          return;
-        }
-        const costoTotal=x.costoUnitario*x.cantidad;
-        const rec={sku:x.sku,barcode:x.barcode,nombre:x.nombre,proveedor:x.proveedor,cantidad:x.cantidad,canal:canal,fecha:fechaHoy,
-          costo_unitario:x.costoUnitario,costo_total:costoTotal,fecha_llegada_estimada:fechaLlegadaEstimada||'',estado:'confirmado'};
-        DB.pendBySku[x.sku]=rec;
-        if(x.barcode)DB.pendByBarcode[x.barcode]=rec;
-      });
-      render();
-      try{renderProvHoyReal();}catch(e){}
+    j=await res.json();
+  }catch(e){
+    showToast('Error de conexión — el pedido no se guardó, intentá de nuevo');
+    return false;
+  }
+  if(!j||!j.ok){
+    showToast('Error al guardar el pedido: '+((j&&j.error)||'no se pudo')+' — intentá de nuevo');
+    return false;
+  }
+  // Refleja el aviso al instante en la copia local (sin esperar al próximo sync) para
+  // que si se vuelve a buscar el producto ya aparezca "ya pedido".
+  const fechaHoy=new Date().toLocaleString('es-CL');
+  DB.pendBySku=DB.pendBySku||{};DB.pendByBarcode=DB.pendByBarcode||{};
+  items.forEach(x=>{
+    // Cantidad 0 = producto sacado de un pedido confirmado (ver
+    // lineasEliminadasDePedidoConfirmado) — el backend lo borra de pedidos_pendientes en
+    // vez de dejarlo en cero, así que acá se refleja igual: se elimina, no se guarda un
+    // registro vacío que seguiría contando como "producto pendiente".
+    if(x.cantidad<=0){
+      delete DB.pendBySku[x.sku];
+      if(x.barcode)delete DB.pendByBarcode[x.barcode];
+      return;
     }
-  }catch(e){/* no crítico — ver comentario arriba */}
+    const costoTotal=x.costoUnitario*x.cantidad;
+    const rec={sku:x.sku,barcode:x.barcode,nombre:x.nombre,proveedor:x.proveedor,cantidad:x.cantidad,canal:canal,fecha:fechaHoy,
+      costo_unitario:x.costoUnitario,costo_total:costoTotal,fecha_llegada_estimada:fechaLlegadaEstimada||'',estado:'confirmado'};
+    DB.pendBySku[x.sku]=rec;
+    if(x.barcode)DB.pendByBarcode[x.barcode]=rec;
+  });
+  render();
+  try{renderProvHoyReal();}catch(e){}
+  return true;
 }
 // Fecha estimada de llegada al confirmar un pedido: reutiliza el calendario semanal CAL_PROV
 // que ya usa "Proveedores de hoy" (calcularProveedoresHoy) para saber qué día llega cada
@@ -11489,7 +11499,8 @@ function cancelarPedidoConfirmado(){
     peligro:true,
     onConfirm:async()=>{
       const lines=items.map(it=>({it,nombre:it.nombre,q:0,packs:0,cost:0,word:it.word}));
-      await marcarPedidoRealizado(lines,'presencial','');
+      const ok=await marcarPedidoRealizado(lines,'presencial','');
+      if(!ok)return; // marcarPedidoRealizado ya mostró el toast de error — no se toca nada más
       // Si alguno de estos productos estaba cargado en el carrito para editarlo, esa edición
       // ya no tiene sentido — se limpia junto con el pedido.
       items.forEach(it=>{delete state.edits[it.ref];});
@@ -11740,18 +11751,19 @@ function confirmarPedidoConCanal(canal){
       // cargarPedidoConfirmadoEnCarrito) no aparecen en `lines` (quedaron en 0) — hay que
       // avisarle a marcarPedidoRealizado que hay que BORRARLOS, no solo que no se tocaron.
       const lineasAGuardar=[...lines,...lineasEliminadasDePedidoConfirmado()];
-      await marcarPedidoRealizado(lineasAGuardar,canal,fecha);
-      // El pedido ya quedó guardado (marcarPedidoRealizado ya corrió) — recién ahora se vacía
-      // TODO el carrito, sin cargar sugeridos de inmediato después (eso solo pasa la próxima
-      // vez que se elija un proveedor con el carrito ya vacío, ver pickProv).
+      const guardado=await marcarPedidoRealizado(lineasAGuardar,canal,fecha);
+      if(btn)btn.disabled=false;
+      if(!guardado)return; // marcarPedidoRealizado ya mostró el toast de error — no se toca el carrito ni se copia nada
+      // El pedido ya quedó guardado — recién ahora se vacía TODO el carrito, sin cargar
+      // sugeridos de inmediato después (eso solo pasa la próxima vez que se elija un
+      // proveedor con el carrito ya vacío, ver pickProv).
       state.edits={};
       _limpiarPedidoConfirmadoCargado();
       render();persistUI();
-      if(btn)btn.disabled=false;
       if(canal==='whatsapp'){
-        const ok=()=>{showToast('Pedido copiado ✓ Pégalo en WhatsApp'+(lines.length?' · carrito vaciado':''));btn.classList.add('copied');setTimeout(()=>btn.classList.remove('copied'),1400);};
-        if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok,()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();ok();});
-        else{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();ok();}
+        const copiado=()=>{showToast('Pedido copiado ✓ Pégalo en WhatsApp'+(lines.length?' · carrito vaciado':''));btn.classList.add('copied');setTimeout(()=>btn.classList.remove('copied'),1400);};
+        if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(copiado,()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();copiado();});
+        else{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();copiado();}
       }else{
         showToast('Pedido marcado como realizado ('+lines.length+' producto'+(lines.length===1?'':'s')+') · carrito vaciado');
       }
