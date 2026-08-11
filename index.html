@@ -1214,7 +1214,9 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
 .wa-ico{width:20px;height:20px;background:var(--wa);border-radius:5px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:800;font-family:'Manrope'}
 .pedido-confirmado-banner{margin:10px 14px 0;padding:9px 11px;background:var(--paper);border:1px solid var(--line);border-left:3px solid var(--gold,#c68a1b);border-radius:9px;font-size:12px;line-height:1.5;color:var(--ink2);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .pedido-confirmado-banner b{color:var(--ink)}
+.pedido-confirmado-banner .pcb-btns{display:flex;gap:6px;flex-wrap:wrap}
 .pedido-confirmado-banner .pcb-btn{flex:none;background:var(--lavanda-tint);border:1px solid #DFD2EC;color:#5A4A6E;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:700;font-family:'Manrope';cursor:pointer;white-space:nowrap}
+.pedido-confirmado-banner .pcb-btn-danger{background:var(--card);border-color:#F3D4D0;color:var(--rojo)}
 .order-body{padding:12px 14px;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .oline{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px dashed var(--line2);font-size:13px}
 .oline-prov-tag{font-weight:800;font-size:10.5px;text-transform:uppercase;letter-spacing:.02em;margin-right:5px}
@@ -11466,9 +11468,36 @@ function renderBannerPedidoConfirmado(){
   let total=0,fecha=null;
   items.forEach(it=>{const p=pendienteDe(it);total+=Number(p.costo_total)||0;if(!fecha&&p.fecha_llegada_estimada)fecha=p.fecha_llegada_estimada;});
   el.innerHTML='<span>📦 Ya pediste a <b>'+state.prov+'</b>: '+items.length+' producto'+(items.length===1?'':'s')+(total>0?' · '+peso(total):'')+(fecha?' · Llega '+fmtDateInputToDDMMAAAA(fecha):'')+'</span>'+
-    '<button type="button" class="pcb-btn" id="pcb-editar-btn">Editar pedido</button>';
+    '<span class="pcb-btns"><button type="button" class="pcb-btn" id="pcb-editar-btn">Editar pedido</button><button type="button" class="pcb-btn pcb-btn-danger" id="pcb-cancelar-btn">Cancelar pedido</button></span>';
   el.classList.remove('hidden');
   document.getElementById('pcb-editar-btn').onclick=cargarPedidoConfirmadoEnCarrito;
+  document.getElementById('pcb-cancelar-btn').onclick=cancelarPedidoConfirmado;
+}
+// Elimina de una sola vez TODO el pedido confirmado del proveedor actual (para cuando se
+// confirmó por error) — sin tener que cargarlo al carrito y sacar cada producto a mano. Arma
+// líneas en cantidad 0 y reutiliza exactamente el mismo mecanismo de borrado que ya usa
+// lineasEliminadasDePedidoConfirmado/marcarPedidoRealizado (el backend borra en vez de dejar
+// en cero), no se duplica esa lógica.
+function cancelarPedidoConfirmado(){
+  const items=itemsPedidoConfirmadoActual();
+  if(!items.length){showToast('No hay pedido confirmado para este proveedor');return;}
+  const provNombre=state.prov;
+  confirmarAccion({
+    titulo:'Cancelar pedido',
+    mensaje:'Se eliminará el pedido confirmado a '+provNombre+' ('+items.length+' producto'+(items.length===1?'':'s')+'). Esta acción no se puede deshacer.',
+    textoConfirmar:'Sí, cancelar pedido',
+    peligro:true,
+    onConfirm:async()=>{
+      const lines=items.map(it=>({it,nombre:it.nombre,q:0,packs:0,cost:0,word:it.word}));
+      await marcarPedidoRealizado(lines,'presencial','');
+      // Si alguno de estos productos estaba cargado en el carrito para editarlo, esa edición
+      // ya no tiene sentido — se limpia junto con el pedido.
+      items.forEach(it=>{delete state.edits[it.ref];});
+      _limpiarPedidoConfirmadoCargado();
+      render();persistUI();
+      showToast('Pedido a '+provNombre+' cancelado');
+    }
+  });
 }
 // Vuelca las cantidades ya confirmadas del proveedor actual a state.edits (mismo mecanismo que
 // ya usan las sugerencias y la edición manual — no crea un carrito paralelo), para que el
