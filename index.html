@@ -456,6 +456,11 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .fp-section-title{font-size:12px;font-weight:800;color:var(--verde);text-transform:uppercase;letter-spacing:.03em;margin:22px 0 10px;padding-top:14px;border-top:1px solid var(--line)}
 .fp-section-title:first-of-type{margin-top:14px;padding-top:0;border-top:none}
 .fp-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px dashed var(--line2);font-size:13.5px;gap:10px}
+/* #fp-pane-minimo reusa _gpFilaConfig(it) tal cual (misma fila que Configuración) — ahí el
+   nombre del producto tiene sentido (lista de varios), acá es redundante (ya está en el
+   título de la Ficha) y la fila no necesita el borde/padding de "fila de lista". */
+#fp-pane-minimo .fp-row{border-bottom:none;padding:0}
+#fp-pane-minimo .fp-row>.k{display:none}
 /* Editor de artículo a pantalla completa, en UNA sola pantalla con scroll (sin pestañas que
    cambian de vista, estilo Loyverse) — secciones apiladas con su título, y una barra de
    acciones (Guardar/Eliminar/Cancelar) siempre visible abajo, sin importar cuánto se baje. */
@@ -2321,6 +2326,8 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <div id="fp-pane-lotes" class="fp-pane hidden"></div>
           <div class="fp-section-title" data-step="2">Unidad</div>
           <div id="fp-pane-unidad" class="fp-pane"></div>
+          <div class="fp-section-title">Mínimo de pedido</div>
+          <div id="fp-pane-minimo" class="fp-pane"></div>
           <div class="fp-section-title" data-step="3">Precio actual</div>
           <div id="fp-pane-precios-actual" class="fp-pane"></div>
           <div class="fp-section-title">Calculadora de precio</div>
@@ -4791,6 +4798,7 @@ function fpPintar(f){
   lotesPane.innerHTML=''; // se pinta recién al expandir (ver fpPaneLotes) — no de entrada
   fpPaneGeneral(f);
   fpPaneUnidad(f);
+  fpPaneMinimo(f);
   fpPanePreciosActual(f);
   fpPanePrecios(f);
   fpPaneProveedores(f);
@@ -5113,6 +5121,17 @@ function fpPaneUnidad(f){
   document.getElementById('fp-g-tipo-unidad').onclick=()=>{fpEditState.soldByWeight=false;fpPintarTipoVenta();};
   document.getElementById('fp-g-tipo-peso').onclick=()=>{fpEditState.soldByWeight=true;fpPintarTipoVenta();};
   fpPintarTipoVenta();
+}
+// Mismo editor de mínimo de pedido que ya existe en "Gestionar proveedores → Configuración"
+// (toggle Und/Caja/Display + stepper + empaque), reusando _gpFilaConfig(it) tal cual — así se
+// autoguarda con la misma maquinaria (_gpCfgCambiarUnidad/_gpCfgAjustar/_gpGuardarMultiplo,
+// ver listeners delegados también en #fp-pane-minimo más abajo) en vez de duplicar la lógica.
+// it.min/it.fmt/it.word no viajan en el payload de la Ficha (f.producto) — solo existen en
+// DB.items, calculados por tag()/tagConOverride() — así que se buscan ahí por sku.
+function fpPaneMinimo(f){
+  const sku=f.producto.sku;
+  const it=DB.items.find(x=>x.ref===sku)||{ref:sku,min:0,fmt:1,word:'caja',nombre:f.producto.nombre,prov:''};
+  document.getElementById('fp-pane-minimo').innerHTML=_gpFilaConfig(it);
 }
 
 // ==== SECCIÓN 3 — PRECIO ACTUAL: indicadores compactos de solo lectura (costo/precio/margen
@@ -6323,7 +6342,9 @@ async function gpCargar(){
     // siempre en esa sesión (psCargarListas ya no volvía a pedirlo, por el flag _psCargado).
     _psProveedores=_gpLista;_psSectores=j.sectores||_psSectores;_psCargado=true;
     _gpCargado=true;
-    gpRender();
+    // Si el usuario ya había tipeado algo en el buscador mientras esto cargaba, aplica ese
+    // filtro en vez de mostrar la lista completa sin filtrar (ver _gpFiltrarProveedores).
+    _gpFiltrarProveedores();
   }catch(e){
     _gpCargado=false;
     document.getElementById('gp-lista').innerHTML='<div class="vc-empty">Error al cargar proveedores</div><button class="loadbtn" id="gp-reintentar" type="button" style="width:100%;margin-top:8px">Reintentar</button>';
@@ -6375,6 +6396,11 @@ document.getElementById('gp-lista').addEventListener('click',ev=>{
 // Configuración), ambas muestran la misma lista de proveedores. Mismo patrón robusto
 // (input+keyup) que #gp-prod-search, ver comentario ahí sobre por qué.
 function _gpFiltrarProveedores(){
+  // Si la carga inicial todavía está en curso o falló (gp-lista muestra "Cargando…" o el
+  // error+Reintentar), no pisar ese estado con la lista/mensaje de "sin proveedores" — se
+  // reportó que escribir en el buscador mientras cargaba dejaba la pantalla atascada
+  // mostrando "Todavía no hay proveedores creados" sin forma de reintentar.
+  if(!_gpCargado)return;
   const q=normTxt((document.getElementById('gp-search').value||'').trim());
   document.getElementById('gp-x').style.display=q?'flex':'none';
   gpRender(q?_gpLista.filter(p=>normTxt(p.nombre).includes(q)):_gpLista);
@@ -6384,7 +6410,7 @@ document.getElementById('gp-search').addEventListener('keyup',_gpFiltrarProveedo
 document.getElementById('gp-x').onclick=()=>{
   document.getElementById('gp-search').value='';
   document.getElementById('gp-x').style.display='none';
-  gpRender();
+  if(_gpCargado)gpRender();
 };
 // ==== Nivel 2 — Productos del proveedor ====
 // Reutiliza itemsFor(nombre), la misma función que ya usa Armar pedido para filtrar el
@@ -6461,18 +6487,29 @@ function _gpFilaConfig(it){
       </div>
     </div>`;
 }
+// Manejador de los controles [data-gp-cfg-*] (toggle Und/Caja/Display, stepper, reset) —
+// factorizado para poder registrarlo tanto en #gp-prod-lista (fila de Configuración) como en
+// #fp-pane-minimo (mismo editor, reusado dentro de la Ficha del producto — ver fpPaneMinimo).
+function _gpCfgOnClick(ev){
+  const fila=ev.target.closest('[data-gp-cfg-ref]');
+  if(!fila)return;
+  const btnUnidad=ev.target.closest('[data-gp-cfg-unidad]');
+  if(btnUnidad){_gpCfgCambiarUnidad(fila,btnUnidad.dataset.gpCfgUnidad);return;}
+  const btnD=ev.target.closest('[data-gp-cfg-d]');
+  if(btnD){_gpCfgAjustar(fila,Number(btnD.dataset.gpCfgD));return;}
+  const btnReset=ev.target.closest('[data-gp-cfg-reset]');
+  if(btnReset){_gpGuardarMultiplo(btnReset.dataset.gpCfgReset,fila,0,0,null);return;}
+}
+function _gpCfgOnChange(ev){
+  const input=ev.target.closest('[data-gp-cfg-num],[data-gp-cfg-empaque]');
+  if(!input)return;
+  const fila=input.closest('[data-gp-cfg-ref]');
+  if(fila)_gpCfgProgramarGuardado(fila);
+}
+document.getElementById('fp-pane-minimo').addEventListener('click',_gpCfgOnClick);
+document.getElementById('fp-pane-minimo').addEventListener('change',_gpCfgOnChange);
 document.getElementById('gp-prod-lista').addEventListener('click',ev=>{
-  if(_gpModo==='config'){
-    const fila=ev.target.closest('[data-gp-cfg-ref]');
-    if(!fila)return;
-    const btnUnidad=ev.target.closest('[data-gp-cfg-unidad]');
-    if(btnUnidad){_gpCfgCambiarUnidad(fila,btnUnidad.dataset.gpCfgUnidad);return;}
-    const btnD=ev.target.closest('[data-gp-cfg-d]');
-    if(btnD){_gpCfgAjustar(fila,Number(btnD.dataset.gpCfgD));return;}
-    const btnReset=ev.target.closest('[data-gp-cfg-reset]');
-    if(btnReset){_gpGuardarMultiplo(btnReset.dataset.gpCfgReset,fila,0,0,null);return;}
-    return;
-  }
+  if(_gpModo==='config'){_gpCfgOnClick(ev);return;}
   const fila=ev.target.closest('[data-gp-prod-ref]');
   if(!fila)return;
   // Nivel 2 → Nivel 3: reutiliza fpAbrir/fp-ov tal cual (mismo editor que el resto de la
@@ -6490,9 +6527,9 @@ function _gpCfgFmtActual(fila){
 }
 // Cambia el toggle Und/Caja/Display de una fila. Solo convierte el número del stepper cuando
 // cambia el MODO (und↔pack) — pasar de Caja a Display (mismo modo pack) no toca la cantidad,
-// solo la palabra. No guarda nada acá: el guardado real ocurre recién cuando el usuario toca
-// el stepper o el campito de empaque (ver _gpCfgProgramarGuardado), para no crear overrides
-// triviales solo por mirar la vista en otra unidad.
+// solo la palabra. Guarda al toque, igual que el resto de los controles de esta fila (stepper,
+// campito de empaque) — el early-return de arriba evita disparar un guardado cuando el toggle
+// en realidad no cambió nada (ej. tocar "Caja" estando ya en Caja).
 function _gpCfgCambiarUnidad(fila,valor){
   const modoNuevo=valor==='und'?'und':'pack';
   const palabraNueva=valor==='und'?fila.dataset.gpCfgPalabra:valor;
@@ -6513,6 +6550,7 @@ function _gpCfgCambiarUnidad(fila,valor){
     const lbl=caption.querySelector('[data-gp-cfg-caption-lbl]');
     if(lbl)lbl.textContent='1 '+palabraNueva+' =';
   }
+  _gpCfgProgramarGuardado(fila);
 }
 function _gpCfgAjustar(fila,delta){
   const input=fila.querySelector('[data-gp-cfg-num]');
@@ -6539,12 +6577,7 @@ function _gpCfgProgramarGuardado(fila){
     _gpGuardarMultiplo(ref,fila,valorEnUnidades,empaqueAGuardar,palabra);
   },500);
 }
-document.getElementById('gp-prod-lista').addEventListener('change',ev=>{
-  const input=ev.target.closest('[data-gp-cfg-num],[data-gp-cfg-empaque]');
-  if(!input)return;
-  const fila=input.closest('[data-gp-cfg-ref]');
-  if(fila)_gpCfgProgramarGuardado(fila);
-});
+document.getElementById('gp-prod-lista').addEventListener('change',_gpCfgOnChange);
 // Guarda (o borra si ambos quedan en 0) el mínimo/empaque/palabra manual de un producto.
 // Actualiza DB.multiplosProducto/DB.empaquesProducto/DB.palabrasProducto y retagAll() al
 // toque para que el carrito/sugerencias reflejen el cambio sin recargar la página.
@@ -6562,10 +6595,21 @@ async function _gpGuardarMultiplo(ref,fila,valorEnUnidades,empaqueEnUnidades,pal
     if(empaqueEnUnidades>0)DB.empaquesProducto[ref]=empaqueEnUnidades;else delete DB.empaquesProducto[ref];
     if(empaqueEnUnidades>0&&palabra)DB.palabrasProducto[ref]=palabra;else delete DB.palabrasProducto[ref];
     retagAll();
-    if(_gpProvActual)_gpProdListaCompleta=itemsFor(_gpProvActual.nombre).slice().sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),'es'));
-    if(_gpModo==='config'){
-      const q=normTxt((document.getElementById('gp-prod-search').value||'').trim());
-      gpRenderProductos(q?_gpProdListaCompleta.filter(x=>normTxt(x.nombre).includes(q)):_gpProdListaCompleta);
+    // Esta misma fila se reusa dentro de la Ficha del producto (fpPaneMinimo) — ahí no hay
+    // lista de Configuración que re-renderizar, solo hay que repintar el propio pane con el
+    // valor ya actualizado (relevante sobre todo tras "↺ Automático"). Se distingue por dónde
+    // vive `fila` en el DOM, no por _gpModo (que puede seguir en 'config' de una sesión
+    // anterior aunque la Ficha se haya abierto desde otra pantalla).
+    const enFicha=fila&&fila.closest&&fila.closest('#fp-pane-minimo');
+    if(enFicha){
+      const itActualizado=DB.items.find(x=>x.ref===ref);
+      if(itActualizado)document.getElementById('fp-pane-minimo').innerHTML=_gpFilaConfig(itActualizado);
+    }else{
+      if(_gpProvActual)_gpProdListaCompleta=itemsFor(_gpProvActual.nombre).slice().sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),'es'));
+      if(_gpModo==='config'){
+        const q=normTxt((document.getElementById('gp-prod-search').value||'').trim());
+        gpRenderProductos(q?_gpProdListaCompleta.filter(x=>normTxt(x.nombre).includes(q)):_gpProdListaCompleta);
+      }
     }
     try{render();}catch(_){}
     showToast('Mínimo actualizado');
