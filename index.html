@@ -4858,6 +4858,8 @@ function fpPintar(f){
   const lotesPane=document.getElementById('fp-pane-lotes');
   lotesPane.classList.add('hidden');
   lotesPane.innerHTML=''; // se pinta recién al expandir (ver fpPaneLotes) — no de entrada
+  delete lotesPane.dataset.pintado; // sin esto, tras recargar la ficha (ej. al eliminar/editar un
+  // lote) el guard de más abajo creía que ya estaba pintada y la dejaba vacía para siempre
   fpPaneGeneral(f);
   fpPaneUnidad(f);
   fpPaneMinimo(f);
@@ -5631,15 +5633,114 @@ function fpPaneLotes(f){
   const paneLotes=document.getElementById('fp-pane-lotes');
   if(!f.lotes||!f.lotes.length){
     paneLotes.innerHTML='<div class="vc-empty">Este producto no tiene lotes de vencimiento activos.</div>';
-  }else{
-    paneLotes.innerHTML=f.lotes.map((l,i)=>`<div class="sm-row">
+    return;
+  }
+  // Acciones "Editar fecha"/"Eliminar lote" por lote — para corregir un vencimiento mal
+  // ingresado (o "Fecha inválida") o sacar un lote cargado por error, directo desde la Ficha
+  // sin tener que ir a Vencimientos. Reutiliza las mismas acciones de backend que ya usa esa
+  // pantalla (eliminar_lote/editar_fecha_venc) — solo cambia cómo se refresca la vista.
+  paneLotes.innerHTML=f.lotes.map((l,i)=>`<div class="sm-row" style="flex-direction:column;align-items:stretch">
+    <div style="display:flex;align-items:flex-start;gap:10px">
       <div class="sm-info">
         <div class="nom">${i===0?'⏰ ':''}${l.lote?('Lote '+l.lote):'Sin lote'} · ${fmt1(l.cantidad)} u</div>
         <div class="meta">Vence ${l.fechaVencimiento} · ${l.accion||l.estado}</div>
       </div>
       ${fpBadgeLote(l)}
-    </div>`).join('');
-  }
+    </div>
+    <div class="btns vc-btns-mini">
+      <button type="button" class="vc-mini" data-fp-editf="${l.filaIndex}" data-fv="${l.fechaVencimiento||''}" title="Editar fecha"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>Fecha</span></button>
+      <button type="button" class="vc-mini vc-mini-rojo" data-fp-elim="${l.filaIndex}" data-cant="${l.cantidad}" title="Eliminar lote"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>Eliminar lote</span></button>
+    </div>
+    <div class="vc-editbox hidden" data-fp-editbox="${l.filaIndex}">
+      <span class="vc-editlbl">Nueva fecha de vencimiento:</span>
+      <div class="fecha-wrap">
+        <input id="fp-ef-dd-${l.filaIndex}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="DD" autocomplete="off">
+        <span class="fecha-sep">/</span>
+        <input id="fp-ef-mm-${l.filaIndex}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="off">
+        <span class="fecha-sep">/</span>
+        <input id="fp-ef-aaaa-${l.filaIndex}" class="fecha-seg fecha-seg-y" inputmode="numeric" maxlength="4" placeholder="AAAA" autocomplete="off">
+        <button type="button" class="btn-ok" data-fp-savef="${l.filaIndex}" style="white-space:nowrap">Guardar</button>
+      </div>
+    </div>
+  </div>`).join('');
+  fpWireLotes(paneLotes);
+}
+// Cablea los botones "Fecha"/"Eliminar lote" recién pintados por fpPaneLotes.
+function fpWireLotes(box){
+  box.querySelectorAll('[data-fp-elim]').forEach(b=>b.onclick=()=>fpEliminarLote(b.dataset.fpElim,b.dataset.cant));
+  // Editar fecha: abre el mini-formulario con la fecha actual precargada en los 3 campos —
+  // mismo patrón que ya usa Vencimientos (vcWireFilas), con ids propios (fp-ef-*) para no
+  // chocar si en algún momento ambas pantallas llegaran a estar en el DOM a la vez.
+  box.querySelectorAll('[data-fp-editf]').forEach(b=>b.onclick=()=>{
+    const fi=b.dataset.fpEditf;
+    const bx=box.querySelector(`[data-fp-editbox="${fi}"]`);
+    if(!bx)return;
+    const wasHidden=bx.classList.contains('hidden');
+    bx.classList.toggle('hidden');
+    if(wasHidden){
+      const p=(b.dataset.fv||'').split('/');
+      if(p.length===3){
+        document.getElementById('fp-ef-dd-'+fi).value=p[0];
+        document.getElementById('fp-ef-mm-'+fi).value=p[1];
+        document.getElementById('fp-ef-aaaa-'+fi).value=p[2];
+      }
+    }
+  });
+  box.querySelectorAll('[data-fp-savef]').forEach(b=>{
+    const fi=b.dataset.fpSavef;
+    document.getElementById('fp-ef-dd-'+fi).addEventListener('keydown',e=>{if(e.key==='Enter')b.click();});
+    document.getElementById('fp-ef-mm-'+fi).addEventListener('keydown',e=>{if(e.key==='Enter')b.click();});
+    document.getElementById('fp-ef-aaaa-'+fi).addEventListener('keydown',e=>{if(e.key==='Enter')b.click();});
+    b.onclick=()=>{
+      const dd=document.getElementById('fp-ef-dd-'+fi).value;
+      const mm=document.getElementById('fp-ef-mm-'+fi).value;
+      const aaaa=document.getElementById('fp-ef-aaaa-'+fi).value;
+      if(dd.length!==2||mm.length!==2||aaaa.length!==4){showToast('Completa día, mes y año');return;}
+      fpEditarFechaLote(fi,dd+'/'+mm+'/'+aaaa);
+    };
+  });
+}
+async function fpEliminarLote(filaIndex,cantidad){
+  const p=_fpActual&&_fpActual.producto;
+  if(!p)return;
+  const cant=Number(cantidad)||0;
+  const msg='¿Eliminar este lote de "'+p.nombre+'"?\n\n'+
+    (cant>0?('Se descontarán '+cant+' del stock en Loyverse (revierte la recepción).\n'):'')+
+    'Esta acción no se puede deshacer.';
+  if(!confirm(msg))return;
+  showToast('Eliminando lote…');
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'eliminar_lote',payload:{filaIndex:Number(filaIndex),sku:p.sku,cantidad:cant}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      let m='Lote eliminado';
+      if(j.fila&&j.fila.nuevoStock!=null)m+=' · stock ahora '+fmt1(j.fila.nuevoStock);
+      if(j.fila&&j.fila.avisoStock)m+=' · '+j.fila.avisoStock;
+      showToast(m);
+      await fpRecargarTrasLotes(p.sku);
+    }else showToast('Error: '+((j&&j.error)||'no se pudo eliminar el lote'));
+  }catch(e){showToast('Error de conexión al eliminar el lote');}
+}
+async function fpEditarFechaLote(filaIndex,nuevaFecha){
+  const p=_fpActual&&_fpActual.producto;
+  if(!p)return;
+  if(!/^\d{2}\/\d{2}\/\d{4}$/.test(nuevaFecha)){showToast('Escribe la fecha como DD/MM/AAAA');return;}
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_fecha_venc',payload:{filaIndex:Number(filaIndex),nuevaFecha:nuevaFecha}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      showToast('Fecha corregida a '+j.nuevaFecha+' ('+j.estado+')');
+      await fpRecargarTrasLotes(p.sku);
+    }else showToast('Error: '+((j&&j.error)||'no se pudo corregir la fecha'));
+  }catch(e){showToast('Error de conexión al corregir la fecha');}
+}
+// Recarga la ficha entera tras eliminar/editar un lote (mismo patrón que fpGuardarRecuento) y
+// reabre la sección Lotes automáticamente, ya que fpPintar la colapsa por defecto en cada carga.
+async function fpRecargarTrasLotes(sku){
+  const scrollActual=document.getElementById('fp-scroll').scrollTop;
+  await fpAbrir(sku,{scroll:scrollActual});
+  const toggle=document.getElementById('fp-lotes-toggle');
+  if(toggle&&!toggle.classList.contains('hidden'))toggle.click();
 }
 
 function fpBadgeStock(p){
