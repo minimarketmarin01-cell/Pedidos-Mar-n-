@@ -107,6 +107,8 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
 .shc-row{display:flex;gap:6px;align-items:center;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:1px}
 .shc-row::-webkit-scrollbar{display:none}
 .shc-mini{display:flex;align-items:center;gap:2px;font-size:8.5px;color:var(--muted);font-weight:700;flex-shrink:0;height:36px;padding:0 2px;box-sizing:border-box;white-space:nowrap}
+.fav-toggle-btn{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:36px;height:36px;box-sizing:border-box;border:1.5px solid var(--line);border-radius:10px;background:#fff;color:var(--muted);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.fav-toggle-btn[aria-pressed="true"]{background:var(--ambar-bg);border-color:var(--ambar);color:var(--ambar)}
 .shc-mini input{width:23px;height:24px;padding:0 1px;border:1.5px solid var(--line);border-radius:6px;font-family:'JetBrains Mono';font-size:11.5px;text-align:center;box-sizing:border-box}
 .seg.sm{flex-shrink:0;height:36px}
 .seg.sm button{padding:0 10px;font-size:11px;height:100%;box-sizing:border-box}
@@ -963,6 +965,8 @@ html.modo-bliss .fila-pedir .qword{text-align:center;max-width:100px;font-size:9
 .card-stepper{flex:0 0 auto;min-width:78px;display:flex;align-items:center;box-sizing:border-box}
 .tdc{text-align:center!important;padding-left:2px!important;padding-right:2px!important}
 .prod-name-wrap{display:flex;align-items:flex-start;gap:3px;min-width:0}
+.fav-star{border:none;background:none;padding:2px;margin:1px 0 0;line-height:0;color:var(--muted);cursor:pointer;flex:0 0 auto;-webkit-tap-highlight-color:transparent}
+.fav-star.activo{color:var(--ambar)}
 .prod-name{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em;white-space:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;cursor:pointer;flex:1;min-width:0}
 @media (min-width:700px){.prod-name{font-size:19px}}
 .sm-info{cursor:pointer}
@@ -1615,6 +1619,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
   <div style="position:relative" id="prov-anchor">
     <div class="shc-row shc-wrap">
       <div class="prov-combo" id="prov-combo"><span class="prov-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13.5 13.5 20a1.5 1.5 0 0 1-2.1 0L4 12.6V4h8.6l7.4 7.4a1.5 1.5 0 0 1 0 2.1Z"/><circle cx="8.3" cy="8.3" r="1.3"/></svg></span><input class="prov-all" id="prov-all" placeholder="Proveedor o producto… escribe o toca" autocomplete="off" inputmode="text"><button class="prov-mic" id="prov-mic" type="button" tabindex="-1" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button><button class="prov-scan cam-btn" id="prov-scan" type="button" tabindex="-1" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button><button class="prov-x" id="prov-x" type="button" tabindex="-1" aria-label="Borrar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+      <button type="button" class="fav-toggle-btn" id="fav-toggle" title="Mostrar solo favoritos" aria-pressed="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
       <div class="seg sm" id="seg-basis"><button data-b="7" class="active">7d</button><button data-b="14">14d</button><button data-b="30">30d</button><button data-b="90">90d</button></div>
       <div class="shc-mini"><label>Ent.</label><input type="number" id="lead" value="3" min="0" max="30"></div>
       <div class="shc-mini"><label>Cob.</label><input type="number" id="cover" value="10" min="1" max="60"></div>
@@ -2807,7 +2812,7 @@ const SCALES={
 const SCALE_OF_PROV={'COCA COLA':['cc_15','cc_vidrio'],'CCU':['ccu_ret']};
 
 let DB=DEFAULT, INVMAP=null, SRC='datos de ejemplo';
-let state={prov:'COCA COLA',basis:7,unit:'sem',lead:3,cover:10,sort:'stock',dir:1,edits:{},search:'',allProv:false,pendWarned:{}};
+let state={prov:'COCA COLA',basis:7,unit:'sem',lead:3,cover:10,sort:'stock',dir:1,edits:{},search:'',allProv:false,favOnly:false,pendWarned:{}};
 
 // ===================== CSV + AGREGACIÓN =====================
 function parseCSV(text){
@@ -3105,7 +3110,15 @@ function avisoYaPedidoEnOtroProveedor(it,nombreProveedorActual){
 }
 // Normaliza texto para comparar sin tildes/mayúsculas ("Pingüino"≈"pinguino")
 function normTxt(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
-function currentItems(){if(state.search){const words=normTxt(state.search).trim().split(/\s+/).filter(Boolean);return DB.items.filter(i=>{const hay=normTxt(i.nombre);const ref=String(i.ref||'');const bc=i.barcode?String(i.barcode):'';return words.every(w=>hay.includes(w)||ref.includes(w)||bc.includes(w));});}if(state.allProv)return DB.items;return itemsFor(state.prov);}
+function currentItems(){
+  let base;
+  if(state.search){const words=normTxt(state.search).trim().split(/\s+/).filter(Boolean);base=DB.items.filter(i=>{const hay=normTxt(i.nombre);const ref=String(i.ref||'');const bc=i.barcode?String(i.barcode):'';return words.every(w=>hay.includes(w)||ref.includes(w)||bc.includes(w));});}
+  else if(state.allProv)base=DB.items;
+  else base=itemsFor(state.prov);
+  // Filtro "solo favoritos" (ver toggleFavorito/#fav-toggle) — se combina con lo anterior en
+  // vez de reemplazarlo, así buscar dentro de los favoritos sigue funcionando.
+  return state.favOnly?base.filter(i=>FAVORITOS.has(i.ref)):base;
+}
 // Antes: si no había edición manual, devolvía a.sug (la cantidad sugerida se autocargaba
 // en el carrito sin que el usuario hiciera nada). Ahora el carrito arranca en 0 siempre —
 // solo cuenta lo que el usuario escribió a mano o agregó con "🔄 Agregar sugeridos".
@@ -3422,6 +3435,28 @@ function rowSortVal(it,a){switch(state.sort){case'nombre':return it.nombre.toLow
 function covColor(a){return a.status==='urgente'?'var(--rojo)':a.status==='pedir'?'var(--ambar)':a.status==='sobre'?'var(--gris)':a.status==='sinstock'?'var(--azul)':'var(--verde)';}
 // --- Render de tabla con carga incremental (lazy) para listas grandes ---
 const TABLE_PAGE=70;let _tbState=null,_tbIO=null;
+// Estrella de favorito — botón propio con stopPropagation() (mismo patrón que abcBadge, línea
+// ~3440) para no disparar el click de la fila (abre la Ficha vía fpAbrir). Favoritos son
+// compartidos por todo el negocio (sin login individual), ver toggleFavorito().
+function favStarHTML(ref){
+  const activo=FAVORITOS.has(ref);
+  return `<button type="button" class="fav-star${activo?' activo':''}" onclick="event.stopPropagation();toggleFavorito('${ref}')" aria-label="${activo?'Quitar de favoritos':'Marcar como favorito'}" aria-pressed="${activo}"><svg width="15" height="15" viewBox="0 0 24 24" fill="${activo?'currentColor':'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>`;
+}
+// Marca/desmarca favorito — compartido por todo el negocio (sin login individual), se guarda
+// al toque sin botón aparte. Solo repinta la lista (renderTable(), no render() completo): no
+// afecta KPIs/carrito/escala, mismo criterio que ya usan los headers de orden.
+async function toggleFavorito(ref){
+  const esFav=FAVORITOS.has(ref);
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:esFav?'quitar_favorito':'marcar_favorito',payload:{sku:ref}})});
+    const j=await res.json();
+    if(!j||!j.ok)throw new Error((j&&j.error)||'No se pudo guardar');
+    if(esFav)FAVORITOS.delete(ref);else FAVORITOS.add(ref);
+    renderTable();
+  }catch(e){
+    showToast('No se pudo actualizar favorito: '+(e&&e.message?e.message:String(e)));
+  }
+}
 function rowHTML(it,a,f){const cant=qOf(it,a);
   const bundles=it.fmt>1?Math.round(cant/it.fmt):cant;
   const covTxt=a.cov==null?'—':a.cov===Infinity?'∞':(a.cov>=100?'99+':fmt1(a.cov)+'d');
@@ -3491,7 +3526,7 @@ function rowHTML(it,a,f){const cant=qOf(it,a);
         `<div class="fila-thumb">${thumb}</div>`+
         `<div class="fila-nombre-col">`+
           `<span class="fila-badge">${a.status==='urgente'?'URGENTE':a.status==='pedir'?'A PEDIR':''}</span>`+
-          `<span class="fila-nombre prod-name">${it.nombre}</span>`+
+          `<span class="fila-nombre-line" style="display:flex;align-items:flex-start;gap:3px">${favStarHTML(it.ref)}<span class="fila-nombre prod-name">${it.nombre}</span></span>`+
           `<span class="fila-prov">${it.proveedorNombre||it.prov}</span>`+pendBadge+extraProvBadge+
         `</div>`+
         `<div class="fila-precios"><span class="fila-venta">${precioVal}</span><span class="fila-costo">${costoVal}</span><span class="fila-margen ${mgCls}">${mgVal}</span>${abcBadge}</div>`+
@@ -3506,7 +3541,7 @@ function rowHTML(it,a,f){const cant=qOf(it,a);
     `<div class="card-row">`+
       `<div class="card-thumb-wrap">${thumb}</div>`+
       `<div class="card-main">`+
-        `<div class="prod-name-wrap"><span class="prod-name">${it.nombre}</span></div>`+
+        `<div class="prod-name-wrap">${favStarHTML(it.ref)}<span class="prod-name">${it.nombre}</span></div>`+
         `<div class="prod-meta">${it.proveedorNombre||it.prov}</div>`+pendBadge+extraProvBadge+
         priceLine+
         `<div class="card-stats">`+
@@ -3826,6 +3861,7 @@ let ABC_BY_SKU={};
 // Skus excluidos a mano de "Riesgo de quiebre" (ver módulo rz*) — persistido en D1, llega en
 // cada sync/full como j.riesgoExcluidos (array de skus). Set para lookup O(1) desde rzCalcular().
 let RIESGO_EXCLUIDOS=new Set();
+let FAVORITOS=new Set();
 async function cargarABC(){
   try{
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=abc');
@@ -4113,7 +4149,7 @@ async function cloudSync(silent,live,full,origen){
       if(esPollDeFondo&&editando)return true;
       _ultimoPayloadFirma=firma;
 
-      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);
+      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);
       INVMAP=invMapFromItems(DB.items);
       SRC='nube · '+new Date().toLocaleString('es-CL');
       // FIX: antes esto era "state.edits={}" incondicional, así que CUALQUIER sync
@@ -4226,7 +4262,7 @@ async function pollFondo(){
     if(firma===_ultimoPayloadFirma)return; // nada cambió, no hay nada que repintar
     _ultimoPayloadFirma=firma;
 
-    DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);
+    DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);
     INVMAP=invMapFromItems(DB.items);
     SRC='nube · '+new Date().toLocaleString('es-CL');
     setLastSync(Date.now());
@@ -4306,6 +4342,13 @@ document.querySelectorAll('#seg-basis button').forEach(b=>b.onclick=()=>{
 });
 document.getElementById('btn-resugerir').onclick=regenerarSugerencia;
 document.querySelectorAll('#seg-unit button').forEach(b=>b.onclick=()=>{state.unit=b.dataset.u;document.querySelectorAll('#seg-unit button').forEach(x=>x.classList.remove('active'));b.classList.add('active');render();persistUI();});
+// Filtro "solo favoritos" — cambia el conjunto base de currentItems(), así que usa render()
+// completo (no solo renderTable()) igual que el resto de los filtros (proveedor/búsqueda).
+document.getElementById('fav-toggle').onclick=()=>{
+  state.favOnly=!state.favOnly;
+  document.getElementById('fav-toggle').setAttribute('aria-pressed',String(state.favOnly));
+  render();persistUI();
+};
 document.getElementById('lead').oninput=e=>{state.lead=Math.max(0,+e.target.value||0);render();};
 document.getElementById('cover').oninput=e=>{state.cover=Math.max(1,+e.target.value||1);render();};
 document.querySelectorAll('#ptable .ptable-head [data-s]').forEach(th=>th.onclick=()=>{const s=th.dataset.s;if(state.sort===s)state.dir*=-1;else{state.sort=s;state.dir=1;}renderTable();persistUI();});
@@ -9280,7 +9323,7 @@ async function recargarHistorial(){
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=recargar_historial');
     const j=await res.json();
     if(j&&j.ok){
-      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);
+      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);
       INVMAP=invMapFromItems(DB.items);
       state.edits={};
       persist();render();
@@ -12427,7 +12470,7 @@ function persistUI(){
     try{
       const sc=tableScrollEl();
       localStorage.setItem('marin_ui',JSON.stringify({
-        prov:state.prov,allProv:state.allProv,search:state.search,
+        prov:state.prov,allProv:state.allProv,search:state.search,favOnly:state.favOnly,
         basis:state.basis,unit:state.unit,sort:state.sort,dir:state.dir,
         winY:window.scrollY||0,
         tblY:sc?sc.scrollTop:0,
@@ -12443,6 +12486,7 @@ function restoreUI(){
   if(u.prov)state.prov=u.prov;
   state.allProv=!!u.allProv;
   state.search=u.search||'';
+  state.favOnly=!!u.favOnly;
   if([7,14,30,90].includes(u.basis))state.basis=u.basis;
   if(['dia','sem','mes'].includes(u.unit))state.unit=u.unit;
   if(u.sort)state.sort=u.sort;
@@ -12451,6 +12495,8 @@ function restoreUI(){
   // refleja en los controles visuales
   document.querySelectorAll('#seg-basis button').forEach(b=>b.classList.toggle('active',+b.dataset.b===state.basis));
   document.querySelectorAll('#seg-unit button').forEach(b=>b.classList.toggle('active',b.dataset.u===state.unit));
+  const favBtn=document.getElementById('fav-toggle');
+  if(favBtn)favBtn.setAttribute('aria-pressed',String(state.favOnly));
   const si=document.getElementById('prov-all');
   if(si){si.value=state.search||(state.allProv?'':state.prov)||'';const px=document.getElementById('prov-x');if(px)px.classList.toggle('on',!!state.search);}
   // El carrito ya no se restaura entre sesiones — siempre inicia oculto (panel superpuesto, no pestaña).
