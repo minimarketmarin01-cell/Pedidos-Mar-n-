@@ -3457,8 +3457,9 @@ function favStarHTML(ref){
   return `<button type="button" class="fav-star${activo?' activo':''}" onclick="event.stopPropagation();toggleFavorito('${ref}')" aria-label="${activo?'Quitar de favoritos':'Marcar como favorito'}" aria-pressed="${activo}"><svg width="15" height="15" viewBox="0 0 24 24" fill="${activo?'currentColor':'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>`;
 }
 // Marca/desmarca favorito — compartido por todo el negocio (sin login individual), se guarda
-// al toque sin botón aparte. Solo repinta la lista (renderTable(), no render() completo): no
-// afecta KPIs/carrito/escala, mismo criterio que ya usan los headers de orden.
+// al toque sin botón aparte. Actualiza solo esa fila en el DOM en vez de renderTable() completo
+// (que siempre reinicia el scroll a 0, ver tableScrollEl() ahí abajo) — reportado: marcar un
+// favorito hacía que la lista "regresara al inicio" en vez de quedarse donde estaba el usuario.
 async function toggleFavorito(ref){
   const esFav=FAVORITOS.has(ref);
   try{
@@ -3466,7 +3467,18 @@ async function toggleFavorito(ref){
     const j=await res.json();
     if(!j||!j.ok)throw new Error((j&&j.error)||'No se pudo guardar');
     if(esFav)FAVORITOS.delete(ref);else FAVORITOS.add(ref);
-    renderTable();
+    const fila=document.querySelector('.card-cell[data-ref="'+CSS.escape(ref)+'"]');
+    if(fila&&state.favOnly&&esFav){
+      // Se desmarcó estando en el filtro "solo favoritos": el producto ya no pertenece a esta
+      // lista — se saca solo esa fila, sin tocar el resto ni el scroll.
+      fila.remove();
+      if(_tbState)_tbState.items=_tbState.items.filter(x=>x.it.ref!==ref);
+      if(!document.querySelector('#ptbody .card-cell'))renderTable(); // quedó vacía: mostrar "Sin resultados."
+    }else if(fila){
+      fila.querySelectorAll('.fav-star').forEach(btn=>btn.outerHTML=favStarHTML(ref));
+    }else{
+      renderTable(); // la fila no está en el DOM actual (página aún no cargada) — repinta normal
+    }
   }catch(e){
     showToast('No se pudo actualizar favorito: '+(e&&e.message?e.message:String(e)));
   }
