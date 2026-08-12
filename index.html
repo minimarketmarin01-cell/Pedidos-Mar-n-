@@ -1785,6 +1785,11 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
             <div id="vc-pend-list"></div>
           </div>
           <div id="vc-view-descuentos" class="hidden">
+            <div id="da-pendientes-box" class="hidden" style="border:1.5px solid var(--ambar);background:var(--ambar-bg);border-radius:10px;padding:10px 12px;margin-bottom:10px">
+              <div style="font-size:12px;font-weight:700;color:var(--ambar);margin-bottom:6px">⚠️ Precios pendientes de restaurar<span id="da-pend-count"></span></div>
+              <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">Estos lotes ya se cerraron, pero el precio nunca volvió al original en Loyverse.</div>
+              <div id="da-pendientes-list"></div>
+            </div>
             <div class="vc-empty" id="da-intro" style="text-align:left;color:var(--muted);font-size:12px;margin-bottom:8px">Productos con descuento ya aplicado y sincronizado con Loyverse. Anota lo vendido y lo que se va a merma — al completarse la cantidad total, el lote pasa solo a Historial. Si llega la fecha de vencimiento sin agotarse, el precio normal se restaura solo.</div>
             <div id="da-list"><div class="vc-empty">Cargando…</div></div>
           </div>
@@ -9643,7 +9648,14 @@ function vcSetView(v){
   // entrada) — en visitas siguientes se repinta con lo que ya hay en memoria, que
   // vcAplicarPrecio mantiene al día en tiempo real. Evita un parpadeo de "Cargando…" y una
   // llamada de red de más cada vez que el usuario va y vuelve entre pestañas.
-  else if(v==='descuentos'){if(_daInicializado)daRender();else daCargar();}
+  // Precios pendientes de restaurar (Fix C) se carga aparte con su propio flag de una sola
+  // vez — daCargarBadgeSolo (ver vcLoad) solo trae descuentos_activos para el badge, así que
+  // sin esto la sección de aviso nunca llegaba a pedirse cuando el usuario entraba directo a
+  // "Descuentos" con la carga rápida ya hecha (_daInicializado ya en true de entrada).
+  else if(v==='descuentos'){
+    if(_daInicializado){daRender();if(!_daPendientesInicializado)daCargarPendientes();}
+    else daCargar();
+  }
   else vcAplicarFiltro();   // refresca la lista por si se retiró algo
 }
 document.querySelectorAll('#vc-viewseg button').forEach(b=>b.onclick=()=>vcSetView(b.dataset.view));
@@ -10020,7 +10032,7 @@ async function vcAplicarPrecio(btn){
 // agotar la cantidad del lote (auto-cierre en el Worker), (b) toca "Cerrar gestión" a mano, o
 // (c) el cron de las 06:00 detecta que venció sin agotarse y lo cierra solo, restaurando el
 // precio normal en Loyverse (chequearYRevertirDescuentosVencidos, sin intervención de esta UI).
-let _daLotes=[],_daInicializado=false;
+let _daLotes=[],_daPendientesRestaurar=[],_daInicializado=false,_daPendientesInicializado=false;
 async function daCargar(){
   const box=document.getElementById('da-list');
   box.innerHTML='<div class="vc-empty">Cargando…</div>';
@@ -10036,6 +10048,21 @@ async function daCargar(){
   }
   daRender();
   daActualizarBadge();
+  daCargarPendientes();
+}
+// Precios pendientes de restaurar (Fix C) — lista aparte, con su propio flag de "ya cargado
+// una vez" (ver vcSetView), porque la carga rápida de solo-badge (daCargarBadgeSolo) no la
+// incluye y puede dejar _daInicializado en true antes de que esto se pida.
+async function daCargarPendientes(){
+  try{
+    const res=await fetch(SYNC_URL+'?action=precios_pendientes_restaurar');
+    const j=await res.json();
+    _daPendientesRestaurar=(j&&j.ok&&Array.isArray(j.lotes))?j.lotes:[];
+  }catch(e){
+    _daPendientesRestaurar=[];
+  }
+  _daPendientesInicializado=true;
+  daRenderPendientes();
 }
 function daRender(){
   const box=document.getElementById('da-list');
@@ -10054,11 +10081,57 @@ function daRender(){
         <input type="number" min="0" step="any" class="da-input" data-damerma="${l.filaIndex}" placeholder="Merma">
         <button type="button" class="vc-mini vc-mini-verde" data-daguardar="${l.filaIndex}" title="Registrar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Registrar</span></button>
       </div>
-      <div class="btns vc-btns-mini"><button type="button" class="vc-mini" style="flex:1" data-dacerrar="${l.filaIndex}" title="Cerrar gestión sin esperar a agotar el stock">Cerrar gestión</button></div>
+      <div class="btns vc-btns-mini">
+        <button type="button" class="vc-mini" style="flex:1" data-dacerrar="${l.filaIndex}" title="Cerrar gestión sin esperar a agotar el stock">Cerrar gestión</button>
+        <button type="button" class="vc-mini" style="flex:1" data-darestaurar="${l.filaIndex}" title="Restaurar el precio original ahora, sin esperar al vencimiento">Restaurar precio ahora</button>
+      </div>
     </div>`;
   }).join('');
   box.querySelectorAll('[data-daguardar]').forEach(b=>b.onclick=()=>daRegistrar(b.dataset.daguardar));
   box.querySelectorAll('[data-dacerrar]').forEach(b=>b.onclick=()=>daCerrar(b.dataset.dacerrar));
+  box.querySelectorAll('[data-darestaurar]').forEach(b=>b.onclick=()=>daRestaurarPrecio(b.dataset.darestaurar));
+}
+// Lotes ya cerrados (agotados o "Cerrar gestión") de ANTES del fix que agregó la restauración
+// de precio a esos dos cierres — su precio con descuento nunca volvió a Loyverse. No hay
+// pantalla de "Historial de vencimientos" donde encontrarlos de otra forma.
+function daRenderPendientes(){
+  const cont=document.getElementById('da-pendientes-list');
+  const caja=document.getElementById('da-pendientes-box');
+  if(!_daPendientesRestaurar.length){caja.classList.add('hidden');cont.innerHTML='';return;}
+  caja.classList.remove('hidden');
+  document.getElementById('da-pend-count').textContent=' ('+_daPendientesRestaurar.length+')';
+  cont.innerHTML=_daPendientesRestaurar.map(l=>{
+    const nom=String(l.nombre||'').replace(/</g,'&lt;');
+    return `<div class="vc-row" data-dapend="${l.filaIndex}" style="padding:8px 0">
+      <div class="nom">${nom}</div>
+      <div class="vc-precio-linea"><span class="vc-precio-actual">Ahora: ${peso(l.precioActual)}</span><span class="vc-precio-flecha">→</span><span class="vc-precio-sug">${peso(l.precioOriginal)}</span></div>
+      <div class="btns vc-btns-mini"><button type="button" class="vc-mini vc-mini-verde" style="flex:1" data-darestaurar="${l.filaIndex}">Restaurar precio ahora</button></div>
+    </div>`;
+  }).join('');
+  cont.querySelectorAll('[data-darestaurar]').forEach(b=>b.onclick=()=>daRestaurarPrecio(b.dataset.darestaurar));
+}
+// Restaura el precio original en Loyverse ya mismo — sirve tanto para un lote todavía activo
+// (reintento inmediato, sin esperar al cron de las 00:00/06:00) como para uno ya cerrado cuyo
+// precio quedó pendiente (ver daRenderPendientes). Muestra el error real de Loyverse si falla,
+// en vez de que quede invisible solo en los logs del servidor.
+async function daRestaurarPrecio(filaIndex){
+  if(!confirm('¿Restaurar el precio original en Loyverse ahora?'))return;
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'restaurar_precio_descuento',payload:{filaIndex}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      showToast('Precio restaurado en Loyverse');
+      _daLotes=_daLotes.filter(l=>String(l.filaIndex)!==String(filaIndex));
+      _daPendientesRestaurar=_daPendientesRestaurar.filter(l=>String(l.filaIndex)!==String(filaIndex));
+      daRender();
+      daRenderPendientes();
+      daActualizarBadge();
+    }else{
+      showToast('No se pudo restaurar: '+((j&&j.error)||'error desconocido'));
+    }
+  }catch(e){
+    showToast('Error de conexión al restaurar el precio');
+  }
 }
 async function daRegistrar(filaIndex){
   const box=document.getElementById('da-list');
@@ -10097,10 +10170,14 @@ async function daCerrar(filaIndex){
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'cerrar_gestion_descuento',payload:{filaIndex}})});
     const j=await res.json();
     if(j&&j.ok){
-      showToast('Gestión cerrada — pasó a Historial');
+      // Si el backend no pudo restaurar el precio en Loyverse al cerrar, avisa acá en vez de
+      // quedar invisible — el lote igual se cierra (recarga daCargar() para que aparezca en
+      // "Precios pendientes de restaurar" y se pueda reintentar desde ahí).
+      showToast(j.advertencia?j.advertencia:'Gestión cerrada — pasó a Historial');
       _daLotes=_daLotes.filter(x=>String(x.filaIndex)!==String(filaIndex));
       daRender();
       daActualizarBadge();
+      if(j.advertencia)daCargar();
     }else{
       showToast('No se pudo cerrar: '+((j&&j.error)||'error desconocido'));
     }
