@@ -6541,6 +6541,7 @@ function _gpCfgCambiarUnidad(fila,valor){
     const actualUnd=modoActual==='pack'?Math.round(Number(input.value)||0)*fmt:Math.round(Number(input.value)||0);
     input.value=modoNuevo==='pack'?Math.round(actualUnd/fmt):actualUnd;
   }
+  const veniaDeUnd=modoActual==='und'&&modoNuevo==='pack';
   fila.dataset.gpCfgModo=modoNuevo;
   fila.dataset.gpCfgPalabra=palabraNueva;
   fila.querySelectorAll('[data-gp-cfg-unidad]').forEach(b=>b.classList.toggle('active',b.dataset.gpCfgUnidad===valor));
@@ -6550,6 +6551,12 @@ function _gpCfgCambiarUnidad(fila,valor){
     const lbl=caption.querySelector('[data-gp-cfg-caption-lbl]');
     if(lbl)lbl.textContent='1 '+palabraNueva+' =';
   }
+  // Recién aparece el campito de empaque (Und→pack, no al alternar Caja↔Display) — foco directo
+  // ahí para que el siguiente dígito que tipee el usuario caiga en el lugar correcto.
+  if(veniaDeUnd){
+    const empaqueInput=fila.querySelector('[data-gp-cfg-empaque]');
+    if(empaqueInput){empaqueInput.focus();empaqueInput.select();}
+  }
   _gpCfgProgramarGuardado(fila);
 }
 function _gpCfgAjustar(fila,delta){
@@ -6558,10 +6565,11 @@ function _gpCfgAjustar(fila,delta){
   input.value=nuevo;
   _gpCfgProgramarGuardado(fila);
 }
-let _gpCfgDebounce=null;
+// Timer por fila (guardado en la propia fila, no en una variable compartida) — así editar dos
+// productos distintos dentro de la ventana de 500ms no cancela el guardado pendiente del otro.
 function _gpCfgProgramarGuardado(fila){
-  clearTimeout(_gpCfgDebounce);
-  _gpCfgDebounce=setTimeout(()=>{
+  clearTimeout(fila._gpCfgDebounceTimer);
+  fila._gpCfgDebounceTimer=setTimeout(()=>{
     const ref=fila.dataset.gpCfgRef;
     const modo=fila.dataset.gpCfgModo;
     // Si se está viendo/editando en modo pack, el campito "1 caja = N und" manda; si está en
@@ -6595,20 +6603,30 @@ async function _gpGuardarMultiplo(ref,fila,valorEnUnidades,empaqueEnUnidades,pal
     if(empaqueEnUnidades>0)DB.empaquesProducto[ref]=empaqueEnUnidades;else delete DB.empaquesProducto[ref];
     if(empaqueEnUnidades>0&&palabra)DB.palabrasProducto[ref]=palabra;else delete DB.palabrasProducto[ref];
     retagAll();
-    // Esta misma fila se reusa dentro de la Ficha del producto (fpPaneMinimo) — ahí no hay
-    // lista de Configuración que re-renderizar, solo hay que repintar el propio pane con el
-    // valor ya actualizado (relevante sobre todo tras "↺ Automático"). Se distingue por dónde
-    // vive `fila` en el DOM, no por _gpModo (que puede seguir en 'config' de una sesión
-    // anterior aunque la Ficha se haya abierto desde otra pantalla).
-    const enFicha=fila&&fila.closest&&fila.closest('#fp-pane-minimo');
-    if(enFicha){
-      const itActualizado=DB.items.find(x=>x.ref===ref);
-      if(itActualizado)document.getElementById('fp-pane-minimo').innerHTML=_gpFilaConfig(itActualizado);
-    }else{
-      if(_gpProvActual)_gpProdListaCompleta=itemsFor(_gpProvActual.nombre).slice().sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),'es'));
-      if(_gpModo==='config'){
-        const q=normTxt((document.getElementById('gp-prod-search').value||'').trim());
-        gpRenderProductos(q?_gpProdListaCompleta.filter(x=>normTxt(x.nombre).includes(q)):_gpProdListaCompleta);
+    // Si el usuario sigue con el foco puesto en el stepper o en el campito de empaque de ESTA
+    // fila, no se repinta — repintar acá (aunque los valores guardados sean correctos) destruye
+    // el <input> donde está escribiendo y lo saca del campo a mitad de camino. Se reportó
+    // justo esto: tocar "Caja" dispara el guardado, y medio segundo después, mientras recién
+    // empezaban a tipear el empaque, la fila se repintaba por debajo y los expulsaba del campo.
+    // El próximo guardado (cuando saquen el foco, vía el evento 'change') sí repinta normal.
+    const activo=document.activeElement;
+    const sigueEditando=fila&&(activo===fila.querySelector('[data-gp-cfg-num]')||activo===fila.querySelector('[data-gp-cfg-empaque]'));
+    if(!sigueEditando){
+      // Esta misma fila se reusa dentro de la Ficha del producto (fpPaneMinimo) — ahí no hay
+      // lista de Configuración que re-renderizar, solo hay que repintar el propio pane con el
+      // valor ya actualizado (relevante sobre todo tras "↺ Automático"). Se distingue por dónde
+      // vive `fila` en el DOM, no por _gpModo (que puede seguir en 'config' de una sesión
+      // anterior aunque la Ficha se haya abierto desde otra pantalla).
+      const enFicha=fila&&fila.closest&&fila.closest('#fp-pane-minimo');
+      if(enFicha){
+        const itActualizado=DB.items.find(x=>x.ref===ref);
+        if(itActualizado)document.getElementById('fp-pane-minimo').innerHTML=_gpFilaConfig(itActualizado);
+      }else{
+        if(_gpProvActual)_gpProdListaCompleta=itemsFor(_gpProvActual.nombre).slice().sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),'es'));
+        if(_gpModo==='config'){
+          const q=normTxt((document.getElementById('gp-prod-search').value||'').trim());
+          gpRenderProductos(q?_gpProdListaCompleta.filter(x=>normTxt(x.nombre).includes(q)):_gpProdListaCompleta);
+        }
       }
     }
     try{render();}catch(_){}
