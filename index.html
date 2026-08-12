@@ -289,11 +289,11 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .mm-search .mm-mic{right:52px}
 .mm-search .mm-scan{right:6px}
 .mm-x{right:84px}
-/* #gp-prod-search (Gestionar proveedores → Nivel 2) es el único buscador sin mic/scan — solo
-   reserva 44px de padding-right, no los 104px que asume el .mm-x genérico de arriba. Con el
+/* #gp-prod-search y #gp-search (Gestionar proveedores) son buscadores sin mic/scan — solo
+   reservan 44px de padding-right, no los 104px que asume el .mm-x genérico de arriba. Con el
    offset genérico (right:84px) el botón "×" quedaba flotando sobre la zona de texto tipeable
    en vez de después de ella, interceptando toques ahí — mismo tipo de bug que #prov-x/.cam-btn. */
-#gp-prod-x{right:6px}
+#gp-prod-x,#gp-x{right:6px}
 /* Botón de cámara/escáner reutilizable en TODOS los buscadores de la app: mismo alto, color e
    ícono que ya tenían — solo más ancho para que sea fácil de presionar con el dedo (antes 24px
    o 19px según el buscador). El mic y el botón de limpiar se corrieron para dejarle espacio,
@@ -2525,6 +2525,10 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <button class="btn-ok loadbtn" id="gp-nuevo-crear" type="button" style="white-space:nowrap"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Crear</button>
         </div>
         <div id="gp-tab-hint" class="cat hidden" style="margin:-4px 0 12px">Elige un proveedor para configurar el mínimo de pedido de sus productos.</div>
+        <div class="mm-search" style="margin:0 0 10px">
+          <input id="gp-search" placeholder="Buscar proveedor…" autocomplete="off" style="padding-right:44px">
+          <button class="mm-x" id="gp-x" type="button" aria-label="Limpiar" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
         <div id="gp-lista"><div class="vc-empty">Cargando…</div></div>
         <div id="gp-reasignar-box" class="hidden" style="margin-top:12px;padding:12px;border:1.5px solid var(--ambar);border-radius:10px;background:var(--ambar-bg)">
           <div id="gp-reasignar-msg" style="font-size:13px;font-weight:700;margin-bottom:10px"></div>
@@ -2900,12 +2904,15 @@ function tag(nm,prov){const n=(nm||'').toLowerCase();
 // cambia — sigue siendo el cálculo automático de base para todo lo que no tiene override.
 function tagConOverride(nombre,prov,ref){
   const t=tag(nombre,prov);
-  const ov=DB&&DB.multiplosProducto&&DB.multiplosProducto[ref];
-  // Solo pisa el mínimo de pedido (it.min) — el tamaño físico del pack (it.fmt/it.word, "1
-  // display = 6 und") no cambia: el usuario está reconfigurando cuánto pedir como mínimo, no
-  // cuántas unidades trae la caja/display. multOf() ya prioriza it.min sobre it.fmt cuando
+  const ovMin=DB&&DB.multiplosProducto&&DB.multiplosProducto[ref];
+  const ovFmt=DB&&DB.empaquesProducto&&DB.empaquesProducto[ref];
+  // ovFmt pisa el tamaño físico del pack (it.fmt/it.word, "1 caja = N und") — permite definir
+  // un pack donde tag() no tiene ninguna regla (ej. Colun, que hoy siempre da fmt=1). Si el
+  // producto no tenía una palabra específica (word genérico 'u'), pasa a "caja" por defecto.
+  if(ovFmt){t.fmt=ovFmt;if(t.word==='u')t.word='caja';}
+  // ovMin pisa el mínimo de pedido (it.min) — multOf() ya prioriza it.min sobre it.fmt cuando
   // it.min>1, así que esto alcanza para que el override mande en las sugerencias/carrito.
-  if(ov)t.min=ov;
+  if(ovMin)t.min=ovMin;
   return t;
 }
 
@@ -3961,13 +3968,15 @@ function renderABCResumen(){
 })();
 
 // Convierte los datos del endpoint (items + ventas) al formato DB que usa el dashboard
-function buildDBfromCloud(items, ventas, pendientes, provsExtra, provsIdsExtra, provsNombresExtra, multiplos){
-  // Mínimos/múltiplos configurados a mano (ver tagConOverride) — se guarda en DB.multiplosProducto
-  // ANTES de armar items_arr (tagConOverride los lee de ahí), y también viaja en el objeto DB
-  // final devuelto más abajo, porque el caller recién reasigna la variable global DB después de
-  // que esta función retorna (mutar la DB vieja acá no serviría de nada).
+function buildDBfromCloud(items, ventas, pendientes, provsExtra, provsIdsExtra, provsNombresExtra, multiplos, empaques){
+  // Mínimos/empaques configurados a mano (ver tagConOverride) — se guardan en DB.multiplosProducto/
+  // DB.empaquesProducto ANTES de armar items_arr (tagConOverride los lee de ahí), y también viajan
+  // en el objeto DB final devuelto más abajo, porque el caller recién reasigna la variable global
+  // DB después de que esta función retorna (mutar la DB vieja acá no serviría de nada).
   const multiplosObj=multiplos||{};
+  const empaquesObj=empaques||{};
   DB.multiplosProducto=multiplosObj;
+  DB.empaquesProducto=empaquesObj;
   const itemRows=(items&&items.rows)?items.rows:{};
   const ventaRows=(ventas&&ventas.rows)?ventas.rows:{};
   const hoyRows=(ventas&&ventas.hoy&&ventas.hoy.rows)?ventas.hoy.rows:{};
@@ -4048,7 +4057,7 @@ function buildDBfromCloud(items, ventas, pendientes, provsExtra, provsIdsExtra, 
   const provsReal=Object.values(psReal).sort((a,b)=>String(a.prov).localeCompare(String(b.prov),'es'));
 
   const meta=ventas&&ventas.meta?ventas.meta:{min:'',max:'',ndays:0};
-  return {meta:{min:meta.min,max:meta.max,ndays:meta.ndays,nitems:items_arr.length,nprov:provs.length},items:items_arr,provs:provs,provsReal:provsReal,pendBySku:pendBySku,pendByBarcode:pendByBarcode,multiplosProducto:multiplosObj};
+  return {meta:{min:meta.min,max:meta.max,ndays:meta.ndays,nitems:items_arr.length,nprov:provs.length},items:items_arr,provs:provs,provsReal:provsReal,pendBySku:pendBySku,pendByBarcode:pendByBarcode,multiplosProducto:multiplosObj,empaquesProducto:empaquesObj};
 }
 // Devuelve el registro de "pedido pendiente" de un producto (por sku, o por barcode si otro
 // proveedor lo vende bajo un sku distinto), o null si no tiene nada pedido en camino.
@@ -4088,7 +4097,7 @@ async function cloudSync(silent,live,full,origen){
       if(esPollDeFondo&&editando)return true;
       _ultimoPayloadFirma=firma;
 
-      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);
+      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);
       INVMAP=invMapFromItems(DB.items);
       SRC='nube · '+new Date().toLocaleString('es-CL');
       // FIX: antes esto era "state.edits={}" incondicional, así que CUALQUIER sync
@@ -4201,7 +4210,7 @@ async function pollFondo(){
     if(firma===_ultimoPayloadFirma)return; // nada cambió, no hay nada que repintar
     _ultimoPayloadFirma=firma;
 
-    DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);
+    DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);
     INVMAP=invMapFromItems(DB.items);
     SRC='nube · '+new Date().toLocaleString('es-CL');
     setLastSync(Date.now());
@@ -6241,7 +6250,7 @@ function _gpCambiarModo(modo){
   document.getElementById('gp-tab-config').classList.toggle('active',modo==='config');
   document.getElementById('gp-nuevo-box').classList.toggle('hidden',modo==='config');
   document.getElementById('gp-tab-hint').classList.toggle('hidden',modo!=='config');
-  if(_gpCargado)gpRender();
+  if(_gpCargado)_gpFiltrarProveedores();
 }
 let _gpVolverA='pedido'; // 'inicio' o 'pedido' — pantalla de fondo real al momento de abrir Proveedores (ver gpAbrir), usada por cerrarModal() en el tercer retroceso
 let _gpCargado=false; // true solo si gpCargar() terminó con éxito al menos una vez en esta sesión del modal
@@ -6252,6 +6261,8 @@ function gpAbrir(){
   document.getElementById('gp-reasignar-box').classList.add('hidden');
   _gpEliminarPendiente=null;
   _gpCargado=false;   // fuerza una carga fresca cada vez que se abre el módulo desde cero
+  document.getElementById('gp-search').value='';
+  document.getElementById('gp-x').style.display='none';
   // Recuerda desde dónde se abrió el módulo (Inicio o Pedidos), para que el retroceso final
   // (Lista de proveedores → pantalla anterior) vuelva ahí — antes siempre caía a Pedidos sin
   // importar el origen real, porque cerrarModal() usa 'pedido' como destino genérico para
@@ -6316,13 +6327,15 @@ async function gpCargar(){
     if(btn)btn.onclick=gpCargar;
   }
 }
-function gpRender(){
+function gpRender(lista){
   const cont=document.getElementById('gp-lista');
   if(!_gpLista.length){cont.innerHTML='<div class="vc-empty">Todavía no hay proveedores creados.</div>';return;}
+  const listaAMostrar=lista||_gpLista;
+  if(!listaAMostrar.length){cont.innerHTML='<div class="vc-empty">Sin coincidencias.</div>';return;}
   // En modo Configuración no tiene sentido renombrar/eliminar proveedores desde acá (son
   // acciones de la pestaña Proveedores) — la fila queda simple, solo para elegir y pasar a
   // configurar sus productos.
-  cont.innerHTML=_gpLista.map(p=>`
+  cont.innerHTML=listaAMostrar.map(p=>`
     <div class="fp-row" data-gp-id="${p.id}" style="cursor:pointer">
       <span class="k">${p.nombre}</span>
       <span class="v" style="display:flex;align-items:center;gap:8px">
@@ -6354,6 +6367,21 @@ document.getElementById('gp-lista').addEventListener('click',ev=>{
     if(prov)gpAbrirProductos(prov);
   }
 });
+// Buscador de proveedores (Nivel 1) — compartido por las dos pestañas (Proveedores y
+// Configuración), ambas muestran la misma lista de proveedores. Mismo patrón robusto
+// (input+keyup) que #gp-prod-search, ver comentario ahí sobre por qué.
+function _gpFiltrarProveedores(){
+  const q=normTxt((document.getElementById('gp-search').value||'').trim());
+  document.getElementById('gp-x').style.display=q?'flex':'none';
+  gpRender(q?_gpLista.filter(p=>normTxt(p.nombre).includes(q)):_gpLista);
+}
+document.getElementById('gp-search').addEventListener('input',_gpFiltrarProveedores);
+document.getElementById('gp-search').addEventListener('keyup',_gpFiltrarProveedores);
+document.getElementById('gp-x').onclick=()=>{
+  document.getElementById('gp-search').value='';
+  document.getElementById('gp-x').style.display='none';
+  gpRender();
+};
 // ==== Nivel 2 — Productos del proveedor ====
 // Reutiliza itemsFor(nombre), la misma función que ya usa Armar pedido para filtrar el
 // catálogo por proveedor — DB.items ya está en memoria, no se pide nada nuevo al backend.
@@ -6393,23 +6421,24 @@ function gpStockTxt(it){
 }
 // ==== Fila de un producto en modo Configuración ====
 // En vez del stock, un stepper (mismo componente .qstep/.qbtn que ya usa el carrito) para
-// definir el mínimo de pedido — con un toggle Und/{word} cuando el producto viene en pack
-// (caja, display, bandeja, etc., según lo calcule tag()), para no obligar a hacer la cuenta
-// de unidades a mano. El valor que se guarda siempre es en unidades (it.min); el toggle solo
-// cambia en qué unidad se muestra/edita.
+// definir el mínimo de pedido, con un toggle Und/{word} SIEMPRE visible (no solo cuando el
+// producto ya viene en pack) — así también se puede definir un pack donde no existía ninguno
+// (ej. proveedores sin reglas hardcodeadas como Colun). En modo pack aparece además un campito
+// editable "1 caja = [N] und" para decir cuántas unidades trae, en vez de un texto fijo.
 function _gpFilaConfig(it){
   const tienePack=it.fmt>1;
   const modo=tienePack?'pack':'und';
   const val=modo==='pack'?Math.round(it.min/it.fmt):it.min;
-  const tieneOverride=!!(DB.multiplosProducto&&DB.multiplosProducto[it.ref]);
+  const palabra=it.word&&it.word!=='u'?it.word:'caja';
+  const tieneOverride=!!((DB.multiplosProducto&&DB.multiplosProducto[it.ref])||(DB.empaquesProducto&&DB.empaquesProducto[it.ref]));
   return `
-    <div class="fp-row" data-gp-cfg-ref="${it.ref}" data-gp-cfg-fmt="${it.fmt}" data-gp-cfg-modo="${modo}" style="flex-direction:column;align-items:stretch;gap:8px">
+    <div class="fp-row" data-gp-cfg-ref="${it.ref}" data-gp-cfg-modo="${modo}" style="flex-direction:column;align-items:stretch;gap:8px">
       <span class="k" style="font-weight:600">${it.nombre}</span>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        ${tienePack?`<div class="fc-tabs" style="margin:0;width:auto">
+        <div class="fc-tabs" style="margin:0;width:auto">
           <button type="button" class="fc-tab-btn ${modo==='und'?'active':''}" data-gp-cfg-unidad="und" style="padding:6px 10px">Und</button>
-          <button type="button" class="fc-tab-btn ${modo==='pack'?'active':''}" data-gp-cfg-unidad="pack" style="padding:6px 10px">${_gpCap(it.word)}</button>
-        </div>`:''}
+          <button type="button" class="fc-tab-btn ${modo==='pack'?'active':''}" data-gp-cfg-unidad="pack" style="padding:6px 10px">${_gpCap(palabra)}</button>
+        </div>
         <div class="qstep">
           <button type="button" class="qbtn" data-gp-cfg-d="-1">−</button>
           <input class="qty-in" inputmode="numeric" pattern="[0-9]*" data-gp-cfg-num value="${val}">
@@ -6417,7 +6446,11 @@ function _gpFilaConfig(it){
         </div>
         ${tieneOverride?`<button type="button" class="loadbtn" data-gp-cfg-reset="${it.ref}" style="padding:5px 9px;font-size:11px;border-color:var(--ambar);color:var(--ambar)">↺ Automático</button>`:''}
       </div>
-      <span class="qword" data-gp-cfg-caption style="text-align:left;${(modo==='pack'&&tienePack)?'':'display:none'}">1 ${it.word} = ${it.fmt} und</span>
+      <div data-gp-cfg-caption style="display:${modo==='pack'?'flex':'none'};align-items:center;gap:6px;font-size:10px;color:var(--muted);font-family:'Manrope';font-weight:600">
+        <span>1 ${palabra} =</span>
+        <input type="text" inputmode="numeric" pattern="[0-9]*" data-gp-cfg-empaque value="${tienePack?it.fmt:''}" placeholder="?" style="width:40px;padding:4px 2px;text-align:center;border:1px solid var(--line);border-radius:6px;font-family:'JetBrains Mono';font-size:11px">
+        <span>und</span>
+      </div>
     </div>`;
 }
 function _gpCap(s){return s?String(s).charAt(0).toUpperCase()+String(s).slice(1):s;}
@@ -6430,7 +6463,7 @@ document.getElementById('gp-prod-lista').addEventListener('click',ev=>{
     const btnD=ev.target.closest('[data-gp-cfg-d]');
     if(btnD){_gpCfgAjustar(fila,Number(btnD.dataset.gpCfgD));return;}
     const btnReset=ev.target.closest('[data-gp-cfg-reset]');
-    if(btnReset){_gpGuardarMultiplo(btnReset.dataset.gpCfgReset,fila,0);return;}
+    if(btnReset){_gpGuardarMultiplo(btnReset.dataset.gpCfgReset,fila,0,0);return;}
     return;
   }
   const fila=ev.target.closest('[data-gp-prod-ref]');
@@ -6441,18 +6474,25 @@ document.getElementById('gp-prod-lista').addEventListener('click',ev=>{
   _fpVolverA='gp';
   fpAbrir(fila.dataset.gpProdRef);
 });
+// Lee el tamaño de pack "vigente" para una fila: lo que haya escrito en el campito editable
+// (si existe/tiene algo), si no 1 — usado tanto para convertir Und↔pack como para guardar.
+function _gpCfgFmtActual(fila){
+  const inp=fila.querySelector('[data-gp-cfg-empaque]');
+  const n=inp?Math.round(Number(inp.value)):0;
+  return n>0?n:1;
+}
 // Cambia el toggle Und/{word} de una fila sin cambiar el valor "real" en unidades — solo
-// convierte lo que se ve en el stepper (y muestra/oculta el texto "1 caja = N und").
+// convierte lo que se ve en el stepper (y muestra/oculta el campito "1 caja = N und").
 function _gpCfgCambiarUnidad(fila,modo){
   if(fila.dataset.gpCfgModo===modo)return;
-  const fmt=Number(fila.dataset.gpCfgFmt)||1;
+  const fmt=_gpCfgFmtActual(fila);
   const input=fila.querySelector('[data-gp-cfg-num]');
   const actualUnd=fila.dataset.gpCfgModo==='pack'?Math.round(Number(input.value)||0)*fmt:Math.round(Number(input.value)||0);
   fila.dataset.gpCfgModo=modo;
   input.value=modo==='pack'?Math.round(actualUnd/fmt):actualUnd;
   fila.querySelectorAll('[data-gp-cfg-unidad]').forEach(b=>b.classList.toggle('active',b.dataset.gpCfgUnidad===modo));
   const caption=fila.querySelector('[data-gp-cfg-caption]');
-  if(caption)caption.style.display=modo==='pack'?'':'none';
+  if(caption)caption.style.display=modo==='pack'?'flex':'none';
 }
 function _gpCfgAjustar(fila,delta){
   const input=fila.querySelector('[data-gp-cfg-num]');
@@ -6465,31 +6505,38 @@ function _gpCfgProgramarGuardado(fila){
   clearTimeout(_gpCfgDebounce);
   _gpCfgDebounce=setTimeout(()=>{
     const ref=fila.dataset.gpCfgRef;
-    const fmt=Number(fila.dataset.gpCfgFmt)||1;
     const modo=fila.dataset.gpCfgModo;
+    // Si se está viendo/editando en modo pack, el campito "1 caja = N und" manda; si está en
+    // modo Und no se toca ningún empaque ya guardado (se reenvía igual para no borrarlo).
+    const empaqueExistente=(DB.empaquesProducto&&DB.empaquesProducto[ref])||0;
+    const fmtActual=modo==='pack'?_gpCfgFmtActual(fila):(empaqueExistente||1);
+    const empaqueAGuardar=modo==='pack'?fmtActual:empaqueExistente;
     const input=fila.querySelector('[data-gp-cfg-num]');
     const valor=Math.max(0,Math.round(Number(input.value))||0);
-    const valorEnUnidades=modo==='pack'?valor*fmt:valor;
-    _gpGuardarMultiplo(ref,fila,valorEnUnidades);
+    const valorEnUnidades=modo==='pack'?valor*fmtActual:valor;
+    _gpGuardarMultiplo(ref,fila,valorEnUnidades,empaqueAGuardar);
   },500);
 }
 document.getElementById('gp-prod-lista').addEventListener('change',ev=>{
-  const input=ev.target.closest('[data-gp-cfg-num]');
+  const input=ev.target.closest('[data-gp-cfg-num],[data-gp-cfg-empaque]');
   if(!input)return;
   const fila=input.closest('[data-gp-cfg-ref]');
   if(fila)_gpCfgProgramarGuardado(fila);
 });
-// Guarda (o borra, si valorEnUnidades<=0) el mínimo manual de un producto. Actualiza
-// DB.multiplosProducto y retagAll() al toque para que el carrito/sugerencias reflejen el
-// cambio sin recargar la página — igual que el resto de las acciones de configuración de la app.
-async function _gpGuardarMultiplo(ref,fila,valorEnUnidades){
-  const valorAnterior=DB.multiplosProducto?DB.multiplosProducto[ref]:null;
+// Guarda (o borra si ambos quedan en 0) el mínimo/empaque manual de un producto. Actualiza
+// DB.multiplosProducto/DB.empaquesProducto y retagAll() al toque para que el carrito/sugerencias
+// reflejen el cambio sin recargar la página — igual que el resto de las acciones de la app.
+async function _gpGuardarMultiplo(ref,fila,valorEnUnidades,empaqueEnUnidades){
+  const minAnterior=DB.multiplosProducto?DB.multiplosProducto[ref]:null;
+  const fmtAnterior=DB.empaquesProducto?DB.empaquesProducto[ref]:null;
   try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'guardar_multiplo_producto',payload:{sku:ref,multiplo:valorEnUnidades}})});
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'guardar_multiplo_producto',payload:{sku:ref,multiplo:valorEnUnidades,empaque:empaqueEnUnidades||0}})});
     const j=await res.json();
     if(!j||!j.ok)throw new Error((j&&j.error)||'No se pudo guardar');
     DB.multiplosProducto=DB.multiplosProducto||{};
+    DB.empaquesProducto=DB.empaquesProducto||{};
     if(valorEnUnidades>0)DB.multiplosProducto[ref]=valorEnUnidades;else delete DB.multiplosProducto[ref];
+    if(empaqueEnUnidades>0)DB.empaquesProducto[ref]=empaqueEnUnidades;else delete DB.empaquesProducto[ref];
     retagAll();
     if(_gpProvActual)_gpProdListaCompleta=itemsFor(_gpProvActual.nombre).slice().sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),'es'));
     if(_gpModo==='config'){
@@ -6502,8 +6549,10 @@ async function _gpGuardarMultiplo(ref,fila,valorEnUnidades){
     showToast('No se pudo guardar el mínimo: '+(e&&e.message?e.message:String(e)));
     if(fila){
       const input=fila.querySelector('[data-gp-cfg-num]');
-      const fmt=Number(fila.dataset.gpCfgFmt)||1;
-      if(input)input.value=fila.dataset.gpCfgModo==='pack'?Math.round((valorAnterior||fmt)/fmt):(valorAnterior||fmt);
+      const empaqueInput=fila.querySelector('[data-gp-cfg-empaque]');
+      const fmt=fmtAnterior||1;
+      if(input)input.value=fila.dataset.gpCfgModo==='pack'?Math.round((minAnterior||fmt)/fmt):(minAnterior||0);
+      if(empaqueInput)empaqueInput.value=fmtAnterior||'';
     }
   }
 }
@@ -9140,7 +9189,7 @@ async function recargarHistorial(){
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=recargar_historial');
     const j=await res.json();
     if(j&&j.ok){
-      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);
+      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);
       INVMAP=invMapFromItems(DB.items);
       state.edits={};
       persist();render();
