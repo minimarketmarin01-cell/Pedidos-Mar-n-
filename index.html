@@ -2906,10 +2906,11 @@ function tagConOverride(nombre,prov,ref){
   const t=tag(nombre,prov);
   const ovMin=DB&&DB.multiplosProducto&&DB.multiplosProducto[ref];
   const ovFmt=DB&&DB.empaquesProducto&&DB.empaquesProducto[ref];
+  const ovPalabra=DB&&DB.palabrasProducto&&DB.palabrasProducto[ref];
   // ovFmt pisa el tamaño físico del pack (it.fmt/it.word, "1 caja = N und") — permite definir
-  // un pack donde tag() no tiene ninguna regla (ej. Colun, que hoy siempre da fmt=1). Si el
-  // producto no tenía una palabra específica (word genérico 'u'), pasa a "caja" por defecto.
-  if(ovFmt){t.fmt=ovFmt;if(t.word==='u')t.word='caja';}
+  // un pack donde tag() no tiene ninguna regla (ej. Colun, que hoy siempre da fmt=1). ovPalabra
+  // (caja/display, elegida a mano) manda si existe; si no, "caja" por defecto.
+  if(ovFmt){t.fmt=ovFmt;t.word=ovPalabra||(t.word==='u'?'caja':t.word);}
   // ovMin pisa el mínimo de pedido (it.min) — multOf() ya prioriza it.min sobre it.fmt cuando
   // it.min>1, así que esto alcanza para que el override mande en las sugerencias/carrito.
   if(ovMin)t.min=ovMin;
@@ -3968,15 +3969,18 @@ function renderABCResumen(){
 })();
 
 // Convierte los datos del endpoint (items + ventas) al formato DB que usa el dashboard
-function buildDBfromCloud(items, ventas, pendientes, provsExtra, provsIdsExtra, provsNombresExtra, multiplos, empaques){
-  // Mínimos/empaques configurados a mano (ver tagConOverride) — se guardan en DB.multiplosProducto/
-  // DB.empaquesProducto ANTES de armar items_arr (tagConOverride los lee de ahí), y también viajan
-  // en el objeto DB final devuelto más abajo, porque el caller recién reasigna la variable global
-  // DB después de que esta función retorna (mutar la DB vieja acá no serviría de nada).
+function buildDBfromCloud(items, ventas, pendientes, provsExtra, provsIdsExtra, provsNombresExtra, multiplos, empaques, palabras){
+  // Mínimos/empaques/palabras configurados a mano (ver tagConOverride) — se guardan en
+  // DB.multiplosProducto/DB.empaquesProducto/DB.palabrasProducto ANTES de armar items_arr
+  // (tagConOverride los lee de ahí), y también viajan en el objeto DB final devuelto más abajo,
+  // porque el caller recién reasigna la variable global DB después de que esta función retorna
+  // (mutar la DB vieja acá no serviría de nada).
   const multiplosObj=multiplos||{};
   const empaquesObj=empaques||{};
+  const palabrasObj=palabras||{};
   DB.multiplosProducto=multiplosObj;
   DB.empaquesProducto=empaquesObj;
+  DB.palabrasProducto=palabrasObj;
   const itemRows=(items&&items.rows)?items.rows:{};
   const ventaRows=(ventas&&ventas.rows)?ventas.rows:{};
   const hoyRows=(ventas&&ventas.hoy&&ventas.hoy.rows)?ventas.hoy.rows:{};
@@ -4057,7 +4061,7 @@ function buildDBfromCloud(items, ventas, pendientes, provsExtra, provsIdsExtra, 
   const provsReal=Object.values(psReal).sort((a,b)=>String(a.prov).localeCompare(String(b.prov),'es'));
 
   const meta=ventas&&ventas.meta?ventas.meta:{min:'',max:'',ndays:0};
-  return {meta:{min:meta.min,max:meta.max,ndays:meta.ndays,nitems:items_arr.length,nprov:provs.length},items:items_arr,provs:provs,provsReal:provsReal,pendBySku:pendBySku,pendByBarcode:pendByBarcode,multiplosProducto:multiplosObj,empaquesProducto:empaquesObj};
+  return {meta:{min:meta.min,max:meta.max,ndays:meta.ndays,nitems:items_arr.length,nprov:provs.length},items:items_arr,provs:provs,provsReal:provsReal,pendBySku:pendBySku,pendByBarcode:pendByBarcode,multiplosProducto:multiplosObj,empaquesProducto:empaquesObj,palabrasProducto:palabrasObj};
 }
 // Devuelve el registro de "pedido pendiente" de un producto (por sku, o por barcode si otro
 // proveedor lo vende bajo un sku distinto), o null si no tiene nada pedido en camino.
@@ -4097,7 +4101,7 @@ async function cloudSync(silent,live,full,origen){
       if(esPollDeFondo&&editando)return true;
       _ultimoPayloadFirma=firma;
 
-      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);
+      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);
       INVMAP=invMapFromItems(DB.items);
       SRC='nube · '+new Date().toLocaleString('es-CL');
       // FIX: antes esto era "state.edits={}" incondicional, así que CUALQUIER sync
@@ -4210,7 +4214,7 @@ async function pollFondo(){
     if(firma===_ultimoPayloadFirma)return; // nada cambió, no hay nada que repintar
     _ultimoPayloadFirma=firma;
 
-    DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);
+    DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);
     INVMAP=invMapFromItems(DB.items);
     SRC='nube · '+new Date().toLocaleString('es-CL');
     setLastSync(Date.now());
@@ -6429,15 +6433,19 @@ function _gpFilaConfig(it){
   const tienePack=it.fmt>1;
   const modo=tienePack?'pack':'und';
   const val=modo==='pack'?Math.round(it.min/it.fmt):it.min;
-  const palabra=it.word&&it.word!=='u'?it.word:'caja';
+  // La palabra del pack solo se ofrece como Caja o Display (lo que pidió el usuario) — si
+  // tag()/el override ya trae otra (ej. "bandeja"), se muestra igual en el texto pero el
+  // toggle arranca en "Caja" por defecto (el usuario puede cambiarla a Display si quiere).
+  const palabra=it.word==='display'?'display':'caja';
   const tieneOverride=!!((DB.multiplosProducto&&DB.multiplosProducto[it.ref])||(DB.empaquesProducto&&DB.empaquesProducto[it.ref]));
   return `
-    <div class="fp-row" data-gp-cfg-ref="${it.ref}" data-gp-cfg-modo="${modo}" style="flex-direction:column;align-items:stretch;gap:8px">
+    <div class="fp-row" data-gp-cfg-ref="${it.ref}" data-gp-cfg-modo="${modo}" data-gp-cfg-palabra="${palabra}" style="flex-direction:column;align-items:stretch;gap:8px">
       <span class="k" style="font-weight:600">${it.nombre}</span>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <div class="fc-tabs" style="margin:0;width:auto">
           <button type="button" class="fc-tab-btn ${modo==='und'?'active':''}" data-gp-cfg-unidad="und" style="padding:6px 10px">Und</button>
-          <button type="button" class="fc-tab-btn ${modo==='pack'?'active':''}" data-gp-cfg-unidad="pack" style="padding:6px 10px">${_gpCap(palabra)}</button>
+          <button type="button" class="fc-tab-btn ${modo==='pack'&&palabra==='caja'?'active':''}" data-gp-cfg-unidad="caja" style="padding:6px 10px">Caja</button>
+          <button type="button" class="fc-tab-btn ${modo==='pack'&&palabra==='display'?'active':''}" data-gp-cfg-unidad="display" style="padding:6px 10px">Display</button>
         </div>
         <div class="qstep">
           <button type="button" class="qbtn" data-gp-cfg-d="-1">−</button>
@@ -6447,13 +6455,12 @@ function _gpFilaConfig(it){
         ${tieneOverride?`<button type="button" class="loadbtn" data-gp-cfg-reset="${it.ref}" style="padding:5px 9px;font-size:11px;border-color:var(--ambar);color:var(--ambar)">↺ Automático</button>`:''}
       </div>
       <div data-gp-cfg-caption style="display:${modo==='pack'?'flex':'none'};align-items:center;gap:6px;font-size:10px;color:var(--muted);font-family:'Manrope';font-weight:600">
-        <span>1 ${palabra} =</span>
+        <span data-gp-cfg-caption-lbl>1 ${palabra} =</span>
         <input type="text" inputmode="numeric" pattern="[0-9]*" data-gp-cfg-empaque value="${tienePack?it.fmt:''}" placeholder="?" style="width:40px;padding:4px 2px;text-align:center;border:1px solid var(--line);border-radius:6px;font-family:'JetBrains Mono';font-size:11px">
         <span>und</span>
       </div>
     </div>`;
 }
-function _gpCap(s){return s?String(s).charAt(0).toUpperCase()+String(s).slice(1):s;}
 document.getElementById('gp-prod-lista').addEventListener('click',ev=>{
   if(_gpModo==='config'){
     const fila=ev.target.closest('[data-gp-cfg-ref]');
@@ -6463,7 +6470,7 @@ document.getElementById('gp-prod-lista').addEventListener('click',ev=>{
     const btnD=ev.target.closest('[data-gp-cfg-d]');
     if(btnD){_gpCfgAjustar(fila,Number(btnD.dataset.gpCfgD));return;}
     const btnReset=ev.target.closest('[data-gp-cfg-reset]');
-    if(btnReset){_gpGuardarMultiplo(btnReset.dataset.gpCfgReset,fila,0,0);return;}
+    if(btnReset){_gpGuardarMultiplo(btnReset.dataset.gpCfgReset,fila,0,0,null);return;}
     return;
   }
   const fila=ev.target.closest('[data-gp-prod-ref]');
@@ -6481,18 +6488,31 @@ function _gpCfgFmtActual(fila){
   const n=inp?Math.round(Number(inp.value)):0;
   return n>0?n:1;
 }
-// Cambia el toggle Und/{word} de una fila sin cambiar el valor "real" en unidades — solo
-// convierte lo que se ve en el stepper (y muestra/oculta el campito "1 caja = N und").
-function _gpCfgCambiarUnidad(fila,modo){
-  if(fila.dataset.gpCfgModo===modo)return;
-  const fmt=_gpCfgFmtActual(fila);
-  const input=fila.querySelector('[data-gp-cfg-num]');
-  const actualUnd=fila.dataset.gpCfgModo==='pack'?Math.round(Number(input.value)||0)*fmt:Math.round(Number(input.value)||0);
-  fila.dataset.gpCfgModo=modo;
-  input.value=modo==='pack'?Math.round(actualUnd/fmt):actualUnd;
-  fila.querySelectorAll('[data-gp-cfg-unidad]').forEach(b=>b.classList.toggle('active',b.dataset.gpCfgUnidad===modo));
+// Cambia el toggle Und/Caja/Display de una fila. Solo convierte el número del stepper cuando
+// cambia el MODO (und↔pack) — pasar de Caja a Display (mismo modo pack) no toca la cantidad,
+// solo la palabra. No guarda nada acá: el guardado real ocurre recién cuando el usuario toca
+// el stepper o el campito de empaque (ver _gpCfgProgramarGuardado), para no crear overrides
+// triviales solo por mirar la vista en otra unidad.
+function _gpCfgCambiarUnidad(fila,valor){
+  const modoNuevo=valor==='und'?'und':'pack';
+  const palabraNueva=valor==='und'?fila.dataset.gpCfgPalabra:valor;
+  const modoActual=fila.dataset.gpCfgModo;
+  if(modoActual===modoNuevo&&fila.dataset.gpCfgPalabra===palabraNueva)return;
+  if(modoActual!==modoNuevo){
+    const fmt=_gpCfgFmtActual(fila);
+    const input=fila.querySelector('[data-gp-cfg-num]');
+    const actualUnd=modoActual==='pack'?Math.round(Number(input.value)||0)*fmt:Math.round(Number(input.value)||0);
+    input.value=modoNuevo==='pack'?Math.round(actualUnd/fmt):actualUnd;
+  }
+  fila.dataset.gpCfgModo=modoNuevo;
+  fila.dataset.gpCfgPalabra=palabraNueva;
+  fila.querySelectorAll('[data-gp-cfg-unidad]').forEach(b=>b.classList.toggle('active',b.dataset.gpCfgUnidad===valor));
   const caption=fila.querySelector('[data-gp-cfg-caption]');
-  if(caption)caption.style.display=modo==='pack'?'flex':'none';
+  if(caption){
+    caption.style.display=modoNuevo==='pack'?'flex':'none';
+    const lbl=caption.querySelector('[data-gp-cfg-caption-lbl]');
+    if(lbl)lbl.textContent='1 '+palabraNueva+' =';
+  }
 }
 function _gpCfgAjustar(fila,delta){
   const input=fila.querySelector('[data-gp-cfg-num]');
@@ -6511,10 +6531,12 @@ function _gpCfgProgramarGuardado(fila){
     const empaqueExistente=(DB.empaquesProducto&&DB.empaquesProducto[ref])||0;
     const fmtActual=modo==='pack'?_gpCfgFmtActual(fila):(empaqueExistente||1);
     const empaqueAGuardar=modo==='pack'?fmtActual:empaqueExistente;
+    const palabraExistente=(DB.palabrasProducto&&DB.palabrasProducto[ref])||null;
+    const palabra=modo==='pack'?(fila.dataset.gpCfgPalabra||'caja'):palabraExistente;
     const input=fila.querySelector('[data-gp-cfg-num]');
     const valor=Math.max(0,Math.round(Number(input.value))||0);
     const valorEnUnidades=modo==='pack'?valor*fmtActual:valor;
-    _gpGuardarMultiplo(ref,fila,valorEnUnidades,empaqueAGuardar);
+    _gpGuardarMultiplo(ref,fila,valorEnUnidades,empaqueAGuardar,palabra);
   },500);
 }
 document.getElementById('gp-prod-lista').addEventListener('change',ev=>{
@@ -6523,20 +6545,22 @@ document.getElementById('gp-prod-lista').addEventListener('change',ev=>{
   const fila=input.closest('[data-gp-cfg-ref]');
   if(fila)_gpCfgProgramarGuardado(fila);
 });
-// Guarda (o borra si ambos quedan en 0) el mínimo/empaque manual de un producto. Actualiza
-// DB.multiplosProducto/DB.empaquesProducto y retagAll() al toque para que el carrito/sugerencias
-// reflejen el cambio sin recargar la página — igual que el resto de las acciones de la app.
-async function _gpGuardarMultiplo(ref,fila,valorEnUnidades,empaqueEnUnidades){
+// Guarda (o borra si ambos quedan en 0) el mínimo/empaque/palabra manual de un producto.
+// Actualiza DB.multiplosProducto/DB.empaquesProducto/DB.palabrasProducto y retagAll() al
+// toque para que el carrito/sugerencias reflejen el cambio sin recargar la página.
+async function _gpGuardarMultiplo(ref,fila,valorEnUnidades,empaqueEnUnidades,palabra){
   const minAnterior=DB.multiplosProducto?DB.multiplosProducto[ref]:null;
   const fmtAnterior=DB.empaquesProducto?DB.empaquesProducto[ref]:null;
   try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'guardar_multiplo_producto',payload:{sku:ref,multiplo:valorEnUnidades,empaque:empaqueEnUnidades||0}})});
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'guardar_multiplo_producto',payload:{sku:ref,multiplo:valorEnUnidades,empaque:empaqueEnUnidades||0,palabra:palabra||''}})});
     const j=await res.json();
     if(!j||!j.ok)throw new Error((j&&j.error)||'No se pudo guardar');
     DB.multiplosProducto=DB.multiplosProducto||{};
     DB.empaquesProducto=DB.empaquesProducto||{};
+    DB.palabrasProducto=DB.palabrasProducto||{};
     if(valorEnUnidades>0)DB.multiplosProducto[ref]=valorEnUnidades;else delete DB.multiplosProducto[ref];
     if(empaqueEnUnidades>0)DB.empaquesProducto[ref]=empaqueEnUnidades;else delete DB.empaquesProducto[ref];
+    if(empaqueEnUnidades>0&&palabra)DB.palabrasProducto[ref]=palabra;else delete DB.palabrasProducto[ref];
     retagAll();
     if(_gpProvActual)_gpProdListaCompleta=itemsFor(_gpProvActual.nombre).slice().sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),'es'));
     if(_gpModo==='config'){
@@ -9189,7 +9213,7 @@ async function recargarHistorial(){
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=recargar_historial');
     const j=await res.json();
     if(j&&j.ok){
-      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);
+      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);
       INVMAP=invMapFromItems(DB.items);
       state.edits={};
       persist();render();
@@ -11725,7 +11749,12 @@ async function marcarPedidoRealizado(lines,canal,fechaLlegadaEstimada){
   // que si se vuelve a buscar el producto ya aparezca "ya pedido".
   const fechaHoy=new Date().toLocaleString('es-CL');
   DB.pendBySku=DB.pendBySku||{};DB.pendByBarcode=DB.pendByBarcode||{};
+  // Productos que el backend NO pudo guardar (sku ya no existe en su catálogo — ver
+  // accionMarcarPedidoRealizado) — el resto del pedido sí se guardó, pero estos hay que
+  // avisarlos aparte y no reflejarlos como "ya pedido" localmente, porque no lo están.
+  const omitidosSet=new Set((j.omitidos||[]).map(o=>o.sku));
   items.forEach(x=>{
+    if(omitidosSet.has(x.sku))return;
     // Cantidad 0 = producto sacado de un pedido confirmado (ver
     // lineasEliminadasDePedidoConfirmado) — el backend lo borra de pedidos_pendientes en
     // vez de dejarlo en cero, así que acá se refleja igual: se elimina, no se guarda un
@@ -11743,6 +11772,10 @@ async function marcarPedidoRealizado(lines,canal,fechaLlegadaEstimada){
   });
   render();
   try{renderProvHoyReal();}catch(e){}
+  if(j.omitidos&&j.omitidos.length){
+    const nombres=j.omitidos.map(o=>o.nombre||o.sku).join(', ');
+    showToast('Se guardó el resto del pedido, pero no se pudo guardar: '+nombres+' (no existe en el catálogo — revisalo en Recepción o Editar productos)');
+  }
   return true;
 }
 // Fecha estimada de llegada al confirmar un pedido: reutiliza el calendario semanal CAL_PROV
