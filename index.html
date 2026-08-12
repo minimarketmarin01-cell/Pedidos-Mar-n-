@@ -266,6 +266,23 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .shc-row .prov-x{right:2px;width:20px;height:20px}
 .shc-row .prov-mic{right:44px;width:17px;height:17px}
 .shc-row .prov-scan{right:24px;width:17px;height:17px}
+/* Mismo agrandado del botón "Borrar" que #prov-x más arriba, pero para el header compacto de
+   celular (donde vive el buscador de la captura) — acá los tres botones están más apretados,
+   así que necesitan sus propios números en vez de heredar los del header ancho. #prov-all
+   (id+clase) le gana en especificidad a .shc-row .prov-all de arriba, igual que #prov-x a
+   .shc-row .prov-x, así que estas reglas SÍ se aplican pese a estar declaradas antes en el
+   archivo — no depende del orden.
+   OJO con el ancho real de #prov-scan: .cam-btn{width:38px!important} (más abajo en este
+   archivo) le gana a cualquier "width" que se declare acá, así que aunque .shc-row .prov-scan
+   diga width:17px, en pantalla mide 38px. Con los números viejos (scan en right:24, mic en
+   right:44) el hit-box real de scan ([24,62]) ya se comía por completo al de mic ([44,61]) —
+   un toque en esa zona SIEMPRE terminaba en la cámara, nunca en el micrófono. Se corrige de
+   paso acá, calculando el lugar de mic a partir del ancho REAL de scan (38px), no del
+   declarado. */
+.shc-row #prov-all{padding-right:96px}
+.shc-row #prov-x{right:2px;width:28px;height:28px}
+.shc-row #prov-scan{right:32px}
+.shc-row #prov-mic{right:72px}
 .mm-search input{width:100%;padding-left:14px;padding-right:104px}
 .mm-search .mm-mic,.mm-search .mm-scan{position:absolute;top:50%;transform:translateY(-50%);width:24px;height:24px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2}
 .mm-x{position:absolute;top:50%;transform:translateY(-50%);width:32px;height:32px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2}
@@ -621,6 +638,16 @@ input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .prov-mic.listening{background:var(--rojo);color:#fff;animation:micpulse 1s infinite}
 .prov-scan{position:absolute;top:50%;right:30px;transform:translateY(-50%);width:19px;height:19px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:10.5px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
 .prov-scan:active{background:var(--line)}
+/* #prov-x (el "Borrar" del buscador de proveedores/productos) más ancho para tocarlo más
+   fácil — a pedido, quedaba muy chico. Solo este buscador (id específico, no .prov-x en
+   general): #rk-x comparte la misma clase para su estilo pero vive en otro buscador (Recuento
+   de stock) con su propio espacio disponible, así que no se toca acá. Mic y scan se corren
+   para dejarle lugar sin superponerse. Se repite con .shc-row #prov-x más abajo (id+clase,
+   suficiente especificidad para ganarle a .shc-row .prov-x) porque en el header compacto de
+   celular los tres botones están más apretados y necesitan sus propios números. */
+#prov-x{width:32px;height:32px}
+#prov-scan{right:38px}
+#prov-mic{right:59px}
 .prov-menu{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.16);max-height:min(320px,46vh);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;z-index:260}
 .prov-menu.hidden{display:none}
 .prov-opt{padding:11px 13px;font-size:14px;cursor:pointer;border-bottom:1px solid #F2F1EC;display:flex;justify-content:space-between;align-items:center;gap:10px}
