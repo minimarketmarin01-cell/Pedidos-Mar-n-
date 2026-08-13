@@ -10129,8 +10129,13 @@ function vcFilaHtml(l){
     botones=`<button class="vc-mini" data-actm="cambiado" data-i="${l.filaIndex}" data-nom="${nom}" data-cant="${l.cantidad}" data-unidad="${l.unidad}" title="Marcar como cambiado"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Cambiado</span></button>
        <button class="vc-mini" data-actm="descuento" data-i="${l.filaIndex}" data-nom="${nom}" title="Descuento en factura"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span>Descuento</span></button>`;
     notaExtra='<div class="cat" style="color:var(--azul);font-weight:700;font-size:11px">Ya se retiró y se descontó del stock — esperando al proveedor</div>';
+  }else if(esCambio && l.estado==='Vencido'){
+    // Ya venció y no hay ningún proceso automático que lo pase a Pendientes — se ofrece el
+    // mismo botón "Retirar" que usan los lotes normales para poder hacerlo a mano (antes acá
+    // no había ningún botón y el lote quedaba trabado para siempre en "Vencido").
+    botones=`<button class="vc-mini" data-act="retirar" data-i="${l.filaIndex}" title="Retirar de la góndola (sin eliminar el lote)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/></svg><span>Retirar</span></button>`;
   }else if(esCambio){
-    botones='';   // aún no vence: se resuelve solo (se descuenta y avisa apenas venza, de un día para otro)
+    botones='';   // todavía no vence: nada que hacer hasta que venza
   }else{
     botones=`<button class="vc-mini vc-mini-verde" data-act="ok" data-i="${l.filaIndex}" title="Vendido"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Vendido</span></button>
        <button class="vc-mini vc-mini-rojo" data-act="merma" data-i="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" data-lote="${l.lote||''}" title="Merma"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><span>Merma</span></button>
