@@ -5778,18 +5778,22 @@ async function fpRecargarTrasLotes(sku){
 }
 
 // ==== SECCIÓN "MOVIMIENTOS DE STOCK" ====
-// Combina f.movimientos (tabla auditoria: recepciones, reconteos, ediciones) y
-// f.mermasRecientes (tabla mermas) en una sola línea de tiempo — el servidor ya los traía en la
-// respuesta de ficha_producto, pero ningún lugar de la app los mostraba. Sirve para responder
-// "¿por qué quedó en negativo?": junta en un mismo lugar cada acción manual sobre el stock.
-// OJO (se muestra como nota en el panel): esto NO incluye cada venta individual del POS —
-// Loyverse descuenta el stock directo con cada venta sin dejar un registro acá — así que una
-// racha de negativo sin ningún movimiento visible en esta lista casi siempre es eso: se vendió
-// más de lo que había contado, no un error de carga.
+// Combina f.movimientos (tabla auditoria: recepciones, reconteos, ediciones), f.mermasRecientes
+// (tabla mermas) y f.ventasDiarias (tabla ventas_diarias: total vendido por día) en una sola
+// línea de tiempo — el servidor ya traía las tres en la respuesta de ficha_producto, pero ningún
+// lugar de la app las mostraba. Sirve para responder "¿por qué quedó en negativo?": junta en un
+// mismo lugar cada recepción/reconteo/merma Y lo vendido cada día, para poder ver de un vistazo
+// si el stock se drenó por ventas reales entre dos recepciones o si hubo algún otro movimiento.
+// Las ventas se muestran agregadas por día (ventas_diarias es un total diario, no venta por
+// venta — Loyverse no expone un log de recibos individuales por producto en esta integración).
 function _fpParseFechaHora(s){
   const m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/.exec(String(s||'').trim());
   if(!m)return 0;
   return new Date(+m[3],+m[2]-1,+m[1],+(m[4]||0),+(m[5]||0)).getTime();
+}
+function _fpIsoADDMMAAAA(iso){
+  const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso||''));
+  return m?(m[3]+'/'+m[2]+'/'+m[1]):(iso||'');
 }
 const FP_MOV_ETIQUETAS={
   recepcion_stock:'📦 Recepción',reconteo_stock:'🔢 Reconteo',editar_producto:'✏️ Producto editado',
@@ -5799,7 +5803,8 @@ const FP_MOV_ETIQUETAS={
 function fpMovimientosCombinados(f){
   const movs=(f.movimientos||[]).map(m=>({tipo:'auditoria',fecha:m.fecha,accion:m.accion,stock:m.stock,motivo:m.motivo,responsable:m.responsable}));
   const mermas=(f.mermasRecientes||[]).map(m=>({tipo:'merma',fecha:m.fecha,cantidad:m.cantidad,motivo:m.motivo,costoTotal:m.costoTotal,responsable:m.responsable}));
-  return movs.concat(mermas).sort((a,b)=>_fpParseFechaHora(b.fecha)-_fpParseFechaHora(a.fecha));
+  const ventas=(f.ventasDiarias||[]).filter(v=>v.unidades).map(v=>({tipo:'venta',fecha:_fpIsoADDMMAAAA(v.fecha),unidades:v.unidades,venta:v.venta}));
+  return movs.concat(mermas).concat(ventas).sort((a,b)=>_fpParseFechaHora(b.fecha)-_fpParseFechaHora(a.fecha));
 }
 function fpPaneMovimientos(movs){
   const pane=document.getElementById('fp-pane-mov');
@@ -5807,8 +5812,18 @@ function fpPaneMovimientos(movs){
     pane.innerHTML='<div class="vc-empty">Sin movimientos registrados para este producto.</div>';
     return;
   }
-  pane.innerHTML='<div class="cat" style="margin-bottom:8px;line-height:1.4">Recepciones, reconteos, mermas y ediciones registradas — no incluye cada venta individual del POS (Loyverse descuenta el stock directo con cada venta, sin dejar rastro acá).</div>'+
+  pane.innerHTML='<div class="cat" style="margin-bottom:8px;line-height:1.4">Recepciones, reconteos, mermas, ediciones y lo vendido cada día. Las ventas van agregadas por día (no venta por venta).</div>'+
     movs.map(m=>{
+      if(m.tipo==='venta'){
+        const neg=Number(m.unidades)<0; // ventas negativas = devoluciones netas del día
+        return `<div class="sm-row">
+          <div class="sm-info">
+            <div class="nom">🛒 ${neg?'Devuelto':'Vendido'} · ${fmt1(Math.abs(m.unidades))} u</div>
+            <div class="meta">${m.fecha}</div>
+          </div>
+          ${m.venta!=null?`<span class="fp-badge gris">${peso(m.venta)}</span>`:''}
+        </div>`;
+      }
       if(m.tipo==='merma'){
         return `<div class="sm-row">
           <div class="sm-info">
