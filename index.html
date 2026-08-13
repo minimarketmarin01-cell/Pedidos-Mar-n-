@@ -2348,6 +2348,10 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
             <span id="fp-lotes-toggle-lbl">Lotes (0)</span><span class="prov-acc-caret">▾</span>
           </button>
           <div id="fp-pane-lotes" class="fp-pane hidden"></div>
+          <button type="button" class="prov-acc-toggle hidden" id="fp-mov-toggle" aria-expanded="false" style="margin-top:10px">
+            <span id="fp-mov-toggle-lbl">Movimientos de stock (0)</span><span class="prov-acc-caret">▾</span>
+          </button>
+          <div id="fp-pane-mov" class="fp-pane hidden"></div>
           <div class="fp-section-title" data-step="2">Unidad</div>
           <div id="fp-pane-unidad" class="fp-pane"></div>
           <div class="fp-section-title">Mínimo de pedido</div>
@@ -4872,6 +4876,18 @@ function fpPintar(f){
   lotesPane.innerHTML=''; // se pinta recién al expandir (ver fpPaneLotes) — no de entrada
   delete lotesPane.dataset.pintado; // sin esto, tras recargar la ficha (ej. al eliminar/editar un
   // lote) el guard de más abajo creía que ya estaba pintada y la dejaba vacía para siempre
+  // Sección "Movimientos de stock" — historial de recepciones/reconteos/mermas/ediciones (tabla
+  // auditoria + mermas, ya se traían del servidor pero nunca se mostraban en ningún lado). Mismo
+  // patrón plegado-por-defecto que Lotes.
+  const movs=fpMovimientosCombinados(f);
+  const movToggle=document.getElementById('fp-mov-toggle');
+  document.getElementById('fp-mov-toggle-lbl').textContent='Movimientos de stock ('+movs.length+')';
+  movToggle.classList.toggle('hidden',!movs.length);
+  movToggle.setAttribute('aria-expanded','false');
+  const movPane=document.getElementById('fp-pane-mov');
+  movPane.classList.add('hidden');
+  movPane.innerHTML='';
+  delete movPane.dataset.pintado;
   fpPaneGeneral(f);
   fpPaneUnidad(f);
   fpPaneMinimo(f);
@@ -4885,6 +4901,12 @@ function fpPintar(f){
     lotesToggle.setAttribute('aria-expanded',abrir?'true':'false');
     lotesPane.classList.toggle('hidden',!abrir);
     if(abrir&&!lotesPane.dataset.pintado){fpPaneLotes(f);lotesPane.dataset.pintado='1';}
+  };
+  movToggle.onclick=()=>{
+    const abrir=movPane.classList.contains('hidden');
+    movToggle.setAttribute('aria-expanded',abrir?'true':'false');
+    movPane.classList.toggle('hidden',!abrir);
+    if(abrir&&!movPane.dataset.pintado){fpPaneMovimientos(movs);movPane.dataset.pintado='1';}
   };
 }
 // Barra de progreso discreta: resalta el paso (1..4) según qué sección esté más cerca del
@@ -5753,6 +5775,58 @@ async function fpRecargarTrasLotes(sku){
   await fpAbrir(sku,{scroll:scrollActual});
   const toggle=document.getElementById('fp-lotes-toggle');
   if(toggle&&!toggle.classList.contains('hidden'))toggle.click();
+}
+
+// ==== SECCIÓN "MOVIMIENTOS DE STOCK" ====
+// Combina f.movimientos (tabla auditoria: recepciones, reconteos, ediciones) y
+// f.mermasRecientes (tabla mermas) en una sola línea de tiempo — el servidor ya los traía en la
+// respuesta de ficha_producto, pero ningún lugar de la app los mostraba. Sirve para responder
+// "¿por qué quedó en negativo?": junta en un mismo lugar cada acción manual sobre el stock.
+// OJO (se muestra como nota en el panel): esto NO incluye cada venta individual del POS —
+// Loyverse descuenta el stock directo con cada venta sin dejar un registro acá — así que una
+// racha de negativo sin ningún movimiento visible en esta lista casi siempre es eso: se vendió
+// más de lo que había contado, no un error de carga.
+function _fpParseFechaHora(s){
+  const m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/.exec(String(s||'').trim());
+  if(!m)return 0;
+  return new Date(+m[3],+m[2]-1,+m[1],+(m[4]||0),+(m[5]||0)).getTime();
+}
+const FP_MOV_ETIQUETAS={
+  recepcion_stock:'📦 Recepción',reconteo_stock:'🔢 Reconteo',editar_producto:'✏️ Producto editado',
+  editar_barcode:'🏷️ Código de barras editado',editar_precio:'💲 Precio editado',
+  eliminar_producto:'🗑️ Producto eliminado',crear_producto:'🆕 Producto creado'
+};
+function fpMovimientosCombinados(f){
+  const movs=(f.movimientos||[]).map(m=>({tipo:'auditoria',fecha:m.fecha,accion:m.accion,stock:m.stock,motivo:m.motivo,responsable:m.responsable}));
+  const mermas=(f.mermasRecientes||[]).map(m=>({tipo:'merma',fecha:m.fecha,cantidad:m.cantidad,motivo:m.motivo,costoTotal:m.costoTotal,responsable:m.responsable}));
+  return movs.concat(mermas).sort((a,b)=>_fpParseFechaHora(b.fecha)-_fpParseFechaHora(a.fecha));
+}
+function fpPaneMovimientos(movs){
+  const pane=document.getElementById('fp-pane-mov');
+  if(!movs.length){
+    pane.innerHTML='<div class="vc-empty">Sin movimientos registrados para este producto.</div>';
+    return;
+  }
+  pane.innerHTML='<div class="cat" style="margin-bottom:8px;line-height:1.4">Recepciones, reconteos, mermas y ediciones registradas — no incluye cada venta individual del POS (Loyverse descuenta el stock directo con cada venta, sin dejar rastro acá).</div>'+
+    movs.map(m=>{
+      if(m.tipo==='merma'){
+        return `<div class="sm-row">
+          <div class="sm-info">
+            <div class="nom">🗑️ Merma · ${fmt1(m.cantidad)} u</div>
+            <div class="meta">${m.fecha}${m.motivo?(' · '+m.motivo):''}${m.responsable?(' · '+m.responsable):''}</div>
+          </div>
+          ${m.costoTotal!=null?`<span class="fp-badge rojo">-${peso(m.costoTotal)}</span>`:''}
+        </div>`;
+      }
+      const stockNeg=m.stock!=null&&Number(m.stock)<0;
+      return `<div class="sm-row">
+        <div class="sm-info">
+          <div class="nom">${FP_MOV_ETIQUETAS[m.accion]||m.accion}</div>
+          <div class="meta">${m.fecha}${m.motivo?(' · '+m.motivo):''}${m.responsable?(' · '+m.responsable):''}</div>
+        </div>
+        ${m.stock!=null?`<span class="fp-badge ${stockNeg?'rojo':'gris'}">stock ${fmt1(m.stock)}</span>`:''}
+      </div>`;
+    }).join('');
 }
 
 function fpBadgeStock(p){
