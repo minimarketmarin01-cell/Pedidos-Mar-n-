@@ -564,10 +564,11 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .pc-resumen-mini{display:flex;gap:16px;margin-top:10px;font-size:11.5px;color:var(--muted)}
 .pc-resumen-mini b{color:var(--ink);font-family:'JetBrains Mono'}
 /* Acordeón de Lotes — plegado por defecto para que muchos lotes no empujen el resto del
-   formulario hacia abajo. Mismo componente .prov-acc-toggle que ya usa "Proveedores de hoy",
-   solo con un poco más de padding/tamaño porque acá muestra el resumen "Lotes (N) · stock
-   total" en vez de un título corto. Al expandir, la lista tiene su propio scroll interno
-   limitado (máx. ~5 filas visibles) en vez de estirar todo el modal. */
+   formulario hacia abajo. Reusa el componente genérico .prov-acc-toggle (antes también lo
+   usaba "Proveedores de hoy" en Inicio, que ahora es una sección fija sin acordeón), solo con
+   un poco más de padding/tamaño porque acá muestra el resumen "Lotes (N) · stock total" en vez
+   de un título corto. Al expandir, la lista tiene su propio scroll interno limitado (máx. ~5
+   filas visibles) en vez de estirar todo el modal. */
 #fp-lotes-toggle{padding:10px 12px;font-size:12.5px;margin-bottom:0}
 #fp-lotes-toggle[aria-expanded="true"]{border-radius:8px 8px 0 0;margin-bottom:0}
 #fp-pane-lotes{max-height:260px;overflow-y:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-top:none;border-radius:0 0 8px 8px;padding:8px 10px;margin-top:0!important}
@@ -1506,13 +1507,13 @@ html.modo-bliss .in2-actions{grid-template-columns:repeat(8,1fr);gap:10px}
 html.modo-bliss .in2-action-btn{padding:12px 4px}
 html.modo-bliss .in2-action-btn .ic{font-size:20px}
 html.modo-bliss .in2-action-btn{font-size:11px}
-/* El acordeón "Proveedores de hoy" vive dentro de Inicio (mismos #ids que Lotes en Editar
-   producto usa la clase genérica .prov-acc-toggle — acá se apunta por id específico para no
-   afectar ese otro uso). Mismo criterio: texto más grande, se lee sentado y fijo. */
-html.modo-bliss #prov-acc-toggle{padding:9px 14px;font-size:13px}
-html.modo-bliss #provday{padding:14px 16px;font-size:13px}
-html.modo-bliss #provday .pd-prov-nom{font-size:13.5px}
-html.modo-bliss #provday .pd-prov-sub{font-size:12px}
+/* "Proveedores de hoy" (Inicio) ya no es un acordeón — sección fija siempre visible. Se
+   agranda igual que el resto de Inicio en modo tablet/POS: texto más grande, se lee sentado y
+   fijo (mismos #ids que antes, apuntados por id específico para no afectar otros usos de las
+   clases genéricas .provday/.pd-prov-*). */
+html.modo-bliss #provday,html.modo-bliss #provday-recep-wrap,html.modo-bliss #provday-real-wrap{padding:14px 16px;font-size:13px}
+html.modo-bliss #provday .pd-prov-nom,html.modo-bliss #provday-recep-wrap .pd-prov-nom,html.modo-bliss #provday-real-wrap .pd-prov-nom{font-size:13.5px}
+html.modo-bliss #provday .pd-prov-sub,html.modo-bliss #provday-recep-wrap .pd-prov-sub,html.modo-bliss #provday-real-wrap .pd-prov-sub{font-size:12px}
 /* Tablet (1000–1399px): el carrito fijo deja un hueco a la derecha de la tabla porque el
    padding/gap se pensó para BlissOS (>=1400px). Este bloque solo corrige eso en el rango de
    tablet — no toca nada fuera de este ancho, así que BlissOS queda exactamente igual. */
@@ -1599,13 +1600,19 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
     <div class="in2-section-title" id="in2-atencion-title">Requiere atención</div>
     <div class="in2-atencion" id="in2-atencion"></div>
 
-    <button class="prov-acc-toggle" id="prov-acc-toggle" aria-expanded="false">
-      <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/></svg> Proveedores de hoy<span class="prov-acc-badge hidden" id="prov-acc-badge"></span></span><span class="prov-acc-caret" id="prov-acc-caret">▾</span>
-    </button>
-    <div class="provday hidden" id="provday"></div>
-    <div class="provday hidden" id="provday-real-wrap" style="margin-top:8px">
-      <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px">Pedidos confirmados que llegan el:</label>
-      <input type="date" id="provday-fecha" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--line);font-size:12.5px;font-family:inherit;box-sizing:border-box;margin-bottom:8px">
+    <div class="in2-section-title">📦 Proveedores de hoy</div>
+
+    <div style="display:flex;align-items:center;gap:6px;margin:0 0 6px"><span style="font-size:12px;font-weight:800;color:var(--ink)">📥 Por recepcionar hoy</span></div>
+    <div class="provday" id="provday-recep-wrap"><div id="provday-recep"></div></div>
+
+    <div style="display:flex;align-items:center;gap:6px;margin:12px 0 6px"><span style="font-size:12px;font-weight:800;color:var(--ink)">📅 A quién pedir hoy</span></div>
+    <div class="provday" id="provday"></div>
+
+    <div style="display:flex;align-items:center;gap:8px;margin:12px 0 6px">
+      <label for="provday-fecha" style="font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap">Otra fecha:</label>
+      <input type="date" id="provday-fecha" style="flex:1;padding:6px 8px;border-radius:8px;border:1px solid var(--line);font-size:11.5px;font-family:inherit;box-sizing:border-box;color:var(--muted)">
+    </div>
+    <div class="provday" id="provday-real-wrap" style="margin-top:0">
       <div id="provday-real"></div>
     </div>
 
@@ -2184,19 +2191,19 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <button id="mas-q-prestamos"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg><br>Préstamos<span class="mas-badge" id="prestamos-badge"></span></button>
         <button id="mas-q-insumos"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><line x1="19" y1="4" x2="10" y2="13"/><path d="M10 13 4 21l3-1 2 2 1-3 3-3"/><path d="M10 13l2-6"/></svg><br>Insumos</button>
         <button id="mas-q-llegadas"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><br>Avisos<span class="mas-badge" id="mas-badge"></span></button>
-        <button id="mas-q-sincosto"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 3 22 20H2Z"/><line x1="12" y1="9" x2="12" y2="14"/><circle cx="12" cy="17.3" r="0.2" fill="currentColor" stroke-width="0"/></svg><br>Sin costo</button>
+        <button id="mas-q-sincosto"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2 2-2 3.5"/><circle cx="12" cy="16.8" r="0.2" fill="currentColor" stroke-width="0"/></svg><br>Sin costo</button>
         <button id="mas-q-hist"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="6" y="4" width="12" height="17" rx="1.5"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="15" y2="15"/></svg><br>Historial</button>
         <button id="mas-q-sinmov"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="10" y1="9" x2="10" y2="15"/><line x1="14" y1="9" x2="14" y2="15"/></svg><br>Sin movimiento</button>
         <button id="mas-q-reconteo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="10" y1="4" x2="8" y2="20"/><line x1="16" y1="4" x2="14" y2="20"/></svg><br>Reconteo stock</button>
-        <button id="mas-q-crear"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><br>Crear producto</button>
+        <button id="mas-q-crear"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><br>Crear producto</button>
         <button id="mas-q-proveedores"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg><br>Proveedores</button>
         <button id="mas-q-editar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><br>Editar productos</button>
-        <button id="mas-q-categorias"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg><br>Mapeo de categorías</button>
+        <button id="mas-q-categorias"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg><br>Mapeo de categorías</button>
         <button id="mas-q-recargar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="20" x2="5" y2="11"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="19" y1="20" x2="19" y2="14"/></svg><br>Recargar historial</button>
         <button id="mas-q-factura"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="10" y2="12"/><line x1="13" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="10" y2="16"/><line x1="13" y1="16" x2="16" y2="16"/></svg><br>Calculadora de precios</button>
         <button id="mas-q-riesgo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><br>Riesgo de quiebre<span class="mas-badge" id="riesgo-badge"></span></button>
         <button id="mas-q-abc"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg><br>Clasificación ABC</button>
-        <button id="mas-q-recneg"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="14" height="10" rx="1"/><path d="M15 9h4l3 3.5V16h-7z"/><circle cx="6" cy="18.5" r="1.6"/><circle cx="17.5" cy="18.5" r="1.6"/><line x1="4" y1="21.5" x2="4" y2="21.5"/></svg><br>Recibidos en negativo</button>
+        <button id="mas-q-recneg"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="6" y="4" width="12" height="17" rx="1.5"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><line x1="12" y1="10" x2="12" y2="14"/><circle cx="12" cy="17.3" r="0.2" fill="currentColor" stroke-width="0"/></svg><br>Recibidos en negativo</button>
       </div>
       <div class="method" style="margin:0;padding:16px 18px">
         <div class="scale-head" id="ayuda-head" style="background:linear-gradient(100deg,#2a2118,#3a2c1a);margin:-16px -18px 0;padding:12px 18px;border-radius:var(--radius-card) var(--radius-card) 0 0"><div><div class="t">ℹ️ Cómo funciona tu app</div></div><svg class="accordion-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
@@ -2206,7 +2213,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <li><b>Catálogo:</b> úsalo cuando crees, elimines o cambies precio/costo de un producto en Loyverse, para verlo reflejado al instante (nuevos, eliminados, precios y costos). También se actualiza solo cada hora.</li>
           <li><b>🛒 Recibir mercadería:</b> escanea el producto, suma el stock en Loyverse y crea el lote de vencimiento, todo en un solo paso.</li>
           <li><b>🔁 Cambio con proveedor:</b> las categorías configuradas como "cambio" (Ideal, Pan Castaño, etc.) se descuentan solas del stock apenas vencen, y avisan que hay que retirarlas de la góndola. Cuando el proveedor llega, marca "Cambiado" desde Vencimientos.</li>
-          <li><b><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/></svg> Proveedores de hoy:</b> el recuadro de arriba te dice a quién <b>pedir hoy</b> y qué <b>llega hoy</b>, según el calendario de cada proveedor.</li>
+          <li><b><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/></svg> Proveedores de hoy:</b> el recuadro de arriba te dice a quién <b>pedir hoy</b> según el calendario de cada proveedor, y qué pedidos confirmados tienes <b>por recepcionar</b> (hoy o atrasados).</li>
           <li><b>Semáforo de pedido:</b> <i class="ldot" style="background:var(--rojo)"></i> Urgente · <i class="ldot" style="background:var(--ambar)"></i> Pedir · <i class="ldot" style="background:var(--verde)"></i> OK · <i class="ldot" style="background:var(--gris)"></i> Sobrestock · <i class="ldot" style="background:var(--azul)"></i> Sin control. Cada fila muestra la cantidad sugerida según rotación, días de entrega y cobertura objetivo — pero el carrito arranca en 0: toca <b>Agregar sugeridos</b> (arriba del carrito) para cargarlos todos de una, o escribe la cantidad a mano fila por fila.</li>
           <li><b>El carrito acumula varios proveedores a la vez:</b> arma el pedido de un proveedor, cambia a otro sin miedo — nada se borra. En el carrito, cada color de franja a la izquierda es un proveedor distinto (solo aparece cuando hay más de uno mezclado). "Copiar" y "Marcar como realizado" solo mandan lo del proveedor que estás viendo; "Vaciar" en cambio borra <b>todo</b> el carrito, de todos los proveedores.</li>
           <li><b>Ver todos los proveedores:</b> en el selector elige "📋 Todos los proveedores" para armar pedidos con todo el inventario junto.</li>
@@ -3335,16 +3342,9 @@ async function renderInicio2(){
   try{smCalcular();}catch(e){}
   const sinMovNum=(_smTodos||[]).length;
 
-  // --- Proveedores de hoy: badge de conteo en el acordeón + repinta su contenido si ya
-  // estaba montado (no hace falta esperar a que el usuario lo abra para que el número esté
-  // al día). ---
-  const provHoyNum=calcularProveedoresHoy().length;
-  const provAccBadge=document.getElementById('prov-acc-badge');
-  if(provAccBadge){
-    if(provHoyNum>0){provAccBadge.textContent=provHoyNum;provAccBadge.classList.remove('hidden');}
-    else provAccBadge.classList.add('hidden');
-  }
-  try{renderProvDay();}catch(e){}
+  // --- Proveedores de hoy: sección siempre visible (sin acordeón) — se repinta acá para que
+  // esté al día apenas se entra a Inicio, sin que el usuario tenga que tocar nada. ---
+  try{refrescarProveedoresHoy();}catch(e){}
 
   // --- Vencimientos: mismo endpoint que usa el módulo Vencimientos, con cache corta para no
   // repetir la llamada si se vuelve a Inicio varias veces seguidas en pocos segundos. ---
@@ -3372,7 +3372,7 @@ async function renderInicio2(){
     {ic:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M3 4h2l2.2 11h9.6L19 8H6.4"/></svg>',lab:'Armar pedido',n:(urg+ped)||null,cls:(urg?'':'warn'),go:()=>{cerrarOverlays();showScreen('pedido');}},
     {ic:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>',lab:'Vencimientos',n:(porVencer+vencidos)||null,cls:(vencidos?'':'warn'),go:()=>{cerrarOverlays();abrirModal('vc-ov');try{vcShowList();vcLoad();}catch(e){}}},
     {ic:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',lab:'Quiebres',n:riesgoNum||null,go:()=>{cerrarOverlays();try{rzAbrir();}catch(e){}}},
-    {ic:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.7-3"/><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.7 3"/><polyline points="21 3 21 9 15 9"/><polyline points="3 21 3 15 9 15"/></svg>',lab:'Recuento stock',n:null,go:()=>{cerrarOverlays();try{rkAbrir();}catch(e){}}},
+    {ic:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="10" y1="4" x2="8" y2="20"/><line x1="16" y1="4" x2="14" y2="20"/></svg>',lab:'Recuento stock',n:null,go:()=>{cerrarOverlays();try{rkAbrir();}catch(e){}}},
     {ic:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>',lab:'Crear producto',n:null,go:()=>{cerrarOverlays();try{cpAbrir();}catch(e){}}}
   ];
   const gridBox=document.getElementById('in2-grid');
@@ -3422,10 +3422,12 @@ async function renderInicio2(){
   }
 
   // ---- Notificaciones: mismo badge combinado que ya usa "Más" (llegadas + riesgo +
-  // proveedores de hoy) ----
+  // proveedores de hoy: a quién pedir + qué recepcionar) ----
   const notifBadge=document.getElementById('in2-notif-badge');
   const llBadge=document.getElementById('ll-badge');
   const nLlegadas=(llBadge&&llBadge.style.display==='flex')?(Number(llBadge.textContent)||0):0;
+  let provHoyNum=0;
+  try{provHoyNum=calcularProveedoresHoy().filter(f=>f.pide).length+calcularRecepcionarHoy().length;}catch(e){}
   const nTotal=nLlegadas+riesgoNum+provHoyNum;
   if(notifBadge){
     if(nTotal>0){notifBadge.textContent=nTotal>99?'99+':String(nTotal);notifBadge.classList.remove('hidden');}
@@ -8775,6 +8777,7 @@ document.getElementById('fc-guardar').onclick=async()=>{
         if(sumadas)showToast('Stock sumado en '+sumadas+' producto(s)');
         if(fallidas.length)showToast('No se pudo sumar stock de: '+fallidas.join(', '));
         if(sumadas)render();
+        if(sumadas)try{refrescarProveedoresHoy();}catch(e){}
       }
       // Proveedor/Sector (solo-D1) de las filas ya vinculadas a un producto real. Se manda
       // con editar_producto, el mismo endpoint que usa la Ficha — no hay lógica nueva en el
@@ -11834,6 +11837,12 @@ document.getElementById('rc-guardar').onclick=async()=>{
         if(j.fila.precioAplicado!=null)itLocal.precio=j.fila.precioAplicado;
         persist();
       }
+      // La mercadería ya llegó — quita el aviso "ya pedido" para que el resumen de
+      // "Proveedores de hoy" deje de mostrarlo como pendiente dentro de esta misma sesión
+      // (mismo criterio que ya usa el flujo de factura escaneada).
+      if(DB.pendBySku)delete DB.pendBySku[it.ref];
+      if(it.barcode&&DB.pendByBarcode)delete DB.pendByBarcode[it.barcode];
+      try{refrescarProveedoresHoy();}catch(e){}
       let msg='Recibido: '+it.nombre+' · +'+cantidad+' '+(it.peso?'kg':'u')+(fecha?(' · vence '+fecha):' · sin vencimiento');
       if(costoCambio||precioCambio)msg+=' · '+(costoCambio?'costo':'')+(costoCambio&&precioCambio?' y ':'')+(precioCambio?'precio':'')+' actualizados';
       if(j.fila.avisoStock)msg+=' · '+j.fila.avisoStock;
@@ -12288,7 +12297,7 @@ async function marcarPedidoRealizado(lines,canal,fechaLlegadaEstimada){
     if(x.barcode)DB.pendByBarcode[x.barcode]=rec;
   });
   render();
-  try{renderProvHoyReal();}catch(e){}
+  try{refrescarProveedoresHoy();}catch(e){}
   if(j.omitidos&&j.omitidos.length){
     const nombres=j.omitidos.map(o=>o.nombre||o.sku).join(', ');
     showToast('Se guardó el resto del pedido, pero no se pudo guardar: '+nombres+' (no existe en el catálogo — revisalo en Recepción o Editar productos)');
@@ -12717,6 +12726,7 @@ function renderProvDay(){
   h+='<div class="pd-note">⏰ Evercrisp: pedir con 48 h de anticipación. · Dinac es quincenal: confirma si esta semana corresponde.</div>';
   el.innerHTML=h;
   try{renderProvHoyReal();}catch(e){} // mismo refresco para el bloque de pedidos confirmados reales, ver más abajo
+  try{renderRecepcionarHoy();}catch(e){} // y para "Por recepcionar hoy", ver más abajo
 }
 // ---- Proveedores de hoy: pedidos CONFIRMADOS reales (distinto del recordatorio de calendario
 // de arriba, que es un patrón semanal fijo) ----
@@ -12781,14 +12791,75 @@ function renderProvHoyReal(){
     };
   });
 }
-document.getElementById('prov-acc-toggle').onclick=()=>{
-  const t=document.getElementById('prov-acc-toggle'), pd=document.getElementById('provday'), pdr=document.getElementById('provday-real-wrap');
-  const abrir=pd.classList.contains('hidden');
-  pd.classList.toggle('hidden',!abrir);
-  if(pdr)pdr.classList.toggle('hidden',!abrir);
-  t.setAttribute('aria-expanded',abrir?'true':'false');
-  if(abrir)try{renderProvHoyReal();}catch(e){}
-};
+// "Por recepcionar hoy": pedidos CONFIRMADOS (no recibidos) cuya fecha_llegada_estimada ya
+// llegó o pasó — a diferencia de calcularProveedoresHoyReal (que exige coincidencia EXACTA
+// con la fecha del selector), esto responde directo "qué tengo pendiente de recibir" sin
+// tocar nada, agrupando "hoy" + atrasados de una. Mismo DB.pendBySku, mismo criterio de
+// exclusión que pendienteDe (estado==='recibido' no cuenta).
+function calcularRecepcionarHoy(){
+  const pend=DB&&DB.pendBySku?DB.pendBySku:{};
+  const hoyISO=isoLocalDate(new Date());
+  const grupos={};
+  Object.keys(pend).forEach(sku=>{
+    const p=pend[sku];
+    if(!p||p.estado==='recibido')return;
+    if(!p.fecha_llegada_estimada||p.fecha_llegada_estimada>hoyISO)return;
+    const key=p.proveedor||'—';
+    if(!grupos[key])grupos[key]={proveedor:key,productos:0,costoTotal:0,fechaLlegada:p.fecha_llegada_estimada,atrasado:false};
+    grupos[key].productos+=1;
+    grupos[key].costoTotal+=Number(p.costo_total)||0;
+    if(p.fecha_llegada_estimada<grupos[key].fechaLlegada)grupos[key].fechaLlegada=p.fecha_llegada_estimada;
+    if(p.fecha_llegada_estimada<hoyISO)grupos[key].atrasado=true;
+  });
+  return Object.values(grupos).sort((a,b)=>a.fechaLlegada.localeCompare(b.fechaLlegada)||a.proveedor.localeCompare(b.proveedor,'es'));
+}
+// Detalle de productos por proveedor para "Por recepcionar hoy" — mismo patrón que
+// itemsPedidoConfirmadoPorProveedorFecha, pero sin exigir fecha exacta (hoy o atrasado).
+function itemsPendientesPorProveedorHastaHoy(proveedor){
+  const pend=DB&&DB.pendBySku?DB.pendBySku:{};
+  const hoyISO=isoLocalDate(new Date());
+  return Object.values(pend)
+    .filter(p=>p&&p.proveedor===proveedor&&p.estado!=='recibido'&&p.fecha_llegada_estimada&&p.fecha_llegada_estimada<=hoyISO)
+    .sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||''),'es'));
+}
+function renderRecepcionarHoy(){
+  const el=document.getElementById('provday-recep'); if(!el)return;
+  const filas=calcularRecepcionarHoy();
+  if(!filas.length){
+    el.innerHTML='<div class="pd-empty-row">Nada pendiente de recepcionar por ahora</div>';
+    return;
+  }
+  el.innerHTML=filas.map(f=>`<div class="pd-prov-row pd-prov-row-clickable" data-prov="${String(f.proveedor).replace(/"/g,'&quot;')}">
+      <span class="pd-prov-ic">📥</span>
+      <span class="pd-prov-txt"><span class="pd-prov-nom">${f.proveedor}${f.atrasado?' <span style="color:var(--rojo);font-weight:800">· atrasado</span>':''}</span><span class="pd-prov-sub">${f.productos} producto${f.productos===1?'':'s'} · ${peso(f.costoTotal)} · Llegada estimada: ${fmtDateInputToDDMMAAAA(f.fechaLlegada)}</span></span>
+      <span class="pd-prov-caret">▾</span>
+    </div>
+    <div class="pd-prov-detalle hidden"></div>`).join('');
+  el.querySelectorAll('.pd-prov-row-clickable').forEach(row=>{
+    row.onclick=()=>{
+      const detalle=row.nextElementSibling;
+      const abrir=detalle.classList.contains('hidden');
+      el.querySelectorAll('.pd-prov-detalle').forEach(d=>d.classList.add('hidden'));
+      el.querySelectorAll('.pd-prov-row-clickable').forEach(r=>r.classList.remove('pd-prov-row-open'));
+      if(!abrir)return;
+      const items=itemsPendientesPorProveedorHastaHoy(row.dataset.prov);
+      detalle.innerHTML=items.map(it=>`<div class="pd-prod-row"><span class="pd-prod-nom">${it.nombre||it.sku}</span><span class="pd-prod-cant">${fmt.format(it.cantidad||0)} u · ${peso(it.costo_total||0)} <button class="pd-recep-btn" data-sku="${it.sku}" style="margin-left:6px;font-size:10px;font-weight:800;color:var(--cielo-d,#1a73e8);background:none;border:none;cursor:pointer">Recibir</button></span></div>`).join('')
+        ||'<div class="pd-empty-row">Sin detalle disponible</div>';
+      detalle.querySelectorAll('.pd-recep-btn').forEach(b=>{
+        b.onclick=(ev)=>{ev.stopPropagation();cerrarOverlays();openRecibir();try{rcPick(b.dataset.sku);}catch(e){}};
+      });
+      detalle.classList.remove('hidden');
+      row.classList.add('pd-prov-row-open');
+    };
+  });
+}
+// Refresca los 2 bloques siempre visibles de "Proveedores de hoy" desde un solo punto de
+// entrada — llamado tanto al abrir Inicio como desde cualquier lugar que modifique
+// DB.pendBySku (confirmar pedido, recibir mercadería).
+function refrescarProveedoresHoy(){
+  try{renderProvDay();}catch(e){}
+  try{renderRecepcionarHoy();}catch(e){}
+}
 {
   const provdayFecha=document.getElementById('provday-fecha');
   if(provdayFecha){
