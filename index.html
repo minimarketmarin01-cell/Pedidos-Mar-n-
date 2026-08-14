@@ -2034,6 +2034,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
               <button class="loadbtn" id="rc-provid-add" type="button" style="white-space:nowrap;padding:7px 10px;font-size:12px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Agregar</button>
             </div>
           </div>
+          <div id="rc-movs" class="hidden" style="margin-top:8px"></div>
           <div id="rc-results"></div>
           <button id="rc-activar-inv" class="hidden" type="button" style="width:100%;margin:8px 0 0;padding:8px 10px;border-radius:9px;border:1.5px solid var(--azul);background:var(--azul-bg);color:var(--azul);font-weight:700;font-size:12.5px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 7.5-2"/></svg> Activar inventario</button>
         </div>
@@ -11353,6 +11354,7 @@ function rcShowPicked(it){
   rcSetModo('unidad');
   rcRenderResumen();
   rcRenderProveedores(it);
+  rcRenderMovimientos(it);
 }
 // Asignar un proveedor adicional (WebApp, no la categoría de Loyverse) directo desde Recepción
 // — para el caso típico de recibir un producto que llegó de un proveedor nuevo que todavía no
@@ -11371,6 +11373,80 @@ function rcRenderProveedores(it){
     sel.innerHTML='<option value="">Agregar proveedor…</option>'+
       _psProveedores.filter(p=>!asignados.has(Number(p.id))).map(p=>'<option value="'+p.id+'">'+p.nombre+'</option>').join('');
   });
+}
+// Últimos 5 movimientos de stock del producto elegido en Recepción — reutiliza action=ficha_producto
+// (mismo endpoint que ya usa la Ficha) en vez de crear un reporte nuevo. Solo "recepcion_stock" con
+// cantidad guardada es eliminable (revierte el stock); "reconteo_stock" se muestra para contexto,
+// nunca con botón de borrar (fija el stock a un valor absoluto, sin cantidad que revertir).
+async function rcRenderMovimientos(it){
+  const box=document.getElementById('rc-movs');
+  if(!box)return;
+  box.classList.remove('hidden');
+  box.innerHTML='<div class="vc-empty">Cargando movimientos…</div>';
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=ficha_producto&sku='+encodeURIComponent(it.ref));
+    const j=await res.json();
+    if(!j||!j.ok){box.innerHTML='<div class="vc-empty">No se pudieron cargar los movimientos.</div>';return;}
+    const movs=(j.ficha.movimientos||[]).filter(m=>m.accion==='recepcion_stock'||m.accion==='reconteo_stock').slice(0,5);
+    rcPintarMovimientos(movs);
+  }catch(e){box.innerHTML='<div class="vc-empty">Error de conexión al cargar movimientos.</div>';}
+}
+function rcPintarMovimientos(movs){
+  const box=document.getElementById('rc-movs');
+  if(!box)return;
+  if(!movs.length){
+    box.innerHTML='<div class="cat" style="font-weight:700;color:var(--ink);margin-bottom:4px">Últimos movimientos</div><div class="vc-empty">Sin movimientos recientes.</div>';
+    return;
+  }
+  box.innerHTML='<div class="cat" style="font-weight:700;color:var(--ink);margin-bottom:4px">Últimos movimientos</div>'+
+    movs.map(m=>{
+      const esRecepcion=m.accion==='recepcion_stock';
+      const puedeBorrar=esRecepcion&&m.cantidad!=null;
+      const stockNeg=m.stock!=null&&Number(m.stock)<0;
+      return `<div class="sm-row" style="flex-direction:column;align-items:stretch">
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <div class="sm-info">
+            <div class="nom">${esRecepcion?'📦 Recepción':'🔢 Reconteo'}</div>
+            <div class="meta">${m.fecha}${m.motivo?(' · '+m.motivo):''}${m.responsable?(' · '+m.responsable):''}</div>
+          </div>
+          ${m.stock!=null?`<span class="fp-badge ${stockNeg?'rojo':'gris'}">stock ${fmt1(m.stock)}</span>`:''}
+        </div>
+        ${puedeBorrar?`<div class="btns vc-btns-mini">
+          <button type="button" class="vc-mini vc-mini-rojo" data-rc-elim="${m.id}" data-cant="${m.cantidad}" title="Eliminar movimiento"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>Eliminar</span></button>
+        </div>`:(esRecepcion?`<div class="meta" style="padding-left:2px">No se puede deshacer (movimiento antiguo)</div>`:'')}
+      </div>`;
+    }).join('');
+  box.querySelectorAll('[data-rc-elim]').forEach(b=>b.onclick=()=>rcEliminarMovimiento(b.dataset.rcElim,b.dataset.cant));
+}
+async function rcEliminarMovimiento(id,cantidad){
+  const it=rcState.item;
+  if(!it)return;
+  const cant=Number(cantidad)||0;
+  const msg='¿Eliminar este movimiento de recepción de "'+it.nombre+'"?\n\n'+
+    (cant>0?('Se descontarán '+fmt1(cant)+' del stock en Loyverse (revierte la recepción).\n'):'')+
+    'Esta acción no se puede deshacer.';
+  if(!confirm(msg))return;
+  showToast('Eliminando movimiento…');
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'eliminar_movimiento_stock',payload:{id:Number(id),sku:it.ref}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      let m='Movimiento eliminado';
+      if(j.fila&&j.fila.nuevoStock!=null){
+        it.stock=j.fila.nuevoStock;
+        const itLocal=(DB.items||[]).find(x=>x.ref===it.ref);
+        if(itLocal)itLocal.stock=j.fila.nuevoStock;
+        persist();
+        const stockTxt=(it.stock==null)?'sin control':(it.stock+(it.peso?' kg':' u'));
+        document.getElementById('rc-stock').textContent='Stock actual: '+stockTxt;
+        m+=' · stock ahora '+fmt1(j.fila.nuevoStock);
+      }
+      if(j.fila&&j.fila.avisoStock)m+=' · '+j.fila.avisoStock;
+      showToast(m);
+      rcRenderMovimientos(it);
+      render();
+    }else showToast('Error: '+((j&&j.error)||'no se pudo eliminar el movimiento'));
+  }catch(e){showToast('Error de conexión al eliminar el movimiento');}
 }
 document.getElementById('rc-provid-add').onclick=async()=>{
   const it=rcState.item; if(!it)return;
@@ -11465,6 +11541,7 @@ function rcReset(){
   {const x=document.getElementById('rc-lx'); if(x)x.style.display='none';}
   document.getElementById('rc-results').innerHTML='';
   document.getElementById('rc-picked').classList.remove('on');
+  { const mv=document.getElementById('rc-movs'); if(mv){mv.classList.add('hidden'); mv.innerHTML='';} }
   document.getElementById('rc-detalle').classList.add('hidden');
   document.getElementById('rc-guardar').classList.add('hidden');
   document.getElementById('rc-costo-actual').textContent='Costo actual: —';
@@ -11541,6 +11618,7 @@ async function rcAjustarGuardar(){
       persist();
       const stockTxt=(it.stock==null)?'sin control':(it.stock+(it.peso?' kg':' u'));
       document.getElementById('rc-stock').textContent='Stock actual: '+stockTxt;
+      rcRenderMovimientos(it);
       showToast((j.trackHabilitado?'Seguimiento activado · ':'Stock ajustado: ')+fmt1(nuevo));
       inp.value='';
       render();
