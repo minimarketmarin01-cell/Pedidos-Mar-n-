@@ -3841,7 +3841,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-07.8';
+const APP_VERSION='2026-08-14.1';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -5358,7 +5358,12 @@ const PcWidget=(function(){
     const state=cfg.state; // objeto mutable del llamador: {modo,ivaModo,precioTocado}
     function costoBruto(){
       const uCaja=$('unidades-caja')?$('unidades-caja').value:null;
-      return PriceCalc.costoBruto($('costo').value,state.modo||'unidad',uCaja,state.ivaModo);
+      // cantidadCajasGetter: SOLO Recepción lo pasa (ver rcMontarPrecio) — ahí "Costo" en modo
+      // "caja" es el total de TODAS las cajas de esta recepción, no el de una sola. Crear
+      // producto/Ficha no lo pasan, así que siguen tratando "Costo" como el de una caja, igual
+      // que siempre.
+      const cantidadCajas=cfg.cantidadCajasGetter?cfg.cantidadCajasGetter():1;
+      return PriceCalc.costoBruto($('costo').value,state.modo||'unidad',uCaja,state.ivaModo,cantidadCajas);
     }
     function precioCalculado(){
       return PriceCalc.precioDesdeMargen(costoBruto(),$('margen-obj').value);
@@ -7684,19 +7689,22 @@ function cpToggleStock(){
 const PriceCalc=(function(){
   const IVA=0.19;
   // Costo por unidad real a partir de lo que el usuario escribió: si compró "por caja", el
-  // costo ingresado es el de la caja completa y hay que dividirlo por las unidades que trae.
-  function costoUnitario(costoIngresado,modo,unidadesCaja){
+  // costo ingresado es el de TODAS las cajas de esta compra (cantidadCajas, por defecto 1 — así
+  // Crear producto/Ficha, que no tienen ese concepto, siguen tratándolo como "costo de una
+  // caja" igual que antes) y hay que dividirlo por unidades×caja × cantidad de cajas.
+  function costoUnitario(costoIngresado,modo,unidadesCaja,cantidadCajas){
     costoIngresado=Number(costoIngresado)||0;
     if(modo!=='caja')return costoIngresado;
     const uCaja=Number(unidadesCaja)||0;
-    return uCaja>0?(costoIngresado/uCaja):0;
+    const cCajas=Number(cantidadCajas)||1;
+    return uCaja>0?(costoIngresado/(uCaja*cCajas)):0;
   }
   // Costo BRUTO (con IVA) — es el único valor que después se usa tanto para calcular el
   // precio de venta como para lo que efectivamente se guarda en Loyverse.
   //   ivaModo 'con' -> lo escrito YA es el bruto, se usa tal cual.
   //   ivaModo 'sin' -> lo escrito es el neto, se le suma 19% para obtener el bruto.
-  function costoBruto(costoIngresado,modo,unidadesCaja,ivaModo){
-    const unit=costoUnitario(costoIngresado,modo,unidadesCaja);
+  function costoBruto(costoIngresado,modo,unidadesCaja,ivaModo,cantidadCajas){
+    const unit=costoUnitario(costoIngresado,modo,unidadesCaja,cantidadCajas);
     return ivaModo==='sin'?(unit*(1+IVA)):unit;
   }
   // Precio de venta a partir del costo bruto y el margen objetivo (margen SOBRE VENTA, no
@@ -11800,8 +11808,8 @@ document.getElementById('rc-mic').onclick=()=>voiceSearch(document.getElementByI
   document.getElementById('rc-search').value=text;
   document.getElementById('rc-search').dispatchEvent(new Event('input',{bubbles:true}));
 });
-function rcQtyMenos(){const i=document.getElementById('rc-cantidad');const st=rcState.item&&rcState.item.peso?0.05:1;i.value=Math.max(0,(Number(i.value)||0)-st).toFixed(rcState.item&&rcState.item.peso?3:0);rcValidar();rcRenderResumen();}
-function rcQtyMas(){const i=document.getElementById('rc-cantidad');const st=rcState.item&&rcState.item.peso?0.05:1;i.value=((Number(i.value)||0)+st).toFixed(rcState.item&&rcState.item.peso?3:0);rcValidar();rcRenderResumen();}
+function rcQtyMenos(){const i=document.getElementById('rc-cantidad');const st=rcState.item&&rcState.item.peso?0.05:1;i.value=Math.max(0,(Number(i.value)||0)-st).toFixed(rcState.item&&rcState.item.peso?3:0);rcValidar();rcRenderResumen();rcRecalcularCostoConModo();}
+function rcQtyMas(){const i=document.getElementById('rc-cantidad');const st=rcState.item&&rcState.item.peso?0.05:1;i.value=((Number(i.value)||0)+st).toFixed(rcState.item&&rcState.item.peso?3:0);rcValidar();rcRenderResumen();rcRecalcularCostoConModo();}
 document.getElementById('rc-qty-menos').onclick=rcQtyMenos;
 document.getElementById('rc-qty-mas').onclick=rcQtyMas;
 // Mantener presionado (.rc-qty-hold): repite la acción cada 120ms mientras se mantiene el
@@ -11825,7 +11833,7 @@ document.getElementById('rc-qty-mas').onclick=rcQtyMas;
     btn.addEventListener('pointercancel',detenerHold);
   });
 })();
-document.getElementById('rc-cantidad').oninput=()=>{rcValidar();rcRenderResumen();};
+document.getElementById('rc-cantidad').oninput=()=>{rcValidar();rcRenderResumen();rcRecalcularCostoConModo();};
 document.getElementById('rc-fecha').oninput=()=>{rcValidar();rcGuardarBorrador();};
 
 // FIX: esta función se llamaba desde varios puntos (rcShowPicked→rcSetModo, rcQtyMenos/Mas,
@@ -11871,6 +11879,9 @@ function rcMontarPrecio(){
     prefix:'rc',state:rcState,mostrarUnidadCaja:false,
     autocompletar:false, // Recepción: precio de venta es el ACTUAL/vigente del producto — no se pisa solo, el usuario elige un chip o "Aplicar precio"
     costoLabel:'Costo',
+    // En modo "caja", "Costo" es el TOTAL de esta recepción (todas las cajas juntas), no el de
+    // una sola — se divide acá por la cantidad de cajas además de por unidades/caja.
+    cantidadCajasGetter:()=>Number(document.getElementById('rc-cantidad').value)||1,
     onCambio:()=>rcGuardarBorrador(),
     onAplicar:(precioFinal)=>{
       document.getElementById('rc-precio').value=precioFinal;
@@ -11893,6 +11904,10 @@ function rcSetModo(modo){
   document.getElementById('rc-caja-campos').classList.toggle('hidden',modo!=='caja');
   const esPeso=rcState.item&&rcState.item.peso;
   document.getElementById('rc-unidad').textContent=modo==='caja'?'cajas':(esPeso?'kg':'u');
+  // En "Por caja", el costo que se pide es el TOTAL de esta recepción (todas las cajas
+  // juntas), no el de una sola — ver cantidadCajasGetter en rcMontarPrecio/rcCostoBrutoReal.
+  const costoLbl=document.getElementById('rc-costo-lbl');
+  if(costoLbl)costoLbl.textContent=modo==='caja'?'Costo total (todas las cajas)':'Costo';
   // El costo del widget usa unidades-caja PROPIAS (rc-pc-mount genera su propio input si
   // mostrarUnidadCaja fuera true) — pero acá se decidió compartir el campo de "Cantidad
   // recibida" para no duplicar "unidades por caja" dos veces en la misma pantalla. Como el
@@ -11914,14 +11929,17 @@ function rcRecalcularCostoConModo(){
   if(!costoInp)return;
   // No se toca el valor que el usuario escribió — el widget siempre trata rc-costo como
   // "costo por unidad" (mostrarUnidadCaja:false); acá solo se dispara su recálculo cuando
-  // cambia el modo o las unidades por caja, para que la vista se actualice.
+  // cambia el modo, las unidades por caja o la cantidad de cajas, para que la vista se
+  // actualice.
   costoInp.dispatchEvent(new Event('input',{bubbles:true}));
 }
 // Costo BRUTO real para el guardado (rc-guardar) — a diferencia del widget (que asume
-// "unidad" porque mostrarUnidadCaja:false), acá SÍ hay que dividir por unidades/caja si el
-// modo es "caja", igual que hacía antes rcCostoBruto().
+// "unidad" porque mostrarUnidadCaja:false), acá SÍ hay que dividir por unidades/caja (y, si es
+// "caja", también por la cantidad de cajas recibidas — "Costo" es el total de la recepción) si
+// el modo es "caja", igual que hacía antes rcCostoBruto().
 function rcCostoBrutoReal(){
-  return PriceCalc.costoBruto(document.getElementById('rc-costo').value,rcState.modo,document.getElementById('rc-unidades-caja').value,rcState.ivaModo);
+  const cantidadCajas=rcState.modo==='caja'?(Number(document.getElementById('rc-cantidad').value)||1):1;
+  return PriceCalc.costoBruto(document.getElementById('rc-costo').value,rcState.modo,document.getElementById('rc-unidades-caja').value,rcState.ivaModo,cantidadCajas);
 }
 // Alias por compatibilidad con el resto del módulo (Ficha, historial, etc. pueden llamarla).
 function rcCostoNeto(){
