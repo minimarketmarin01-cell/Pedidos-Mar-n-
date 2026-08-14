@@ -3530,7 +3530,8 @@ function rowHTML(it,a,f){const cant=qOf(it,a);
     :'';
   // Aviso de "ya pedido a otro proveedor" — evita pedidos duplicados (ver marcarPedidoRealizado).
   const pend=pendienteDe(it);
-  const pendBadge=pend?`<span class="pend-badge" title="Pedido a ${pend.proveedor||'otro proveedor'} el ${pend.fecha||''} · ${fmt.format(pend.cantidad||0)} u"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg> Ya pedido a ${pend.proveedor||'?'}</span>`:'';
+  const pendProv=pend?_proveedorRealDePendiente(pend):'';
+  const pendBadge=pend?`<span class="pend-badge" title="Pedido a ${pendProv||'otro proveedor'} el ${pend.fecha||''} · ${fmt.format(pend.cantidad||0)} u"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg> Ya pedido a ${pendProv||'?'}</span>`:'';
   // El carrito ya no se autocompleta con el sugerido (ver qOf) — este hint mantiene visible
   // la recomendación aunque el stepper esté en 0, para no perder esa información de un vistazo.
   const sugHint=(a.sug>0&&cant===0)?`<span class="sug-hint">Sugerido: ${fmt.format(a.sug)}</span>`:'';
@@ -3739,9 +3740,15 @@ function renderOrder(){
   if(!lines.length&&!soloCambio.length){body.innerHTML='<div class="order-empty">Sin productos sugeridos con los parámetros actuales.</div>';cartUpdateTotals();return;}
   // Ítems de varios proveedores mezclados en el mismo carrito (ver currentOrder): recién ahí
   // vale la pena mostrar el color/nombre de proveedor por fila — con un solo proveedor sería
-  // ruido repetido sin aportar nada.
+  // ruido repetido sin aportar nada. Además, viendo el carrito FILTRADO a un solo proveedor
+  // (soloEsteProv), nunca se muestra esta etiqueta aunque el producto tenga otro proveedor
+  // principal distinto (ej. "Bon o bon" con principal Arcor pero pedido desde el carrito de
+  // Luduar, uno de sus "otros proveedores") — el encabezado del carrito ("Proveedor · LUDUAR")
+  // ya deja claro bajo qué proveedor se está pidiendo todo lo que se ve acá; repetir el
+  // proveedor PRINCIPAL de cada producto en esa vista es lo que generaba el aviso equivocado.
+  const soloEsteProv=!state.search&&!state.allProv;
   const provsEnCarrito=new Set(lines.map(l=>l.it.proveedorNombre||l.it.prov));
-  const mostrarProv=provsEnCarrito.size>1;
+  const mostrarProv=!soloEsteProv&&provsEnCarrito.size>1;
   let html=lines.map(l=>{
     const cambio=cambiosMap[l.it.ref]||0;
     const color=mostrarProv?colorForProv(l.it.proveedorNombre||l.it.prov):null;
@@ -12377,9 +12384,16 @@ document.getElementById('ll-cerrar').onclick=()=>document.getElementById('ll-ov'
 // para calcular el total del carrito) y la fecha estimada de llegada — con esto el pedido
 // confirmado deja de ser "solo un aviso de duplicado" y pasa a ser un registro real de
 // historial que "Proveedores de hoy" puede listar por fecha (ver calcularProveedoresHoyReal).
-async function marcarPedidoRealizado(lines,canal,fechaLlegadaEstimada){
+// provContexto: el proveedor bajo el que se está confirmando el pedido (state.prov en el
+// momento de confirmar, ver confirmarPedidoConCanal) — cuando viene, se guarda TAL CUAL para
+// cada línea, sin importar cuál sea el proveedor principal del producto. Así, un producto con
+// varios proveedores reales asignados (Ficha → "Otros proveedores del mismo producto") queda
+// registrado bajo el proveedor con el que realmente se pidió, no siempre bajo el principal.
+// Sin provContexto (ej. "todos los proveedores"/búsqueda, donde no hay un único proveedor de
+// referencia), cae al proveedor real del producto como antes.
+async function marcarPedidoRealizado(lines,canal,fechaLlegadaEstimada,provContexto){
   if(!lines||!lines.length)return false;
-  const items=lines.map(l=>{const costoUnitario=tierCostUn(l.it);return{sku:l.it.ref,barcode:l.it.barcode||'',nombre:l.it.nombre,proveedor:l.it.prov,cantidad:l.q,costoUnitario:costoUnitario};});
+  const items=lines.map(l=>{const costoUnitario=tierCostUn(l.it);return{sku:l.it.ref,barcode:l.it.barcode||'',nombre:l.it.nombre,proveedor:provContexto||l.it.proveedorNombre||l.it.prov,cantidad:l.q,costoUnitario:costoUnitario};});
   let j;
   try{
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'marcar_pedido_realizado',payload:{items:items,canal:canal,fechaLlegadaEstimada:fechaLlegadaEstimada||''}})});
@@ -12501,7 +12515,7 @@ function cancelarPedidoConfirmado(){
     peligro:true,
     onConfirm:async()=>{
       const lines=items.map(it=>({it,nombre:it.nombre,q:0,packs:0,cost:0,word:it.word}));
-      const ok=await marcarPedidoRealizado(lines,'presencial','');
+      const ok=await marcarPedidoRealizado(lines,'presencial','',provNombre);
       if(!ok)return; // marcarPedidoRealizado ya mostró el toast de error — no se toca nada más
       // Si alguno de estos productos estaba cargado en el carrito para editarlo, esa edición
       // ya no tiene sentido — se limpia junto con el pedido.
@@ -12753,7 +12767,7 @@ function confirmarPedidoConCanal(canal){
       // cargarPedidoConfirmadoEnCarrito) no aparecen en `lines` (quedaron en 0) — hay que
       // avisarle a marcarPedidoRealizado que hay que BORRARLOS, no solo que no se tocaron.
       const lineasAGuardar=[...lines,...lineasEliminadasDePedidoConfirmado()];
-      const guardado=await marcarPedidoRealizado(lineasAGuardar,canal,fecha);
+      const guardado=await marcarPedidoRealizado(lineasAGuardar,canal,fecha,soloEsteProv?state.prov:null);
       if(btn)btn.disabled=false;
       if(!guardado)return; // marcarPedidoRealizado ya mostró el toast de error — no se toca el carrito ni se copia nada
       // El pedido ya quedó guardado — recién ahora se vacía TODO el carrito, sin cargar
@@ -12869,13 +12883,19 @@ function renderProvDay(){
 // buildDBfromCloud/pendienteDe) por proveedor, filtrando por la fecha_llegada_estimada elegida
 // en el selector — no dispara ninguna consulta nueva ni toca los pedidos guardados, solo
 // cambia el filtro de visualización.
-// Proveedor para agrupar un pendiente: el proveedor REAL asignado ACTUALMENTE al producto
-// (mismo criterio que el resto de la app, ver nombreProveedorVisual — reutilizado, no
-// reinventado), no el texto que quedó guardado en pedidos_pendientes al confirmar el pedido.
-// Así, si el producto se migra a un proveedor real después de confirmado (o no tenía categoría
-// de Loyverse y quedó como "SIN CATEGORÍA"), esta lista se corrige sola sin re-guardar nada.
+// Proveedor para mostrar/agrupar un pendiente. Prioridad:
+// 1) El proveedor guardado en pedidos_pendientes, SI sigue siendo uno de los proveedores reales
+//    vigentes del producto (el principal o alguno de "Otros proveedores del mismo producto") —
+//    esto respeta bajo qué proveedor se pidió realmente (ver marcarPedidoRealizado/provContexto),
+//    que puede ser un proveedor adicional distinto del principal.
+// 2) Si no (texto viejo/stale, ej. "SIN CATEGORÍA" de antes de migrar el producto a un proveedor
+//    real), el proveedor real principal ACTUAL del producto (nombreProveedorVisual) — así la
+//    lista se autocorrige sola sin tener que re-guardar el pedido.
 function _proveedorRealDePendiente(p){
   const it=(DB.items||[]).find(x=>x.ref===p.sku);
+  if(it&&p.proveedor&&(p.proveedor===it.proveedorNombre||(it.proveedorNombresExtra||[]).includes(p.proveedor))){
+    return p.proveedor.toUpperCase();
+  }
   return (it&&nombreProveedorVisual(it))||p.proveedor||'—';
 }
 function calcularProveedoresHoyReal(fechaISO){
@@ -12948,7 +12968,7 @@ function calcularRecepcionarHoy(){
     const p=pend[sku];
     if(!p||p.estado==='recibido')return;
     if(!p.fecha_llegada_estimada||p.fecha_llegada_estimada>hoyISO)return;
-    const key=p.proveedor||'—';
+    const key=_proveedorRealDePendiente(p);
     if(!grupos[key])grupos[key]={proveedor:key,productos:0,costoTotal:0,fechaLlegada:p.fecha_llegada_estimada,atrasado:false};
     grupos[key].productos+=1;
     grupos[key].costoTotal+=Number(p.costo_total)||0;
@@ -12963,7 +12983,7 @@ function itemsPendientesPorProveedorHastaHoy(proveedor){
   const pend=DB&&DB.pendBySku?DB.pendBySku:{};
   const hoyISO=isoLocalDate(new Date());
   return Object.values(pend)
-    .filter(p=>p&&p.proveedor===proveedor&&p.estado!=='recibido'&&p.fecha_llegada_estimada&&p.fecha_llegada_estimada<=hoyISO)
+    .filter(p=>p&&_proveedorRealDePendiente(p)===proveedor&&p.estado!=='recibido'&&p.fecha_llegada_estimada&&p.fecha_llegada_estimada<=hoyISO)
     .sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||''),'es'));
 }
 function renderRecepcionarHoy(){
