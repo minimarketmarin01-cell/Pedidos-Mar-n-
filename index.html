@@ -12869,13 +12869,22 @@ function renderProvDay(){
 // buildDBfromCloud/pendienteDe) por proveedor, filtrando por la fecha_llegada_estimada elegida
 // en el selector — no dispara ninguna consulta nueva ni toca los pedidos guardados, solo
 // cambia el filtro de visualización.
+// Proveedor para agrupar un pendiente: el proveedor REAL asignado ACTUALMENTE al producto
+// (mismo criterio que el resto de la app, ver nombreProveedorVisual — reutilizado, no
+// reinventado), no el texto que quedó guardado en pedidos_pendientes al confirmar el pedido.
+// Así, si el producto se migra a un proveedor real después de confirmado (o no tenía categoría
+// de Loyverse y quedó como "SIN CATEGORÍA"), esta lista se corrige sola sin re-guardar nada.
+function _proveedorRealDePendiente(p){
+  const it=(DB.items||[]).find(x=>x.ref===p.sku);
+  return (it&&nombreProveedorVisual(it))||p.proveedor||'—';
+}
 function calcularProveedoresHoyReal(fechaISO){
   const pend=DB&&DB.pendBySku?DB.pendBySku:{};
   const grupos={};
   Object.keys(pend).forEach(sku=>{
     const p=pend[sku];
     if(!p||!p.fecha_llegada_estimada||p.fecha_llegada_estimada!==fechaISO)return;
-    const key=p.proveedor||'—';
+    const key=_proveedorRealDePendiente(p);
     if(!grupos[key])grupos[key]={proveedor:key,productos:0,costoTotal:0,fechaLlegada:p.fecha_llegada_estimada,estado:p.estado||'confirmado'};
     grupos[key].productos+=1;
     grupos[key].costoTotal+=Number(p.costo_total)||0;
@@ -12888,7 +12897,7 @@ function calcularProveedoresHoyReal(fechaISO){
 function itemsPedidoConfirmadoPorProveedorFecha(proveedor,fechaISO){
   const pend=DB&&DB.pendBySku?DB.pendBySku:{};
   return Object.values(pend)
-    .filter(p=>p&&p.proveedor===proveedor&&p.fecha_llegada_estimada===fechaISO)
+    .filter(p=>p&&_proveedorRealDePendiente(p)===proveedor&&p.fecha_llegada_estimada===fechaISO)
     .sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||''),'es'));
 }
 function renderProvHoyReal(){
