@@ -1378,6 +1378,8 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
 .bn-item.active .ic{transform:translateY(-1px)}
 .bn-dot{position:absolute;top:4px;right:calc(50% - 17px);width:8px;height:8px;border-radius:50%;background:var(--rojo);display:none;border:1.5px solid var(--ink);z-index:2}
 .bn-dot.on{display:block}
+.bn-badge{position:absolute;top:2px;right:calc(50% - 20px);background:var(--rojo);color:#fff;border-radius:9px;min-width:15px;height:15px;font-size:9px;font-weight:800;display:none;align-items:center;justify-content:center;padding:0 3px;border:1.5px solid var(--ink);z-index:2}
+.bn-badge.on{display:flex}
 .mas-quick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
 .mas-quick button{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:13px 6px;font-size:11.5px;font-weight:700;cursor:pointer;text-align:center;position:relative}
 .mas-quick button:active{background:var(--line)}
@@ -1463,7 +1465,7 @@ html.carrito-fijo.ocultar-contenido-pedido #tab-pedido{grid-template-columns:min
 .in2-card .badge.ok{background:var(--verde,#3a9d5c)}
 .in2-card .badge.warn{background:var(--gold,#c68a1b)}
 .in2-atencion{display:flex;flex-direction:column;gap:7px}
-.in2-att-row{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--rojo);border-radius:11px;padding:10px 12px;cursor:pointer}
+.in2-att-row{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--rojo);border-radius:11px;padding:8px 10px;cursor:pointer}
 .in2-att-row:active{background:var(--paper)}
 .in2-att-row .n{font-size:17px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--rojo);min-width:26px;text-align:center}
 .in2-att-row .txt{flex:1;min-width:0}
@@ -1594,30 +1596,18 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
     <div class="in2-hdr-sub" id="in2-hdr-sub"></div>
   </div>
   <div class="in2-body">
-    <div class="in2-section-title">Accesos rápidos</div>
-    <div class="in2-grid" id="in2-grid"></div>
-
     <div class="in2-section-title" id="in2-atencion-title">Requiere atención</div>
     <div class="in2-atencion" id="in2-atencion"></div>
 
-    <div class="in2-section-title">📦 Proveedores de hoy</div>
+    <div class="in2-section-title">HOY</div>
 
-    <div style="display:flex;align-items:center;gap:6px;margin:0 0 6px"><span style="font-size:12px;font-weight:800;color:var(--ink)">📥 Por recepcionar hoy</span></div>
-    <div class="provday" id="provday-recep-wrap"><div id="provday-recep"></div></div>
-
-    <div style="display:flex;align-items:center;gap:6px;margin:12px 0 6px"><span style="font-size:12px;font-weight:800;color:var(--ink)">📅 A quién pedir hoy</span></div>
+    <div style="display:flex;align-items:center;gap:6px;margin:0 0 6px"><span style="font-size:12px;font-weight:800;color:var(--ink)">📅 A quién pedir hoy</span></div>
     <div class="provday" id="provday"></div>
 
-    <div style="display:flex;align-items:center;gap:8px;margin:12px 0 6px">
-      <label for="provday-fecha" style="font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap">Otra fecha:</label>
-      <input type="date" id="provday-fecha" style="flex:1;padding:6px 8px;border-radius:8px;border:1px solid var(--line);font-size:11.5px;font-family:inherit;box-sizing:border-box;color:var(--muted)">
-    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin:12px 0 6px"><span style="font-size:12px;font-weight:800;color:var(--ink)">📦 Proveedores que llegan hoy</span></div>
     <div class="provday" id="provday-real-wrap" style="margin-top:0">
       <div id="provday-real"></div>
     </div>
-
-    <div class="in2-section-title">Acciones rápidas</div>
-    <div class="in2-actions" id="in2-actions"></div>
   </div>
 </div>
 <div id="tab-pedido">
@@ -2176,9 +2166,9 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
 
 <nav class="bottom-nav" id="bottom-nav">
   <button class="bn-item" id="bn-inicio"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg></span>Inicio</button>
-  <button class="bn-item active" id="bn-pedidos"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M3 4h2l2.2 11h9.6L19 8H6.4"/></svg></span>Pedidos</button>
-  <button class="bn-item" id="bn-recepcion"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="1" y="6" width="14" height="10" rx="1"/><path d="M15 9h4l3 3.5V16h-7z"/><circle cx="6" cy="18.5" r="1.6"/><circle cx="17.5" cy="18.5" r="1.6"/></svg></span>Recepción</button>
-  <button class="bn-item" id="bn-vencimientos"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></span>Vencimientos</button>
+  <button class="bn-item active" id="bn-pedidos"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M3 4h2l2.2 11h9.6L19 8H6.4"/></svg></span>Pedidos<span class="bn-badge" id="bn-pedidos-badge"></span></button>
+  <button class="bn-item" id="bn-recepcion"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="1" y="6" width="14" height="10" rx="1"/><path d="M15 9h4l3 3.5V16h-7z"/><circle cx="6" cy="18.5" r="1.6"/><circle cx="17.5" cy="18.5" r="1.6"/></svg></span>Recepción<span class="bn-badge" id="bn-recepcion-badge"></span></button>
+  <button class="bn-item" id="bn-vencimientos"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></span>Vencimientos<span class="bn-badge" id="bn-vencimientos-badge"></span></button>
   <button class="bn-item" id="bn-mas"><span class="ic">⋯</span>Más<span class="bn-dot" id="bn-mas-dot"></span></button>
 </nav>
 
@@ -3365,21 +3355,6 @@ async function renderInicio2(){
   let riesgoNum=0;
   try{riesgoNum=(rzCalcular(false)||[]).length;}catch(e){}
 
-  // ---- 7 tarjetas de accesos rápidos — "Editar producto" primero (acceso más pedido
-  // según feedback de uso diario), el resto mantiene el orden original ----
-  const cards=[
-    {ic:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',lab:'Editar producto',n:null,go:()=>{cerrarOverlays();try{edAbrir();}catch(e){}}},
-    {ic:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="14" height="10" rx="1"/><path d="M15 9h4l3 3.5V16h-7z"/><circle cx="6" cy="18.5" r="1.6"/><circle cx="17.5" cy="18.5" r="1.6"/></svg>',lab:'Recepción',n:null,go:()=>{cerrarOverlays();openRecibir();}},
-    {ic:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M3 4h2l2.2 11h9.6L19 8H6.4"/></svg>',lab:'Armar pedido',n:(urg+ped)||null,cls:(urg?'':'warn'),go:()=>{cerrarOverlays();showScreen('pedido');}},
-    {ic:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>',lab:'Vencimientos',n:(porVencer+vencidos)||null,cls:(vencidos?'':'warn'),go:()=>{cerrarOverlays();abrirModal('vc-ov');try{vcShowList();vcLoad();}catch(e){}}},
-    {ic:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',lab:'Quiebres',n:riesgoNum||null,go:()=>{cerrarOverlays();try{rzAbrir();}catch(e){}}},
-    {ic:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="10" y1="4" x2="8" y2="20"/><line x1="16" y1="4" x2="14" y2="20"/></svg>',lab:'Recuento stock',n:null,go:()=>{cerrarOverlays();try{rkAbrir();}catch(e){}}},
-    {ic:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>',lab:'Crear producto',n:null,go:()=>{cerrarOverlays();try{cpAbrir();}catch(e){}}}
-  ];
-  const gridBox=document.getElementById('in2-grid');
-  gridBox.innerHTML=cards.map((c,i)=>`<div class="in2-card" data-i="${i}"><span class="ic">${c.ic}</span><span class="lab">${c.lab}</span>${c.n?`<span class="badge${c.cls?(' '+c.cls):''}">${c.n>99?'99+':c.n}</span>`:''}</div>`).join('');
-  gridBox.querySelectorAll('.in2-card').forEach(el=>el.onclick=()=>cards[+el.dataset.i].go());
-
   // ---- Requiere atención: quiebres, vencimientos, stock crítico, sin movimiento ----
   const atencion=[];
   if(urg>0)atencion.push({n:urg,t:'Productos en quiebre',s:'Requieren reposición ya',go:()=>{cerrarOverlays();showScreen('pedido');}});
@@ -3397,45 +3372,35 @@ async function renderInicio2(){
     attBox.innerHTML='';attBox.classList.add('hidden');
   }
 
-  // ---- Acciones rápidas: Escanear, Crear producto, Recepcionar, Buscar ----
-  const actionsBox=document.getElementById('in2-actions');
-  if(!actionsBox.dataset.wired){
-    actionsBox.innerHTML=`
-      <button class="in2-action-btn" id="in2-act-scan"><span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></span>Escanear</button>
-      <button class="in2-action-btn" id="in2-act-crear"><span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span>Crear</button>
-      <button class="in2-action-btn" id="in2-act-recep"><span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="14" height="10" rx="1"/><path d="M15 9h4l3 3.5V16h-7z"/><circle cx="6" cy="18.5" r="1.6"/><circle cx="17.5" cy="18.5" r="1.6"/></svg></span>Recepcionar</button>
-      <button class="in2-action-btn" id="in2-act-buscar"><span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>Buscar</button>`;
-    actionsBox.dataset.wired='1';
-    document.getElementById('in2-act-scan').onclick=()=>{
-      // Misma acción que el escáner del buscador principal (prov-scan) — se reutiliza el
-      // mismo botón en vez de reimplementar el flujo de cámara.
-      cerrarOverlays();showScreen('pedido');
-      const btn=document.getElementById('prov-scan');
-      if(btn)setTimeout(()=>btn.click(),50);
-    };
-    document.getElementById('in2-act-crear').onclick=()=>{cerrarOverlays();try{cpAbrir();}catch(e){}};
-    document.getElementById('in2-act-recep').onclick=()=>{cerrarOverlays();openRecibir();};
-    document.getElementById('in2-act-buscar').onclick=()=>{
-      cerrarOverlays();showScreen('pedido');
-      const inp=document.getElementById('prov-all');
-      if(inp)setTimeout(()=>inp.focus(),50);
-    };
-  }
-
   // ---- Notificaciones: mismo badge combinado que ya usa "Más" (llegadas + riesgo +
   // proveedores de hoy: a quién pedir + qué recepcionar) ----
   const notifBadge=document.getElementById('in2-notif-badge');
   const llBadge=document.getElementById('ll-badge');
   const nLlegadas=(llBadge&&llBadge.style.display==='flex')?(Number(llBadge.textContent)||0):0;
+  let recepHoyNum=0;
+  try{recepHoyNum=calcularRecepcionarHoy().length;}catch(e){}
   let provHoyNum=0;
-  try{provHoyNum=calcularProveedoresHoy().filter(f=>f.pide).length+calcularRecepcionarHoy().length;}catch(e){}
+  try{provHoyNum=calcularProveedoresHoy().filter(f=>f.pide).length+recepHoyNum;}catch(e){}
   const nTotal=nLlegadas+riesgoNum+provHoyNum;
   if(notifBadge){
     if(nTotal>0){notifBadge.textContent=nTotal>99?'99+':String(nTotal);notifBadge.classList.remove('hidden');}
     else notifBadge.classList.add('hidden');
   }
+
+  // ---- Badges de la barra inferior: mismos números ya calculados arriba, sin fuente
+  // de datos nueva ni sistema paralelo — Pedidos (quiebre+a pedir), Recepción (proveedores
+  // con algo pendiente de recepcionar), Vencimientos (por vencer+vencidos). ----
+  actualizarBadgeBn('bn-pedidos-badge',urg+ped);
+  actualizarBadgeBn('bn-recepcion-badge',recepHoyNum);
+  actualizarBadgeBn('bn-vencimientos-badge',porVencer+vencidos);
 }
 document.getElementById('in2-notif-btn').onclick=()=>{cerrarOverlays();abrirModal('mas-ov');};
+function actualizarBadgeBn(id,n){
+  const b=document.getElementById(id);
+  if(!b)return;
+  b.textContent=n>99?'99+':String(n);
+  b.classList.toggle('on',n>0);
+}
 
 
 function renderKPIs(){
@@ -4214,7 +4179,7 @@ async function cloudSync(silent,live,full,origen){
       // sync automático NUNCA debe devolverlo al inicio de la fila en la que estaba.
       const sc=tableScrollEl();const prevTbl=sc?sc.scrollTop:0,prevWin=window.scrollY||0;
       const ob=document.getElementById('order-body');const prevOrder=ob?ob.scrollTop:0;
-      persist();render();renderProvDay();
+      persist();render();renderProvDay();try{renderInicio2();}catch(e){}
       restaurarScrollTabla(prevTbl,prevWin);
       const ob2=document.getElementById('order-body');if(ob2)ob2.scrollTop=prevOrder;
       llCheckBadge();
@@ -4324,7 +4289,7 @@ function aplicarRepintadoDiferido(){
   _repintadoPendiente=false;
   const sc=tableScrollEl();const prevTbl=sc?sc.scrollTop:0,prevWin=window.scrollY||0;
   const ob=document.getElementById('order-body');const prevOrder=ob?ob.scrollTop:0;
-  render();renderProvDay();
+  render();renderProvDay();try{renderInicio2();}catch(e){}
   restaurarScrollTabla(prevTbl,prevWin);
   const ob2=document.getElementById('order-body');if(ob2)ob2.scrollTop=prevOrder;
   llCheckBadge();cargarVencidoParaCambio();cargarABC();flashUpdated();
@@ -12841,7 +12806,7 @@ function renderProvHoyReal(){
   const fechaISO=inp?inp.value:isoLocalDate(new Date());
   const filas=calcularProveedoresHoyReal(fechaISO);
   if(!filas.length){
-    el.innerHTML='<div class="pd-empty-row">Sin pedidos confirmados para esa fecha</div>';
+    el.innerHTML='<div class="pd-empty-row">Ningún proveedor tiene recepción programada para hoy</div>';
     return;
   }
   // Cada fila es clickeable: despliega la lista real de productos de ESE pedido (proveedor +
@@ -12849,7 +12814,7 @@ function renderProvHoyReal(){
   // al servidor solo para VER qué incluye el pedido.
   el.innerHTML=filas.map(f=>`<div class="pd-prov-row pd-prov-row-clickable" data-prov="${String(f.proveedor).replace(/"/g,'&quot;')}" data-fecha="${f.fechaLlegada}">
       <span class="pd-prov-ic">📦</span>
-      <span class="pd-prov-txt"><span class="pd-prov-nom">${f.proveedor}</span><span class="pd-prov-sub">${f.productos} producto${f.productos===1?'':'s'} · ${peso(f.costoTotal)} · Llega: ${fmtDateInputToDDMMAAAA(f.fechaLlegada)} · ${f.estado==='recibido'?'Recibido':'Confirmado'}</span></span>
+      <span class="pd-prov-txt"><span class="pd-prov-nom">${f.proveedor}</span><span class="pd-prov-sub">${f.productos} producto${f.productos===1?'':'s'} · ${peso(f.costoTotal)} · ${f.estado==='recibido'?'Recibido':'Pendiente'}</span></span>
       <span class="pd-prov-caret">▾</span>
     </div>
     <div class="pd-prov-detalle hidden"></div>`).join('');
@@ -13170,7 +13135,7 @@ if(new URLSearchParams(location.search).get('debug')==='1'){
 
 restore();retagAll();
 const _ui=restoreUI();
-render();renderProvDay();
+render();renderProvDay();try{renderInicio2();}catch(e){}
 try{prCargarPendientes();}catch(e){} // badge de "Préstamos" en el menú Más — no debe interrumpir el arranque si falla
 if(_ui)restoreScroll(_ui);
 // FIX bug de descuadre del carrito en tablet: _actualizarLayout() ya se había llamado más
