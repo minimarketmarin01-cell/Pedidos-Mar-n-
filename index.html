@@ -1602,9 +1602,17 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
     <div class="in2-section-title">HOY</div>
 
     <div style="display:flex;align-items:center;gap:6px;margin:0 0 6px"><span style="font-size:12px;font-weight:800;color:var(--ink)">📅 A quién pedir hoy</span></div>
+    <div style="display:flex;align-items:center;gap:8px;margin:0 0 6px">
+      <label for="provday-fecha-cal" style="font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap">Ver fecha:</label>
+      <input type="date" id="provday-fecha-cal" style="flex:1;padding:6px 8px;border-radius:8px;border:1px solid var(--line);font-size:11.5px;font-family:inherit;box-sizing:border-box;color:var(--muted)">
+    </div>
     <div class="provday" id="provday"></div>
 
     <div style="display:flex;align-items:center;gap:6px;margin:12px 0 6px"><span style="font-size:12px;font-weight:800;color:var(--ink)">📦 Proveedores que llegan hoy</span></div>
+    <div style="display:flex;align-items:center;gap:8px;margin:0 0 6px">
+      <label for="provday-fecha" style="font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap">Ver fecha:</label>
+      <input type="date" id="provday-fecha" style="flex:1;padding:6px 8px;border-radius:8px;border:1px solid var(--line);font-size:11.5px;font-family:inherit;box-sizing:border-box;color:var(--muted)">
+    </div>
     <div class="provday" id="provday-real-wrap" style="margin-top:0">
       <div id="provday-real"></div>
     </div>
@@ -12429,6 +12437,13 @@ function estimarFechaLlegada(provNombre){
 }
 // 'YYYY-MM-DD' en horario local (evita el corrimiento de día de toISOString, que usa UTC).
 function isoLocalDate(d){const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
+// Inversa de isoLocalDate: arma la Date con año/mes/día explícitos (horario local), para no
+// repetir el mismo corrimiento de día que new Date('YYYY-MM-DD') tiene en husos horarios
+// negativos (esa forma la interpreta como UTC medianoche).
+function _fechaDesdeInputDate(v){
+  const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v||'');
+  return m?new Date(Number(m[1]),Number(m[2])-1,Number(m[3])):new Date();
+}
 
 // ===================== Retomar/editar un pedido ya confirmado desde el carrito =====================
 // pedidos_pendientes (D1) guarda una sola fila por SKU — así que "el pedido confirmado a un
@@ -12791,8 +12806,12 @@ const CAL_PROV=[
 // proveedor (solo los que tienen algo hoy — pedir y/o recibir), mismo patrón visual que
 // "Requiere atención" (in2-att-row), así se lee de un vistazo igual que Quiebres/Vencimientos.
 // Devuelve la cantidad de proveedores con algo hoy, para el badge de notificación.
-function calcularProveedoresHoy(){
-  const now=new Date(), hoy=now.getDay();
+// fechaISO opcional ("YYYY-MM-DD", igual al value de un <input type="date">): permite ver el
+// patrón semanal de OTRO día sin tocar la fecha real de "hoy" — sin argumento sigue siendo hoy,
+// que es lo que necesita el cálculo del badge de notificación (nunca debe depender de qué
+// fecha esté mirando el usuario en el selector).
+function calcularProveedoresHoy(fechaISO){
+  const now=fechaISO?_fechaDesdeInputDate(fechaISO):new Date(), hoy=now.getDay();
   const filas=[];
   CAL_PROV.forEach(p=>{
     let pide=false,llega=false,llegaDia=null;
@@ -12816,12 +12835,15 @@ function calcularProveedoresHoy(){
 }
 function renderProvDay(){
   const el=document.getElementById('provday'); if(!el)return;
-  const now=new Date(), hoy=now.getDay();
-  const fecha=DOW_LBL[hoy]+' '+now.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit'});
-  const filas=calcularProveedoresHoy();
+  const inp=document.getElementById('provday-fecha-cal');
+  if(inp&&!inp.value)inp.value=isoLocalDate(new Date());
+  const fechaISO=inp?inp.value:isoLocalDate(new Date());
+  const d=_fechaDesdeInputDate(fechaISO), hoy=d.getDay();
+  const fecha=DOW_LBL[hoy]+' '+d.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit'});
+  const filas=calcularProveedoresHoy(fechaISO);
   let h='<div class="pd-date-row">· '+fecha+'</div>';
   if(!filas.length){
-    h+='<div class="pd-empty-row">Sin pedidos ni entregas programadas para hoy</div>';
+    h+='<div class="pd-empty-row">Sin pedidos ni entregas programadas para esta fecha</div>';
   }else{
     h+=filas.map(f=>`<div class="pd-prov-row"><span class="pd-prov-ic">${f.pide?'':''}</span><span class="pd-prov-txt"><span class="pd-prov-nom">${f.nombre}</span><span class="pd-prov-sub">${f.sub}</span></span></div>`).join('');
   }
@@ -12865,7 +12887,7 @@ function renderProvHoyReal(){
   const fechaISO=inp?inp.value:isoLocalDate(new Date());
   const filas=calcularProveedoresHoyReal(fechaISO);
   if(!filas.length){
-    el.innerHTML='<div class="pd-empty-row">Ningún proveedor tiene recepción programada para hoy</div>';
+    el.innerHTML='<div class="pd-empty-row">Ningún proveedor tiene recepción programada para esta fecha</div>';
     return;
   }
   // Cada fila es clickeable: despliega la lista real de productos de ESE pedido (proveedor +
@@ -12967,6 +12989,13 @@ function refrescarProveedoresHoy(){
   if(provdayFecha){
     provdayFecha.value=isoLocalDate(new Date());
     provdayFecha.onchange=()=>{try{renderProvHoyReal();}catch(e){}};
+  }
+}
+{
+  const provdayFechaCal=document.getElementById('provday-fecha-cal');
+  if(provdayFechaCal){
+    provdayFechaCal.value=isoLocalDate(new Date());
+    provdayFechaCal.onchange=()=>{try{renderProvDay();}catch(e){}};
   }
 }
 
