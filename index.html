@@ -3357,7 +3357,7 @@ async function renderInicio2(){
 
   // ---- Requiere atención: quiebres, vencimientos, stock crítico, sin movimiento ----
   const atencion=[];
-  if(urg>0)atencion.push({n:urg,t:'Productos en quiebre',s:'Requieren reposición ya',go:()=>{cerrarOverlays();showScreen('pedido');}});
+  if(riesgoNum>0)atencion.push({n:riesgoNum,t:'Riesgo de quiebre',s:'Alta rotación con stock crítico',go:()=>{cerrarOverlays();try{rzAbrir();}catch(e){}}});
   if(vencidos>0)atencion.push({n:vencidos,t:'Lotes vencidos',s:'Gestionar cambio o merma',go:()=>{cerrarOverlays();abrirModal('vc-ov');try{vcShowList();vcLoad();}catch(e){}}});
   if(porVencer>0)atencion.push({n:porVencer,t:'Por vencer pronto',s:'Revisar en los próximos días',go:()=>{cerrarOverlays();abrirModal('vc-ov');try{vcShowList();vcLoad();}catch(e){}}});
   if(sinMovNum>0)atencion.push({n:sinMovNum,t:'Sin movimiento',s:'0 ventas en 90 días — revisar',go:()=>{cerrarOverlays();try{smAbrir();}catch(e){}}});
