@@ -10136,7 +10136,7 @@ function vcFilaHtml(l){
       ${stockLinea}
       ${bloquePrecio}
       ${notaExtra}
-      <div class="btns vc-btns-mini">${botones||''}<button class="vc-mini" data-editf="${l.filaIndex}" data-fv="${l.fechaVencimiento}" title="Editar fecha"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>Fecha</span></button><button class="vc-mini vc-mini-rojo" data-elim="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" data-nom="${nom}" title="Eliminar lote"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>Eliminar lote</span></button></div>
+      <div class="btns vc-btns-mini">${botones||''}${stockActual!=null?`<button class="vc-mini" data-editstock="${l.filaIndex}" data-sku="${l.sku}" data-stock="${stockActual}" title="Ajustar stock"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="1.5"/><path d="M7 8V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/></svg><span>Ajustar stock</span></button>`:''}<button class="vc-mini" data-editf="${l.filaIndex}" data-fv="${l.fechaVencimiento}" title="Editar fecha"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>Fecha</span></button><button class="vc-mini vc-mini-rojo" data-elim="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" data-nom="${nom}" title="Eliminar lote"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>Eliminar lote</span></button></div>
       <div class="vc-editbox hidden" data-editbox="${l.filaIndex}">
         <span class="vc-editlbl">Nueva fecha de vencimiento:</span>
         <div class="fecha-wrap">
@@ -10148,6 +10148,13 @@ function vcFilaHtml(l){
           <button type="button" class="btn-ok vc-ef-save" data-savef="${l.filaIndex}" style="white-space:nowrap">Guardar</button>
         </div>
       </div>
+      ${stockActual!=null?`<div class="vc-editbox hidden" data-stockbox="${l.filaIndex}">
+        <span class="vc-editlbl">Corregir stock actual (${l.unidad||'un'}):</span>
+        <div class="fecha-wrap">
+          <input type="number" step="any" inputmode="decimal" id="vc-es-${l.filaIndex}" class="fecha-seg" style="width:100px" autocomplete="off">
+          <button type="button" class="btn-ok vc-ef-save" data-savestock="${l.filaIndex}" data-sku="${l.sku}" style="white-space:nowrap">Guardar</button>
+        </div>
+      </div>`:''}
     </div>`;
 }
 // Cablea los botones de un lote de filas recién pintadas — separado de vcFilaHtml para no
@@ -10202,6 +10209,59 @@ function vcWireFilas(box){
       vcEditarFecha(fi,dd+'/'+mm+'/'+aaaa);
     };
   });
+  // Ajustar stock: mismo patrón que Editar fecha — abre un mini-formulario con un solo campo,
+  // precargado con el stock actual del producto (mismo dato que ya muestra "Stock actual" en
+  // la tarjeta), y reutiliza action:'ajustar_stock' (la misma que ya usan Recuento stock y
+  // Recepción, ver rkGuardarFila/rcAjustarGuardar) — no crea ninguna acción nueva de backend.
+  box.querySelectorAll('[data-editstock]').forEach(b=>{
+    b.onclick=()=>{
+      const fi=b.dataset.editstock;
+      const bx=box.querySelector(`[data-stockbox="${fi}"]`);
+      if(!bx)return;
+      const wasHidden=bx.classList.contains('hidden');
+      bx.classList.toggle('hidden');
+      if(wasHidden){
+        const inp=document.getElementById('vc-es-'+fi);
+        if(inp){inp.value='';inp.placeholder=b.dataset.stock||'0';inp.focus();}
+      }
+    };
+  });
+  box.querySelectorAll('[data-savestock]').forEach(b=>{
+    const fi=b.dataset.savestock,sku=b.dataset.sku;
+    const inp=document.getElementById('vc-es-'+fi);
+    if(inp)inp.addEventListener('keydown',e=>{if(e.key==='Enter')b.click();});
+    b.onclick=()=>vcAjustarStockLote(fi,sku);
+  });
+}
+// Corrige el stock de un producto directo desde su tarjeta en Vencimientos — misma acción de
+// backend que ya usan Recuento de stock (rkGuardarFila) y Recepción (rcAjustarGuardar), sin
+// duplicar lógica ni crear un endpoint nuevo.
+async function vcAjustarStockLote(filaIndex,sku){
+  const inp=document.getElementById('vc-es-'+filaIndex);
+  if(!inp)return;
+  const val=inp.value.trim();
+  if(val===''){showToast('Escribe la cantidad contada primero');return;}
+  const nuevo=Number(val);
+  if(isNaN(nuevo)||nuevo<0){showToast('Cantidad inválida');return;}
+  const btn=document.querySelector(`[data-savestock="${filaIndex}"]`);
+  if(btn){btn.disabled=true;btn.textContent='Guardando…';}
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'ajustar_stock',payload:{sku,stockNuevo:nuevo,responsable:''}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      const it=(DB.items||[]).find(x=>x.ref===sku);
+      if(it){it.stock=j.stockNuevo!=null?j.stockNuevo:nuevo;if(j.trackHabilitado)it.track=true;}
+      persist();
+      showToast((j.trackHabilitado?'Seguimiento activado · ':'Stock ajustado: ')+fmt1(nuevo));
+      vcAplicarFiltro();   // repinta la tarjeta con el nuevo "Stock actual" y cierra el mini-formulario
+    }else{
+      showToast(''+(j&&j.error?j.error:'No se pudo guardar'));
+      if(btn){btn.disabled=false;btn.textContent='Guardar';}
+    }
+  }catch(e){
+    showToast('Error de conexión al guardar');
+    if(btn){btn.disabled=false;btn.textContent='Guardar';}
+  }
 }
 // Aplica el precio sugerido por vencimiento al producto — reutiliza el endpoint editar_precio
 // (el mismo que usa la Ficha completa para cambiar precio: patrón seguro leer→cambiar→
