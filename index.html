@@ -1622,11 +1622,15 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
     <div class="in2-section-title" id="in2-atencion-title">Requiere atención</div>
     <div class="in2-atencion" id="in2-atencion"></div>
 
-    <div class="in2-section-title">VENCIMIENTOS</div>
-    <div class="in2-venc-sel" id="in2-venc-sel" style="display:flex;gap:6px;margin:0 0 10px">
-      <button type="button" class="in2-venc-chip" data-dias="7" style="flex:1;padding:9px 4px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-size:11.5px;font-weight:700;color:var(--ink);cursor:pointer;text-align:center">7 días<br><span class="n" style="font-size:15px">—</span></button>
-      <button type="button" class="in2-venc-chip" data-dias="15" style="flex:1;padding:9px 4px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-size:11.5px;font-weight:700;color:var(--ink);cursor:pointer;text-align:center">15 días<br><span class="n" style="font-size:15px">—</span></button>
-      <button type="button" class="in2-venc-chip" data-dias="30" style="flex:1;padding:9px 4px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-size:11.5px;font-weight:700;color:var(--ink);cursor:pointer;text-align:center">30 días<br><span class="n" style="font-size:15px">—</span></button>
+    <div class="in2-venc-card" id="in2-venc-card" style="display:flex;align-items:center;gap:7px;background:#fff;border:1.5px solid var(--line);border-left:4px solid #b3392b;border-radius:12px;padding:9px 10px;margin:0 0 14px;cursor:pointer">
+      <span id="in2-venc-main-n" style="font-size:19px;font-weight:800;color:#b3392b;flex:none;min-width:24px">—</span>
+      <span style="font-weight:700;font-size:12px;color:var(--ink);flex:none;white-space:nowrap">Vence ≤15 días</span>
+      <span style="flex:1;display:flex;gap:4px;overflow-x:auto;justify-content:flex-end">
+        <button type="button" class="in2-venc-mini" data-dias="7" style="flex:none;padding:5px 7px;border-radius:8px;border:1px solid var(--line);background:var(--paper);font-size:10.5px;font-weight:700;color:var(--ink);cursor:pointer;white-space:nowrap">7d <span id="in2-venc-d7">—</span></button>
+        <button type="button" class="in2-venc-mini" data-dias="15" style="flex:none;padding:5px 7px;border-radius:8px;border:1px solid var(--line);background:var(--paper);font-size:10.5px;font-weight:700;color:var(--ink);cursor:pointer;white-space:nowrap">15d <span id="in2-venc-d15">—</span></button>
+        <button type="button" class="in2-venc-mini" data-dias="30" style="flex:none;padding:5px 7px;border-radius:8px;border:1px solid var(--line);background:var(--paper);font-size:10.5px;font-weight:700;color:var(--ink);cursor:pointer;white-space:nowrap">30d <span id="in2-venc-d30">—</span></button>
+      </span>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;color:var(--muted)"><polyline points="9 6 15 12 9 18"/></svg>
     </div>
 
     <div class="in2-section-title">HOY</div>
@@ -3369,6 +3373,50 @@ function render(){
 // showScreen, abrirModal+vcLoad, rzAbrir, rkAbrir, cpAbrir, smAbrir) — cero lógica de
 // navegación duplicada.
 let _in2VencCache=null;
+let _in2VencUltimo=null; // último conteo REAL conocido (vencidos/d7/d15/d30) — se reutiliza para
+// pintar la tarjeta sin dejarla en "—"/0 mientras se espera una red nueva, si ya hubo una carga
+// previa en esta sesión. Nunca se inventa un número: si no hay nada previo, se espera al fetch.
+function in2CalcVenc(lotes){
+  // Solo lotes con fecha de vencimiento REGISTRADA y VÁLIDA — mismo requisito que ya aplica
+  // _vcTodos en el módulo real de Vencimientos (ver vcLoad: "j.lotes.filter(l=>!!l.fechaVencimiento)").
+  // Sin esto, un lote creado sin fecha (campo opcional en Recepción) inflaría los contadores.
+  const base=(lotes||[]).filter(l=>!!l.fechaVencimiento&&l.estado!=='Retirado'&&l.estado!=='Revisado');
+  // "Vencidos" = ya pasada la fecha (prioridad de mayor urgencia, mismo criterio que usa el
+  // propio módulo de Vencimientos para pintar "⚫"/"🔴" como vencido real).
+  const vencidos=base.filter(l=>l.prioridad==='').length;
+  // Mismo filtro EXACTO que usa _vcDiasFiltro en el módulo de Vencimientos (vcAplicarFiltro):
+  // los vencidos SIEMPRE cuentan en cualquier rango de días, no solo los "por vencer" dentro
+  // del rango — así el número de acá nunca contradice lo que se ve al entrar al módulo real.
+  const dentroDe=(dias)=>base.filter(l=>{const d=_diasVenc(l.fechaVencimiento);return d==null||d<0||d<=dias;}).length;
+  return {vencidos,d7:dentroDe(7),d15:dentroDe(15),d30:dentroDe(30)};
+}
+function in2PintarVencCard(c){
+  const set=(id,n)=>{const el=document.getElementById(id);if(el)el.textContent=String(n);}; // número REAL siempre, nunca "99+"
+  set('in2-venc-main-n',c.d15);
+  set('in2-venc-d7',c.d7);
+  set('in2-venc-d15',c.d15);
+  set('in2-venc-d30',c.d30);
+}
+// Pinta el bloque "Requiere atención" (Riesgo de quiebre / Lotes vencidos / Sin ventas ≥90
+// días). Separado en su propia función para poder llamarla DOS VECES en renderInicio2: una
+// apenas se calculan riesgo/sin-ventas (instantáneo, sin red), y otra cuando llegan los lotes
+// de vencimientos — así riesgo ya no espera a un fetch con el que no tiene nada que ver.
+function in2PintarAtencion(st){
+  const atencion=[];
+  if(st.riesgoNum>0)atencion.push({n:st.riesgoNum,t:'Riesgo de quiebre (clase A)',s:'Alta rotación con stock crítico',go:()=>{cerrarOverlays();try{const sel=document.getElementById('rz-clase');if(sel)sel.value='A';rzAbrir();}catch(e){}}});
+  if(st.vencidos>0)atencion.push({n:st.vencidos,t:'Lotes vencidos',s:'Gestionar cambio o merma',go:()=>{cerrarOverlays();abrirModal('vc-ov');try{vcShowList();vcLoad();}catch(e){}}});
+  if(st.sinMovNum>0)atencion.push({n:st.sinMovNum,t:'Sin ventas ≥90 días',s:'0 ventas en 90 días — revisar',go:()=>{cerrarOverlays();try{smAbrir();}catch(e){}}});
+  const attBox=document.getElementById('in2-atencion');
+  const attTitle=document.getElementById('in2-atencion-title');
+  if(atencion.length){
+    attTitle.classList.remove('hidden');attBox.classList.remove('hidden');
+    attBox.innerHTML=atencion.map((a,i)=>`<div class="in2-att-row" data-i="${i}" title="${a.s}"><span class="n">${a.n>99?'99+':a.n}</span><span class="txt"><span class="t">${a.t}</span></span><svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></div>`).join('');
+    attBox.querySelectorAll('.in2-att-row').forEach(el=>el.onclick=()=>atencion[+el.dataset.i].go());
+  }else{
+    attTitle.classList.add('hidden');
+    attBox.innerHTML='';attBox.classList.add('hidden');
+  }
+}
 async function renderInicio2(){
   const items=DB.items||[];
 
@@ -3388,74 +3436,52 @@ async function renderInicio2(){
     hdrSub.textContent=`${n} productos · Última sincronización ${hora}`;
   }
 
-  // --- Cálculos base: quiebre/pedir (analyze), sin movimiento (smCalcular) ---
+  // --- Cálculos base: quiebre/pedir (analyze), sin movimiento (smCalcular), riesgo de quiebre
+  // (rzCalcular) — TODOS síncronos, sobre datos que ya están en memoria (DB.items). No hay
+  // ningún motivo para que su render espere a la red, así que se pintan de inmediato acá,
+  // ANTES de tocar el fetch de vencimientos (que antes bloqueaba a Riesgo de quiebre sin
+  // necesidad — ver historial: ambos vivían en el mismo bloque `await`). ---
   let urg=0,ped=0;
   items.forEach(it=>{const a=analyze(it);if(a.status==='urgente')urg++;else if(a.status==='pedir')ped++;});
   try{smCalcular();}catch(e){}
   const sinMovNum=(_smTodos||[]).length;
+  let riesgoNum=0;
+  try{riesgoNum=(rzCalcular(true)||[]).length;}catch(e){}
+
+  // Primer pintado de "Requiere atención": riesgo y sin-ventas ya son números finales (no
+  // dependen de red). "Lotes vencidos" usa el último valor conocido si existe (evita mostrarlo
+  // en 0 un instante para luego saltar a otro número), o 0 si es la primera carga de la sesión.
+  in2PintarAtencion({riesgoNum,sinMovNum,vencidos:_in2VencUltimo?_in2VencUltimo.vencidos:0});
+  if(_in2VencUltimo)in2PintarVencCard(_in2VencUltimo);
 
   // --- Proveedores de hoy: sección siempre visible (sin acordeón) — se repinta acá para que
   // esté al día apenas se entra a Inicio, sin que el usuario tenga que tocar nada. ---
   try{refrescarProveedoresHoy();}catch(e){}
 
   // --- Vencimientos: mismo endpoint que usa el módulo Vencimientos, con cache corta para no
-  // repetir la llamada si se vuelve a Inicio varias veces seguidas en pocos segundos. ---
-  let porVencer=0,vencidos=0;
-  try{
-    if(!_in2VencCache||(Date.now()-_in2VencCache.ts)>15000){
+  // repetir la llamada si se vuelve a Inicio varias veces seguidas en pocos segundos. Si la
+  // caché sigue fresca, se usa tal cual sin ir a la red (recalculo sincrónico, instantáneo). ---
+  let vencidos=_in2VencUltimo?_in2VencUltimo.vencidos:0;
+  const cacheFresca=_in2VencCache&&(Date.now()-_in2VencCache.ts)<=15000;
+  const aplicarLotes=(lotes)=>{
+    const c=in2CalcVenc(lotes);
+    vencidos=c.vencidos;
+    _in2VencUltimo=c;
+    in2PintarVencCard(c);
+    in2PintarAtencion({riesgoNum,sinMovNum,vencidos});
+  };
+  if(cacheFresca){
+    aplicarLotes(_in2VencCache.lotes||[]);
+  }else{
+    try{
       const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=vencimientos');
       const j=await res.json();
-      _in2VencCache={ts:Date.now(),lotes:(j&&j.ok)?j.lotes:[]};
-    }
-    const lotes=_in2VencCache.lotes||[];
-    // "Por vencer pronto" solo cuenta lo que vence dentro de los próximos 15 días (mismo criterio
-    // que la pestaña "15 días" de Vencimientos, ver _diasVenc/_vcDiasFiltro) — antes contaba
-    // cualquier lote no vencido sin importar cuán lejos estuviera su fecha.
-    porVencer=lotes.filter(l=>{
-      if(l.estado==='Retirado'||l.estado==='Revisado'||l.prioridad==='')return false;
-      const d=_diasVenc(l.fechaVencimiento);
-      return d!=null&&d<=15;
-    }).length;
-    vencidos=lotes.filter(l=>l.prioridad===''&&l.estado!=='Revisado').length;
-    // --- Chips 7/15/30 días: mismo set de lotes, mismo criterio que "Por vencer pronto" de
-    // arriba, solo cambiando el umbral. Los vencidos (prioridad='') siempre cuentan, igual que
-    // en el filtro real del módulo de Vencimientos (ver _vcDiasFiltro). ---
-    const vencBase=lotes.filter(l=>l.estado!=='Retirado'&&l.estado!=='Revisado');
-    document.querySelectorAll('#in2-venc-sel .in2-venc-chip').forEach(chip=>{
-      const dias=Number(chip.dataset.dias)||0;
-      const n=vencBase.filter(l=>{
-        const d=_diasVenc(l.fechaVencimiento);
-        return d==null||d<0||d<=dias;
-      }).length;
-      const s=chip.querySelector('.n');
-      if(s)s.textContent=n>99?'99+':String(n);
-    });
-  }catch(e){}
-
-  // --- Riesgo de quiebre (alta rotación + crítico) — mismo cálculo que ese módulo. Solo
-  // clase A acá (los que más venden): clase B sumaba cientos de filas y volvía pesada tanto
-  // la cifra del panel de Inicio como la apertura del módulo (ver rzAbrir/rzRender, que arma
-  // un <input> + 3 botones por fila y les engancha eventos uno por uno). Si se necesita ver
-  // A+B, el selector "Clase A y B" del propio módulo sigue disponible. ---
-  let riesgoNum=0;
-  try{riesgoNum=(rzCalcular(true)||[]).length;}catch(e){}
-
-  // ---- Requiere atención: quiebres, vencimientos, stock crítico, sin movimiento ----
-  const atencion=[];
-  if(riesgoNum>0)atencion.push({n:riesgoNum,t:'Riesgo de quiebre (clase A)',s:'Alta rotación con stock crítico',go:()=>{cerrarOverlays();try{const sel=document.getElementById('rz-clase');if(sel)sel.value='A';rzAbrir();}catch(e){}}});
-  if(vencidos>0)atencion.push({n:vencidos,t:'Lotes vencidos',s:'Gestionar cambio o merma',go:()=>{cerrarOverlays();abrirModal('vc-ov');try{vcShowList();vcLoad();}catch(e){}}});
-  if(porVencer>0)atencion.push({n:porVencer,t:'Vence ≤15 días',s:'Revisar en los próximos días',go:()=>{try{abrirVencimientosDias(15);}catch(e){}}});
-  if(sinMovNum>0)atencion.push({n:sinMovNum,t:'Sin ventas ≥90 días',s:'0 ventas en 90 días — revisar',go:()=>{cerrarOverlays();try{smAbrir();}catch(e){}}});
-  const attBox=document.getElementById('in2-atencion');
-  const attTitle=document.getElementById('in2-atencion-title');
-  if(atencion.length){
-    attTitle.classList.remove('hidden');attBox.classList.remove('hidden');
-    attBox.innerHTML=atencion.map((a,i)=>`<div class="in2-att-row" data-i="${i}" title="${a.s}"><span class="n">${a.n>99?'99+':a.n}</span><span class="txt"><span class="t">${a.t}</span></span><svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></div>`).join('');
-    attBox.querySelectorAll('.in2-att-row').forEach(el=>el.onclick=()=>atencion[+el.dataset.i].go());
-  }else{
-    attTitle.classList.add('hidden');
-    attBox.innerHTML='';attBox.classList.add('hidden');
+      const lotes=(j&&j.ok)?j.lotes:[];
+      _in2VencCache={ts:Date.now(),lotes};
+      aplicarLotes(lotes);
+    }catch(e){}
   }
+  const vencCounts=_in2VencUltimo||{d7:0,d15:0,d30:0};
 
   // ---- Notificaciones: mismo badge combinado que ya usa "Más" (llegadas + riesgo +
   // proveedores de hoy: a quién pedir + qué recepcionar) ----
@@ -3477,7 +3503,9 @@ async function renderInicio2(){
   // con algo pendiente de recepcionar), Vencimientos (por vencer+vencidos). ----
   actualizarBadgeBn('bn-pedidos-badge',urg+ped);
   actualizarBadgeBn('bn-recepcion-badge',recepHoyNum);
-  actualizarBadgeBn('bn-vencimientos-badge',porVencer+vencidos);
+  // bn-vencimientos-badge: d15 ya incluye los vencidos (mismo criterio que _vcDiasFiltro, ver
+  // in2CalcVenc), así que sumar 'vencidos' aparte duplicaría el conteo — no hace falta.
+  actualizarBadgeBn('bn-vencimientos-badge',vencCounts.d15);
 }
 document.getElementById('in2-notif-btn').onclick=()=>{cerrarOverlays();abrirModal('mas-ov');};
 function actualizarBadgeBn(id,n){
@@ -9922,8 +9950,9 @@ function abrirVencimientosDias(dias){
   document.querySelectorAll('#vc-diasfilter button').forEach(b=>b.classList.toggle('active',(Number(b.dataset.dias)||0)===(dias||0)));
   vcLoad();
 }
-document.querySelectorAll('#in2-venc-sel .in2-venc-chip').forEach(chip=>{
-  chip.onclick=()=>abrirVencimientosDias(Number(chip.dataset.dias)||0);
+document.getElementById('in2-venc-card').onclick=()=>abrirVencimientosDias(15);
+document.querySelectorAll('#in2-venc-card .in2-venc-mini').forEach(mini=>{
+  mini.onclick=(e)=>{e.stopPropagation();abrirVencimientosDias(Number(mini.dataset.dias)||0);};
 });
 // Puebla el filtro de proveedor SOLO con los que realmente tienen lotes de vencimiento
 // activos (no todo el catálogo de proveedores) — mismo criterio que ya usan otros filtros de
