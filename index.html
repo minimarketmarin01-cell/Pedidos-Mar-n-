@@ -1622,6 +1622,13 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
     <div class="in2-section-title" id="in2-atencion-title">Requiere atención</div>
     <div class="in2-atencion" id="in2-atencion"></div>
 
+    <div class="in2-section-title">VENCIMIENTOS</div>
+    <div class="in2-venc-sel" id="in2-venc-sel" style="display:flex;gap:6px;margin:0 0 10px">
+      <button type="button" class="in2-venc-chip" data-dias="7" style="flex:1;padding:9px 4px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-size:11.5px;font-weight:700;color:var(--ink);cursor:pointer;text-align:center">7 días<br><span class="n" style="font-size:15px">—</span></button>
+      <button type="button" class="in2-venc-chip" data-dias="15" style="flex:1;padding:9px 4px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-size:11.5px;font-weight:700;color:var(--ink);cursor:pointer;text-align:center">15 días<br><span class="n" style="font-size:15px">—</span></button>
+      <button type="button" class="in2-venc-chip" data-dias="30" style="flex:1;padding:9px 4px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-size:11.5px;font-weight:700;color:var(--ink);cursor:pointer;text-align:center">30 días<br><span class="n" style="font-size:15px">—</span></button>
+    </div>
+
     <div class="in2-section-title">HOY</div>
 
     <div class="pd-mod-hdr" style="margin:0 0 6px"><span class="pd-mod-title">📅 A quién pedir</span><button type="button" class="pd-cfg-btn" id="calprov-cfg-btn" aria-label="Configurar calendario de proveedores" title="Configurar calendario de proveedores">⚙</button></div>
@@ -2220,6 +2227,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <button id="mas-q-riesgo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><br>Riesgo de quiebre<span class="mas-badge" id="riesgo-badge"></span></button>
         <button id="mas-q-abc"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg><br>Clasificación ABC</button>
         <button id="mas-q-recneg"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="6" y="4" width="12" height="17" rx="1.5"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><line x1="12" y1="10" x2="12" y2="14"/><circle cx="12" cy="17.3" r="0.2" fill="currentColor" stroke-width="0"/></svg><br>Recibidos en negativo</button>
+        <button id="mas-q-reportedia"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg><br>Reportes del día</button>
       </div>
       <div class="method" style="margin:0;padding:16px 18px">
         <div class="scale-head" id="ayuda-head" style="background:linear-gradient(100deg,#2a2118,#3a2c1a);margin:-16px -18px 0;padding:12px 18px;border-radius:var(--radius-card) var(--radius-card) 0 0"><div><div class="t">ℹ️ Cómo funciona tu app</div></div><svg class="accordion-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
@@ -2279,13 +2287,26 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <option value=""><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="4" width="16" height="17" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="17" x2="13" y2="17"/></svg> Todos los proveedores</option>
         </select>
         <select id="rz-clase" style="width:110px;padding:8px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:12.5px">
+          <option value="A" selected>Solo clase A</option>
           <option value="AB">Clase A y B</option>
-          <option value="A">Solo clase A</option>
         </select>
       </div>
       <button type="button" id="rz-ver-excluidos" style="width:100%;margin-bottom:10px;padding:7px;border-radius:9px;border:1px dashed var(--line);background:transparent;color:var(--muted);font-weight:600;font-size:11.5px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><circle cx="12" cy="12" r="9"/><line x1="5.5" y1="5.5" x2="18.5" y2="18.5"/></svg> Ver productos excluidos<span id="rz-excl-count"></span></button>
       <div id="rz-excluidos-box" class="hidden" style="margin-bottom:10px"></div>
       <div id="rz-list"></div>
+    </div>
+  </div>
+</div>
+
+<div class="mm-ov hidden" id="rd-ov">
+  <div class="mm-card">
+    <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mm-head-ic"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>Reportes del día</h3></div>
+    <div class="mm-topbar"><button class="loadbtn" id="rd-cerrar" style="width:100%">Cerrar</button></div>
+    <div class="mm-body">
+      <div class="cat" style="margin-bottom:8px;line-height:1.4">Todos los movimientos registrados ese día: recepciones, mermas, ajustes de stock, vencimientos gestionados y más — mismo historial que ya queda en auditoría, filtrado por fecha.</div>
+      <div class="pd-datechip-row" style="margin-bottom:10px"><label class="pd-datechip" for="rd-fecha"><span class="ic">📅</span><input type="date" id="rd-fecha"><span class="car">▾</span></label></div>
+      <div class="hm-summary" style="margin-bottom:8px"><span class="lbl" id="rd-lbl">—</span></div>
+      <div id="rd-list"></div>
     </div>
   </div>
 </div>
@@ -3396,17 +3417,34 @@ async function renderInicio2(){
       return d!=null&&d<=15;
     }).length;
     vencidos=lotes.filter(l=>l.prioridad===''&&l.estado!=='Revisado').length;
+    // --- Chips 7/15/30 días: mismo set de lotes, mismo criterio que "Por vencer pronto" de
+    // arriba, solo cambiando el umbral. Los vencidos (prioridad='') siempre cuentan, igual que
+    // en el filtro real del módulo de Vencimientos (ver _vcDiasFiltro). ---
+    const vencBase=lotes.filter(l=>l.estado!=='Retirado'&&l.estado!=='Revisado');
+    document.querySelectorAll('#in2-venc-sel .in2-venc-chip').forEach(chip=>{
+      const dias=Number(chip.dataset.dias)||0;
+      const n=vencBase.filter(l=>{
+        const d=_diasVenc(l.fechaVencimiento);
+        return d==null||d<0||d<=dias;
+      }).length;
+      const s=chip.querySelector('.n');
+      if(s)s.textContent=n>99?'99+':String(n);
+    });
   }catch(e){}
 
-  // --- Riesgo de quiebre (alta rotación + crítico) — mismo cálculo que ese módulo ---
+  // --- Riesgo de quiebre (alta rotación + crítico) — mismo cálculo que ese módulo. Solo
+  // clase A acá (los que más venden): clase B sumaba cientos de filas y volvía pesada tanto
+  // la cifra del panel de Inicio como la apertura del módulo (ver rzAbrir/rzRender, que arma
+  // un <input> + 3 botones por fila y les engancha eventos uno por uno). Si se necesita ver
+  // A+B, el selector "Clase A y B" del propio módulo sigue disponible. ---
   let riesgoNum=0;
-  try{riesgoNum=(rzCalcular(false)||[]).length;}catch(e){}
+  try{riesgoNum=(rzCalcular(true)||[]).length;}catch(e){}
 
   // ---- Requiere atención: quiebres, vencimientos, stock crítico, sin movimiento ----
   const atencion=[];
-  if(riesgoNum>0)atencion.push({n:riesgoNum,t:'Riesgo de quiebre',s:'Alta rotación con stock crítico',go:()=>{cerrarOverlays();try{rzAbrir();}catch(e){}}});
+  if(riesgoNum>0)atencion.push({n:riesgoNum,t:'Riesgo de quiebre (clase A)',s:'Alta rotación con stock crítico',go:()=>{cerrarOverlays();try{const sel=document.getElementById('rz-clase');if(sel)sel.value='A';rzAbrir();}catch(e){}}});
   if(vencidos>0)atencion.push({n:vencidos,t:'Lotes vencidos',s:'Gestionar cambio o merma',go:()=>{cerrarOverlays();abrirModal('vc-ov');try{vcShowList();vcLoad();}catch(e){}}});
-  if(porVencer>0)atencion.push({n:porVencer,t:'Vence ≤15 días',s:'Revisar en los próximos días',go:()=>{cerrarOverlays();abrirModal('vc-ov');try{vcShowList();vcLoad();}catch(e){}}});
+  if(porVencer>0)atencion.push({n:porVencer,t:'Vence ≤15 días',s:'Revisar en los próximos días',go:()=>{try{abrirVencimientosDias(15);}catch(e){}}});
   if(sinMovNum>0)atencion.push({n:sinMovNum,t:'Sin ventas ≥90 días',s:'0 ventas en 90 días — revisar',go:()=>{cerrarOverlays();try{smAbrir();}catch(e){}}});
   const attBox=document.getElementById('in2-atencion');
   const attTitle=document.getElementById('in2-atencion-title');
@@ -9873,6 +9911,20 @@ document.querySelectorAll('#vc-diasfilter button').forEach(b=>b.onclick=()=>{
   vcRecalcularProgTotal();
   vcAplicarFiltro();
 });
+// Abre el módulo de Vencimientos directo en la pestaña de días indicada (7/15/30) — usada por
+// la tarjeta "Vence ≤15 días" del panel de Inicio y por los chips 7/15/30 del mismo panel, para
+// no obligar al usuario a entrar y tocar el filtro a mano cada vez.
+function abrirVencimientosDias(dias){
+  cerrarOverlays();
+  abrirModal('vc-ov');
+  vcShowList();
+  _vcDiasFiltro=dias||0;
+  document.querySelectorAll('#vc-diasfilter button').forEach(b=>b.classList.toggle('active',(Number(b.dataset.dias)||0)===(dias||0)));
+  vcLoad();
+}
+document.querySelectorAll('#in2-venc-sel .in2-venc-chip').forEach(chip=>{
+  chip.onclick=()=>abrirVencimientosDias(Number(chip.dataset.dias)||0);
+});
 // Puebla el filtro de proveedor SOLO con los que realmente tienen lotes de vencimiento
 // activos (no todo el catálogo de proveedores) — mismo criterio que ya usan otros filtros de
 // la app, para no llenar el selector de opciones sin resultados.
@@ -10135,13 +10187,26 @@ function vcRender(lotes,containerId,esBusqueda){
     if(esPendientes)return lotes.map(l=>vcFilaHtml(l)).join('');
     const grupos={};
     lotes.forEach(l=>{const p=vcProveedorDe(l);(grupos[p]=grupos[p]||[]).push(l);});
-    const provs=Object.keys(grupos).sort((a,b)=>String(a).localeCompare(String(b),'es'));
-    return provs.map(p=>{
-      const items=grupos[p].sort((a,b)=>{
+    // Cada grupo se ordena internamente por fecha más próxima primero, y los grupos entre sí
+    // también se ordenan por su fecha más próxima (ya no alfabético por proveedor) — así el
+    // vencimiento más urgente de toda la lista siempre queda arriba, sin importar a qué
+    // proveedor pertenezca.
+    const provs=Object.keys(grupos);
+    provs.forEach(p=>{
+      grupos[p].sort((a,b)=>{
         const da=_diasVenc(a.fechaVencimiento),db=_diasVenc(b.fechaVencimiento);
         if(da==null)return 1; if(db==null)return -1;
         return da-db;
       });
+    });
+    provs.sort((a,b)=>{
+      const da=_diasVenc(grupos[a][0].fechaVencimiento),db=_diasVenc(grupos[b][0].fechaVencimiento);
+      if(da==null&&db==null)return String(a).localeCompare(String(b),'es');
+      if(da==null)return 1; if(db==null)return -1;
+      return da-db;
+    });
+    return provs.map(p=>{
+      const items=grupos[p];
       return `<div class="gon-cat"><div class="gon-cat-head"><span class="cat-nom">${p}</span><span class="gon-counts">${items.length} lote${items.length===1?'':'s'}</span></div>${items.map(l=>vcFilaHtml(l)).join('')}</div>`;
     }).join('');
   })();
@@ -12134,7 +12199,7 @@ function rzCalcular(soloClaseA){
     });
 }
 function rzActualizarBadge(){
-  const lista=rzCalcular(false);
+  const lista=rzCalcular(true); // mismo criterio que el panel de Inicio: solo clase A
   _rzUltimoConteo=lista.length;
   const rb=document.getElementById('riesgo-badge');
   if(rb){
@@ -12285,6 +12350,58 @@ async function rzGuardarStock(sku,rid){
 }
 document.getElementById('mas-q-riesgo').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');rzAbrir();};
 document.getElementById('rz-cerrar').onclick=()=>cerrarModal('rz-ov');
+
+// ===================== REPORTES DEL DÍA (todos los movimientos de auditoría por fecha) =====================
+const ACCION_LABELS={
+  recepcion_stock:'📦 Recepción',
+  reconteo_stock:'🔢 Reconteo de stock',
+  merma:'🗑️ Merma',
+  retiro_vencimiento:'📅 Retiro por vencimiento',
+  cambio_precio:'💲 Cambio de precio',
+  descuento_activado:'🏷️ Descuento activado',
+  precio_restaurado:'↩️ Precio restaurado',
+  producto_creado:'✨ Producto creado',
+  ajuste_manual:'✏️ Ajuste manual'
+};
+function rdEtiquetaAccion(a){return ACCION_LABELS[a]||('• '+String(a||'').replace(/_/g,' '));}
+function rdAbrir(){
+  document.getElementById('mas-ov').classList.add('hidden');
+  abrirModal('rd-ov');
+  const inp=document.getElementById('rd-fecha');
+  if(inp&&!inp.value)inp.value=isoLocalDate(new Date());
+  rdCargar();
+}
+async function rdCargar(){
+  const inp=document.getElementById('rd-fecha');
+  const fecha=inp?inp.value:isoLocalDate(new Date());
+  const box=document.getElementById('rd-list');
+  const lbl=document.getElementById('rd-lbl');
+  box.innerHTML='<div class="vc-empty">Cargando…</div>';
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=reporte_dia&fecha='+encodeURIComponent(fecha));
+    const j=await res.json();
+    const rep=(j&&j.ok)?j.reporte:{items:[],total:0};
+    const items=rep.items||[];
+    lbl.textContent=items.length+' movimiento'+(items.length===1?'':'s')+' registrado'+(items.length===1?'':'s');
+    if(!items.length){box.innerHTML='<div class="vc-empty">Sin movimientos registrados en esta fecha.</div>';return;}
+    box.innerHTML=items.map(it=>{
+      const hora=(String(it.fecha||'').split(' ')[1])||'';
+      const cant=(it.cantidad!=null&&it.cantidad!=='')?(' · '+it.cantidad+' u'):(it.stock!=null?(' · stock: '+it.stock):'');
+      return `<div class="fp-row" style="flex-direction:column;align-items:stretch;gap:2px;padding:9px 0">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+          <span style="font-weight:700;font-size:12.5px">${rdEtiquetaAccion(it.accion)}</span>
+          <span style="font-size:11px;color:var(--muted);white-space:nowrap">${hora}</span>
+        </div>
+        <div style="font-size:12.5px">${(it.nombre||it.sku||'').replace(/</g,'&lt;')}${cant}</div>
+        ${it.motivo?`<div style="font-size:11px;color:var(--muted)">${String(it.motivo).replace(/</g,'&lt;')}</div>`:''}
+        <div style="font-size:10.5px;color:var(--muted)">${it.responsable||'—'}</div>
+      </div>`;
+    }).join('');
+  }catch(e){box.innerHTML='<div class="vc-empty">Error al cargar. Intenta de nuevo.</div>';}
+}
+document.getElementById('mas-q-reportedia').onclick=rdAbrir;
+document.getElementById('rd-cerrar').onclick=()=>cerrarModal('rd-ov');
+document.getElementById('rd-fecha').onchange=rdCargar;
 document.getElementById('rz-prov').onchange=rzRender;
 document.getElementById('rz-clase').onchange=rzRender;
 document.getElementById('rz-ver-excluidos').onclick=rzMostrarExcluidos;
