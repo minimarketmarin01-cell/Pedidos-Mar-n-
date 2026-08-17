@@ -3952,7 +3952,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-17.2';
+const APP_VERSION='2026-08-17.3';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -5422,7 +5422,7 @@ const PcWidget=(function(){
         '<div class="mm-field" style="margin-bottom:8px">'+
           '<div style="display:flex;gap:6px">'+
             '<button type="button" class="pc-modo-btn active" id="'+pfx+'-modo-unidad" data-modo="unidad">Por unidad</button>'+
-            '<button type="button" class="pc-modo-btn" id="'+pfx+'-modo-caja" data-modo="caja">Por caja</button>'+
+            '<button type="button" class="pc-modo-btn" id="'+pfx+'-modo-caja" data-modo="caja">Por caja/Display</button>'+
           '</div>'+
         '</div>'+
         '<div class="mm-field hidden" id="'+pfx+'-caja-campo" style="margin-bottom:8px">'+
@@ -5533,17 +5533,32 @@ const PcWidget=(function(){
       if(cfg.onCambio)cfg.onCambio();
     }
     if(cfg.mostrarUnidadCaja){
+      // Costo por unidad "de fábrica" (según el IVA elegido) — se guarda acá para poder
+      // reconstruir el costo total de la caja/display sin pedirle al usuario que lo vuelva a
+      // escribir cada vez que cambia de presentación o de unidades por caja.
+      function sincronizarCostoPresentacion(){
+        const nuevoValor=PriceCalc.costoEnPresentacion(state.costoUnitarioBase||0,state.modo,$('unidades-caja').value);
+        $('costo').value=nuevoValor?String(Math.round(nuevoValor*100)/100):'';
+      }
       function setModo(modo){
         state.modo=modo;
         $('modo-unidad').classList.toggle('active',modo==='unidad');
         $('modo-caja').classList.toggle('active',modo==='caja');
         $('caja-campo').classList.toggle('hidden',modo!=='caja');
-        $('costo-lbl').textContent=modo==='caja'?(cfg.costoLabel||'Costo')+' de la caja':(cfg.costoLabel||'Costo');
+        $('costo-lbl').textContent=modo==='caja'?(cfg.costoLabel||'Costo')+' de la caja/display':(cfg.costoLabel||'Costo');
+        sincronizarCostoPresentacion();
         recalcularTodo();
       }
       $('modo-unidad').onclick=()=>setModo('unidad');
       $('modo-caja').onclick=()=>setModo('caja');
-      $('unidades-caja').addEventListener('input',recalcularTodo);
+      $('unidades-caja').addEventListener('input',()=>{sincronizarCostoPresentacion();recalcularTodo();});
+      // El campo Costo sigue siendo la fuente de verdad cuando el usuario lo edita a mano: cada
+      // vez que cambia, se recalcula el costo por unidad, para poder reconstruir el valor
+      // correcto si después cambia el modo o las unidades por caja.
+      $('costo').addEventListener('input',()=>{
+        state.costoUnitarioBase=PriceCalc.costoUnitario($('costo').value,state.modo,$('unidades-caja').value);
+      });
+      state.costoUnitarioBase=PriceCalc.costoUnitario($('costo').value,state.modo||'unidad',$('unidades-caja').value);
       setModo(state.modo||'unidad');
     }
     function setIva(modo){
@@ -7837,7 +7852,17 @@ const PriceCalc=(function(){
     if(!precio)return null;
     return ((precio-(Number(costoBrutoVal)||0))/precio)*100;
   }
-  return {IVA,costoUnitario,costoBruto,precioDesdeMargen,margenDesdePrecio};
+  // Inversa de costoUnitario(): a partir de un costo YA por unidad, arma cuánto costaría la
+  // presentación completa (unidadesCaja). Se usa solo para mantener sincronizado lo que se ve en
+  // el campo "Costo" al cambiar de modo o de "Unidades por caja" — el margen/precio siguen
+  // calculándose con costoUnitario()/costoBruto() tal cual.
+  function costoEnPresentacion(costoUnitarioVal,modo,unidadesCaja){
+    costoUnitarioVal=Number(costoUnitarioVal)||0;
+    if(modo!=='caja')return costoUnitarioVal;
+    const uCaja=Number(unidadesCaja)||0;
+    return uCaja>0?costoUnitarioVal*uCaja:costoUnitarioVal;
+  }
+  return {IVA,costoUnitario,costoBruto,costoEnPresentacion,precioDesdeMargen,margenDesdePrecio};
 })();
 
 
