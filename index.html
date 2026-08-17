@@ -3952,7 +3952,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-17.3';
+const APP_VERSION='2026-08-17.4';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -7503,8 +7503,13 @@ document.getElementById('cp-ps-sugerir').onclick=()=>{
 // ejecutarse en un punto distinto al esperado del script (ver cpReset más abajo, que ya
 // depende de este objeto existiendo).
 var cpState={modo:'unidad',ivaModo:'con',precioTocado:false,margenTocado:false,redondeo:'none'};
+// Estado APARTE para la Calculadora de precio (prefijo cp-pr) — antes compartía cpState con el
+// toggle de "Cantidad inicial" de arriba, pero son dos conceptos distintos (cuántas unidades
+// arrancan de stock vs. costo/precio del producto): compartir la misma propiedad .modo hacía
+// que tocar un toggle pisara el estado del otro. Mismo patrón que fpPState en Ficha de producto.
+var cpPState={modo:'unidad',ivaModo:'con',precioTocado:false};
 function cpReset(){
-  ['cp-nombre','cp-precio','cp-costo','cp-barcode','cp-stock','cp-stock-min','cp-fecha-dd','cp-fecha-mm','cp-fecha-aaaa','cp-cat-nuevanom','cp-cantidad','cp-unidades-caja','cp-fecha'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['cp-nombre','cp-barcode','cp-stock','cp-stock-min','cp-fecha-dd','cp-fecha-mm','cp-fecha-aaaa','cp-cat-nuevanom','cp-cantidad','cp-unidades-caja','cp-fecha'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   const track=document.getElementById('cp-track');if(track)track.checked=true;
   const iva=document.getElementById('cp-iva');if(iva)iva.checked=true;
   const activo=document.getElementById('cp-activo');if(activo)activo.checked=true;
@@ -7519,6 +7524,7 @@ function cpReset(){
   try{cpToggleStock();}catch(e){}
   try{cpValidar();}catch(e){}
   cpState.ivaModo='con';cpState.modo='unidad';cpState.precioTocado=false;
+  cpPState.ivaModo='con';cpPState.modo='unidad';cpPState.precioTocado=false;
   try{cpMontarPrecio();}catch(e){}
   try{cpSetModoCantidad('unidad');}catch(e){}
   try{cpRenderResumen();}catch(e){}
@@ -7856,11 +7862,12 @@ const PriceCalc=(function(){
   // presentación completa (unidadesCaja). Se usa solo para mantener sincronizado lo que se ve en
   // el campo "Costo" al cambiar de modo o de "Unidades por caja" — el margen/precio siguen
   // calculándose con costoUnitario()/costoBruto() tal cual.
-  function costoEnPresentacion(costoUnitarioVal,modo,unidadesCaja){
+  function costoEnPresentacion(costoUnitarioVal,modo,unidadesCaja,cantidadCajas){
     costoUnitarioVal=Number(costoUnitarioVal)||0;
     if(modo!=='caja')return costoUnitarioVal;
     const uCaja=Number(unidadesCaja)||0;
-    return uCaja>0?costoUnitarioVal*uCaja:costoUnitarioVal;
+    const cCajas=Number(cantidadCajas)||1;
+    return uCaja>0?costoUnitarioVal*uCaja*cCajas:costoUnitarioVal;
   }
   return {IVA,costoUnitario,costoBruto,costoEnPresentacion,precioDesdeMargen,margenDesdePrecio};
 })();
@@ -7874,15 +7881,18 @@ let cpPcApi=null; // instancia devuelta por PcWidget.wire() para esta pantalla �
 function cpMontarPrecio(){
   const mount=document.getElementById('cp-pc-mount');
   if(!mount)return;
-  cpState.ivaModo=cpState.ivaModo||'con';
+  cpPState.ivaModo=cpPState.ivaModo||'con';
+  // Costo por unidad "de fábrica" — arranca en blanco (cp-pr-costo:null más abajo), se usa para
+  // reconstruir el total al cambiar de modo/unidades sin que el usuario lo vuelva a escribir.
+  cpPState.costoUnitarioBase=0;
   mount.innerHTML=PcWidget.render({
-    prefix:'cp',costo:null,margen:30,precio:null,
-    mostrarUnidadCaja:false, // el toggle unidad/caja de Crear producto es para "Cantidad inicial", no para el costo — se deja fuera del widget
+    prefix:'cp-pr',costo:null,margen:30,precio:null,
+    mostrarUnidadCaja:true, // Por unidad / Por caja-display para el COSTO — prefijo cp-pr para no chocar con cp-modo-unidad/cp-modo-caja de "Cantidad inicial"
     mostrarBotonAplicar:false, // acá no hay "aplicar": el precio de venta ES directamente el que se va a crear
     costoLabel:'Costo'
   });
   cpPcApi=PcWidget.wire({
-    prefix:'cp',state:cpState,mostrarUnidadCaja:false,
+    prefix:'cp-pr',state:cpPState,mostrarUnidadCaja:true,
     autocompletar:true, // Crear producto: el precio se auto-completa solo mientras el usuario no lo edite a mano — no hay botón "Aplicar" separado
     costoLabel:'Costo',
     onCambio:()=>cpRenderResumen(),
@@ -8519,7 +8529,7 @@ function fcAbrirPanelCrear(row){
   cpAbrir();
   setTimeout(()=>{ // cpAbrir() carga catálogo/proveedores async — se rellena en el siguiente tick
     const nombreInp=document.getElementById('cp-nombre');if(nombreInp)nombreInp.value=nombre;
-    const costoInp=document.getElementById('cp-costo');
+    const costoInp=document.getElementById('cp-pr-costo');
     if(costoInp){costoInp.value=costo||'';costoInp.dispatchEvent(new Event('input',{bubbles:true}));}
     // Usa el mismo helper que Crear producto para que el combo visible (input) y el select
     // oculto queden sincronizados — setear .value del select solo no actualiza lo que se ve.
@@ -8531,7 +8541,7 @@ function fcAbrirPanelCrear(row){
     // escucha) para que el margen objetivo no lo sobrescriba después.
     try{
       if(precio){
-        const precioInp=document.getElementById('cp-precio');
+        const precioInp=document.getElementById('cp-pr-precio');
         if(precioInp){precioInp.value=precio;precioInp.dispatchEvent(new Event('input',{bubbles:true}));}
       }
     }catch(e){}
@@ -9585,11 +9595,11 @@ document.getElementById('cp-scan').onclick=()=>{
   document.getElementById('cp-ov').classList.add('hidden');
   openScanner(code=>{reopen();document.getElementById('cp-barcode').value=code;cpAutocompletarPorCodigo(code);},reopen);
 };
-// Wrapper fino sobre PriceCalc para el guardado real — el modo unidad/caja de Crear producto
-// para el COSTO ya no existe (el widget de precio no lo usa, mostrarUnidadCaja:false), así
-// que el costo se guarda siempre "por unidad" con el modo de IVA elegido en el widget.
+// Wrapper fino sobre PriceCalc para el guardado real — Loyverse siempre guarda el costo POR
+// UNIDAD, nunca el de la caja/display: si cpPState.modo es 'caja', costoBruto ya divide por
+// "Unidades por caja" internamente (mismo mecanismo que Ficha/Recepción).
 function cpCostoBruto(){
-  return PriceCalc.costoBruto(document.getElementById('cp-costo').value,'unidad',null,cpState.ivaModo);
+  return PriceCalc.costoBruto(document.getElementById('cp-pr-costo').value,cpPState.modo,document.getElementById('cp-pr-unidades-caja').value,cpPState.ivaModo);
 }
 document.getElementById('cp-guardar').onclick=async()=>{
   const btn=document.getElementById('cp-guardar');
@@ -9599,7 +9609,7 @@ document.getElementById('cp-guardar').onclick=async()=>{
     const categoryId=sel.value;
     const categoriaNombre=(sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:'');
     if(!nombre||!categoryId){cpValidar();showToast('Falta el nombre o la categoría');return;}
-    const precioRaw=(document.getElementById('cp-precio').value||'').replace(/[^\d]/g,'');
+    const precioRaw=(document.getElementById('cp-pr-precio').value||'').replace(/[^\d]/g,'');
     // Loyverse siempre guarda el costo POR UNIDAD, nunca el costo de la caja. cpCostoBruto()
     // ya hace ese trabajo: si el modo es "caja" divide por unidades/caja, y respeta el toggle
     // Con/Sin IVA (mismo cálculo que ya usa la vista previa del precio). El costo de la caja
@@ -11962,18 +11972,18 @@ function rcProductoNoEncontrado(code){
   cpAbrir();
   document.getElementById('cp-barcode').value=code;
   cpAutocompletarPorCodigo(code);
-  // La cantidad y el costo se vuelcan a los campos NUEVOS (cp-cantidad / cp-costo); cp-stock
+  // La cantidad y el costo se vuelcan a los campos NUEVOS (cp-cantidad / cp-pr-costo); cp-stock
   // ya no se escribe a mano — lo completa cpRenderResumen() a partir de la cantidad.
   // También se hereda el modo Con/Sin IVA que venía elegido en Recepción, para no perderlo.
-  if(_rcPendiente.costo){const ci=document.getElementById('cp-costo');if(ci){ci.value=_rcPendiente.costo;}}
+  if(_rcPendiente.costo){const ci=document.getElementById('cp-pr-costo');if(ci){ci.value=_rcPendiente.costo;}}
   if(_rcPendiente.cantidad){document.getElementById('cp-cantidad').value=_rcPendiente.cantidad;document.getElementById('cp-track').checked=true;cpToggleStock();}
   if(_rcPendiente.fecha)document.getElementById('cp-fecha').value=_rcPendiente.fecha;
   // Hereda el modo Con/Sin IVA que venía elegido en Recepción — toca directo los botones del
   // widget (mismo patrón que un clic real) para que dispare su propio recálculo interno.
   try{
-    const btnIva=document.getElementById('cp-iva-'+(rcState.ivaModo==='sin'?'sin':'con'));
+    const btnIva=document.getElementById('cp-pr-iva-'+(rcState.ivaModo==='sin'?'sin':'con'));
     if(btnIva)btnIva.click();
-    const ci=document.getElementById('cp-costo');
+    const ci=document.getElementById('cp-pr-costo');
     if(ci)ci.dispatchEvent(new Event('input',{bubbles:true}));
   }catch(_){}
   try{cpRenderResumen();}catch(_){}
@@ -12016,7 +12026,7 @@ document.getElementById('rc-qty-mas').onclick=rcQtyMas;
     btn.addEventListener('pointercancel',detenerHold);
   });
 })();
-document.getElementById('rc-cantidad').oninput=()=>{rcValidar();rcRenderResumen();rcRecalcularCostoConModo();};
+document.getElementById('rc-cantidad').oninput=()=>{rcValidar();rcSincronizarCostoPresentacion();rcRenderResumen();rcRecalcularCostoConModo();};
 document.getElementById('rc-fecha').oninput=()=>{rcValidar();rcGuardarBorrador();};
 
 // FIX: esta función se llamaba desde varios puntos (rcShowPicked→rcSetModo, rcQtyMenos/Mas,
@@ -12052,6 +12062,10 @@ function rcMontarPrecio(){
   const mount=document.getElementById('rc-pc-mount');
   if(!mount)return;
   rcState.ivaModo=rcState.ivaModo||'con';
+  // Costo por unidad "de fábrica" — arranca en blanco porque Recepción no prellena costo (cada
+  // recepción se escribe de cero), y se usa para reconstruir el total sin perder precisión al
+  // cambiar de modo/cantidad/unidades — ver rcSincronizarCostoPresentacion.
+  rcState.costoUnitarioBase=0;
   mount.innerHTML=PcWidget.render({
     prefix:'rc',costo:null,margen:null,precio:null,
     mostrarUnidadCaja:false, // el toggle unidad/caja de Recepción ya vive en "Cantidad recibida", justo arriba — se comparte el mismo rcState.modo en vez de duplicar el control
@@ -12082,7 +12096,24 @@ function rcMontarPrecio(){
   document.getElementById('rc-costo').addEventListener('input',rcActualizarCostoUnitarioHint);
   document.getElementById('rc-iva-con').addEventListener('click',rcActualizarCostoUnitarioHint);
   document.getElementById('rc-iva-sin').addEventListener('click',rcActualizarCostoUnitarioHint);
+  // Cada vez que el usuario edita "Costo" a mano, se recalcula el costo por unidad "de fábrica"
+  // (con el modo/cantidad/unidades actuales), para poder reconstruir el valor correcto si
+  // después cambia de presentación, cantidad de cajas o unidades por caja sin volver a escribir.
+  document.getElementById('rc-costo').addEventListener('input',()=>{
+    const cantidadCajas=rcState.modo==='caja'?(Number(document.getElementById('rc-cantidad').value)||1):1;
+    rcState.costoUnitarioBase=PriceCalc.costoUnitario(document.getElementById('rc-costo').value,rcState.modo,document.getElementById('rc-unidades-caja').value,cantidadCajas);
+  });
   rcActualizarCostoUnitarioHint();
+}
+// Reconstruye lo que debe mostrar "Costo" a partir del costo por unidad guardado
+// (rcState.costoUnitarioBase) y la presentación/cantidad/unidades actuales — mismo mecanismo
+// que ya usa la Calculadora de precio de Ficha de producto (PriceCalc.costoEnPresentacion).
+function rcSincronizarCostoPresentacion(){
+  const costoInp=document.getElementById('rc-costo');
+  if(!costoInp)return;
+  const cantidadCajas=rcState.modo==='caja'?(Number(document.getElementById('rc-cantidad').value)||1):1;
+  const nuevoValor=PriceCalc.costoEnPresentacion(rcState.costoUnitarioBase||0,rcState.modo,document.getElementById('rc-unidades-caja').value,cantidadCajas);
+  costoInp.value=nuevoValor?String(Math.round(nuevoValor*100)/100):'';
 }
 function rcSetModo(modo){
   rcState.modo=modo;
@@ -12107,12 +12138,13 @@ function rcSetModo(modo){
   // recibida" para no duplicar "unidades por caja" dos veces en la misma pantalla. Como el
   // widget tiene mostrarUnidadCaja:false, su costoBruto() no usa unidades-caja — por eso el
   // costo se recalcula manualmente acá según el mismo criterio que antes.
+  rcSincronizarCostoPresentacion();
   rcRecalcularCostoConModo();
   rcRenderResumen();
 }
 document.getElementById('rc-modo-unidad').onclick=()=>rcSetModo('unidad');
 document.getElementById('rc-modo-caja').onclick=()=>rcSetModo('caja');
-document.getElementById('rc-unidades-caja').oninput=()=>{rcRecalcularCostoConModo();rcRenderResumen();};
+document.getElementById('rc-unidades-caja').oninput=()=>{rcSincronizarCostoPresentacion();rcRecalcularCostoConModo();rcRenderResumen();};
 // Costo por unidad real cuando la compra es por caja — el widget de precio (mostrarUnidadCaja
 // false) no lo sabe, así que este wrapper decide la base real ANTES de que el widget calcule
 // margen/precio: si es "caja", se le pasa el costo ya dividido por unidades como si fuera "el
