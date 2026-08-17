@@ -3947,7 +3947,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-14.2';
+const APP_VERSION='2026-08-17.1';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -5430,6 +5430,7 @@ const PcWidget=(function(){
           '<label id="'+pfx+'-costo-lbl">'+costoLabel+'</label>'+
           '<input id="'+pfx+'-costo" type="number" inputmode="decimal" value="'+(cfg.costo!=null?cfg.costo:'')+'" placeholder="$" class="pc-input pc-input-lg">'+
           '<div id="'+pfx+'-costo-explica" class="pc-hint"></div>'+
+          (cfg.costoUnitarioHint?'<div id="'+pfx+'-costo-unitario-hint" class="pc-hint" style="font-weight:700"></div>':'')+
         '</div>'+
         '<div class="mm-field" style="margin-bottom:0">'+
           '<label>IVA <span title="El precio se calcula sobre el costo con IVA — el mismo valor que se guarda en Loyverse. Si eliges \'Sin IVA\', se le suma 19% automáticamente." style="cursor:help">ⓘ</span></label>'+
@@ -12025,7 +12026,8 @@ function rcMontarPrecio(){
     prefix:'rc',costo:null,margen:null,precio:null,
     mostrarUnidadCaja:false, // el toggle unidad/caja de Recepción ya vive en "Cantidad recibida", justo arriba — se comparte el mismo rcState.modo en vez de duplicar el control
     mostrarBotonAplicar:true,
-    costoLabel:'Costo'
+    costoLabel:'Costo',
+    costoUnitarioHint:true // "Costo por unidad: $X,XX" debajo del campo Costo, solo en modo "caja" — ver rcActualizarCostoUnitarioHint
   });
   rcPcApi=PcWidget.wire({
     prefix:'rc',state:rcState,mostrarUnidadCaja:false,
@@ -12041,6 +12043,16 @@ function rcMontarPrecio(){
       rcGuardarBorrador();
     }
   });
+  // Mismo evento 'input' que ya escucha el widget (tanto al escribir el costo a mano como al
+  // dispararse sintéticamente desde rcRecalcularCostoConModo) — se reutiliza para mantener el
+  // hint de "Costo por unidad" al día sin duplicar los puntos de enganche. El click de IVA no
+  // dispara 'input' en rc-costo (setIva() de PcWidget es interno y no se expone), así que se
+  // engancha aparte — se agrega DESPUÉS del onclick propio del widget, por lo que corre a
+  // continuación de que ya haya actualizado rcState.ivaModo.
+  document.getElementById('rc-costo').addEventListener('input',rcActualizarCostoUnitarioHint);
+  document.getElementById('rc-iva-con').addEventListener('click',rcActualizarCostoUnitarioHint);
+  document.getElementById('rc-iva-sin').addEventListener('click',rcActualizarCostoUnitarioHint);
+  rcActualizarCostoUnitarioHint();
 }
 function rcSetModo(modo){
   rcState.modo=modo;
@@ -12096,6 +12108,21 @@ function rcCostoBrutoReal(){
 // Alias por compatibilidad con el resto del módulo (Ficha, historial, etc. pueden llamarla).
 function rcCostoNeto(){
   return rcCostoBrutoReal();
+}
+// "Costo por unidad": ayuda visual solo para "Por caja", donde "Costo" es el TOTAL de la
+// recepción — sin este número intermedio, el salto entre lo que el usuario escribió y el
+// "Precio calculado" final puede parecer un error aunque no lo sea. Reutiliza rcCostoBrutoReal()
+// (misma cuenta que ya usa el guardado real), no se duplica la fórmula acá.
+function rcActualizarCostoUnitarioHint(){
+  const hint=document.getElementById('rc-costo-unitario-hint');
+  if(!hint)return;
+  const costoInp=document.getElementById('rc-costo');
+  if(rcState.modo!=='caja'||!costoInp||!costoInp.value){hint.textContent='';return;}
+  const costoUnit=rcCostoBrutoReal();
+  hint.textContent=costoUnit>0?('Costo por unidad: '+_pesoDecimales(costoUnit)):'';
+}
+function _pesoDecimales(n){
+  return '$'+new Intl.NumberFormat('es-CL',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
 }
 document.getElementById('rc-guardar').onclick=async()=>{
   const btn=document.getElementById('rc-guardar');
