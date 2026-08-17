@@ -3952,7 +3952,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-17.5';
+const APP_VERSION='2026-08-17.6';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -12188,7 +12188,14 @@ function rcActualizarCostoUnitarioHint(){
   const hint=document.getElementById('rc-costo-unitario-hint');
   if(!hint)return;
   const costoInp=document.getElementById('rc-costo');
-  if(rcState.modo!=='caja'||!costoInp||!costoInp.value){hint.textContent='';return;}
+  if(rcState.modo!=='caja'||!costoInp){hint.textContent='';return;}
+  if(!costoInp.value){
+    // Sin costo cargado (ni escrito a mano ni traído de Loyverse) no hay nada que calcular
+    // todavía — se lo decimos al usuario en vez de dejar el campo mudo, para que no parezca
+    // que el cálculo se rompió.
+    hint.textContent='Escribe el costo total de esta caja/display para calcular el precio.';
+    return;
+  }
   const costoUnit=rcCostoBrutoReal();
   hint.textContent=costoUnit>0?('Costo por unidad: '+_pesoDecimales(costoUnit)):'';
 }
