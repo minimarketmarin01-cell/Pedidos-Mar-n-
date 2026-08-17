@@ -3156,7 +3156,13 @@ function analyze(it){const rate=rateOf(it),tracked=it.track&&it.stock!=null,esCa
     else if(stock<=0||cov<lead){status='urgente';sug=roundPack(Math.max(0,target-stock),M);}
     else if(cov<lead+cover){status='pedir';sug=roundPack(Math.max(0,target-stock),M);}
     else if(cov>(lead+cover)*2.5){status='sobre';sug=0;}else{status='ok';sug=0;}}
-  return{rate,cov,status,sug,tracked,trend:trendOf(it),vencido:paraCambioTotal};}
+  // 'vencido' (total "para cambio", vencidoDe+retiradoDe) sigue siendo el número informativo del
+  // badge "Cambio: -N" — eso no cambia. 'vencidoNoDescontadoAun' es SOLO la porción que Loyverse
+  // todavía no refleja (estado='Vencido', sin retirar de la góndola todavía): la porción ya
+  // 'Retirado' YA se descontó de verdad en Loyverse al presionar "Retirar" (ver accionRevisarLote
+  // en el Worker), así que it.stock ya viene neto de esa parte — restarla de nuevo acá para el
+  // número de "stock disponible" mostrado sería descontarla dos veces.
+  return{rate,cov,status,sug,tracked,trend:trendOf(it),vencido:paraCambioTotal,vencidoNoDescontadoAun:vencidoResta};}
 const SO={urgente:0,pedir:1,sinstock:2,ok:3,sobre:4};const SL={urgente:'Urgente',pedir:'Pedir',ok:'OK',sobre:'Sobrestock',sinstock:'Ref.'};
 // Un producto pertenece al proveedor "p" si: 1) su proveedor real principal coincide
 // (it.proveedorNombre) — fuente correcta y la que se prioriza siempre que exista — o 2) "p"
@@ -3608,11 +3614,17 @@ function rowHTML(it,a,f){const cant=qOf(it,a);
   //  - negro: sin unidades reservadas para cambio con proveedor (caso normal)
   //  - ámbar: hay unidades disponibles además de las reservadas para cambio
   //  - rojo, en negativo: todas las unidades (o más) están reservadas para cambio — nada vendible
+  // FIX: solo se resta a.vencidoNoDescontadoAun (estado='Vencido', Loyverse todavía no lo sabe),
+  // NUNCA a.vencido completo. La porción ya 'Retirado' ya se descontó de verdad en Loyverse al
+  // presionar "Retirar" — it.stock ya viene neto de esa parte. Restar a.vencido (que incluye lo
+  // ya retirado) sobre un it.stock que YA es neto duplicaba el descuento (ej.: Loyverse 2 real
+  // se mostraba como 1).
   const statStock=(()=>{
     if(it.stock==null)return '<span style="color:var(--azul)">s/c</span>';
-    if(a.vencido>0){
-      const disp=it.stock-a.vencido;
-      if(disp<=0)return `<span style="color:var(--rojo);font-weight:700">-${fmt.format(a.vencido)}</span>`;
+    const restaAun=a.vencidoNoDescontadoAun||0;
+    if(restaAun>0){
+      const disp=it.stock-restaAun;
+      if(disp<=0)return `<span style="color:var(--rojo);font-weight:700">-${fmt.format(restaAun)}</span>`;
       return `<span style="color:var(--ambar);font-weight:700">${fmt.format(disp)}</span>`;
     }
     return fmt.format(it.stock);
@@ -10665,11 +10677,12 @@ async function vcEditarFecha(filaIndex,nuevaFecha){
     }else{showToast('Error: '+((j&&j.error)||'no se pudo corregir la fecha'));}
   }catch(e){showToast('Error de conexión al corregir la fecha');}
 }
-// El producto ya se retiró de la góndola y el stock ya se descontó SOLO (automático,
-// la noche que venció). Esto cierra el registro cuando llega el proveedor con el cambio —
-// nunca vuelve a tocar Loyverse ni a duplicar la merma. Si el proveedor trae MENOS unidades
-// de las que había en el lote (ej. 3 pendientes, llegaron 2), se pregunta la cantidad y el
-// backend cierra solo esa parte, dejando el resto todavía pendiente en la lista.
+// FIX: este comentario decía "el stock ya se descontó SOLO (automático, la noche que
+// venció)" — eso nunca ocurrió: no existe ningún cron que toque Loyverse al vencer un lote
+// (recalcularVencimientosD1 solo recalcula estado/prioridad, nunca stock). El descuento real
+// ahora ocurre al presionar "Retirar" (ver accionRevisarLote en el Worker), y esta función
+// vuelve a sumarlo al presionar "Cambiado" (ver accionMarcarCambiado) — nunca antes de eso, y
+// nunca dos veces gracias a la validación de estado='Retirado' que hace el backend.
 async function vcMarcarCambiado(filaIndex,nombre,cantidadTotal,unidad){
   const total=Number(cantidadTotal)||0;
   let cantidadCambiada=total;
@@ -10688,11 +10701,18 @@ async function vcMarcarCambiado(filaIndex,nombre,cantidadTotal,unidad){
     const j=await res.json();
     if(j&&j.ok){
       const f=j.fila||{};
+      // Actualiza el stock local al instante (misma fuente que ya lee la Ficha del producto y
+      // Armar pedido — DB.items[].stock) para que ambas pantallas queden coherentes sin esperar
+      // a un resync completo. Ver accionMarcarCambiado en el Worker: ahora sí suma en Loyverse.
+      if(f.nuevoStock!=null){
+        const itLocal=(DB.items||[]).find(x=>x.ref===(f.sku));
+        if(itLocal){itLocal.stock=f.nuevoStock;persist();}
+      }
       if(f.parcial){
-        showToast('Cambio parcial: '+cantidadCambiada+' de '+total+' '+(unidad||'u')+' de '+(nombre||f.nombre)+' — quedan '+f.cantidadRestante+' pendientes');
+        showToast('Cambio parcial: '+cantidadCambiada+' de '+total+' '+(unidad||'u')+' de '+(nombre||f.nombre)+' — quedan '+f.cantidadRestante+' pendientes'+(f.avisoStock?' · '+f.avisoStock:''));
         closeVenc();vcLoad(); // se queda en Vencimientos: todavía hay unidades pendientes de este mismo lote
       }else{
-        showToast('Cambio confirmado: '+(nombre||f.nombre)+' · ahora carga lo que recibiste a cambio');
+        showToast('Cambio confirmado: '+(nombre||f.nombre)+' · ahora carga lo que recibiste a cambio'+(f.avisoStock?' · '+f.avisoStock:''));
         closeVenc();
         openRecibir();
       }
@@ -10730,9 +10750,17 @@ async function vcRevisar(filaIndex,resultado,recargar){
     }})});
     const j=await res.json();
     if(j&&j.ok){
+      // Retirar descuenta stock real en Loyverse (ver accionRevisarLote en el Worker) — se
+      // refleja al instante en DB.items para que Ficha del producto y Armar pedido queden
+      // coherentes con lo que ya mostraba Vencimientos, sin esperar a un resync completo.
+      const f=j.fila||{};
+      if(f.nuevoStock!=null&&f.sku){
+        const itLocal=(DB.items||[]).find(x=>x.ref===f.sku);
+        if(itLocal){itLocal.stock=f.nuevoStock;persist();}
+      }
       if(recargar){
         const msgs={vendido:'Marcado como vendido/liquidado',merma:'Registrado como merma',revisado:'Marcado como revisado',retirado:'Retirado — pasa a Pendientes'};
-        showToast(msgs[resultado]||'Lote revisado');
+        showToast((msgs[resultado]||'Lote revisado')+(f.avisoStock?' · '+f.avisoStock:''));
         // 'retirado' NO se saca de _vcTodos — sigue existiendo (estado='Retirado'), solo se
         // mueve visualmente a la pestaña Pendientes. Los demás cierres ('vendido'/'merma'/
         // 'revisado') sí se quitan de la lista en memoria: ya no vuelven a aparecer en
