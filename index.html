@@ -263,7 +263,7 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
    arriba) no coincidía con la altura de los chips 7d/14d/30d/90d (~26px). Se define una
    altura común de 36px para los tres tipos de control de la fila — ni tan chico como los
    chips originales (quedaban apretados) ni tan alto como el buscador original. */
-.shc-row .prov-all{padding-top:0;padding-bottom:0;height:36px;padding-left:10px;padding-right:64px;font-size:12.5px}
+.shc-row .prov-all{padding-top:0;padding-bottom:0;height:36px;padding-left:10px;padding-right:64px;font-size:14px}
 .shc-row .prov-icon{display:none}
 .shc-row .prov-x{right:2px;width:20px;height:20px}
 .shc-row .prov-mic{right:44px;width:17px;height:17px}
@@ -3258,7 +3258,12 @@ function buildChips(){
   if(xb)xb.onclick=ev=>{ev.preventDefault();ev.stopPropagation();const q=normTxt(sel.value||'').trim();const esProveedor=q&&(DB.provsReal||[]).some(p=>normTxt(p.prov).indexOf(q)>-1);state.search='';xb.classList.remove('on');clearTimeout(window._searchT);if(esProveedor){sel.value='';openMenu('');sel.focus();}else{menu.classList.add('hidden');sel.blur();setProvInputValue();}render();persistUI();};
   sel.onkeydown=e=>{
     if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();if(!acts.length)return;let i=acts.indexOf(menu.querySelector('.prov-opt.act'));acts.forEach(o=>o.classList.remove('act'));i=e.key==='ArrowDown'?(i+1)%acts.length:(i<=0?acts.length-1:i-1);acts[i].classList.add('act');acts[i].scrollIntoView({block:'nearest'});}
-    else if(e.key==='Enter'){e.preventDefault();const a=menu.querySelector('.prov-opt.act');if(a&&a.dataset.val){pickProv(a.dataset.val);}else{menu.classList.add('hidden');if(sel.value.trim()&&!commitProv(sel.value))setProvInputValue();sel.blur();}}
+    else if(e.key==='Enter'){e.preventDefault();const a=menu.querySelector('.prov-opt.act');if(a&&a.dataset.val){pickProv(a.dataset.val);}else{menu.classList.add('hidden');const val=sel.value.trim();const esProveedor=val&&commitProv(val);
+      // Si el texto no matcheó ningún proveedor (búsqueda de producto o código de barras), NO
+      // se le quita el foco al buscador — así un lector físico USB/Bluetooth (que emula Enter al
+      // terminar cada código) puede seguir escaneando sin que el usuario tenga que volver a
+      // tocar la pantalla entre un escaneo y el siguiente.
+      if(esProveedor||!val)sel.blur();}}
     else if(e.key==='Escape'){menu.classList.add('hidden');if(sel.value.trim())setProvInputValue();sel.blur();}
   };
   if(!window._provDocBound){window._provDocBound=true;
@@ -3355,7 +3360,7 @@ function pickProv(target){
   if(carritoVacioAntes&&target!=='__ALL__')aplicarSugeridos(currentItems());
   render();persistUI();
 }
-function commitProv(val){const key=(val||'').trim().toLowerCase();if(!key)return false;if(key.indexOf('todos')===0||key.indexOf('')===0){pickProv('__ALL__');return true;}let hit=(DB.provsReal||[]).find(p=>p.prov.toLowerCase()===key);if(!hit&&key.length>=2)hit=(DB.provsReal||[]).find(p=>p.prov.toLowerCase().indexOf(key)>-1);if(hit){pickProv(hit.prov);return true;}return false;}
+function commitProv(val){const key=(val||'').trim().toLowerCase();if(!key)return false;if(key.indexOf('todos')===0){pickProv('__ALL__');return true;}let hit=(DB.provsReal||[]).find(p=>p.prov.toLowerCase()===key);if(!hit&&key.length>=2)hit=(DB.provsReal||[]).find(p=>p.prov.toLowerCase().indexOf(key)>-1);if(hit){pickProv(hit.prov);return true;}return false;}
 function updGlob(){let q=0;DB.items.forEach(it=>{if(it.track&&it.stock!=null&&it.stock<=0&&it.u30>0)q++;});document.getElementById('glob-quiebre').textContent='● '+q+' en quiebre';
   document.getElementById('updlabel').innerHTML=`Datos: <b>${DB.meta.min} → ${DB.meta.max}</b> · ${DB.meta.nitems} productos · ${SRC}`;}
 
@@ -3947,7 +3952,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-17.1';
+const APP_VERSION='2026-08-17.2';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -12967,6 +12972,14 @@ function aplicarSugeridos(items){
 // target==='__ALL__' ("mezclar sugeridos de todo el catálogo no es lo que se pidió"); acá solo
 // se refresca la tabla con los nuevos parámetros y se avisa que hace falta elegir proveedor.
 function regenerarSugerencia(){
+  // El autorrelleno solo debe pisar el carrito cuando hay proveedor elegido Y no se está
+  // buscando nada puntual — si hay una búsqueda activa (tipeada o escaneada), igual se refresca
+  // la tabla/columnas visibles (ej. al cambiar el rango de días), pero no se toca state.edits.
+  if(state.search){
+    render();persistUI();
+    showToast('Hay una búsqueda activa · vacía el buscador para volver a sugerir · tabla actualizada');
+    return;
+  }
   if(state.allProv){
     render();persistUI();
     showToast('Elige un proveedor para regenerar su carrito · tabla actualizada');
