@@ -2082,7 +2082,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <label>Cantidad recibida</label>
           <div style="display:flex;gap:6px;margin-bottom:6px">
             <button type="button" class="rc-modo-btn active" id="rc-modo-unidad" data-modo="unidad" style="border-color:var(--wa-d);background:var(--wa-bg,var(--verde-bg));color:var(--wa-d)">Por unidad</button>
-            <button type="button" class="rc-modo-btn" id="rc-modo-caja" data-modo="caja">Por caja</button>
+            <button type="button" class="rc-modo-btn" id="rc-modo-caja" data-modo="caja">Por caja/Display</button>
           </div>
           <div class="mm-qty" style="height:38px">
             <button class="qbtn rc-qty-hold" id="rc-qty-menos" type="button" style="height:100%">−</button>
@@ -3952,7 +3952,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-17.4';
+const APP_VERSION='2026-08-17.5';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -7867,7 +7867,10 @@ const PriceCalc=(function(){
     if(modo!=='caja')return costoUnitarioVal;
     const uCaja=Number(unidadesCaja)||0;
     const cCajas=Number(cantidadCajas)||1;
-    return uCaja>0?costoUnitarioVal*uCaja*cCajas:costoUnitarioVal;
+    // Sin "Unidades por caja" todavía no hay forma de calcular un total real — se devuelve 0
+    // (el campo Costo queda en blanco) en vez del costo por unidad sin cambios, que se veía
+    // como si el cambio de presentación no hubiera hecho nada.
+    return uCaja>0?costoUnitarioVal*uCaja*cCajas:0;
   }
   return {IVA,costoUnitario,costoBruto,costoEnPresentacion,precioDesdeMargen,margenDesdePrecio};
 })();
@@ -12100,6 +12103,10 @@ function rcMontarPrecio(){
   // (con el modo/cantidad/unidades actuales), para poder reconstruir el valor correcto si
   // después cambia de presentación, cantidad de cajas o unidades por caja sin volver a escribir.
   document.getElementById('rc-costo').addEventListener('input',()=>{
+    // rcSincronizarCostoPresentacion (abajo) también dispara 'input' en este mismo campo para
+    // refrescar "Precio calculado" — sin este guard, ese eco se interpretaría como una edición
+    // real y pisaría rcState.costoUnitarioBase con el valor recién sincronizado (a veces vacío).
+    if(_rcSincronizandoCosto){_rcSincronizandoCosto=false;return;}
     const cantidadCajas=rcState.modo==='caja'?(Number(document.getElementById('rc-cantidad').value)||1):1;
     rcState.costoUnitarioBase=PriceCalc.costoUnitario(document.getElementById('rc-costo').value,rcState.modo,document.getElementById('rc-unidades-caja').value,cantidadCajas);
   });
@@ -12108,11 +12115,13 @@ function rcMontarPrecio(){
 // Reconstruye lo que debe mostrar "Costo" a partir del costo por unidad guardado
 // (rcState.costoUnitarioBase) y la presentación/cantidad/unidades actuales — mismo mecanismo
 // que ya usa la Calculadora de precio de Ficha de producto (PriceCalc.costoEnPresentacion).
+let _rcSincronizandoCosto=false;
 function rcSincronizarCostoPresentacion(){
   const costoInp=document.getElementById('rc-costo');
   if(!costoInp)return;
   const cantidadCajas=rcState.modo==='caja'?(Number(document.getElementById('rc-cantidad').value)||1):1;
   const nuevoValor=PriceCalc.costoEnPresentacion(rcState.costoUnitarioBase||0,rcState.modo,document.getElementById('rc-unidades-caja').value,cantidadCajas);
+  _rcSincronizandoCosto=true;
   costoInp.value=nuevoValor?String(Math.round(nuevoValor*100)/100):'';
 }
 function rcSetModo(modo){
@@ -12132,7 +12141,7 @@ function rcSetModo(modo){
   // En "Por caja", el costo que se pide es el TOTAL de esta recepción (todas las cajas
   // juntas), no el de una sola — ver cantidadCajasGetter en rcMontarPrecio/rcCostoBrutoReal.
   const costoLbl=document.getElementById('rc-costo-lbl');
-  if(costoLbl)costoLbl.textContent=modo==='caja'?'Costo total (todas las cajas)':'Costo';
+  if(costoLbl)costoLbl.textContent=modo==='caja'?'Costo total (todas las cajas/displays)':'Costo';
   // El costo del widget usa unidades-caja PROPIAS (rc-pc-mount genera su propio input si
   // mostrarUnidadCaja fuera true) — pero acá se decidió compartir el campo de "Cantidad
   // recibida" para no duplicar "unidades por caja" dos veces en la misma pantalla. Como el
