@@ -4262,8 +4262,10 @@ function pendienteDe(it){
   // El backend ya no borra la fila al recibir la mercadería (queda como historial, ver
   // "Proveedores de hoy" real) — pasa a estado='recibido' en su lugar. Para el aviso de "ya
   // pedido" solo cuenta lo que sigue en camino (estado='confirmado', o sin estado = pedidos
-  // guardados antes de este cambio, mismo criterio de siempre).
-  if(rec&&rec.estado==='recibido')return null;
+  // guardados antes de este cambio, mismo criterio de siempre). estado='incompleto' (pedido
+  // cerrado desde Recepción → "Finalizar como incompleto" sin haber llegado ese artículo)
+  // también libera el aviso: el artículo debe volver a estar solicitable de inmediato.
+  if(rec&&(rec.estado==='recibido'||rec.estado==='incompleto'))return null;
   return rec;
 }
 
@@ -12659,6 +12661,43 @@ async function marcarPedidoRealizado(lines,canal,fechaLlegadaEstimada,provContex
   }
   return true;
 }
+// "Finalizar como incompleto" (Recepción de productos) — cierra el pedido de un proveedor
+// aunque no haya llegado completo. Solo toca los artículos que TODAVÍA no tienen recepción
+// registrada (estado 'confirmado'): pasan a 'incompleto' y quedan libres para pedirse de
+// nuevo. Los artículos que ya se recibieron (estado 'recibido', aunque haya sido con cantidad
+// parcial) NO se tocan — su recepción real queda intacta como historial. No modifica stock,
+// no borra nada. Ver accionFinalizarPedidoIncompleto en el Worker.
+async function finalizarPedidoIncompleto(skus){
+  const lista=(skus||[]).filter(Boolean);
+  if(!lista.length){showToast('No hay productos sin recepción para finalizar');return false;}
+  let j;
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'finalizar_pedido_incompleto',payload:{skus:lista}})});
+    j=await res.json();
+  }catch(e){
+    showToast('Error de conexión — no se pudo finalizar el pedido, intentá de nuevo');
+    return false;
+  }
+  if(!j||!j.ok){
+    showToast('Error al finalizar el pedido: '+((j&&j.error)||'no se pudo')+' — intentá de nuevo');
+    return false;
+  }
+  // Refleja el cambio al instante en la copia local (sin esperar al próximo sync) — mismo
+  // patrón que marcarPedidoRealizado: solo los que seguían 'confirmado' pasan a 'incompleto',
+  // los que ya estaban 'recibido' se dejan como están.
+  DB.pendBySku=DB.pendBySku||{};
+  lista.forEach(sku=>{
+    const rec=DB.pendBySku[sku];
+    if(rec&&rec.estado==='confirmado'){
+      rec.estado='incompleto';
+      if(rec.barcode&&DB.pendByBarcode&&DB.pendByBarcode[rec.barcode])DB.pendByBarcode[rec.barcode].estado='incompleto';
+    }
+  });
+  render();
+  try{refrescarProveedoresHoy();}catch(e){}
+  showToast('Pedido finalizado como incompleto');
+  return true;
+}
 // Fecha estimada de llegada al confirmar un pedido: reutiliza el calendario semanal CAL_PROV
 // que ya usa "Proveedores de hoy" (calcularProveedoresHoy) para saber qué día llega cada
 // proveedor. Si el proveedor no está en ese calendario, usa como respaldo el mismo "Ent."
@@ -13270,7 +13309,15 @@ function calcularProveedoresHoyReal(fechaISO){
     if(!grupos[key])grupos[key]={proveedor:key,productos:0,costoTotal:0,fechaLlegada:p.fecha_llegada_estimada,estado:p.estado||'confirmado'};
     grupos[key].productos+=1;
     grupos[key].costoTotal+=Number(p.costo_total)||0;
-    if(p.estado==='confirmado')grupos[key].estado='confirmado'; // un solo pendiente sin recibir alcanza para marcar el grupo como activo
+    // Estado del PEDIDO (grupo) a partir del estado de cada artículo — prioridad:
+    // 1) 'confirmado': con un solo artículo sin recepción alcanza para que el pedido siga
+    //    Pendiente (todavía puede terminar Recibido o Incompleto).
+    // 2) 'incompleto': ya no queda ningún 'confirmado' pero sí algún artículo cerrado como
+    //    incompleto → el pedido en su conjunto quedó Incompleto.
+    // 3) si no hay ni 'confirmado' ni 'incompleto', todos los artículos están 'recibido' →
+    //    Recibido automático (ver accionLoteNuevo en el Worker).
+    if(p.estado==='confirmado')grupos[key].estado='confirmado';
+    else if(p.estado==='incompleto'&&grupos[key].estado!=='confirmado')grupos[key].estado='incompleto';
   });
   return Object.values(grupos).sort((a,b)=>a.proveedor.localeCompare(b.proveedor,'es'));
 }
@@ -13297,7 +13344,7 @@ function renderProvHoyReal(){
   // al servidor solo para VER qué incluye el pedido.
   el.innerHTML=filas.map(f=>`<div class="pd-prov-row pd-prov-row-clickable" data-prov="${String(f.proveedor).replace(/"/g,'&quot;')}" data-fecha="${f.fechaLlegada}">
       <span class="pd-prov-ic">📦</span>
-      <span class="pd-prov-txt"><span class="pd-prov-nom">${f.proveedor}</span><span class="pd-prov-sub">${f.productos} producto${f.productos===1?'':'s'} · ${peso(f.costoTotal)} · ${f.estado==='recibido'?'Recibido':'Pendiente'}</span></span>
+      <span class="pd-prov-txt"><span class="pd-prov-nom">${f.proveedor}</span><span class="pd-prov-sub">${f.productos} producto${f.productos===1?'':'s'} · ${peso(f.costoTotal)} · ${f.estado==='recibido'?'Recibido':(f.estado==='incompleto'?'Incompleto':'Pendiente')}</span></span>
       <span class="pd-prov-caret">▾</span>
     </div>
     <div class="pd-prov-detalle hidden"></div>`).join('');
@@ -13310,8 +13357,20 @@ function renderProvHoyReal(){
       el.querySelectorAll('.pd-prov-row-clickable').forEach(r=>r.classList.remove('pd-prov-row-open'));
       if(!abrir)return; // ya estaba abierto: con cerrarlo (arriba) alcanza
       const items=itemsPedidoConfirmadoPorProveedorFecha(row.dataset.prov,row.dataset.fecha);
-      detalle.innerHTML=items.map(it=>`<div class="pd-prod-row"><span class="pd-prod-nom">${it.nombre||it.sku}</span><span class="pd-prod-cant">${fmt.format(it.cantidad||0)} u · ${peso(it.costo_total||0)}</span></div>`).join('')
-        ||'<div class="pd-empty-row">Sin detalle disponible</div>';
+      // Solo los artículos aún sin recepción ('confirmado') pueden cerrarse como incompleto —
+      // los 'recibido' ya no aplican, ver accionFinalizarPedidoIncompleto.
+      const pendientesSinRecibir=items.filter(it=>it.estado==='confirmado').map(it=>it.sku);
+      const btnIncompleto=pendientesSinRecibir.length?`<button class="pd-incompleto-btn" style="display:block;width:100%;margin-bottom:8px;padding:8px;font-size:11.5px;font-weight:800;color:var(--rojo,#c0392b);background:none;border:1px dashed var(--rojo,#c0392b);border-radius:8px;cursor:pointer">Finalizar como incompleto</button>`:'';
+      detalle.innerHTML=btnIncompleto+(items.map(it=>`<div class="pd-prod-row"><span class="pd-prod-nom">${it.nombre||it.sku}${it.estado==='recibido'?' <span style="color:var(--verde,#2e7d32);font-weight:700">· recibido</span>':(it.estado==='incompleto'?' <span style="color:var(--rojo,#c0392b);font-weight:700">· incompleto</span>':'')}</span><span class="pd-prod-cant">${fmt.format(it.cantidad||0)} u · ${peso(it.costo_total||0)}</span></div>`).join('')
+        ||'<div class="pd-empty-row">Sin detalle disponible</div>');
+      const btnInc=detalle.querySelector('.pd-incompleto-btn');
+      if(btnInc)btnInc.onclick=async(ev)=>{
+        ev.stopPropagation();
+        if(!pendientesSinRecibir.length)return;
+        if(!confirm('¿Finalizar este pedido como incompleto?\n\n'+pendientesSinRecibir.length+' producto(s) sin recepción quedarán disponibles para volver a pedirse. Lo que ya se recibió no se modifica.'))return;
+        const ok=await finalizarPedidoIncompleto(pendientesSinRecibir);
+        if(ok){detalle.classList.add('hidden');}
+      };
       detalle.classList.remove('hidden');
       row.classList.add('pd-prov-row-open');
     };
@@ -13328,7 +13387,10 @@ function calcularRecepcionarHoy(){
   const grupos={};
   Object.keys(pend).forEach(sku=>{
     const p=pend[sku];
-    if(!p||p.estado==='recibido')return;
+    // 'incompleto' = pedido ya cerrado desde "Finalizar como incompleto": el artículo no
+    // sigue en camino, no debe seguir apareciendo como "por recepcionar" (mismo criterio que
+    // 'recibido', ver pendienteDe).
+    if(!p||p.estado==='recibido'||p.estado==='incompleto')return;
     if(!p.fecha_llegada_estimada||p.fecha_llegada_estimada>hoyISO)return;
     const key=_proveedorRealDePendiente(p);
     if(!grupos[key])grupos[key]={proveedor:key,productos:0,costoTotal:0,fechaLlegada:p.fecha_llegada_estimada,atrasado:false};
@@ -13345,7 +13407,7 @@ function itemsPendientesPorProveedorHastaHoy(proveedor){
   const pend=DB&&DB.pendBySku?DB.pendBySku:{};
   const hoyISO=isoLocalDate(new Date());
   return Object.values(pend)
-    .filter(p=>p&&_proveedorRealDePendiente(p)===proveedor&&p.estado!=='recibido'&&p.fecha_llegada_estimada&&p.fecha_llegada_estimada<=hoyISO)
+    .filter(p=>p&&_proveedorRealDePendiente(p)===proveedor&&p.estado!=='recibido'&&p.estado!=='incompleto'&&p.fecha_llegada_estimada&&p.fecha_llegada_estimada<=hoyISO)
     .sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||''),'es'));
 }
 function renderRecepcionarHoy(){
@@ -13369,11 +13431,24 @@ function renderRecepcionarHoy(){
       el.querySelectorAll('.pd-prov-row-clickable').forEach(r=>r.classList.remove('pd-prov-row-open'));
       if(!abrir)return;
       const items=itemsPendientesPorProveedorHastaHoy(row.dataset.prov);
-      detalle.innerHTML=items.map(it=>`<div class="pd-prod-row"><span class="pd-prod-nom">${it.nombre||it.sku}</span><span class="pd-prod-cant">${fmt.format(it.cantidad||0)} u · ${peso(it.costo_total||0)} <button class="pd-recep-btn" data-sku="${it.sku}" style="margin-left:6px;font-size:10px;font-weight:800;color:var(--cielo-d,#1a73e8);background:none;border:none;cursor:pointer">Recibir</button></span></div>`).join('')
-        ||'<div class="pd-empty-row">Sin detalle disponible</div>';
+      // Botón a nivel de PEDIDO (no por artículo): cierra como Incompleto todo lo que siga
+      // sin recepción en este proveedor+fecha. Los artículos ya recibidos (no listados acá,
+      // ver itemsPendientesPorProveedorHastaHoy) no se tocan.
+      const btnIncompleto=items.length?`<button class="pd-incompleto-btn" data-prov="${String(row.dataset.prov).replace(/"/g,'&quot;')}" style="display:block;width:100%;margin-bottom:8px;padding:8px;font-size:11.5px;font-weight:800;color:var(--rojo,#c0392b);background:none;border:1px dashed var(--rojo,#c0392b);border-radius:8px;cursor:pointer">Finalizar como incompleto</button>`:'';
+      detalle.innerHTML=btnIncompleto+(items.map(it=>`<div class="pd-prod-row"><span class="pd-prod-nom">${it.nombre||it.sku}</span><span class="pd-prod-cant">${fmt.format(it.cantidad||0)} u · ${peso(it.costo_total||0)} <button class="pd-recep-btn" data-sku="${it.sku}" style="margin-left:6px;font-size:10px;font-weight:800;color:var(--cielo-d,#1a73e8);background:none;border:none;cursor:pointer">Recibir</button></span></div>`).join('')
+        ||'<div class="pd-empty-row">Sin detalle disponible</div>');
       detalle.querySelectorAll('.pd-recep-btn').forEach(b=>{
         b.onclick=(ev)=>{ev.stopPropagation();cerrarOverlays();openRecibir();try{rcPick(b.dataset.sku);}catch(e){}};
       });
+      const btnInc=detalle.querySelector('.pd-incompleto-btn');
+      if(btnInc)btnInc.onclick=async(ev)=>{
+        ev.stopPropagation();
+        const skusPend=itemsPendientesPorProveedorHastaHoy(btnInc.dataset.prov).map(it=>it.sku);
+        if(!skusPend.length)return;
+        if(!confirm('¿Finalizar este pedido como incompleto?\n\n'+skusPend.length+' producto(s) sin recepción quedarán disponibles para volver a pedirse. Lo que ya se recibió no se modifica.'))return;
+        const ok=await finalizarPedidoIncompleto(skusPend);
+        if(ok){detalle.classList.add('hidden');}
+      };
       detalle.classList.remove('hidden');
       row.classList.add('pd-prov-row-open');
     };
