@@ -3990,7 +3990,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-18.5';
+const APP_VERSION='2026-08-18.6';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -4940,6 +4940,11 @@ function fpCargarBorrador(){
 }
 async function fpAbrir(ref,restaurar){
   _fpImagenPreviewUrl=null;
+  // El botón eliminar es un nodo fijo del DOM (no se repinta por producto) — si un intento
+  // anterior quedó a medias (timeout, error) puede haber quedado disabled/"Eliminando…".
+  // Se restaura siempre al abrir, sin importar en qué producto haya quedado pegado.
+  const btnEliminar=document.getElementById('fp-eliminar-btn');
+  if(btnEliminar&&typeof FP_ELIMINAR_BTN_HTML!=='undefined'){btnEliminar.disabled=false;btnEliminar.innerHTML=FP_ELIMINAR_BTN_HTML;}
   const it=DB.items.find(x=>x.ref===ref);
   document.getElementById('fp-titulo').textContent=(it?it.nombre:ref);
   document.getElementById('fp-content').classList.add('hidden');
@@ -6181,15 +6186,24 @@ async function fpGuardarTodo(){
     btn.disabled=false;btn.textContent='Guardar cambios';
   }
 }
+// Icono original del botón eliminar, capturado una sola vez al cargar la página — se usa para
+// restaurarlo tras un error/timeout, en vez de dejarlo en blanco con textContent='' (eso borraba
+// el SVG para siempre, porque el botón es un nodo fijo del DOM que fpAbrir no vuelve a pintar).
+const FP_ELIMINAR_BTN_HTML=document.getElementById('fp-eliminar-btn').innerHTML;
 async function fpEliminarProducto(f){
   const p=f.producto;
   if(!confirm('¿Eliminar "'+p.nombre+'" de Loyverse?\n\nSe borra del catálogo de forma PERMANENTE. Esta acción no se puede deshacer.'))return;
   const btn=document.getElementById('fp-eliminar-btn');
   btn.disabled=true;btn.textContent='Eliminando…';
+  // Timeout: si el servidor (o Loyverse detrás) no responde en 45s, avisa en vez de quedar
+  // colgado en "Eliminando…" en silencio, sin saber si se borró o no (mismo patrón que ya usa
+  // Crear producto, ver cpGuardar).
+  const ctrl=new AbortController();
+  const to=setTimeout(()=>ctrl.abort(),45000);
   try{
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'eliminar_productos',payload:{
       items:[{id:p.idLoyverse,sku:p.sku,nombre:p.nombre,categoria:p.categoria,stock:p.stock}]
-    }})});
+    }}),signal:ctrl.signal});
     const j=await res.json();
     const r=(j&&j.resultados&&j.resultados[0])||null;
     if(j&&j.ok&&r&&r.ok){
@@ -6202,12 +6216,12 @@ async function fpEliminarProducto(f){
       try{smRender();}catch(_){}
     }else{
       showToast(''+((r&&r.error)||(j&&j.error)||'No se pudo eliminar'));
-      btn.disabled=false;btn.textContent='';
+      btn.disabled=false;btn.innerHTML=FP_ELIMINAR_BTN_HTML;
     }
   }catch(e){
-    showToast('Error de conexión al eliminar');
-    btn.disabled=false;btn.textContent='';
-  }
+    showToast(e.name==='AbortError'?'Tardó demasiado en responder — revisa si se eliminó antes de reintentar':'Error de conexión al eliminar');
+    btn.disabled=false;btn.innerHTML=FP_ELIMINAR_BTN_HTML;
+  }finally{clearTimeout(to);}
 }
 document.getElementById('fp-eliminar-btn').onclick=()=>{if(_fpActual)fpEliminarProducto(_fpActual);};
 
@@ -6405,10 +6419,14 @@ async function smEliminar(){
   const aviso=sinId?('\n\n'+sinId+' no tienen id de Loyverse (usa Catálogo antes).'):'';
   if(!confirm('¿Eliminar '+sel.length+' producto'+(sel.length===1?'':'s')+' de Loyverse?\n\nSe borran del catálogo de forma PERMANENTE. Esta acción no se puede deshacer.'+aviso))return;
   const b=document.getElementById('sm-del');b.disabled=true;b.textContent='Eliminando…';
+  // Timeout: si el servidor (o Loyverse detrás) no responde en 45s, avisa en vez de quedar
+  // colgado en "Eliminando…" en silencio (mismo patrón que ya usa Crear producto).
+  const ctrl=new AbortController();
+  const to=setTimeout(()=>ctrl.abort(),45000);
   try{
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'eliminar_productos',payload:{
       items:sel.map(p=>({id:p.id,sku:p.ref,nombre:p.nombre,categoria:p.prov,stock:p.stock}))
-    }})});
+    }}),signal:ctrl.signal});
     const j=await res.json();
     if(j&&j.ok){
       const okRefs=new Set((j.resultados||[]).filter(r=>r.ok).map(r=>r.sku));
@@ -6420,8 +6438,8 @@ async function smEliminar(){
       showToast(m);smRender();
       try{render();}catch(_){}   // refresca el tablero de Pedidos
     }else showToast('Error: '+((j&&j.error)||'no se pudo eliminar'));
-  }catch(e){showToast('Error de conexión al eliminar');}
-  finally{smActualizarBoton();}
+  }catch(e){showToast(e.name==='AbortError'?'Tardó demasiado en responder — revisa si se eliminó antes de reintentar':'Error de conexión al eliminar');}
+  finally{clearTimeout(to);smActualizarBoton();}
 }
 document.getElementById('sm-del').onclick=smEliminar;
 
@@ -7391,8 +7409,12 @@ document.getElementById('mc-lista').addEventListener('click',ev=>{
 async function mcEliminarProducto(sku,idLoyverse,nombre,fila){
   if(!idLoyverse){showToast('Este producto no tiene id de Loyverse — sincroniza con Catálogo antes de eliminarlo');return;}
   if(fila)fila.style.opacity='.5';
+  // Timeout: si el servidor (o Loyverse detrás) no responde en 45s, avisa en vez de quedar
+  // colgado en silencio (mismo patrón que ya usa Crear producto).
+  const ctrl=new AbortController();
+  const to=setTimeout(()=>ctrl.abort(),45000);
   try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'eliminar_productos',payload:{items:[{sku,id:idLoyverse,nombre}]}})});
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'eliminar_productos',payload:{items:[{sku,id:idLoyverse,nombre}]}}),signal:ctrl.signal});
     const j=await res.json();
     const r=j&&j.resultados&&j.resultados[0];
     if(!j||!j.ok||!r||!r.ok)throw new Error((r&&r.error)||(j&&j.error)||'No se pudo eliminar');
@@ -7409,9 +7431,9 @@ async function mcEliminarProducto(sku,idLoyverse,nombre,fila){
     mcRenderChips();
     mcRefrescarDesgloseGeneral();
   }catch(e){
-    showToast(''+e.message);
+    showToast(e.name==='AbortError'?'Tardó demasiado en responder — revisa si se eliminó antes de reintentar':(''+e.message));
     if(fila)fila.style.opacity='';
-  }
+  }finally{clearTimeout(to);}
 }
 // Refresca solo los contadores generales de arriba ("N sin sector", "N sin proveedor", "N
 // productos en total") sin recargar categorías ni tocar la selección/scroll actual.
