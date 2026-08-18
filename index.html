@@ -1658,6 +1658,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
     <div class="shc-row shc-wrap">
       <div class="prov-combo" id="prov-combo"><span class="prov-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13.5 13.5 20a1.5 1.5 0 0 1-2.1 0L4 12.6V4h8.6l7.4 7.4a1.5 1.5 0 0 1 0 2.1Z"/><circle cx="8.3" cy="8.3" r="1.3"/></svg></span><input class="prov-all" id="prov-all" placeholder="Proveedor o producto… escribe o toca" autocomplete="off" inputmode="text"><button class="prov-mic" id="prov-mic" type="button" tabindex="-1" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button><button class="prov-scan cam-btn" id="prov-scan" type="button" tabindex="-1" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button><button class="prov-x" id="prov-x" type="button" tabindex="-1" aria-label="Borrar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
       <button type="button" class="fav-toggle-btn" id="fav-toggle" title="Mostrar solo favoritos" aria-pressed="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+      <button type="button" class="fav-toggle-btn" id="cg-toggle" title="Carritos guardados" aria-label="Carritos guardados" style="position:relative"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span class="mas-badge" id="cg-badge"></span></button>
       <div class="seg sm" id="seg-basis"><button data-b="7" class="active">7d</button><button data-b="14">14d</button><button data-b="30">30d</button><button data-b="90">90d</button></div>
       <div class="shc-mini"><label>Ent.</label><input type="number" id="lead" value="3" min="0" max="30"></div>
       <div class="shc-mini"><label>Cob.</label><input type="number" id="cover" value="10" min="1" max="60"></div>
@@ -2171,6 +2172,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <div class="order-row-main">
             <div class="tot-compact"><span class="l">Total</span><span class="v mono" id="tot-cost">$0</span></div>
             <button class="oact-btn" id="btn-resugerir" aria-label="Volver a sugerir" title="Vuelve a calcular la sugerencia de pedido y reemplaza el carrito del proveedor actual"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.7-3"/><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.7 3"/><polyline points="21 3 21 9 15 9"/><polyline points="3 21 3 15 9 15"/></svg><span class="oact-lbl">Sugerir</span></button>
+            <button class="oact-btn" id="btn-guardar-carrito" aria-label="Guardar carrito" title="Guarda el carrito de este proveedor como borrador, sin confirmar ni enviar el pedido"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span class="oact-lbl">Guardar</span></button>
             <button class="oact-btn oact-danger" id="btn-clear" aria-label="Vaciar carrito" title="Vaciar todo el carrito (todos los proveedores, no solo el que estás viendo)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg><span class="oact-lbl">Vaciar</span></button>
             <button class="btn btn-wa btn-wa-compact" id="btn-copy" title="Confirmar pedido (WhatsApp o presencial) y copiar mensaje para WhatsApp — pide fecha de llegada">
               <span class="wa-ico"><svg width="12" height="12" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span>
@@ -2237,6 +2239,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <button id="mas-q-abc"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg><br>Clasificación ABC</button>
         <button id="mas-q-recneg"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="6" y="4" width="12" height="17" rx="1.5"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><line x1="12" y1="10" x2="12" y2="14"/><circle cx="12" cy="17.3" r="0.2" fill="currentColor" stroke-width="0"/></svg><br>Recibidos en negativo</button>
         <button id="mas-q-reportedia"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg><br>Reportes del día</button>
+        <button id="mas-q-vcompacta"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg><br>Vista compacta</button>
       </div>
       <div class="method" style="margin:0;padding:16px 18px">
         <div class="scale-head" id="ayuda-head" style="background:linear-gradient(100deg,#2a2118,#3a2c1a);margin:-16px -18px 0;padding:12px 18px;border-radius:var(--radius-card) var(--radius-card) 0 0"><div><div class="t">ℹ️ Cómo funciona tu app</div></div><svg class="accordion-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
@@ -2261,6 +2264,18 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <li><b>Instalar como app:</b> en Chrome → menú ⋮ → "Añadir a pantalla de inicio". Ícono propio, pantalla completa.</li>
         </ul>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mm-ov hidden" id="vcomp-ov">
+  <div class="mm-card">
+    <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mm-head-ic"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>Vista compacta</h3></div>
+    <div class="mm-topbar"><button class="loadbtn" id="vcomp-cerrar" style="width:100%">Cerrar vista</button></div>
+    <div class="mm-body" style="display:flex;justify-content:center;align-items:flex-start;padding:18px 10px;background:var(--paper)">
+      <div style="width:340px;max-width:100%;height:680px;border:10px solid #1c1c1c;border-radius:32px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.25);background:#000;flex:none">
+        <iframe id="vcomp-iframe" title="Vista previa móvil de la webapp" style="width:100%;height:100%;border:none;display:block;background:#fff"></iframe>
       </div>
     </div>
   </div>
@@ -2390,6 +2405,17 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <button class="rk-hcol" data-s="stock">Sistema <span class="ar">▲▼</span></button>
       </div>
       <div id="rk-list"></div>
+    </div>
+  </div>
+</div>
+
+<div class="mm-ov hidden" id="cg-ov">
+  <div class="mm-card">
+    <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mm-head-ic"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Carritos guardados</h3></div>
+    <div class="mm-topbar"><button class="loadbtn" id="cg-cerrar" style="width:100%">Cerrar</button></div>
+    <div class="mm-body">
+      <div class="hm-summary"><span class="lbl" id="cg-lbl">—</span></div>
+      <div id="cg-list"></div>
     </div>
   </div>
 </div>
@@ -3953,6 +3979,82 @@ function renderOrder(){
   });
   body.addEventListener('input',e=>{if(e.target.classList&&e.target.classList.contains('qty-in'))cartApplyQty(e.target.dataset.ref,Math.max(0,parseInt(e.target.value)||0));});
 })();
+// ===================== CARRITOS GUARDADOS (borradores, NO confirman ni envían el pedido) =====
+// Un borrador por proveedor (identificado por "cgProvId": el nombre del proveedor, o '__ALL__'
+// para "Todos los proveedores") — guardar de nuevo el mismo proveedor actualiza su borrador en
+// vez de crear uno nuevo, así nunca se duplican. state.edits sigue siendo el carrito EN VIVO
+// (independiente de esto); un borrador es una foto fija que se puede restaurar más tarde.
+const CG_KEY='marin_carritos_guardados';
+function cgCargarTodos(){try{const v=localStorage.getItem(CG_KEY);const a=v?JSON.parse(v):[];return Array.isArray(a)?a:[];}catch(e){return [];}}
+function cgGuardarTodos(arr){try{localStorage.setItem(CG_KEY,JSON.stringify(arr));}catch(e){}}
+function cgProvId(){return state.allProv?'__ALL__':state.prov;}
+function cgProvLabel(){return state.allProv?'Todos los proveedores':state.prov;}
+function cgActualizarBadge(){actualizarBadgeBn('cg-badge',cgCargarTodos().length);}
+function cgGuardarCarritoActual(){
+  const lines=currentOrderVisible();
+  if(!lines.length){showToast('El carrito de este proveedor está vacío — no hay nada que guardar');return;}
+  const items=lines.map(l=>({ref:l.it.ref,nombre:l.nombre,q:l.q,cost:l.cost}));
+  const total=items.reduce((s,i)=>s+i.cost,0);
+  const provId=cgProvId();
+  const draft={provId,provLabel:cgProvLabel(),items,total,fecha:new Date().toISOString()};
+  const arr=cgCargarTodos().filter(d=>d.provId!==provId); // dedupe: un solo borrador por proveedor
+  arr.unshift(draft);
+  cgGuardarTodos(arr);
+  cgActualizarBadge();
+  showToast('Carrito de "'+draft.provLabel+'" guardado como borrador ('+items.length+' producto'+(items.length===1?'':'s')+')');
+}
+function cgFechaTxt(iso){
+  try{const d=new Date(iso);return d.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});}catch(e){return '';}
+}
+function cgRenderLista(){
+  const arr=cgCargarTodos();
+  const box=document.getElementById('cg-list');
+  document.getElementById('cg-lbl').textContent=arr.length+' carrito'+(arr.length===1?'':'s')+' guardado'+(arr.length===1?'':'s');
+  if(!arr.length){box.innerHTML='<div class="vc-empty">No hay carritos guardados todavía. Desde el carrito activo, toca "Guardar" para dejar un borrador sin confirmar el pedido.</div>';return;}
+  box.innerHTML=arr.map(d=>`<div class="sm-row" data-cg-id="${String(d.provId).replace(/"/g,'&quot;')}">
+    <div class="sm-info">
+      <div class="nom">${d.provLabel}</div>
+      <div class="meta">${d.items.length} producto${d.items.length===1?'':'s'} · ${peso(d.total)} · ${cgFechaTxt(d.fecha)}</div>
+    </div>
+    <button type="button" class="loadbtn" data-cg-editar="${String(d.provId).replace(/"/g,'&quot;')}" style="flex:none;width:auto;padding:8px 12px;font-size:12.5px;margin:0">Editar</button>
+    <button type="button" class="mc-dr-eliminar" data-cg-eliminar="${String(d.provId).replace(/"/g,'&quot;')}" title="Eliminar borrador"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
+  </div>`).join('');
+  box.querySelectorAll('button[data-cg-editar]').forEach(btn=>btn.addEventListener('click',()=>cgRestaurar(btn.dataset.cgEditar)));
+  box.querySelectorAll('button[data-cg-eliminar]').forEach(btn=>btn.addEventListener('click',()=>{
+    const id=btn.dataset.cgEliminar;
+    const d=arr.find(x=>x.provId===id);
+    confirmarAccion({
+      titulo:'Eliminar carrito guardado',
+      mensaje:'Se eliminará el borrador de "'+(d?d.provLabel:id)+'". Esta acción no se puede deshacer.',
+      textoConfirmar:'Eliminar',
+      peligro:true,
+      onConfirm:()=>{cgGuardarTodos(cgCargarTodos().filter(x=>x.provId!==id));cgRenderLista();cgActualizarBadge();}
+    });
+  }));
+}
+// "Editar" restaura EXACTAMENTE el borrador: aplica sus cantidades y, para no dejar restos,
+// pone en 0 cualquier producto de ese mismo proveedor que esté en el carrito EN VIVO pero ya
+// no esté en el borrador. Nunca toca productos de otros proveedores (carritos independientes).
+function cgRestaurar(provId){
+  const d=cgCargarTodos().find(x=>x.provId===provId);
+  if(!d)return;
+  const refsDraft=new Set(d.items.map(i=>i.ref));
+  currentOrder().forEach(l=>{
+    const esDeEsteProv=provId==='__ALL__'||esDelProveedor(l.it,provId);
+    if(esDeEsteProv&&!refsDraft.has(l.it.ref))state.edits[l.it.ref]=0;
+  });
+  d.items.forEach(i=>{state.edits[i.ref]=i.q;});
+  if(provId==='__ALL__')state.allProv=true;
+  else{state.allProv=false;state.prov=provId;setProvInputValue();}
+  cerrarModal('cg-ov');
+  render();persistUI();
+  toggleCarrito(true);
+  showToast('Carrito de "'+d.provLabel+'" restaurado');
+}
+document.getElementById('btn-guardar-carrito').onclick=cgGuardarCarritoActual;
+document.getElementById('cg-toggle').onclick=()=>{cgRenderLista();abrirModal('cg-ov');};
+document.getElementById('cg-cerrar').onclick=()=>cerrarModal('cg-ov');
+cgActualizarBadge();
 function renderOverview(){
   // Gráfico: venta semanal estimada por categoría (u7 × precio)
   const catRev={};
@@ -3990,7 +4092,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-18.7';
+const APP_VERSION='2026-08-18.8';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -6235,6 +6337,21 @@ document.getElementById('ptbody').addEventListener('click',ev=>{
 // para no interrumpir el flujo de contar/escribir stock por accidente al tocar el nombre.
 const rkState={cat:'',search:'',sort:'nombre',dir:1};
 document.getElementById('mas-q-reconteo').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');rkAbrir();};
+// Vista compacta: previsualiza la webapp dentro de un marco tipo celular, cargando la MISMA
+// página en un iframe (reutiliza toda la interfaz/CSS tal cual, no es una segunda app). El
+// iframe solo carga al abrir y se vacía a about:blank al cerrar, para no dejar una segunda
+// instancia sincronizando en segundo plano sin que el usuario la vea.
+document.getElementById('mas-q-vcompacta').onclick=()=>{
+  document.getElementById('mas-ov').classList.add('hidden');
+  const ifr=document.getElementById('vcomp-iframe');
+  if(ifr&&(!ifr.src||ifr.src==='about:blank'))ifr.src=location.href;
+  abrirModal('vcomp-ov');
+};
+document.getElementById('vcomp-cerrar').onclick=()=>{
+  cerrarModal('vcomp-ov');
+  const ifr=document.getElementById('vcomp-iframe');
+  if(ifr)ifr.src='about:blank';
+};
 document.getElementById('rk-cerrar').onclick=()=>cerrarModal('rk-ov');
 function rkAbrir(presetSearch){
   rkState.cat='';rkState.search=presetSearch||'';rkState.sort='nombre';rkState.dir=1;
