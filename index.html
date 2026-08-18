@@ -3352,22 +3352,22 @@ function pvAbrir(providerName,editedCount,onKeepSuggested,onKeepCurrent,onCancel
 // algo de OTRO proveedor, no se autocarga nada — se respeta tal cual esté.
 function pickProv(target){
   const carritoVacioAntes=currentOrder().length===0;
-  // Autorrelleno solo si el buscador de productos estaba VACÍO antes de elegir proveedor — si
-  // había una búsqueda/código escaneado en curso, elegir un proveedor (p.ej. desde el lector
-  // físico, que puede matchear un nombre de proveedor) no debe pisar esa búsqueda con
-  // sugeridos. Se mide ANTES de limpiar state.search más abajo, que si no siempre daría vacío.
-  const buscadorVacioAntes=!state.search;
   // Cambiar de proveedor cierra cualquier edición de "pedido confirmado" que estuviera en
   // curso (ver cargarPedidoConfirmadoEnCarrito) — si quedaba algo cargado sin reconfirmar, sus
   // cantidades siguen en state.edits (no se pierden), solo se deja de rastrear como "edición de
   // un pedido ya confirmado" para no eliminar por error SKUs de OTRO proveedor al reconfirmar.
   if(typeof _limpiarPedidoConfirmadoCargado==='function')_limpiarPedidoConfirmadoCargado();
   if(target==='__ALL__'){state.allProv=true;}else{state.allProv=false;state.prov=target;state.sort='rate';state.dir=-1;}
-  state.search='';const sx=document.getElementById('prov-x');if(sx)sx.classList.remove('on');const menu=document.getElementById('prov-menu');if(menu)menu.classList.add('hidden');const sel=document.getElementById('prov-all');if(sel)sel.blur();setProvInputValue();
   // "Todos los proveedores" no autocarga nada — no hay un único proveedor nuevo al que
   // aplicarle sugeridos, y mezclar sugeridos de todo el catálogo de una sola vez no es lo que
   // se pidió (el punto 3/4 habla de "el nuevo proveedor" en singular).
-  if(carritoVacioAntes&&buscadorVacioAntes&&target!=='__ALL__')aplicarSugeridos(currentItems());
+  // IMPORTANTE: esto se decide y ejecuta ANTES de limpiar state.search más abajo —
+  // puedeAutorrellenarCarrito() (dentro de aplicarSugeridos) necesita ver el valor REAL que
+  // tenía el buscador en el momento de elegir el proveedor, no un valor ya vaciado por las
+  // líneas de acá abajo. Si hay una búsqueda/código escaneado en curso (p.ej. desde el lector
+  // físico, que puede matchear un nombre de proveedor), NO se autorrellena.
+  if(carritoVacioAntes&&target!=='__ALL__')aplicarSugeridos(currentItems());
+  state.search='';const sx=document.getElementById('prov-x');if(sx)sx.classList.remove('on');const menu=document.getElementById('prov-menu');if(menu)menu.classList.add('hidden');const sel=document.getElementById('prov-all');if(sel)sel.blur();setProvInputValue();
   render();persistUI();
 }
 function commitProv(val){const key=(val||'').trim().toLowerCase();if(!key)return false;if(key.indexOf('todos')===0){pickProv('__ALL__');return true;}let hit=(DB.provsReal||[]).find(p=>p.prov.toLowerCase()===key);if(!hit&&key.length>=2)hit=(DB.provsReal||[]).find(p=>p.prov.toLowerCase().indexOf(key)>-1);if(hit){pickProv(hit.prov);return true;}return false;}
@@ -3962,7 +3962,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-18.2';
+const APP_VERSION='2026-08-18.3';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -13056,12 +13056,24 @@ function abrirConfirmarPedido({provNombre,lines,fechaSugerida,notaExtra,onConfir
   _sincronizarNav();
 }
 
+// Condición ÚNICA y central que decide si el autorrelleno del carrito puede tocar algo:
+// proveedor específico elegido (no "todos") Y buscador de productos realmente vacío (el
+// valor actual de #prov-all, sin importar si lo escribió el usuario o lo dejó un lector de
+// código de barras). Se revisa acá — DENTRO de la función que realmente escribe en
+// state.edits — para que ningún llamador presente o futuro (pickProv, regenerarSugerencia,
+// o cualquier otro que se agregue después) pueda rellenar el carrito sin pasar por esta
+// misma validación, sin importar cómo haya llegado a llamar a aplicarSugeridos().
+function puedeAutorrellenarCarrito(){
+  return !state.allProv && String(state.search||'').trim()==='';
+}
 // Lógica compartida de "agregar sugeridos" — la usa el autocargado de pickProv (carrito
-// vacío + cambio de proveedor). Antes también la usaba el botón manual "Ingresar sugeridos",
-// eliminado de la interfaz por quedar redundante: con el autocargado, el único caso que cubría
-// (carrito CON productos + agregar sugeridos de otro proveedor sin reemplazar nada) se resuelve
-// escribiendo la cantidad a mano fila por fila, como cualquier otro producto del carrito.
+// vacío + cambio de proveedor) y regenerarSugerencia (día de venta/"Volver a sugerir").
+// Antes también la usaba el botón manual "Ingresar sugeridos", eliminado de la interfaz por
+// quedar redundante: con el autocargado, el único caso que cubría (carrito CON productos +
+// agregar sugeridos de otro proveedor sin reemplazar nada) se resuelve escribiendo la
+// cantidad a mano fila por fila, como cualquier otro producto del carrito.
 function aplicarSugeridos(items){
+  if(!puedeAutorrellenarCarrito())return 0;
   let agregados=0;
   items.forEach(it=>{
     const a=analyze(it);
