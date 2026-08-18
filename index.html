@@ -3793,15 +3793,22 @@ function toggleAccordion(headEl,bodyEl,openState){
 // sugerido, así que solo entran acá los productos que el usuario realmente puso en el
 // carrito (a mano o con "Agregar sugeridos"), sin importar qué proveedor estés viendo.
 function currentOrder(){const lines=[];DB.items.forEach(it=>{const a=analyze(it);const q=qOf(it,a);if(q>0)lines.push({it,nombre:it.nombre,q,packs:packsOf(it,q),cost:tierCostUn(it)*q,word:it.word});});return lines;}
-// Vista del carrito acotada al proveedor que se está viendo — mismo criterio "soloEsteProv" que
-// ya usan "Copiar" y "Confirmar" más abajo (no mezclar productos de otros proveedores en
-// pantalla). state.edits sigue siendo global (currentOrder no cambia): cambiar de proveedor no
-// borra ni pierde las cantidades de los demás, solo deja de mostrarlas hasta volver a ese
-// proveedor — así que "todos los proveedores" y la búsqueda, que sí necesitan verlo todo junto,
-// siguen funcionando exactamente igual que antes.
+// Única fuente de verdad de "¿el carrito visible debe acotarse al proveedor actual?" — depende
+// SOLO de si hay un proveedor específico elegido (state.allProv), nunca de si hay una búsqueda
+// en curso (state.search). Antes esta condición mezclaba ambas cosas (!state.search&&!state.
+// allProv), duplicada en 3 lugares — el efecto era que, con un proveedor elegido, escribir
+// CUALQUIER texto en el buscador hacía que el carrito visible se expandiera de golpe a mostrar
+// TODOS los productos de TODOS los proveedores que ya hubiera en state.edits (acumulados de
+// elegir otros proveedores en sesiones anteriores) — nada se agregaba al buscar, pero visualmente
+// parecía que la búsqueda "rellenaba" el carrito con productos de otros proveedores. El buscador
+// de productos y el filtro del carrito son dos cosas independientes: buscar nunca debe cambiar
+// qué se ve en el carrito. "Todos los proveedores" sigue mostrando todo, como siempre.
+function soloEsteProveedor(){return !state.allProv;}
+// Vista del carrito acotada al proveedor que se está viendo. state.edits sigue siendo global
+// (currentOrder no cambia): cambiar de proveedor no borra ni pierde las cantidades de los
+// demás, solo deja de mostrarlas hasta volver a ese proveedor.
 function currentOrderVisible(){
-  const soloEsteProv=!state.search&&!state.allProv;
-  return soloEsteProv?currentOrder().filter(l=>esDelProveedor(l.it,state.prov)):currentOrder();
+  return soloEsteProveedor()?currentOrder().filter(l=>esDelProveedor(l.it,state.prov)):currentOrder();
 }
 // Productos con unidades pendientes de "cambio con proveedor" (a.vencido, ya usado en la
 // columna STK), separado de currentOrder() a propósito: un producto puede necesitar cambio
@@ -3844,7 +3851,7 @@ function cartApplyQty(ref,newPacks){
     if(!document.querySelector('#order-body .oline'))document.getElementById('order-body').innerHTML='<div class="order-empty">Sin productos sugeridos con los parámetros actuales.</div>';
   }else if(row){
     const q=newPacks*it.fmt,cost=tierCostUn(it)*q;
-    const sub=row.querySelector('.oline-sub');if(sub)sub.textContent=peso(cost)+(it.fmt>1?' · '+q+' u':'');
+    const sub=row.querySelector('.oline-sub');if(sub)sub.textContent=peso(cost)+(it.fmt>1?' · '+q+' u':'')+(it.stock!=null?' · STK: '+it.stock:'');
     const qty=row.querySelector('.qty-in');if(qty&&+qty.value!==newPacks)qty.value=newPacks;
     const qstep=row.querySelector('.qstep');if(qstep)qstep.classList.toggle('has',newPacks>0);
     const qw=row.querySelector('.qword');if(qw)qw.textContent=labelFor(it,newPacks);
@@ -3885,17 +3892,20 @@ function renderOrder(){
   // Luduar, uno de sus "otros proveedores") — el encabezado del carrito ("Proveedor · LUDUAR")
   // ya deja claro bajo qué proveedor se está pidiendo todo lo que se ve acá; repetir el
   // proveedor PRINCIPAL de cada producto en esa vista es lo que generaba el aviso equivocado.
-  const soloEsteProv=!state.search&&!state.allProv;
+  const soloEsteProv=soloEsteProveedor();
   const provsEnCarrito=new Set(lines.map(l=>l.it.proveedorNombre||l.it.prov));
   const mostrarProv=!soloEsteProv&&provsEnCarrito.size>1;
   let html=lines.map(l=>{
     const cambio=cambiosMap[l.it.ref]||0;
     const color=mostrarProv?colorForProv(l.it.proveedorNombre||l.it.prov):null;
     const provTag=mostrarProv?`<span class="oline-prov-tag" style="color:${color}">${nombreProveedorVisual(l.it)}</span>`:'';
+    // Stock actual: mismo campo que ya usa toda la app (it.stock, viene de Loyverse vía sync) —
+    // no se duplica ni se vuelve a pedir, solo se muestra compacto junto al costo de la línea.
+    const stockTxt=l.it.stock!=null?` · STK: ${l.it.stock}`:'';
     return `<div class="oline" data-ref="${l.it.ref}"${color?` style="border-left:4px solid ${color};padding-left:8px"`:''}>
       <div class="on-wrap">
         <span class="on">${l.nombre}</span>
-        <span class="oline-sub">${provTag}${peso(l.cost)}${l.it.fmt>1?' · '+(l.q)+' u':''}</span>
+        <span class="oline-sub">${provTag}${peso(l.cost)}${l.it.fmt>1?' · '+(l.q)+' u':''}${stockTxt}</span>
         ${cambio>0?`<span class="oline-cambio"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.7-3"/><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.7 3"/><polyline points="21 3 21 9 15 9"/><polyline points="3 21 3 15 9 15"/></svg> Cambio: ${fmt.format(cambio)} u</span>`:''}
       </div>
       <div class="qcell">
@@ -3980,7 +3990,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-18.4';
+const APP_VERSION='2026-08-18.5';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
@@ -13158,7 +13168,7 @@ document.getElementById('btn-clear').onclick=()=>{
 // detalles distintos (uno pedía fecha, el otro no). Ahora hay una sola implementación; lo que
 // cambia por botón es el ícono, el canal, y si copia al portapapeles.
 function confirmarPedidoConCanal(canal){
-  const soloEsteProv=!state.search&&!state.allProv;
+  const soloEsteProv=soloEsteProveedor();
   const lines=currentOrderVisible();
   const provNombre=soloEsteProv?state.prov:(canal==='whatsapp'?'(varios)':'el proveedor');
   let txt=null;
