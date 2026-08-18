@@ -950,6 +950,11 @@ html.modo-bliss .fila-pedir{align-items:center}
 html.modo-bliss .qbtn{width:22px;height:29px;font-size:14px}
 html.modo-bliss .qty-in{width:25px;padding:4px 1px;font-size:13px}
 html.modo-bliss .fila-pedir .qword{text-align:center;max-width:100px;font-size:9px}
+/* Buscador de productos/proveedores (#prov-all, un solo input para ambos) — mismo tamaño que
+   ya usa el texto del carrito del pedido a este ancho (.oline .on, ver @media 700px arriba),
+   para que sea legible a la distancia de lectura de BlissOS. Solo tipografía — alto/padding/
+   ancho/estructura del campo quedan igual que en el resto de la app. */
+html.modo-bliss #prov-all{font-size:17px}
 .card-thumb-wrap{flex:0 0 44px;width:44px;height:44px;box-sizing:border-box}
 .card-thumb{width:44px;height:44px;border-radius:10px;object-fit:cover;background:var(--gris-bg,#F3F1EA);display:block}
 /* Producto sin foto: ícono neutro y sutil, no un punto de color llamativo —
@@ -3347,6 +3352,11 @@ function pvAbrir(providerName,editedCount,onKeepSuggested,onKeepCurrent,onCancel
 // algo de OTRO proveedor, no se autocarga nada — se respeta tal cual esté.
 function pickProv(target){
   const carritoVacioAntes=currentOrder().length===0;
+  // Autorrelleno solo si el buscador de productos estaba VACÍO antes de elegir proveedor — si
+  // había una búsqueda/código escaneado en curso, elegir un proveedor (p.ej. desde el lector
+  // físico, que puede matchear un nombre de proveedor) no debe pisar esa búsqueda con
+  // sugeridos. Se mide ANTES de limpiar state.search más abajo, que si no siempre daría vacío.
+  const buscadorVacioAntes=!state.search;
   // Cambiar de proveedor cierra cualquier edición de "pedido confirmado" que estuviera en
   // curso (ver cargarPedidoConfirmadoEnCarrito) — si quedaba algo cargado sin reconfirmar, sus
   // cantidades siguen en state.edits (no se pierden), solo se deja de rastrear como "edición de
@@ -3357,7 +3367,7 @@ function pickProv(target){
   // "Todos los proveedores" no autocarga nada — no hay un único proveedor nuevo al que
   // aplicarle sugeridos, y mezclar sugeridos de todo el catálogo de una sola vez no es lo que
   // se pidió (el punto 3/4 habla de "el nuevo proveedor" en singular).
-  if(carritoVacioAntes&&target!=='__ALL__')aplicarSugeridos(currentItems());
+  if(carritoVacioAntes&&buscadorVacioAntes&&target!=='__ALL__')aplicarSugeridos(currentItems());
   render();persistUI();
 }
 function commitProv(val){const key=(val||'').trim().toLowerCase();if(!key)return false;if(key.indexOf('todos')===0){pickProv('__ALL__');return true;}let hit=(DB.provsReal||[]).find(p=>p.prov.toLowerCase()===key);if(!hit&&key.length>=2)hit=(DB.provsReal||[]).find(p=>p.prov.toLowerCase().indexOf(key)>-1);if(hit){pickProv(hit.prov);return true;}return false;}
@@ -3952,7 +3962,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-18.1';
+const APP_VERSION='2026-08-18.2';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
