@@ -3257,7 +3257,16 @@ function buildChips(){
     if(!acts.length){const e=document.createElement('div');e.className='prov-opt';e.style.color='var(--muted)';e.textContent=matchProd?'Sin proveedores — mostrando productos abajo ↓':'Sin coincidencias';menu.appendChild(e);}}
   function openMenu(f){renderProvMenu(f);menu.classList.remove('hidden');menu.scrollTop=0;}
   function caretToEnd(el){const n=(el.value||'').length;try{el.setSelectionRange(n,n);}catch(e){}}
-  sel.onfocus=()=>{openMenu(sel.value);setTimeout(()=>caretToEnd(sel),0);};
+  // Con el buscador vacío, el campo muestra el nombre del proveedor actual como valor (ver
+  // setProvInputValue) — es solo un indicador de "dónde estás", no algo que el usuario haya
+  // escrito. Si al enfocar se dejaba el cursor al final (caretToEnd) y el usuario tecleaba de
+  // inmediato (muy común al tocar y escribir/escanear sin pausa), el texto se pegaba DETRÁS del
+  // nombre del proveedor (ej. "AGAMAcoca") en vez de reemplazarlo — una búsqueda que no
+  // matcheaba nada y podía parecer que "algo raro" pasó. Seleccionando todo el texto al
+  // enfocar (solo cuando no hay una búsqueda real en curso), la siguiente tecla lo reemplaza
+  // entero, como cualquier campo de búsqueda. Si ya había una búsqueda real (state.search no
+  // vacío) se mantiene el comportamiento anterior (cursor al final, no se toca lo escrito).
+  sel.onfocus=()=>{openMenu(sel.value);setTimeout(()=>{if(!state.search){try{sel.select();}catch(e){caretToEnd(sel);}}else{caretToEnd(sel);}},0);};
   sel.oninput=()=>{openMenu(sel.value);state.search=sel.value.trim();document.getElementById('prov-x').classList.toggle('on',!!state.search);clearTimeout(window._searchT);window._searchT=setTimeout(()=>{render();persistUI();},200);};
   const xb=document.getElementById('prov-x');
   if(xb)xb.onclick=ev=>{ev.preventDefault();ev.stopPropagation();const q=normTxt(sel.value||'').trim();const esProveedor=q&&(DB.provsReal||[]).some(p=>normTxt(p.prov).indexOf(q)>-1);state.search='';xb.classList.remove('on');clearTimeout(window._searchT);if(esProveedor){sel.value='';openMenu('');sel.focus();}else{menu.classList.add('hidden');sel.blur();setProvInputValue();}render();persistUI();};
@@ -3268,7 +3277,16 @@ function buildChips(){
       // se le quita el foco al buscador — así un lector físico USB/Bluetooth (que emula Enter al
       // terminar cada código) puede seguir escaneando sin que el usuario tenga que volver a
       // tocar la pantalla entre un escaneo y el siguiente.
-      if(esProveedor||!val)sel.blur();}}
+      if(esProveedor||!val)sel.blur();
+      else{
+        // Sin esto, el próximo código escaneado se pegaba DETRÁS del anterior en el mismo campo
+        // (ej. "78012345678907809876543210"), porque el foco nunca se pierde entre un escaneo y
+        // el siguiente y el campo nunca se vaciaba solo. Se limpia solo el VALOR VISIBLE del
+        // campo — no state.search ni la tabla filtrada, que siguen mostrando el producto recién
+        // encontrado — para que el próximo escaneo empiece de cero en vez de concatenarse.
+        sel.value='';
+      }
+    }}
     else if(e.key==='Escape'){menu.classList.add('hidden');if(sel.value.trim())setProvInputValue();sel.blur();}
   };
   if(!window._provDocBound){window._provDocBound=true;
@@ -3962,7 +3980,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-18.3';
+const APP_VERSION='2026-08-18.4';
 (function(){
   async function hayAlgoAbierto(){
     return !!document.querySelector('.mm-ov:not(.hidden)');
