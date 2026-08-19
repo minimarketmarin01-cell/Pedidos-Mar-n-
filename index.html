@@ -4127,7 +4127,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-19.4';
+const APP_VERSION='2026-08-19.5';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -10698,7 +10698,11 @@ function vcFilaHtml(l){
 // Cablea los botones de un lote de filas recién pintadas — separado de vcFilaHtml para no
 // repetir este bloque en cada llamada de vcRender (agrupada o plana).
 function vcWireFilas(box){
-  box.querySelectorAll('[data-act="ok"]').forEach(b=>b.onclick=()=>vcRevisar(b.dataset.i,'vendido'));
+  box.querySelectorAll('[data-act="ok"]').forEach(b=>b.onclick=()=>{
+    const l=_vcTodos.find(x=>String(x.filaIndex)===String(b.dataset.i));
+    if(l&&l.estado==='Vencido'&&!confirm('Este producto ya está VENCIDO. ¿Seguro que se vendió antes de vencer?\n\nSi en realidad se venció, tocá "Merma" en vez de "Vendido".'))return;
+    vcRevisar(b.dataset.i,'vendido');
+  });
   box.querySelectorAll('[data-act="retirar"]').forEach(b=>b.onclick=()=>vcRevisar(b.dataset.i,'retirado'));
   box.querySelectorAll('[data-act="merma"]').forEach(b=>b.onclick=()=>{
     // El lote de vencimiento YA NO se cierra acá — antes se marcaba 'Revisado' apenas se
