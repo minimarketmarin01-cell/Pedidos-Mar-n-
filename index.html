@@ -1802,11 +1802,13 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
             <button type="button" data-view="descuentos" style="flex:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M20.59 13.41 13 21l-9-9 7.59-7.59A2 2 0 0 1 13 4h6a2 2 0 0 1 2 2v6a2 2 0 0 1-.41 1.41Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg> Descuentos<span id="vc-desc-badge"></span></button>
           </div>
           <div id="vc-view-lista">
-          <div class="mm-search" style="margin:0 0 10px">
-            <input id="vc-lsearch" placeholder="Buscar producto: nombre, código o SKU…" autocomplete="off" style="padding-right:132px">
-            <button class="mm-x" id="vc-lx" type="button" aria-label="Limpiar" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-            <button class="mm-mic" id="vc-lmic" type="button" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
-            <button class="mm-scan cam-btn" id="vc-lscan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
+          <div class="prov-combo" id="vc-l-combo" style="margin-bottom:8px">
+            <span class="prov-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13.5 13.5 20a1.5 1.5 0 0 1-2.1 0L4 12.6V4h8.6l7.4 7.4a1.5 1.5 0 0 1 0 2.1Z"/><circle cx="8.3" cy="8.3" r="1.3"/></svg></span>
+            <input class="prov-all" id="vc-l-search" placeholder="Producto, código o proveedor…" autocomplete="off" inputmode="text">
+            <button class="prov-mic" id="vc-l-mic" type="button" tabindex="-1" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
+            <button class="prov-scan cam-btn" id="vc-l-scan" type="button" tabindex="-1" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
+            <button class="prov-x" id="vc-l-x" type="button" tabindex="-1" aria-label="Borrar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            <div class="prov-menu hidden" id="vc-l-menu"></div>
           </div>
           <!-- Filtros rápidos por antigüedad — reemplazan el filtro de categoría que antes solo
                existía en "Por góndola" (módulo eliminado, fusionado acá). "Todos" es el default. -->
@@ -1816,7 +1818,6 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
             <button type="button" data-dias="30" style="flex:1">1 mes</button>
             <button type="button" data-dias="0" class="active" style="flex:1">Todos</button>
           </div>
-          <select id="vc-provfilter" style="width:100%;margin:0 0 8px;padding:9px 10px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:12.5px"><option value=""><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="4" width="16" height="17" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="17" x2="13" y2="17"/></svg> Todos los proveedores</option></select>
           <!-- Barra de progreso de revisión — antes solo vivía en "Por góndola"; ahora es la
                única vista, así que la barra cubre siempre todo lo visible según los filtros
                activos (días + proveedor), no una categoría suelta. -->
@@ -1824,10 +1825,26 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <div id="vc-list"><div class="vc-empty">Cargando…</div></div>
           </div>
           <div id="vc-view-pendientes" class="hidden">
+            <div class="prov-combo" id="vc-pend-combo" style="margin-bottom:10px">
+              <span class="prov-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13.5 13.5 20a1.5 1.5 0 0 1-2.1 0L4 12.6V4h8.6l7.4 7.4a1.5 1.5 0 0 1 0 2.1Z"/><circle cx="8.3" cy="8.3" r="1.3"/></svg></span>
+              <input class="prov-all" id="vc-pend-search" placeholder="Producto, código o proveedor…" autocomplete="off" inputmode="text">
+              <button class="prov-mic" id="vc-pend-mic" type="button" tabindex="-1" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
+              <button class="prov-scan cam-btn" id="vc-pend-scan" type="button" tabindex="-1" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
+              <button class="prov-x" id="vc-pend-x" type="button" tabindex="-1" aria-label="Borrar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+              <div class="prov-menu hidden" id="vc-pend-menu"></div>
+            </div>
             <div class="vc-empty" id="vc-pend-intro" style="text-align:left;color:var(--muted);font-size:12px;margin-bottom:8px">Ya se retiraron de la revisión — esperando que el proveedor los cambie, o falta confirmar si son merma.</div>
             <div id="vc-pend-list"></div>
           </div>
           <div id="vc-view-descuentos" class="hidden">
+            <div class="prov-combo" id="da-combo" style="margin-bottom:10px">
+              <span class="prov-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13.5 13.5 20a1.5 1.5 0 0 1-2.1 0L4 12.6V4h8.6l7.4 7.4a1.5 1.5 0 0 1 0 2.1Z"/><circle cx="8.3" cy="8.3" r="1.3"/></svg></span>
+              <input class="prov-all" id="da-search" placeholder="Producto, código o proveedor…" autocomplete="off" inputmode="text">
+              <button class="prov-mic" id="da-mic" type="button" tabindex="-1" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
+              <button class="prov-scan cam-btn" id="da-scan" type="button" tabindex="-1" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
+              <button class="prov-x" id="da-x" type="button" tabindex="-1" aria-label="Borrar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+              <div class="prov-menu hidden" id="da-menu"></div>
+            </div>
             <div id="da-pendientes-box" class="hidden" style="border:1.5px solid var(--ambar);background:var(--ambar-bg);border-radius:10px;padding:10px 12px;margin-bottom:10px">
               <div style="font-size:12px;font-weight:700;color:var(--ambar);margin-bottom:6px">⚠️ Precios pendientes de restaurar<span id="da-pend-count"></span></div>
               <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">Estos lotes ya se cerraron, pero el precio nunca volvió al original en Loyverse.</div>
@@ -4110,7 +4127,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-19.2';
+const APP_VERSION='2026-08-19.3';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -9718,7 +9735,7 @@ function wireClearX(inp){
   inp.dataset.xWired='1';
   // Si ya hay un ✕ hermano puesto a mano en el HTML, no se duplica — puede ser .search-x
   // (genérica) o .mm-x (la usada en los buscadores dentro de .mm-search, con su propio
-  // posicionamiento fijo junto al mic/scan; ver rc-search, ed-search, vc-lsearch, etc.).
+  // posicionamiento fijo junto al mic/scan; ver rc-search, ed-search, etc.).
   const hermano=inp.nextElementSibling;
   if(hermano&&hermano.classList&&(hermano.classList.contains('search-x')||hermano.classList.contains('mm-x')))return;
   const cont=inp.parentElement;
@@ -10199,7 +10216,7 @@ let _vcProgTotal=0; // total de lotes pendientes al momento de aplicar el filtro
 // filtro real (días, proveedor, o al cargar el módulo por primera vez), nunca en cada
 // repintado tras marcar un lote, para que la barra avance en vez de resetearse a 0 cada vez.
 function vcRecalcularProgTotal(){
-  const provFiltro=document.getElementById('vc-provfilter').value;
+  const provFiltro=_vcLFiltro.prov;
   // FIX: el total de referencia de la barra de progreso debe contar lo mismo que Lista
   // realmente muestra — sin los lotes Retirado (esos viven en Pendientes).
   let base=_vcTodos.filter(l=>l.estado!=='Retirado');
@@ -10208,10 +10225,10 @@ function vcRecalcularProgTotal(){
   _vcProgTotal=base.length;
 }
 function vcAplicarFiltro(){
-  const inp=document.getElementById('vc-lsearch');
-  const q=(inp?inp.value:'').toLowerCase().trim();
-  const provFiltro=document.getElementById('vc-provfilter').value;
-  const x=document.getElementById('vc-lx'); if(x)x.style.display=q?'block':'none';
+  // vcBuscarCatalogo compara contra un haystack solo con .toLowerCase() (sin sacar acentos),
+  // así que acá se normaliza igual que antes (no con normTxt) para no cambiar qué encuentra.
+  const q=(_vcLFiltro.search||'').toLowerCase().trim();
+  const provFiltro=_vcLFiltro.prov;
   if(!q){
     // FIX: un lote "Retirado" ya se movió a la pestaña Pendientes — no debe seguir viéndose
     // también en Lista. _vcTodos trae ambos (el backend solo excluye 'Revisado'), así que acá
@@ -10251,17 +10268,9 @@ document.getElementById('in2-venc-card').onclick=()=>abrirVencimientosDias(15);
 document.querySelectorAll('#in2-venc-card .in2-venc-mini').forEach(mini=>{
   mini.onclick=(e)=>{e.stopPropagation();abrirVencimientosDias(Number(mini.dataset.dias)||0);};
 });
-// Puebla el filtro de proveedor SOLO con los que realmente tienen lotes de vencimiento
-// activos (no todo el catálogo de proveedores) — mismo criterio que ya usan otros filtros de
-// la app, para no llenar el selector de opciones sin resultados.
-function vcPoblarFiltroProveedor(){
-  const sel=document.getElementById('vc-provfilter');
-  const actual=sel.value;
-  const provs=[...new Set(_vcTodos.map(l=>l.categoria).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'es'));
-  sel.innerHTML='<option value=""><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="4" width="16" height="17" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="17" x2="13" y2="17"/></svg> Todos los proveedores</option>'+provs.map(p=>`<option value="${p}">${p}</option>`).join('');
-  if(provs.includes(actual))sel.value=actual;
-}
-document.getElementById('vc-provfilter').onchange=()=>{vcRecalcularProgTotal();vcAplicarFiltro();};
+// (vcPoblarFiltroProveedor se eliminó al unificar el buscador de Lista — el desplegable de
+// proveedores del combo único ya se recalcula en vivo cada vez que se enfoca el campo, no
+// necesita un paso de "poblar" aparte.)
 // Busca en el catálogo completo (no solo en lotes activos) por nombre, código de
 // barras o SKU. Muestra los lotes registrados del producto reutilizando vcRender
 // (todos sus botones siguen funcionando) y, si el producto no tiene lote/fecha,
@@ -10297,7 +10306,7 @@ function vcBuscarCatalogo(q,provFiltro){
 }
 // Abre el formulario de nuevo lote con el producto ya seleccionado (reutiliza vcPick).
 function vcNuevoLoteDe(ref){
-  document.getElementById('vc-lsearch').value='';
+  document.getElementById('vc-l-search').value='';_vcLFiltro.search='';
   vcShowForm();
   vcPick(ref);
 }
@@ -10344,8 +10353,8 @@ document.querySelectorAll('#vc-viewseg button').forEach(b=>b.onclick=()=>vcSetVi
 // botones por categoría cambio/normal) apuntando al contenedor propio de esta pestaña.
 function vcRenderPendientes(){
   const pendientes=_vcTodos.filter(l=>l.estado==='Retirado');
-  vcRender(pendientes,'vc-pend-list');
-  vcUpdatePendBadge(pendientes.length);
+  vcRender(vcAplicarFiltroInteligente(pendientes,_vcPendFiltro),'vc-pend-list');
+  vcUpdatePendBadge(pendientes.length);   // el badge cuenta el TOTAL, no el filtrado
 }
 function vcUpdatePendBadge(n){
   const b=document.getElementById('vc-pend-badge');
@@ -10364,7 +10373,6 @@ async function vcRefreshCurrentView(){
     const j=await res.json();
     if(j&&j.ok)_vcTodos=j.lotes.filter(l=>!!l.fechaVencimiento);   // mismo filtro que vcLoad — solo lotes con fecha registrada
   }catch(e){/* si falla la recarga, se repinta igual con los datos que ya había en memoria */}
-  vcPoblarFiltroProveedor();
   const activo=document.querySelector('#vc-viewseg button.active');
   const v=activo?activo.dataset.view:'lista';
   if(v==='pendientes')vcRenderPendientes();
@@ -10438,7 +10446,6 @@ async function vcLoad(){
     // cargue una fecha real. Sigue existiendo en la base de datos, solo queda fuera de esta
     // vista mientras tanto.
     _vcTodos=(j&&j.ok)?j.lotes.filter(l=>!!l.fechaVencimiento):[];
-    vcPoblarFiltroProveedor();
     vcRecalcularProgTotal();   // punto de partida de la barra de progreso para esta sesión del módulo
     vcAplicarFiltro();   // pinta ya filtrado por lo que haya escrito en el buscador y/o el proveedor elegido
     vcUpdatePendBadge(_vcTodos.filter(l=>l.estado==='Retirado').length);
@@ -10465,6 +10472,84 @@ async function daCargarBadgeSolo(){
 function vcProveedorDe(l){
   const it=(DB.items||[]).find(x=>x.ref===l.sku);
   return (it&&it.proveedorNombre)||l.categoria||'Sin proveedor';
+}
+// Filtra una lista de lotes por texto (nombre/SKU/código de barras, vía join con DB.items — el
+// lote no trae barcode directo) y/o por proveedor exacto (vcProveedorDe por defecto). Usado por
+// Pendientes y Descuentos; Lista tiene su propia lógica más rica (busca en TODO el catálogo, no
+// solo en los lotes cargados) y no pasa por acá.
+function vcAplicarFiltroInteligente(lotes,filtro){
+  let lista=lotes;
+  if(filtro.prov)lista=lista.filter(l=>vcProveedorDe(l)===filtro.prov);
+  const q=normTxt(filtro.search).trim();
+  if(q){
+    const words=q.split(/\s+/).filter(Boolean);
+    lista=lista.filter(l=>{
+      const it=(DB.items||[]).find(x=>x.ref===l.sku);
+      const s=normTxt((l.nombre||'')+' '+(l.sku||'')+' '+((it&&it.barcode)||''));
+      return words.every(w=>s.includes(w));
+    });
+  }
+  return lista;
+}
+// Buscador inteligente reutilizable: nombre+código+proveedor en un solo campo, con desplegable
+// de proveedores sugeridos (solo los que aparecen en getLotes(), no todo DB.provs — así nunca
+// sugiere un proveedor sin resultados en esta pestaña). Mismo patrón visual/JS que #rk-all
+// (Reconteo de stock), parametrizado para no duplicarlo entre Pendientes/Descuentos/Lista.
+function vcWireBuscadorInteligente(prefix,{getLotes,onFiltroChange,vistaParaReabrir,proveedorDe}){
+  const deQueCampo=proveedorDe||vcProveedorDe; // Pendientes/Descuentos: proveedor real. Lista: l.categoria (mismo campo que ya filtraba antes de unificar el buscador).
+  const filtro={search:'',prov:''};
+  const inp=document.getElementById(prefix+'-search');
+  const menu=document.getElementById(prefix+'-menu');
+  const x=document.getElementById(prefix+'-x');
+  function proveedoresDisponibles(){
+    return [...new Set(getLotes().map(deQueCampo).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+  }
+  function abrirMenu(textoFiltro){
+    const q=normTxt(textoFiltro||'').trim();
+    const provs=proveedoresDisponibles().filter(p=>!q||normTxt(p).indexOf(q)>-1);
+    menu.innerHTML='';
+    if(!provs.length){menu.classList.add('hidden');return;}
+    provs.forEach(p=>{
+      const d=document.createElement('div');
+      d.className='prov-opt';
+      d.textContent=p;
+      d.onclick=ev=>{
+        ev.preventDefault();ev.stopPropagation();
+        filtro.prov=p;filtro.search='';
+        inp.value=p;x.classList.remove('on');menu.classList.add('hidden');inp.blur();
+        onFiltroChange();
+      };
+      menu.appendChild(d);
+    });
+    menu.classList.remove('hidden');
+  }
+  inp.onfocus=()=>abrirMenu(inp.value);
+  inp.oninput=()=>{
+    abrirMenu(inp.value);
+    filtro.search=inp.value.trim();filtro.prov='';
+    x.classList.toggle('on',!!filtro.search);
+    clearTimeout(inp._t);inp._t=setTimeout(onFiltroChange,200);
+  };
+  document.addEventListener('pointerdown',ev=>{
+    if(!menu.classList.contains('hidden')&&!inp.parentElement.contains(ev.target))menu.classList.add('hidden');
+  },true);
+  x.onclick=ev=>{
+    ev.preventDefault();ev.stopPropagation();
+    inp.value='';filtro.search='';filtro.prov='';x.classList.remove('on');menu.classList.add('hidden');
+    onFiltroChange();inp.focus();
+  };
+  document.getElementById(prefix+'-mic').onclick=()=>voiceSearch(document.getElementById(prefix+'-mic'),text=>{
+    inp.value=text;filtro.search=text;filtro.prov='';x.classList.toggle('on',!!text);onFiltroChange();
+  });
+  document.getElementById(prefix+'-scan').onclick=()=>{
+    const reopen=()=>{document.getElementById('vc-ov').classList.remove('hidden');vcSetView(vistaParaReabrir);};
+    closeVenc();
+    openScanner(code=>{
+      reopen();inp.value=code;filtro.search=code;filtro.prov='';
+      x.classList.add('on');onFiltroChange();
+    },reopen);
+  };
+  return filtro;
 }
 function vcPrecioActualDe(l){
   const it=(DB.items||[]).find(x=>x.ref===l.sku);
@@ -10500,7 +10585,7 @@ function vcRender(lotes,containerId,esBusqueda){
       const pct=total?Math.round(hechos/total*100):0;
       if(fill)fill.style.width=pct+'%';
       if(lbl){
-        const provFiltro=document.getElementById('vc-provfilter').value;
+        const provFiltro=_vcLFiltro.prov;
         lbl.textContent=hechos+'/'+total+' revisados — '+pct+'%'+(provFiltro?' · '+provFiltro:'');
       }
     }
@@ -10823,8 +10908,9 @@ async function daCargarPendientes(){
 }
 function daRender(){
   const box=document.getElementById('da-list');
-  if(!_daLotes.length){box.innerHTML='<div class="vc-empty">No hay descuentos activos ahora mismo.</div>';return;}
-  box.innerHTML=_daLotes.map(l=>{
+  const lotes=vcAplicarFiltroInteligente(_daLotes,_daFiltro);
+  if(!lotes.length){box.innerHTML='<div class="vc-empty">'+(_daLotes.length?'Sin resultados para este filtro.':'No hay descuentos activos ahora mismo.')+'</div>';return;}
+  box.innerHTML=lotes.map(l=>{
     const total=Number(l.cantidad)||0,vend=Number(l.cantVendida)||0,merma=Number(l.cantMerma)||0;
     const restante=Math.max(0,total-vend-merma);
     const nom=String(l.nombre||'').replace(/</g,'&lt;');
@@ -11138,15 +11224,26 @@ function closeVenc(){cerrarModal('vc-ov');}
 document.getElementById('btn-venc').onclick=openVenc;
 document.getElementById('vc-cerrar').onclick=closeVenc;
 document.getElementById('vc-add-btn').onclick=vcShowForm;
-// Buscador de la LISTA de vencimientos (filtra en memoria, instantáneo)
-document.getElementById('vc-lsearch').oninput=vcAplicarFiltro;
-document.getElementById('vc-lx').onclick=()=>{document.getElementById('vc-lsearch').value='';vcAplicarFiltro();document.getElementById('vc-lsearch').focus();};
-document.getElementById('vc-lmic').onclick=()=>voiceSearch(document.getElementById('vc-lmic'),text=>{document.getElementById('vc-lsearch').value=text;vcAplicarFiltro();});
-document.getElementById('vc-lscan').onclick=()=>{
-  const reopen=()=>{document.getElementById('vc-ov').classList.remove('hidden');vcShowList();_sincronizarNav();};
-  closeVenc();
-  openScanner(code=>{reopen();document.getElementById('vc-lsearch').value=code;vcAplicarFiltro();},reopen);
-};
+// Buscador inteligente único (nombre+código+proveedor) de las 3 pestañas — filtra en memoria,
+// instantáneo, sin llamadas de red nuevas. Lista conserva su lógica propia (busca en TODO el
+// catálogo, no solo en los lotes cargados) vía vcAplicarFiltro/vcBuscarCatalogo, que ahora leen
+// de _vcLFiltro en vez del DOM directo; Pendientes/Descuentos usan vcAplicarFiltroInteligente.
+const _vcLFiltro=vcWireBuscadorInteligente('vc-l',{
+  getLotes:()=>_vcTodos.filter(l=>l.estado!=='Retirado'),
+  onFiltroChange:()=>{vcRecalcularProgTotal();vcAplicarFiltro();},
+  vistaParaReabrir:'lista',
+  proveedorDe:l=>l.categoria   // Lista sigue filtrando por categoría Loyverse, igual que antes de unificar el buscador
+});
+const _vcPendFiltro=vcWireBuscadorInteligente('vc-pend',{
+  getLotes:()=>_vcTodos.filter(l=>l.estado==='Retirado'),
+  onFiltroChange:vcRenderPendientes,
+  vistaParaReabrir:'pendientes'
+});
+const _daFiltro=vcWireBuscadorInteligente('da',{
+  getLotes:()=>_daLotes,
+  onFiltroChange:daRender,
+  vistaParaReabrir:'descuentos'
+});
 document.getElementById('vc-cancelar').onclick=vcShowList;
 document.getElementById('vc-search').oninput=e=>{
   const list=mmFindItems(e.target.value);
