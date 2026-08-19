@@ -2242,6 +2242,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <button id="mas-q-abc"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg><br>Clasificación ABC</button>
         <button id="mas-q-recneg"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="6" y="4" width="12" height="17" rx="1.5"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><line x1="12" y1="10" x2="12" y2="14"/><circle cx="12" cy="17.3" r="0.2" fill="currentColor" stroke-width="0"/></svg><br>Recibidos en negativo</button>
         <button id="mas-q-reportedia"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg><br>Reportes del día</button>
+        <button id="mas-q-ventasdia"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg><br>Ventas por día</button>
       </div>
       <div class="method" style="margin:0;padding:16px 18px">
         <div class="scale-head" id="ayuda-head" style="background:linear-gradient(100deg,#2a2118,#3a2c1a);margin:-16px -18px 0;padding:12px 18px;border-radius:var(--radius-card) var(--radius-card) 0 0"><div><div class="t">ℹ️ Cómo funciona tu app</div></div><svg class="accordion-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
@@ -2322,6 +2323,35 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
       <div class="pd-datechip-row" style="margin-bottom:10px"><label class="pd-datechip" for="rd-fecha"><span class="ic">📅</span><input type="date" id="rd-fecha"><span class="car">▾</span></label></div>
       <div class="hm-summary" style="margin-bottom:8px"><span class="lbl" id="rd-lbl">—</span></div>
       <div id="rd-list"></div>
+    </div>
+  </div>
+</div>
+
+<div class="mm-ov hidden" id="vd-ov">
+  <div class="mm-card">
+    <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mm-head-ic"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg>Ventas por día</h3></div>
+    <div class="mm-topbar"><button class="loadbtn" id="vd-cerrar" style="width:100%">Cerrar</button></div>
+    <div class="mm-body">
+      <div class="mm-search" style="margin:0 0 8px">
+        <input id="vd-search" placeholder="Buscar producto… (ej. ensalada)" autocomplete="off">
+        <button class="mm-x" id="vd-x" type="button" aria-label="Limpiar" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="sm-filters" style="display:flex;gap:6px;margin-bottom:8px">
+        <select id="vd-sector" style="flex:1;min-width:0;padding:8px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:12.5px">
+          <option value="">Todos los sectores</option>
+        </select>
+        <select id="vd-proveedor" style="flex:1;min-width:0;padding:8px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:12.5px">
+          <option value="">Todos los proveedores</option>
+        </select>
+      </div>
+      <div class="seg" id="vd-modo" style="display:flex;width:100%;margin-bottom:10px">
+        <button type="button" data-modo="dow" class="active" style="flex:1">Promedio día de semana</button>
+        <button type="button" data-modo="semana" style="flex:1">Últimos 7 días</button>
+      </div>
+      <div class="hm-summary"><span class="lbl" id="vd-lbl">—</span></div>
+      <div class="catchart" id="vd-chart"></div>
+      <div class="cat" style="margin:10px 0 6px;font-weight:700">Por producto</div>
+      <div id="vd-list"></div>
     </div>
   </div>
 </div>
@@ -4080,7 +4110,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-19.1';
+const APP_VERSION='2026-08-19.2';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -12784,6 +12814,120 @@ document.getElementById('rd-fecha').onchange=rdCargar;
 document.getElementById('rz-prov').onchange=rzRender;
 document.getElementById('rz-clase').onchange=rzRender;
 document.getElementById('rz-ver-excluidos').onclick=rzMostrarExcluidos;
+
+// ===================== VENTAS POR DÍA (gráfico interactivo, filtrable) =====================
+// Trae ventas_series una sola vez por apertura (90 días desde la tabla permanente
+// ventas_diarias_historico, ver backend) y cachea el crudo en _vdFilas — todo el
+// filtrado/agregado (búsqueda, sector, proveedor, promedio por día de semana vs últimos 7
+// días) es 100% client-side para que sea instantáneo, sin volver a pedirle nada al backend en
+// cada cambio de filtro.
+let _vdFilas=null,_vdFiltro={search:'',sector:'',proveedor:'',modo:'dow'};
+function vdAbrir(){
+  document.getElementById('mas-ov').classList.add('hidden');
+  abrirModal('vd-ov');
+  if(_vdFilas)vdRender();
+  else vdCargar();
+}
+async function vdCargar(){
+  document.getElementById('vd-chart').innerHTML='<div class="cc-empty">Cargando…</div>';
+  document.getElementById('vd-list').innerHTML='';
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=ventas_series&dias=90');
+    const j=await res.json();
+    _vdFilas=(j&&j.ok&&Array.isArray(j.filas))?j.filas:[];
+  }catch(e){_vdFilas=[];}
+  vdPoblarSelects();
+  vdRender();
+}
+function vdPoblarSelects(){
+  const sectores=[...new Set((_vdFilas||[]).map(f=>f.sector).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+  const proveedores=[...new Set((_vdFilas||[]).map(f=>f.proveedor).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+  document.getElementById('vd-sector').innerHTML='<option value="">Todos los sectores</option>'+sectores.map(s=>`<option value="${s.replace(/"/g,'&quot;')}">${s}</option>`).join('');
+  document.getElementById('vd-proveedor').innerHTML='<option value="">Todos los proveedores</option>'+proveedores.map(p=>`<option value="${p.replace(/"/g,'&quot;')}">${p}</option>`).join('');
+}
+function vdFiltrados(){
+  if(!_vdFilas)return [];
+  const q=normTxt(_vdFiltro.search).trim();
+  return _vdFilas.filter(f=>{
+    if(_vdFiltro.sector&&f.sector!==_vdFiltro.sector)return false;
+    if(_vdFiltro.proveedor&&f.proveedor!==_vdFiltro.proveedor)return false;
+    if(q&&!normTxt(f.nombre||'').includes(q))return false;
+    return true;
+  });
+}
+// Promedio de unidades vendidas por día de la semana: divide por la cantidad de fechas
+// distintas de TODO el rango cargado (no solo del filtro), así un día sin ventas del filtro
+// actual cuenta como 0 y no infla el promedio — reutiliza el mismo orden Lun-Dom que DIAS
+// (ya usado para "Día pico" en Resumen).
+function vdPromedioSemana(filas){
+  const fechasPorDia=[0,1,2,3,4,5,6].map(()=>new Set());
+  (_vdFilas||[]).forEach(f=>{const idx=(new Date(f.fecha+'T00:00:00').getDay()+6)%7;fechasPorDia[idx].add(f.fecha);});
+  const sumaPorDia=[0,0,0,0,0,0,0];
+  filas.forEach(f=>{const idx=(new Date(f.fecha+'T00:00:00').getDay()+6)%7;sumaPorDia[idx]+=f.unidades||0;});
+  return DIAS.map((label,idx)=>({label,valor:fechasPorDia[idx].size?Math.round(sumaPorDia[idx]/fechasPorDia[idx].size*10)/10:0}));
+}
+// Últimos 7 días CALENDARIO presentes en el dataset completo (no en el filtrado, para que el
+// eje de fechas no salte al filtrar) — suma unidades del filtro actual en cada una.
+function vdUltimaSemana(filas){
+  const fechas=[...new Set((_vdFilas||[]).map(f=>f.fecha))].sort().slice(-7);
+  const sumaPorFecha={};
+  fechas.forEach(f=>{sumaPorFecha[f]=0;});
+  filas.forEach(f=>{if(sumaPorFecha[f.fecha]!=null)sumaPorFecha[f.fecha]+=f.unidades||0;});
+  return fechas.map(f=>({label:f.slice(5).replace('-','/'),valor:Math.round((sumaPorFecha[f]||0)*10)/10}));
+}
+function vdRenderChart(){
+  const datos=_vdFiltro.modo==='semana'?vdUltimaSemana(vdFiltrados()):vdPromedioSemana(vdFiltrados());
+  const box=document.getElementById('vd-chart');
+  const max=Math.max(...datos.map(d=>d.valor),0.1);
+  box.innerHTML=datos.map(d=>`<div class="cbar-row"><span class="cbar-lbl">${d.label}</span><span class="cbar-track"><span class="cbar-fill" style="width:${Math.max(3,Math.round(d.valor/max*100))}%"></span></span><span class="cbar-val">${d.valor} u</span></div>`).join('');
+}
+function vdRenderLista(){
+  const filas=vdFiltrados();
+  const box=document.getElementById('vd-list');
+  const porSku={};
+  filas.forEach(f=>{
+    if(!porSku[f.sku])porSku[f.sku]={nombre:f.nombre,total:0};
+    porSku[f.sku].total+=f.unidades||0;
+  });
+  const lista=Object.keys(porSku).map(sku=>({sku,...porSku[sku]})).sort((a,b)=>b.total-a.total);
+  document.getElementById('vd-lbl').textContent=lista.length+' producto'+(lista.length===1?'':'s')+' vendido'+(lista.length===1?'':'s')+' en el rango';
+  if(!lista.length){box.innerHTML='<div class="vc-empty">Sin ventas para este filtro en los últimos 90 días.</div>';return;}
+  const max=Math.max(...lista.map(l=>l.total),0.1);
+  box.innerHTML=lista.slice(0,100).map(l=>`<div class="cbar-row" data-vd-sku="${l.sku}" style="cursor:pointer"><span class="cbar-lbl" title="${(l.nombre||'').replace(/"/g,'&quot;')}">${l.nombre||l.sku}</span><span class="cbar-track"><span class="cbar-fill" style="width:${Math.max(3,Math.round(l.total/max*100))}%;background:var(--rojo)"></span></span><span class="cbar-val">${Math.round(l.total*10)/10} u</span></div>`).join('');
+}
+function vdRender(){vdRenderChart();vdRenderLista();}
+document.getElementById('mas-q-ventasdia').onclick=vdAbrir;
+document.getElementById('vd-cerrar').onclick=()=>cerrarModal('vd-ov');
+(function(){
+  const inp=document.getElementById('vd-search');
+  const x=document.getElementById('vd-x');
+  inp.addEventListener('input',()=>{
+    _vdFiltro.search=inp.value;
+    x.style.display=inp.value?'block':'none';
+    clearTimeout(window._vdSearchT);window._vdSearchT=setTimeout(vdRender,200);
+  });
+  x.onclick=()=>{inp.value='';_vdFiltro.search='';x.style.display='none';vdRender();inp.focus();};
+})();
+document.getElementById('vd-sector').onchange=e=>{_vdFiltro.sector=e.target.value;vdRender();};
+document.getElementById('vd-proveedor').onchange=e=>{_vdFiltro.proveedor=e.target.value;vdRender();};
+document.getElementById('vd-modo').addEventListener('click',ev=>{
+  const btn=ev.target.closest('button[data-modo]');
+  if(!btn)return;
+  document.querySelectorAll('#vd-modo button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  _vdFiltro.modo=btn.dataset.modo;
+  vdRenderChart();
+});
+document.getElementById('vd-list').addEventListener('click',ev=>{
+  const row=ev.target.closest('[data-vd-sku]');
+  if(!row)return;
+  const f=(_vdFilas||[]).find(x=>x.sku===row.dataset.vdSku);
+  if(!f)return;
+  document.getElementById('vd-search').value=f.nombre||'';
+  _vdFiltro.search=f.nombre||'';
+  document.getElementById('vd-x').style.display='block';
+  vdRender();
+});
 
 // ===================== NOTIFICACIONES PUSH (avisos aunque la app esté cerrada) =====================
 // Flujo: 1) registrar el Service Worker (sw.js, dedicado solo a push) 2) pedir permiso al
