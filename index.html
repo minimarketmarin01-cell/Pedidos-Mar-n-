@@ -4127,7 +4127,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-19.3';
+const APP_VERSION='2026-08-19.4';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -12842,7 +12842,12 @@ async function rzGuardarStock(sku,rid){
       const it=DB.items.find(x=>x.ref===sku);
       if(it){it.stock=j.stockNuevo!=null?j.stockNuevo:nuevo;if(j.trackHabilitado)it.track=true;}
       persist();
-      showToast((j.trackHabilitado?'Seguimiento activado · ':'Stock corregido: ')+fmt1(nuevo));
+      // Si Loyverse rechazó activar "Seguir inventario", el backend igual guarda el conteo
+      // localmente y devuelve ok:true + avisoStock — hay que avisar eso en vez del toast de
+      // éxito genérico, o el usuario cree que quedó todo sincronizado cuando no fue así (mismo
+      // chequeo que ya hace rkGuardarFila en Reconteo de stock).
+      if(j.avisoStock)showToast(j.avisoStock);
+      else showToast((j.trackHabilitado?'Seguimiento activado · ':'Stock corregido: ')+fmt1(nuevo));
       rzRender(); // vuelve a calcular el riesgo con el stock ya corregido — el producto puede salir de la lista si ya no está en riesgo
       try{render();}catch(_){} // refleja el cambio también en la tabla principal de Pedidos
     }else{
