@@ -2082,7 +2082,6 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
               <button class="loadbtn" id="rc-provid-add" type="button" style="white-space:nowrap;padding:7px 10px;font-size:12px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Agregar</button>
             </div>
           </div>
-          <div id="rc-movs" class="hidden" style="margin-top:8px"></div>
           <div id="rc-results"></div>
           <button id="rc-activar-inv" class="hidden" type="button" style="width:100%;margin:8px 0 0;padding:8px 10px;border-radius:9px;border:1.5px solid var(--azul);background:var(--azul-bg);color:var(--azul);font-weight:700;font-size:12.5px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 7.5-2"/></svg> Activar inventario</button>
         </div>
@@ -2137,6 +2136,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         </div>
 
         <div id="rc-pc-mount"></div>
+        <div id="rc-movs" class="hidden" style="margin-top:8px"></div>
         </div>
 
         </div>
@@ -4165,7 +4165,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-20.3';
+const APP_VERSION='2026-08-20.4';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -10738,6 +10738,21 @@ function vcFilaHtml(l){
           <button type="button" class="btn-ok vc-ef-save" data-saveretir="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" style="white-space:nowrap">Retirar</button>
         </div>
       </div>
+      ${esCambio && l.estado==='Retirado'?`<div class="vc-editbox hidden" data-cambiadobox="${l.filaIndex}">
+        <span class="vc-editlbl">¿Cuántas ${l.unidad||'unidades'} trajo el proveedor (de ${l.cantidad})?</span>
+        <div class="fecha-wrap" style="margin-bottom:6px">
+          <input type="number" step="any" inputmode="decimal" id="vc-cc-cant-${l.filaIndex}" class="fecha-seg" style="width:100px" autocomplete="off">
+        </div>
+        <span class="vc-editlbl">Fecha de vencimiento del producto nuevo (opcional):</span>
+        <div class="fecha-wrap">
+          <input id="vc-cc-dd-${l.filaIndex}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="DD" autocomplete="off">
+          <span class="fecha-sep">/</span>
+          <input id="vc-cc-mm-${l.filaIndex}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="off">
+          <span class="fecha-sep">/</span>
+          <input id="vc-cc-aaaa-${l.filaIndex}" class="fecha-seg fecha-seg-y" inputmode="numeric" maxlength="4" placeholder="AAAA" autocomplete="off">
+          <button type="button" class="btn-ok vc-ef-save" data-savecambiado="${l.filaIndex}" data-nom="${nom}" data-cant="${l.cantidad}" data-unidad="${l.unidad}" style="white-space:nowrap">Confirmar</button>
+        </div>
+      </div>`:''}
     </div>`;
 }
 // Cablea los botones de un lote de filas recién pintadas — separado de vcFilaHtml para no
@@ -10781,7 +10796,42 @@ function vcWireFilas(box){
     mmPrefill(b.dataset.sku,b.dataset.cant,b.dataset.lote,b.dataset.i);
     openMerma(true);
   });
-  box.querySelectorAll('[data-actm="cambiado"]').forEach(b=>b.onclick=()=>vcMarcarCambiado(b.dataset.i,b.dataset.nom,b.dataset.cant,b.dataset.unidad));
+  // Cambiado: mismo patrón que Retirar/Ajustar stock — abre un mini-formulario en vez del
+  // prompt() de antes, con cantidad (precargada con el total del lote) y fecha de vencimiento
+  // del producto nuevo (opcional, 3 segmentos como en Editar fecha).
+  box.querySelectorAll('[data-actm="cambiado"]').forEach(b=>{
+    b.onclick=()=>{
+      const fi=b.dataset.i;
+      const bx=box.querySelector(`[data-cambiadobox="${fi}"]`);
+      if(!bx)return;
+      const wasHidden=bx.classList.contains('hidden');
+      bx.classList.toggle('hidden');
+      if(wasHidden){
+        const inp=document.getElementById('vc-cc-cant-'+fi);
+        if(inp){inp.value=b.dataset.cant||'';inp.focus();inp.select();}
+      }
+    };
+  });
+  box.querySelectorAll('[data-savecambiado]').forEach(b=>{
+    const fi=b.dataset.savecambiado,nom=b.dataset.nom,cantTotal=b.dataset.cant,unidad=b.dataset.unidad;
+    b.onclick=()=>{
+      const cantInp=document.getElementById('vc-cc-cant-'+fi);
+      const val=cantInp.value.trim();
+      if(val===''){showToast('Escribe cuántas unidades trajo el proveedor');return;}
+      const num=Number(val.replace(',','.'));
+      if(isNaN(num)||num<=0){showToast('Cantidad inválida');return;}
+      if(num>Number(cantTotal)){showToast('No puede ser más de las '+cantTotal+' pendientes');return;}
+      const dd=document.getElementById('vc-cc-dd-'+fi).value;
+      const mm=document.getElementById('vc-cc-mm-'+fi).value;
+      const aaaa=document.getElementById('vc-cc-aaaa-'+fi).value;
+      let nuevaFecha='';
+      if(dd||mm||aaaa){
+        if(dd.length!==2||mm.length!==2||aaaa.length!==4){showToast('Completa día, mes y año de la fecha, o déjala vacía');return;}
+        nuevaFecha=dd+'/'+mm+'/'+aaaa;
+      }
+      vcMarcarCambiado(fi,nom,cantTotal,unidad,num,nuevaFecha);
+    };
+  });
   box.querySelectorAll('[data-actm="descuento"]').forEach(b=>b.onclick=()=>vcMarcarDescuento(b.dataset.i,b.dataset.nom));
   box.querySelectorAll('[data-elim]').forEach(b=>b.onclick=()=>vcEliminarLote(b.dataset.elim,b.dataset.sku,b.dataset.cant,b.dataset.nom));
   box.querySelectorAll('[data-aplicar]').forEach(b=>b.onclick=()=>vcAplicarPrecio(b));
@@ -11161,21 +11211,10 @@ async function vcEditarFecha(filaIndex,nuevaFecha){
 // ahora ocurre al presionar "Retirar" (ver accionRevisarLote en el Worker), y esta función
 // vuelve a sumarlo al presionar "Cambiado" (ver accionMarcarCambiado) — nunca antes de eso, y
 // nunca dos veces gracias a la validación de estado='Retirado' que hace el backend.
-async function vcMarcarCambiado(filaIndex,nombre,cantidadTotal,unidad){
+async function vcMarcarCambiado(filaIndex,nombre,cantidadTotal,unidad,cantidadCambiada,nuevaFecha){
   const total=Number(cantidadTotal)||0;
-  let cantidadCambiada=total;
-  // Solo pregunta si hay más de 1 unidad en el lote — con 1 sola unidad no existe "parcial"
-  // posible, así que no vale la pena interrumpir con un prompt innecesario.
-  if(total>1){
-    const txt=prompt('¿Cuántas '+(unidad||'unidades')+' trajo el proveedor de "'+(nombre||'este producto')+'"?\n\nEl lote tiene '+total+' '+(unidad||'unidades')+' pendientes. Si trajo menos, el resto queda pendiente.',String(total));
-    if(txt===null)return; // canceló el prompt, no se hace nada
-    const num=Number(txt.replace(',','.').trim());
-    if(isNaN(num)||num<=0){showToast('Cantidad inválida');return;}
-    if(num>total){showToast('No puede ser más de las '+total+' pendientes');return;}
-    cantidadCambiada=num;
-  }
   try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'marcar_cambiado',payload:{filaIndex:filaIndex,cantidadCambiada:cantidadCambiada,revisadoPor:''}})});
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'marcar_cambiado',payload:{filaIndex:filaIndex,cantidadCambiada:cantidadCambiada,nuevaFechaVencimiento:nuevaFecha||'',revisadoPor:''}})});
     const j=await res.json();
     if(j&&j.ok){
       const f=j.fila||{};
@@ -11186,11 +11225,12 @@ async function vcMarcarCambiado(filaIndex,nombre,cantidadTotal,unidad){
         const itLocal=(DB.items||[]).find(x=>x.ref===(f.sku));
         if(itLocal){itLocal.stock=f.nuevoStock;persist();}
       }
+      const fechaTxt=f.fechaVencimiento?(' · vence '+f.fechaVencimiento):'';
       if(f.parcial){
-        showToast('Cambio parcial: '+cantidadCambiada+' de '+total+' '+(unidad||'u')+' de '+(nombre||f.nombre)+' — quedan '+f.cantidadRestante+' pendientes'+(f.avisoStock?' · '+f.avisoStock:''));
+        showToast('Cambio parcial: '+cantidadCambiada+' de '+total+' '+(unidad||'u')+' de '+(nombre||f.nombre)+fechaTxt+' — quedan '+f.cantidadRestante+' pendientes'+(f.avisoStock?' · '+f.avisoStock:''));
         closeVenc();vcLoad(); // se queda en Vencimientos: todavía hay unidades pendientes de este mismo lote
       }else{
-        showToast('Cambio confirmado: '+(nombre||f.nombre)+' · ahora carga lo que recibiste a cambio'+(f.avisoStock?' · '+f.avisoStock:''));
+        showToast('Cambio confirmado: '+(nombre||f.nombre)+fechaTxt+' · ahora carga lo que recibiste a cambio'+(f.avisoStock?' · '+f.avisoStock:''));
         closeVenc();
         openRecibir();
       }
