@@ -1991,10 +1991,10 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <div class="mm-field" style="margin-bottom:8px">
           <label>Dirección</label>
           <div style="display:flex;gap:6px">
-            <button type="button" class="rc-modo-btn active" id="pr-dir-salida" data-dir="salida" style="border-color:var(--wa-d);background:var(--wa-bg,var(--verde-bg));color:var(--wa-d)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M4 12h13"/><polyline points="13 6 19 12 13 18"/><path d="M19 4v16"/></svg> Le presto a Los Cumpas</button>
+            <button type="button" class="rc-modo-btn" id="pr-dir-salida" data-dir="salida"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M4 12h13"/><polyline points="13 6 19 12 13 18"/><path d="M19 4v16"/></svg> Le presto a Los Cumpas</button>
             <button type="button" class="rc-modo-btn" id="pr-dir-entrada" data-dir="entrada"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M20 12H7"/><polyline points="11 6 5 12 11 18"/><path d="M5 4v16"/></svg> Los Cumpas me prestan</button>
           </div>
-          <div class="cat" id="pr-dir-hint" style="margin-top:6px">Sale stock de Marín — se registra como deuda a favor, hasta que Los Cumpas lo devuelvan.</div>
+          <div class="cat" id="pr-dir-hint" style="margin-top:6px">Elegí una dirección antes de continuar — de esto depende si el stock sube o baja.</div>
         </div>
 
         <div class="mm-field" style="margin-bottom:8px">
@@ -4165,7 +4165,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-20.5';
+const APP_VERSION='2026-08-20.6';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -11834,10 +11834,15 @@ document.getElementById('in-guardar').onclick=async()=>{
 };
 
 // ===================== PRÉSTAMOS ENTRE SUCURSALES (Los Cumpas) =====================
-const prState={item:null,dir:'salida',resp:''};
+// dir arranca en null (ninguna de las dos precargada) — antes quedaba "Le presto a Los Cumpas"
+// (salida) activo por defecto, así que si el usuario no tocaba el toggle a propósito (ej. venía
+// apurado a registrar que LOS CUMPAS le prestaron a él), el préstamo se registraba con la
+// dirección contraria — restando stock en vez de sumarlo. Ahora hay que elegir sí o sí antes de
+// poder guardar (ver prValidar), no hay dirección "por defecto" que se pueda pasar por alto.
+const prState={item:null,dir:null,resp:''};
 function prAbrir(){
   document.getElementById('mas-ov').classList.add('hidden');
-  prState.item=null;prState.dir='salida';prState.resp='';
+  prState.item=null;prState.resp='';
   document.getElementById('pr-search').value='';
   document.getElementById('pr-results').innerHTML='';
   document.getElementById('pr-picked').classList.remove('on');
@@ -11846,7 +11851,7 @@ function prAbrir(){
   document.getElementById('pr-costo').value='';
   document.getElementById('pr-costo-field').classList.add('hidden');
   document.querySelectorAll('#pr-resp button').forEach(b=>b.classList.remove('sel'));
-  prSetDireccion('salida');
+  prSetDireccion(null);
   abrirModal('pr-ov');
   prCargarPendientes();
   setTimeout(()=>document.getElementById('pr-search').focus(),150);
@@ -11865,7 +11870,10 @@ function prSetDireccion(dir){
   entradaBtn.style.color=dir==='entrada'?activa:'var(--muted)';
   document.getElementById('pr-dir-hint').textContent=dir==='salida'
     ?'Sale stock de Marín — se registra como deuda a favor, hasta que Los Cumpas lo devuelvan.'
-    :'Entra stock a Marín — se registra como deuda pendiente, hasta que se lo devuelvas a Los Cumpas.';
+    :dir==='entrada'
+    ?'Entra stock a Marín — se registra como deuda pendiente, hasta que se lo devuelvas a Los Cumpas.'
+    :'Elegí una dirección antes de continuar — de esto depende si el stock sube o baja.';
+  prValidar();
 }
 document.getElementById('pr-dir-salida').onclick=()=>prSetDireccion('salida');
 document.getElementById('pr-dir-entrada').onclick=()=>prSetDireccion('entrada');
@@ -11927,7 +11935,7 @@ function prValidar(){
   const cant=Number(document.getElementById('pr-cantidad').value)||0;
   const costoFieldVisible=!document.getElementById('pr-costo-field').classList.contains('hidden');
   const costoOk=!costoFieldVisible||Number(document.getElementById('pr-costo').value)>0;
-  document.getElementById('pr-guardar').disabled=!(prState.item&&cant>0&&costoOk);
+  document.getElementById('pr-guardar').disabled=!(prState.item&&prState.dir&&cant>0&&costoOk);
 }
 document.getElementById('pr-guardar').onclick=async()=>{
   const btn=document.getElementById('pr-guardar');
