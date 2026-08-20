@@ -2120,12 +2120,6 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           </div>
           <div class="cat" id="rc-stock-total-hint" style="margin-top:5px"></div>
         </div>
-        <div class="mm-field hidden" id="rc-sin-track-msg" style="margin-bottom:8px">
-          <div style="background:var(--azul-bg);border-radius:9px;padding:10px;color:var(--azul);font-size:12.5px;font-weight:600;line-height:1.35">Para registrar una recepción, primero activa "Seguir inventario".</div>
-        </div>
-
-        <div id="rc-pc-mount"></div>
-
         <div class="mm-field" style="margin-bottom:4px">
           <label>Fecha de vencimiento <span style="color:var(--rojo)">*</span></label>
           <div class="fecha-wrap">
@@ -2138,6 +2132,11 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
             <input type="date" id="rc-fecha" class="fecha-date-hidden" tabindex="-1">
           </div>
         </div>
+        <div class="mm-field hidden" id="rc-sin-track-msg" style="margin-bottom:8px">
+          <div style="background:var(--azul-bg);border-radius:9px;padding:10px;color:var(--azul);font-size:12.5px;font-weight:600;line-height:1.35">Para registrar una recepción, primero activa "Seguir inventario".</div>
+        </div>
+
+        <div id="rc-pc-mount"></div>
         </div>
 
         </div>
@@ -4166,7 +4165,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-20.1';
+const APP_VERSION='2026-08-20.2';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
