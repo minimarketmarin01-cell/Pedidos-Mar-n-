@@ -4165,7 +4165,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-20.6';
+const APP_VERSION='2026-08-20.7';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -10922,8 +10922,13 @@ async function vcAjustarStockLote(filaIndex,sku){
   if(isNaN(nuevo)||nuevo<0){showToast('Cantidad inválida');return;}
   const btn=document.querySelector(`[data-savestock="${filaIndex}"]`);
   if(btn){btn.disabled=true;btn.textContent='Guardando…';}
+  // Timeout: si el servidor (o Loyverse detrás) no responde en 45s, avisa en vez de quedar
+  // colgado en "Guardando…" para siempre sin ningún error (mismo patrón que ya usa
+  // fpEliminarProducto/cpGuardar).
+  const ctrl=new AbortController();
+  const to=setTimeout(()=>ctrl.abort(),45000);
   try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'ajustar_stock',payload:{sku,stockNuevo:nuevo,responsable:''}})});
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'ajustar_stock',payload:{sku,stockNuevo:nuevo,responsable:''}}),signal:ctrl.signal});
     const j=await res.json();
     if(j&&j.ok){
       const it=(DB.items||[]).find(x=>x.ref===sku);
@@ -10936,9 +10941,9 @@ async function vcAjustarStockLote(filaIndex,sku){
       if(btn){btn.disabled=false;btn.textContent='Guardar';}
     }
   }catch(e){
-    showToast('Error de conexión al guardar');
+    showToast(e.name==='AbortError'?'Tardó demasiado en responder — revisa si se guardó antes de reintentar':'Error de conexión al guardar');
     if(btn){btn.disabled=false;btn.textContent='Guardar';}
-  }
+  }finally{clearTimeout(to);}
 }
 // Retira una cantidad del lote (puede ser parcial, ej. 3 de 13). Si es parcial, el backend
 // divide el lote en dos filas (la retirada + el remanente que sigue pendiente en Lista) — por
@@ -10954,8 +10959,12 @@ async function vcRetirarLote(filaIndex,sku,cantidadTotal){
   if(cantidad>Number(cantidadTotal)){showToast('No puede ser más que el total del lote ('+cantidadTotal+')');return;}
   const btn=document.querySelector(`[data-saveretir="${filaIndex}"]`);
   if(btn){btn.disabled=true;btn.textContent='Retirando…';}
+  // Mismo timeout de 45s que vcAjustarStockLote — sin esto, si Loyverse queda colgado detrás del
+  // Worker, el botón se queda en "Retirando…" para siempre sin ningún error.
+  const ctrl=new AbortController();
+  const to=setTimeout(()=>ctrl.abort(),45000);
   try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'revisar_lote',payload:{filaIndex,revisadoPor:'',resultado:'retirado',cantidad}})});
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'revisar_lote',payload:{filaIndex,revisadoPor:'',resultado:'retirado',cantidad}}),signal:ctrl.signal});
     const j=await res.json();
     if(j&&j.ok){
       const f=j.fila||{};
@@ -10973,9 +10982,9 @@ async function vcRetirarLote(filaIndex,sku,cantidadTotal){
       if(btn){btn.disabled=false;btn.textContent='Retirar';}
     }
   }catch(e){
-    showToast('Error de conexión al retirar');
+    showToast(e.name==='AbortError'?'Tardó demasiado en responder — revisa si se retiró antes de reintentar':'Error de conexión al retirar');
     if(btn){btn.disabled=false;btn.textContent='Retirar';}
-  }
+  }finally{clearTimeout(to);}
 }
 // Aplica el precio sugerido por vencimiento al producto — reutiliza el endpoint editar_precio
 // (el mismo que usa la Ficha completa para cambiar precio: patrón seguro leer→cambiar→
@@ -11979,15 +11988,21 @@ async function prCargarPendientes(){
     box.innerHTML=pend.map(p=>{
       const dirTxt=p.direccion==='salida'?'Le prestamos':'Nos prestaron';
       const costoTxt=p.costoTotal?(' · '+peso(p.costoTotal)):'';
+      const costoU=p.costoUnitario||0;
+      const resp=(p.responsable||'').replace(/"/g,'&quot;');
       return `<div class="pr-pend-row" data-id="${p.id}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:9px 11px;margin-bottom:6px">
         <div style="min-width:0">
           <div style="font-size:12.5px;font-weight:700;color:var(--ink)">${p.producto||p.sku}</div>
           <div style="font-size:11px;color:var(--muted);margin-top:1px">${dirTxt} · ${p.cantidad}${p.unidad||''}${costoTxt} · ${p.fecha}</div>
         </div>
-        <button type="button" class="pr-devolver-btn" data-id="${p.id}" style="flex:none;padding:7px 11px;border-radius:8px;border:none;background:var(--verde,#3a9d5c);color:#fff;font-weight:700;font-size:11.5px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg> Devuelto</button>
+        <div style="display:flex;gap:6px;flex:none;align-items:center">
+          <button type="button" class="pr-corregir-btn" data-id="${p.id}" data-dir="${p.direccion}" data-sku="${p.sku}" data-cant="${p.cantidad}" data-costo="${costoU}" data-resp="${resp}" title="Me equivoqué de dirección — corregirla" style="flex:none;width:30px;height:30px;border-radius:8px;border:1.5px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></button>
+          <button type="button" class="pr-devolver-btn" data-id="${p.id}" style="flex:none;padding:7px 11px;border-radius:8px;border:none;background:var(--verde,#3a9d5c);color:#fff;font-weight:700;font-size:11.5px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg> Devuelto</button>
+        </div>
       </div>`;
     }).join('');
     document.querySelectorAll('.pr-devolver-btn').forEach(b=>b.onclick=()=>prDevolver(Number(b.dataset.id),b));
+    document.querySelectorAll('.pr-corregir-btn').forEach(b=>b.onclick=()=>prCorregirDireccion(Number(b.dataset.id),b,b.dataset.dir,b.dataset.sku,Number(b.dataset.cant),Number(b.dataset.costo),b.dataset.resp));
   }catch(e){box.innerHTML='<div class="vc-empty">Error de conexión</div>';}
 }
 async function prDevolver(id,btn){
@@ -12001,6 +12016,32 @@ async function prDevolver(id,btn){
       prCargarPendientes();
     }else{showToast('Error: '+((j&&j.error)||'no se pudo guardar'));btn.disabled=false;btn.textContent='Devuelto';}
   }catch(e){showToast('Error de conexión');btn.disabled=false;btn.textContent='Devuelto';}
+}
+// Corrige un préstamo registrado con la dirección equivocada (ej. se cargó "Le prestamos"
+// cuando en realidad era "Nos prestaron") sin tener que hacerlo a mano en dos pasos: marca el
+// registro actual como devuelto (revierte su ajuste de stock, reutilizando accionDevolverPrestamo
+// tal cual) y de inmediato registra uno nuevo con la dirección contraria, mismo producto/
+// cantidad/costo/responsable (reutilizando accionRegistrarPrestamo tal cual) — no hace falta
+// ninguna acción de backend nueva, son las mismas dos que ya existían, encadenadas.
+async function prCorregirDireccion(id,btn,direccionActual,sku,cantidad,costoUnitario,responsable){
+  const nuevaDir=direccionActual==='salida'?'entrada':'salida';
+  const nuevaDirTxt=nuevaDir==='salida'?'Le prestamos':'Nos prestaron';
+  if(!confirm('¿Corregir este préstamo a "'+nuevaDirTxt+'"?\n\nSe marca el registro actual como devuelto (revierte lo que ajustó) y se crea uno nuevo con la dirección correcta.'))return;
+  btn.disabled=true;
+  try{
+    const res1=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'devolver_prestamo',payload:{id}})});
+    const j1=await res1.json();
+    if(!j1||!j1.ok){showToast('Error: '+((j1&&j1.error)||'no se pudo corregir'));btn.disabled=false;return;}
+    const res2=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'registrar_prestamo',payload:{sku,direccion:nuevaDir,cantidad,costoManual:costoUnitario||0,responsable:responsable||''}})});
+    const j2=await res2.json();
+    if(j2&&j2.ok){
+      showToast('Dirección corregida a "'+nuevaDirTxt+'"'+(j2.avisoStock?' · '+j2.avisoStock:''));
+      prCargarPendientes();
+    }else{
+      showToast('Se revirtió el préstamo original, pero no se pudo volver a registrar ('+((j2&&j2.error)||'error desconocido')+') — registralo a mano.');
+      prCargarPendientes();
+    }
+  }catch(e){showToast('Error de conexión al corregir');btn.disabled=false;}
 }
 
 // ===================== RECIBIR MERCADERÍA =====================
