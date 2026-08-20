@@ -4165,7 +4165,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-20.2';
+const APP_VERSION='2026-08-20.3';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -10679,11 +10679,11 @@ function vcFilaHtml(l){
     // en ambos casos no hay ningún proceso automático que lo pase a Pendientes, así que se
     // ofrece el mismo botón "Retirar" manual — antes solo aparecía con estado==='Vencido' y las
     // tarjetas "Por vencer" (aviso ya urgente/muy atrasado) quedaban sin ninguna acción.
-    botones=`<button class="vc-mini" data-act="retirar" data-i="${l.filaIndex}" title="Retirar de la góndola (sin eliminar el lote)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/></svg><span>Retirar</span></button>`;
+    botones=`<button class="vc-mini" data-act="retirar" data-i="${l.filaIndex}" data-cant="${l.cantidad}" title="Retirar de la góndola (sin eliminar el lote)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/></svg><span>Retirar</span></button>`;
   }else{
     botones=`<button class="vc-mini vc-mini-verde" data-act="ok" data-i="${l.filaIndex}" title="Vendido"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Vendido</span></button>
        <button class="vc-mini vc-mini-rojo" data-act="merma" data-i="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" data-lote="${l.lote||''}" title="Merma"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><span>Merma</span></button>
-       <button class="vc-mini" data-act="retirar" data-i="${l.filaIndex}" title="Retirar de la góndola (sin eliminar el lote)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/></svg><span>Retirar</span></button>`;
+       <button class="vc-mini" data-act="retirar" data-i="${l.filaIndex}" data-cant="${l.cantidad}" title="Retirar de la góndola (sin eliminar el lote)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/></svg><span>Retirar</span></button>`;
   }
   const precioActual=vcPrecioActualDe(l);
   // Precio actual → sugerido con descuento → Aplicar (punto 6) — solo si hay recomendación
@@ -10731,6 +10731,13 @@ function vcFilaHtml(l){
           <button type="button" class="btn-ok vc-ef-save" data-savestock="${l.filaIndex}" data-sku="${l.sku}" style="white-space:nowrap">Guardar</button>
         </div>
       </div>`:''}
+      <div class="vc-editbox hidden" data-retirbox="${l.filaIndex}">
+        <span class="vc-editlbl">¿Cuántas ${l.unidad||'unidades'} se retiran (de ${l.cantidad})?</span>
+        <div class="fecha-wrap">
+          <input type="number" step="any" inputmode="decimal" id="vc-rt-${l.filaIndex}" class="fecha-seg" style="width:100px" autocomplete="off">
+          <button type="button" class="btn-ok vc-ef-save" data-saveretir="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" style="white-space:nowrap">Retirar</button>
+        </div>
+      </div>
     </div>`;
 }
 // Cablea los botones de un lote de filas recién pintadas — separado de vcFilaHtml para no
@@ -10741,7 +10748,28 @@ function vcWireFilas(box){
     if(l&&l.estado==='Vencido'&&!confirm('Este producto ya está VENCIDO. ¿Seguro que se vendió antes de vencer?\n\nSi en realidad se venció, tocá "Merma" en vez de "Vendido".'))return;
     vcRevisar(b.dataset.i,'vendido');
   });
-  box.querySelectorAll('[data-act="retirar"]').forEach(b=>b.onclick=()=>vcRevisar(b.dataset.i,'retirado'));
+  // Retirar: mismo patrón que Ajustar stock — abre un mini-formulario con la cantidad total
+  // precargada (editable hacia abajo, ej. de 13 a 3 si solo una parte se venció), en vez de
+  // asumir siempre el lote completo.
+  box.querySelectorAll('[data-act="retirar"]').forEach(b=>{
+    b.onclick=()=>{
+      const fi=b.dataset.i;
+      const bx=box.querySelector(`[data-retirbox="${fi}"]`);
+      if(!bx)return;
+      const wasHidden=bx.classList.contains('hidden');
+      bx.classList.toggle('hidden');
+      if(wasHidden){
+        const inp=document.getElementById('vc-rt-'+fi);
+        if(inp){inp.value=b.dataset.cant||'';inp.focus();inp.select();}
+      }
+    };
+  });
+  box.querySelectorAll('[data-saveretir]').forEach(b=>{
+    const fi=b.dataset.saveretir,sku=b.dataset.sku,cantTotal=b.dataset.cant;
+    const inp=document.getElementById('vc-rt-'+fi);
+    if(inp)inp.addEventListener('keydown',e=>{if(e.key==='Enter')b.click();});
+    b.onclick=()=>vcRetirarLote(fi,sku,cantTotal);
+  });
   box.querySelectorAll('[data-act="merma"]').forEach(b=>b.onclick=()=>{
     // El lote de vencimiento YA NO se cierra acá — antes se marcaba 'Revisado' apenas se
     // tocaba este botón, así que si el usuario cancelaba el formulario de merma que se abre a
@@ -10841,6 +10869,43 @@ async function vcAjustarStockLote(filaIndex,sku){
   }catch(e){
     showToast('Error de conexión al guardar');
     if(btn){btn.disabled=false;btn.textContent='Guardar';}
+  }
+}
+// Retira una cantidad del lote (puede ser parcial, ej. 3 de 13). Si es parcial, el backend
+// divide el lote en dos filas (la retirada + el remanente que sigue pendiente en Lista) — por
+// eso, a diferencia de vcAjustarStockLote, acá se recarga todo con vcLoad() en vez de solo
+// repintar sobre _vcTodos: el remanente es una fila nueva que el cliente todavía no tiene.
+async function vcRetirarLote(filaIndex,sku,cantidadTotal){
+  const inp=document.getElementById('vc-rt-'+filaIndex);
+  if(!inp)return;
+  const val=inp.value.trim();
+  if(val===''){showToast('Escribe cuántas unidades se retiran');return;}
+  const cantidad=Number(val);
+  if(isNaN(cantidad)||cantidad<=0){showToast('Cantidad inválida');return;}
+  if(cantidad>Number(cantidadTotal)){showToast('No puede ser más que el total del lote ('+cantidadTotal+')');return;}
+  const btn=document.querySelector(`[data-saveretir="${filaIndex}"]`);
+  if(btn){btn.disabled=true;btn.textContent='Retirando…';}
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'revisar_lote',payload:{filaIndex,revisadoPor:'',resultado:'retirado',cantidad}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      const f=j.fila||{};
+      if(f.nuevoStock!=null&&f.sku){
+        const itLocal=(DB.items||[]).find(x=>x.ref===f.sku);
+        if(itLocal){itLocal.stock=f.nuevoStock;persist();}
+      }
+      const msg=f.cantidadRestante!=null
+        ?('Retirado: '+cantidad+' · quedan '+f.cantidadRestante+' pendientes en Lista')
+        :('Retirado: '+cantidad+' · pasa a Pendientes');
+      showToast(msg+(f.avisoStock?' · '+f.avisoStock:''));
+      vcLoad();
+    }else{
+      showToast(''+(j&&j.error?j.error:'No se pudo retirar'));
+      if(btn){btn.disabled=false;btn.textContent='Retirar';}
+    }
+  }catch(e){
+    showToast('Error de conexión al retirar');
+    if(btn){btn.disabled=false;btn.textContent='Retirar';}
   }
 }
 // Aplica el precio sugerido por vencimiento al producto — reutiliza el endpoint editar_precio
