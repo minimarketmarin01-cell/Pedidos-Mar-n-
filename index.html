@@ -4165,7 +4165,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-20.4';
+const APP_VERSION='2026-08-20.5';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -10749,7 +10749,7 @@ function vcFilaHtml(l){
           <span class="fecha-sep">/</span>
           <input id="vc-cc-mm-${l.filaIndex}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="off">
           <span class="fecha-sep">/</span>
-          <input id="vc-cc-aaaa-${l.filaIndex}" class="fecha-seg fecha-seg-y" inputmode="numeric" maxlength="4" placeholder="AAAA" autocomplete="off">
+          <input id="vc-cc-aa-${l.filaIndex}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="AA" autocomplete="off">
           <button type="button" class="btn-ok vc-ef-save" data-savecambiado="${l.filaIndex}" data-nom="${nom}" data-cant="${l.cantidad}" data-unidad="${l.unidad}" style="white-space:nowrap">Confirmar</button>
         </div>
       </div>`:''}
@@ -10812,6 +10812,25 @@ function vcWireFilas(box){
       }
     };
   });
+  // Fecha del producto nuevo: escritura continua (auto-avanza DD→MM→AA al completar cada
+  // casilla, como ya hace wireFechaSegmentada en otros formularios) pero con año de 2 dígitos
+  // en vez de 4 — se asume el siglo 20 y se antepone al armar la fecha para el backend.
+  box.querySelectorAll('[data-cambiadobox]').forEach(bx=>{
+    const fi=bx.dataset.cambiadobox;
+    const dd=document.getElementById('vc-cc-dd-'+fi),mm=document.getElementById('vc-cc-mm-'+fi),aa=document.getElementById('vc-cc-aa-'+fi);
+    if(!dd||!mm||!aa)return;
+    [[dd,2,mm],[mm,2,aa],[aa,2,null]].forEach(([inp,max,next])=>{
+      inp.addEventListener('input',()=>{
+        inp.value=inp.value.replace(/[^\d]/g,'').slice(0,max);
+        if(inp.value.length>=max&&next)next.focus();
+      });
+      inp.addEventListener('keydown',e=>{
+        if(e.key==='Backspace'&&!inp.value){
+          if(inp===mm)dd.focus();else if(inp===aa)mm.focus();
+        }
+      });
+    });
+  });
   box.querySelectorAll('[data-savecambiado]').forEach(b=>{
     const fi=b.dataset.savecambiado,nom=b.dataset.nom,cantTotal=b.dataset.cant,unidad=b.dataset.unidad;
     b.onclick=()=>{
@@ -10823,11 +10842,11 @@ function vcWireFilas(box){
       if(num>Number(cantTotal)){showToast('No puede ser más de las '+cantTotal+' pendientes');return;}
       const dd=document.getElementById('vc-cc-dd-'+fi).value;
       const mm=document.getElementById('vc-cc-mm-'+fi).value;
-      const aaaa=document.getElementById('vc-cc-aaaa-'+fi).value;
+      const aa=document.getElementById('vc-cc-aa-'+fi).value;
       let nuevaFecha='';
-      if(dd||mm||aaaa){
-        if(dd.length!==2||mm.length!==2||aaaa.length!==4){showToast('Completa día, mes y año de la fecha, o déjala vacía');return;}
-        nuevaFecha=dd+'/'+mm+'/'+aaaa;
+      if(dd||mm||aa){
+        if(dd.length!==2||mm.length!==2||aa.length!==2){showToast('Completa día, mes y año de la fecha, o déjala vacía');return;}
+        nuevaFecha=dd+'/'+mm+'/20'+aa;
       }
       vcMarcarCambiado(fi,nom,cantTotal,unidad,num,nuevaFecha);
     };
@@ -11226,14 +11245,16 @@ async function vcMarcarCambiado(filaIndex,nombre,cantidadTotal,unidad,cantidadCa
         if(itLocal){itLocal.stock=f.nuevoStock;persist();}
       }
       const fechaTxt=f.fechaVencimiento?(' · vence '+f.fechaVencimiento):'';
+      // Se queda en el módulo, en la misma pestaña (Pendientes) — sin cerrar Vencimientos ni
+      // saltar a Recibir — para poder seguir procesando otros lotes uno atrás de otro sin
+      // reabrir la pantalla cada vez. vcRefreshCurrentView (no vcLoad) porque vcLoad siempre
+      // vuelve a la pestaña "Lista".
       if(f.parcial){
         showToast('Cambio parcial: '+cantidadCambiada+' de '+total+' '+(unidad||'u')+' de '+(nombre||f.nombre)+fechaTxt+' — quedan '+f.cantidadRestante+' pendientes'+(f.avisoStock?' · '+f.avisoStock:''));
-        closeVenc();vcLoad(); // se queda en Vencimientos: todavía hay unidades pendientes de este mismo lote
       }else{
-        showToast('Cambio confirmado: '+(nombre||f.nombre)+fechaTxt+' · ahora carga lo que recibiste a cambio'+(f.avisoStock?' · '+f.avisoStock:''));
-        closeVenc();
-        openRecibir();
+        showToast('Cambio confirmado: '+(nombre||f.nombre)+fechaTxt+(f.avisoStock?' · '+f.avisoStock:''));
       }
+      vcRefreshCurrentView();
     }else{
       showToast('Error: '+((j&&j.error)||'no se pudo confirmar el cambio'));
     }
