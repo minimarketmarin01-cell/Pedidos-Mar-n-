@@ -2074,7 +2074,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
             <div class="cat" id="rc-cat">—</div>
             <div class="cat" id="rc-stock" style="font-weight:700;color:var(--ink);margin-top:3px">Stock actual: —</div>
             <div class="mm-field hidden" id="rc-nombre-box" style="margin-top:6px">
-              <label>Corregir nombre del producto (stock 0 — seguro renombrar)</label>
+              <label>Corregir nombre del producto</label>
               <div style="display:flex;gap:6px">
                 <input id="rc-nombre-input" style="flex:1;min-width:0;padding:7px 9px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px" autocomplete="off">
                 <button class="loadbtn" id="rc-nombre-guardar" type="button" style="white-space:nowrap;padding:7px 10px;font-size:12px">Guardar</button>
@@ -4172,7 +4172,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-20.8';
+const APP_VERSION='2026-08-20.9';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -12139,11 +12139,9 @@ function rcShowPicked(it){
   document.getElementById('rc-cat').textContent=it.prov+(it.barcode?' · '+it.barcode:'');
   const stockTxt=(it.stock==null)?'sin control':(it.stock+(it.peso?' kg':' u'));
   document.getElementById('rc-stock').textContent='Stock actual: '+stockTxt;
-  // Renombrar acá solo se habilita con stock EXACTAMENTE 0 (no null/"sin control"): es el caso
-  // seguro — un producto recién creado o descontinuado sin nada vendido todavía bajo ese
-  // nombre. Con stock>0 el producto ya tiene movimiento real y renombrarlo debe pasar por la
-  // Ficha del producto (flujo más deliberado), no de paso al recibir mercadería.
-  document.getElementById('rc-nombre-box').classList.toggle('hidden',it.stock!==0);
+  // Corregir nombre acá: igual que costo/precio (siempre editables sin importar el stock),
+  // reutiliza la acción "editar_producto" ya existente — mismo trato, sin gate por stock.
+  document.getElementById('rc-nombre-box').classList.remove('hidden');
   document.getElementById('rc-nombre-input').value=it.nombre;
   document.getElementById('rc-costo-actual').textContent='Costo actual: '+(it.coste!=null?peso(it.coste):'—');
   document.getElementById('rc-precio-actual').textContent='Precio actual: '+(it.precio!=null?peso(it.precio):'—');
@@ -12523,6 +12521,20 @@ function rcRestaurarPendiente(refNuevo){
 document.getElementById('rc-search').oninput=e=>{
   const q=e.target.value;
   const x=document.getElementById('rc-lx'); if(x)x.style.display=q?'block':'none';
+  // Si había un producto ya elegido (tarjeta "rc-picked" arriba de los resultados) y el
+  // usuario vuelve a tocar el buscador —sea borrando con la X o tipeando encima— esa
+  // elección quedó vieja: se limpia para no dejar la tarjeta de un producto distinto
+  // tapando la lista del que se está buscando ahora.
+  if(rcState.item){
+    rcState.item=null;
+    document.getElementById('rc-picked').classList.remove('on');
+    document.getElementById('rc-nombre-box').classList.add('hidden');
+    document.getElementById('rc-detalle').classList.add('hidden');
+    document.getElementById('rc-guardar').classList.add('hidden');
+    document.getElementById('rc-guardar').disabled=true;
+    document.getElementById('rc-activar-inv').classList.add('hidden');
+    document.getElementById('rc-ajustar-box').classList.add('hidden');
+  }
   const list=mmFindItems(q);
   if(list.length){
     document.getElementById('rc-results').innerHTML=list.map(it=>`<div class="mm-motivo" style="display:block;margin-bottom:6px;cursor:pointer" data-ref="${it.ref}">${it.nombre} <span style="color:var(--muted);font-weight:400">· ${it.prov}</span></div>`).join('');
