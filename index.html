@@ -4172,7 +4172,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-20.9';
+const APP_VERSION='2026-08-21.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -12052,7 +12052,11 @@ async function prCorregirDireccion(id,btn,direccionActual,sku,cantidad,costoUnit
 }
 
 // ===================== RECIBIR MERCADERÍA =====================
-const rcState={item:null,costoOriginal:0,precioOriginal:0,precioTocado:false,margenTocado:false,modo:'unidad',ivaModo:'con',precioPreview:null,redondeo:'none'};
+const rcState={item:null,costoOriginal:0,precioOriginal:0,costoBaseline:0,precioBaseline:0,precioTocado:false,margenTocado:false,modo:'unidad',ivaModo:'con',precioPreview:null,redondeo:'none'};
+// true mientras rc-guardar (cualquiera de sus 2 ramas) tiene un POST en vuelo — evita que
+// rcValidar() reactive el botón o le pise el texto "Guardando…" si el usuario sigue
+// escribiendo en Costo/Precio/Cantidad mientras espera la respuesta.
+let rcGuardando=false;
 // Pestaña activa del modal de Recepción: 'recibir' (flujo normal, suma stock) o 'ajustar'
 // (corrige un stock mal ingresado, reutilizando la misma acción de backend que ya usa la Ficha).
 let rcModoPantalla='recibir';
@@ -12174,6 +12178,13 @@ function rcShowPicked(it){
   const cIdx=document.getElementById('rc-costo');
   if(cIdx){cIdx.value=rcState.costoOriginal||'';cIdx.dispatchEvent(new Event('input',{bubbles:true}));}
   const pIdx=document.getElementById('rc-precio');if(pIdx){pIdx.value=rcState.precioOriginal||'';pIdx.dispatchEvent(new Event('input',{bubbles:true}));}
+  // Referencia para "¿el usuario cambió algo?" (rcCalcularCambiosCostoPrecio): NO se compara
+  // contra costoOriginal/precioOriginal directo, porque rcCostoNeto() devuelve el costo BRUTO
+  // recalculado desde el input (con el toggle IVA/ILA aplicado) — no es el mismo número que el
+  // costo neto guardado en it.coste. Comparar contra este snapshot (tomado apenas se prellenan
+  // los campos, antes de que el usuario toque nada) evita falsos positivos por esa conversión.
+  rcState.costoBaseline=Math.round(rcCostoNeto())||0;
+  rcState.precioBaseline=Math.round(rcState.precioOriginal||0);
   rcSetModo('unidad');
   rcRenderResumen();
   rcRenderProveedores(it);
@@ -12381,14 +12392,27 @@ document.getElementById('rc-nombre-guardar').onclick=async()=>{
   }
 };
 function rcValidar(){
+  const btn=document.getElementById('rc-guardar');
+  if(rcGuardando)return; // no tocar disabled/texto mientras hay un guardado en curso
+  if(!rcState.item){btn.disabled=true;return;}
   const cant=Number(document.getElementById('rc-cantidad').value)||0;
   // La fecha de vencimiento es OPCIONAL (productos de limpieza, utensilios, etc.):
   // basta con producto + cantidad para poder guardar.
-  document.getElementById('rc-guardar').disabled=!(rcState.item&&cant>0);
+  if(cant>0){
+    btn.disabled=false;
+    btn.textContent='Guardar y sumar stock';
+    return;
+  }
+  // Cantidad=0: no hay stock que sumar — solo tiene sentido habilitar Guardar si costo o
+  // precio realmente cambiaron (ver rcCalcularCambiosCostoPrecio y rcGuardarSoloPrecio).
+  const{costoCambio,precioCambio}=rcCalcularCambiosCostoPrecio();
+  const hayCambio=costoCambio||precioCambio;
+  btn.disabled=!hayCambio;
+  btn.textContent=hayCambio?'Guardar costo y precio':'Guardar y sumar stock';
 }
 function rcReset(){
   _rcSuprimirBorrador=true;
-  rcState.item=null;rcState.costoOriginal=0;rcState.precioOriginal=0;rcState.precioTocado=false;rcState.margenTocado=false;rcState.precioPreview=null;
+  rcState.item=null;rcState.costoOriginal=0;rcState.precioOriginal=0;rcState.costoBaseline=0;rcState.precioBaseline=0;rcState.precioTocado=false;rcState.margenTocado=false;rcState.precioPreview=null;
   document.getElementById('rc-search').value='';
   {const x=document.getElementById('rc-lx'); if(x)x.style.display='none';}
   document.getElementById('rc-results').innerHTML='';
@@ -12697,11 +12721,12 @@ function rcMontarPrecio(){
     // En modo "caja", "Costo" es el TOTAL de esta recepción (todas las cajas juntas), no el de
     // una sola — se divide acá por la cantidad de cajas además de por unidades/caja.
     cantidadCajasGetter:()=>Number(document.getElementById('rc-cantidad').value)||1,
-    onCambio:()=>rcGuardarBorrador(),
+    onCambio:()=>{rcGuardarBorrador();rcValidar();},
     onAplicar:(precioFinal)=>{
       document.getElementById('rc-precio').value=precioFinal;
       rcState.precioTocado=false;
       rcGuardarBorrador();
+      rcValidar();
     }
   });
   // Mismo evento 'input' que ya escucha el widget (tanto al escribir el costo a mano como al
@@ -12795,6 +12820,25 @@ function rcCostoBrutoReal(){
 function rcCostoNeto(){
   return rcCostoBrutoReal();
 }
+// Diff real contra lo recién prellenado — no un simple "es mayor a 0", porque #rc-costo/
+// #rc-precio vienen PRELLENADOS al elegir un producto (ver rcShowPicked), así que ">0" sería
+// casi siempre true sin que el usuario haya tocado nada. Se compara contra
+// costoBaseline/precioBaseline (snapshot tomado en rcShowPicked apenas se prellenan los
+// campos) y NO contra costoOriginal/precioOriginal directo: rcCostoNeto() devuelve el costo
+// BRUTO recalculado con el toggle IVA/ILA aplicado, que no coincide numéricamente con el costo
+// neto guardado en it.coste — comparar contra esos crudos daría un falso positivo de "cambió"
+// apenas se elige el producto, sin que el usuario haya editado nada.
+function rcCalcularCambiosCostoPrecio(){
+  const nuevoCosto=Math.round(rcCostoNeto())||0;
+  const nuevoPrecio=Math.round(Number(document.getElementById('rc-precio').value)||0);
+  const costoBaseline=Math.round(rcState.costoBaseline||0);
+  const precioBaseline=Math.round(rcState.precioBaseline||0);
+  return{
+    nuevoCosto,nuevoPrecio,
+    costoCambio:nuevoCosto>0&&nuevoCosto!==costoBaseline,
+    precioCambio:nuevoPrecio>0&&nuevoPrecio!==precioBaseline
+  };
+}
 // "Costo por unidad": ayuda visual solo para "Por caja", donde "Costo" es el TOTAL de la
 // recepción — sin este número intermedio, el salto entre lo que el usuario escribió y el
 // "Precio calculado" final puede parecer un error aunque no lo sea. Reutiliza rcCostoBrutoReal()
@@ -12825,6 +12869,10 @@ document.getElementById('rc-guardar').onclick=async()=>{
   // Por unidad, se mantiene el comportamiento de siempre (sin cambios).
   const uCaja=Number(document.getElementById('rc-unidades-caja').value)||0;
   const cantidad=(rcState.modo==='caja'&&uCaja>0)?(cantIngresada*uCaja):cantIngresada;
+  if(cantidad<0){showToast('Cantidad inválida');return;}
+  // Cantidad=0: no hay nada que recibir — si costo/precio cambiaron, se guardan solos, sin
+  // crear ningún lote de vencimiento ni tocar stock (ver rcGuardarSoloPrecio).
+  if(cantidad===0){await rcGuardarSoloPrecio(it);return;}
   const fecha=fmtDateInputToDDMMAAAA(document.getElementById('rc-fecha').value);
   // Lo que se guarda en Loyverse es el costo BRUTO (Loyverse usa costo con IVA) — el mismo
   // valor que sirvió de base para calcular el precio de venta arriba. rcCostoNeto() es alias
@@ -12833,6 +12881,7 @@ document.getElementById('rc-guardar').onclick=async()=>{
   const nuevoPrecio=Number(document.getElementById('rc-precio').value)||0;
   const costoCambio=nuevoCosto>0;
   const precioCambio=nuevoPrecio>0;
+  rcGuardando=true;
   btn.disabled=true;btn.textContent='Guardando…';
   // Timeout de seguridad: si el servidor no responde en 25s, se corta y avisa
   // (así el botón nunca queda pegado en "Guardando…" para siempre).
@@ -12876,10 +12925,56 @@ document.getElementById('rc-guardar').onclick=async()=>{
     else showToast('Error de conexión al recibir la mercadería');
   }finally{
     clearTimeout(to);
+    rcGuardando=false;
     btn.disabled=false;btn.textContent='Guardar y sumar stock';
     try{rcValidar();}catch(_){}
   }
 };
+// Guarda SOLO costo/precio cuando "Cantidad recibida" quedó en 0 — reutiliza "editar_precio"
+// (mismo endpoint que ya usa "Aplicar costo y precio" en Ficha de producto/Factura), sin crear
+// ningún lote de vencimiento ni tocar stock. No es un endpoint nuevo.
+async function rcGuardarSoloPrecio(it){
+  const btn=document.getElementById('rc-guardar');
+  const{nuevoCosto,nuevoPrecio,costoCambio,precioCambio}=rcCalcularCambiosCostoPrecio();
+  if(!costoCambio&&!precioCambio){showToast('No hay cambios de costo o precio para guardar');return;}
+  rcGuardando=true;
+  btn.disabled=true;btn.textContent='Guardando…';
+  const ctrl=new AbortController();
+  const to=setTimeout(()=>ctrl.abort(),25000);
+  try{
+    const payload={sku:it.ref,responsable:''};
+    if(costoCambio)payload.costo=nuevoCosto;
+    if(precioCambio)payload.precio=nuevoPrecio;
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_precio',payload:payload}),signal:ctrl.signal});
+    const j=await res.json();
+    if(j&&j.ok){
+      if(j.sinCambios){
+        showToast('Sin cambios para guardar');
+      }else{
+        const itLocal=(DB.items||[]).find(x=>x.ref===it.ref);
+        if(itLocal){
+          if(j.costo!=null)itLocal.coste=j.costo;
+          if(j.precio!=null)itLocal.precio=j.precio;
+          persist();
+        }
+        let msg='Actualizado: '+it.nombre+' · '+(costoCambio&&precioCambio?'costo y precio':(costoCambio?'costo':'precio'));
+        if(j.advertencia)msg+=' · '+j.advertencia;
+        showToast(msg);
+        render();
+      }
+      rcReset();
+      rcLimpiarBorrador();
+      document.getElementById('rc-search').focus();
+    }else{showToast('Error: '+((j&&j.error)||'no se pudo guardar'));}
+  }catch(e){
+    showToast(e.name==='AbortError'?'El guardado tardó demasiado. Revisa tu conexión y vuelve a intentar (el costo/precio pudo haberse guardado — verifica antes de repetir).':'Error de conexión al guardar');
+  }finally{
+    clearTimeout(to);
+    rcGuardando=false;
+    btn.disabled=false;btn.textContent='Guardar y sumar stock';
+    try{rcValidar();}catch(_){}
+  }
+}
 
 // ===================== RECIÉN LLEGADO =====================
 async function llLoad(){
