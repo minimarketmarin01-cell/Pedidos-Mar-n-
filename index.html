@@ -1076,6 +1076,7 @@ html.modo-bliss #prov-all{font-size:17px}
 .mc-dr-solosect .mc-dr-dot{background:var(--gold,#C9A15A)}
 .mc-dr-completo{background:var(--wa-bg,#E8F7EE)}
 .mc-dr-completo .mc-dr-dot{background:var(--wa-d,#2E9B5C)}
+.mc-dr-encontrado{outline:2px solid var(--wa-d,#2E9B5C);outline-offset:-2px}
 .fc-track-warn{margin-top:7px;padding:9px 10px;border-radius:9px;background:#FFF4E5;border:1.5px solid var(--gold);font-size:11.5px;line-height:1.45;color:var(--ink2)}
 .fc-track-warn.hidden{display:none}
 .fc-track-warn button{width:100%;margin-top:7px;min-height:40px;font-size:12px}
@@ -2842,6 +2843,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
       <div id="mc-chips" style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:10px 0 2px"></div>
       <div style="display:flex;gap:6px;margin-top:6px">
         <input id="mc-detalle-buscar" placeholder="Filtrar dentro de la categoría…" autocomplete="off" style="flex:1;min-width:0;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12px">
+        <button class="loadbtn cam-btn" id="mc-scan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
         <button class="loadbtn" id="mc-marcar-todos" type="button" style="white-space:nowrap;font-size:11px;padding:0 10px">Todos</button>
         <button class="loadbtn" id="mc-desmarcar-todos" type="button" style="white-space:nowrap;font-size:11px;padding:0 10px">Ninguno</button>
       </div>
@@ -4172,7 +4174,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-21.1';
+const APP_VERSION='2026-08-21.2';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -7495,6 +7497,44 @@ let _mcCategorias=[],_mcCategoriaActiva=null,_mcProductos=[],_mcCargando=false;
 document.getElementById('mas-q-categorias').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');mcAbrir();};
 document.getElementById('mc-cerrar').onclick=()=>cerrarModal('mc-ov');
 document.getElementById('mc-cargar-mas').onclick=()=>{}; // placeholder: los chips no paginan (ver mcRenderChips)
+// Escanear código de barras: encuentra el producto, salta a SU categoría (sin que el usuario
+// tenga que saber cuál es) y lo deja marcado, listo para "Aplicar a seleccionados". Reutiliza
+// el mismo mecanismo de cámara (openScanner) y el mismo patrón de búsqueda EXACTA por barcode
+// contra DB.items que ya usa rc-scan en Recepción — un escaneo real debe calzar exacto, no por
+// substring como mmFindItems.
+document.getElementById('mc-scan').onclick=()=>{
+  const reopen=()=>{abrirModal('mc-ov');};
+  cerrarModal('mc-ov');
+  openScanner(async code=>{
+    reopen();
+    const codeNorm=String(code||'').trim();
+    const exacto=(DB.items||[]).filter(i=>String(i.barcode||'').trim()===codeNorm);
+    if(exacto.length===0){showToast('Código no encontrado: '+codeNorm);return;}
+    if(exacto.length>1){showToast('Hay '+exacto.length+' productos con ese código — buscalo a mano');return;}
+    const it=exacto[0];
+    // OJO: en DB.items la categoría de Loyverse viaja en el campo "prov" (nombre heredado de
+    // cuando esa categoría hacía las veces de "proveedor" antes de existir el módulo de
+    // Proveedores real) — NO en "categoria", que no existe en estos objetos.
+    if(!it.prov||!_mcCategorias.some(c=>c.categoria===it.prov)){
+      showToast('"'+it.nombre+'" no aparece en ninguna categoría de este mapeo');
+      return;
+    }
+    // Se limpia el filtro de texto ANTES de recargar la categoría: si quedara algo escrito ahí
+    // sin calzar con el nombre del producto escaneado, mcRenderLista lo dejaría fuera de vista
+    // aunque ya esté seleccionado.
+    document.getElementById('mc-detalle-buscar').value='';
+    await mcSeleccionarCategoria(it.prov);
+    const row=Array.from(document.querySelectorAll('#mc-lista .mc-detalle-row')).find(r=>r.dataset.sku===it.ref);
+    if(row){
+      const cb=row.querySelector('input[type=checkbox]');
+      if(cb&&!cb.checked){cb.checked=true;mcActualizarContadorSeleccion();}
+      row.scrollIntoView({block:'center'});
+      row.classList.add('mc-dr-encontrado');
+      setTimeout(()=>row.classList.remove('mc-dr-encontrado'),2500);
+    }
+    showToast('Encontrado: '+it.nombre);
+  },reopen);
+};
 
 function mcAbrir(){
   abrirModal('mc-ov');
