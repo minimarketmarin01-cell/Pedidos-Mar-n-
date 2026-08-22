@@ -4174,7 +4174,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-21.2';
+const APP_VERSION='2026-08-21.3';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -14860,7 +14860,8 @@ const REABRIR_MODULO={
     const d=fpCargarBorrador();
     if(d&&d.sku)fpAbrir(d.sku,d); else cerrarModal('fp-ov'); // sin sku guardado, no hay nada que reabrir
   },
-  'rz-ov':()=>{try{rzAbrir();}catch(e){}} // rzAbrir ya carga la lista Y pinta el estado real de las notificaciones — antes faltaba esta entrada, así que un F5 caía al fallback genérico que solo mostraba el modal vacío
+  'rz-ov':()=>{try{rzAbrir();}catch(e){}}, // rzAbrir ya carga la lista Y pinta el estado real de las notificaciones — antes faltaba esta entrada, así que un F5 caía al fallback genérico que solo mostraba el modal vacío
+  'gp-ov':()=>{try{gpAbrir();}catch(e){}} // mismo bug que rz-ov: sin esta entrada, un F5 dejaba "Gestionar proveedores" pegado en el "Cargando…" estático del HTML para siempre, porque el fallback genérico solo hace abrirModal() sin disparar gpCargar()
 };
 (function restaurarUltimaPantallaAlCargar(){
   const id=cargarUltimaPantalla();
