@@ -255,14 +255,34 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 #vc-list-view,#vc-form-view{display:flex;flex-direction:column;flex:1;min-height:0}
 .mm-head h3{font-family:'Manrope';font-weight:800;font-size:16px;display:flex;align-items:center;gap:9px}
 .mm-head-ic{flex:none;color:var(--brand-2,#8FA67B)}
-/* Rediseño visual de Revisión de vencimientos — todo escopado a #vc-ov para no afectar el resto
-   de los modales que comparten .mm-head/.mm-topbar/.seg/.prov-x/.loadbtn (Recepción, Crear
-   producto, Ficha de producto, etc.). Colores propios de este módulo, sin reusar --ambar/--azul
-   globales (ya significan otra cosa en el resto de la app). */
-#vc-ov{--vc-activo:#123B5D;--vc-vencido:#F59E0B;--vc-retirar:#D97706;--vc-stock:#2563EB;--vc-fecha:#7C3AED;--vc-mas:#64748B}
-#vc-ov .mm-head{padding:12px 16px 0 16px;margin-bottom:8px}
-#vc-ov .mm-head h3{font-size:14px}
-#vc-ov .mm-topbar{margin-bottom:8px}
+/* ============ Rediseño visual de "Revisión de vencimientos" ============
+   TODO escopado a #vc-ov (o a los ids propios del módulo) para no afectar al resto de los
+   modales que comparten .mm-head, .mm-topbar, .mm-card, .seg, .prov-combo, .loadbtn, .vc-mini
+   y .vc-row
+   (Recepción, Crear producto, Ficha de producto, Recuento de stock, etc.).
+   Paleta propia del módulo: no se reutilizan --ambar/--azul globales, que en el resto de la app
+   significan otra cosa (verde oliva y malva) y cambiarlas tendría efecto en pantallas ajenas.
+   Cada acción tiene su color + su tinte de fondo y de borde. */
+#vc-ov{
+  --vc-activo:#123B5D;
+  --vc-vencido:#F59E0B;--vc-vencido-bg:#FFF7E8;--vc-vencido-bd:#F7DCA8;
+  --vc-retirar:#D97706;--vc-retirar-bg:#FDF4E7;--vc-retirar-bd:#F0CE9C;
+  --vc-stock:#2563EB;  --vc-stock-bg:#EFF5FF;  --vc-stock-bd:#C3D8FB;
+  --vc-fecha:#7C3AED;  --vc-fecha-bg:#F5F1FE;  --vc-fecha-bd:#DBCCFA;
+  --vc-mas:#64748B;    --vc-mas-bd:#E2E8F0;
+  --vc-merma:#DC2626;  --vc-merma-bg:#FEF2F2;  --vc-merma-bd:#F6C9C9;
+  --vc-urgente:#EF4444;--vc-proximo:#EAB308;   --vc-vigente:#16A34A;
+}
+/* Encabezado: la ✕ vive dentro de .mm-head (que ya es space-between), y "+ Nuevo lote" queda
+   solo en la barra de abajo como botón sólido de identidad. */
+#vc-ov .mm-head{padding:14px 16px 0 16px;margin-bottom:10px}
+#vc-ov .mm-head h3{font-size:19px;letter-spacing:-.015em}
+#vc-ov .mm-head-ic{color:var(--vc-activo)}
+#vc-ov .vc-cerrar-x{flex:none;width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;border:1.5px solid var(--line);background:#fff;border-radius:11px;color:var(--ink);cursor:pointer;padding:0}
+#vc-ov .vc-cerrar-x:active{background:var(--paper)}
+#vc-ov .mm-topbar{margin-bottom:10px}
+#vc-ov #vc-add-btn{flex:none;background:var(--vc-activo);border-color:var(--vc-activo);color:#fff;font-size:14px;font-weight:700;padding:10px 18px;border-radius:11px;box-shadow:none}
+#vc-ov #vc-add-btn:active{background:#0d2c46}
 .mm-field{margin-bottom:12px}
 .mm-field label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:5px}
 .mm-search{position:relative}
@@ -358,10 +378,24 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .mm-save:disabled{opacity:.45;cursor:not-allowed}
 .mm-save.saving{opacity:.7}
 .vc-row{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
-/* Tarjetas más compactas — solo padding/márgenes, sin tocar tamaños de fuente ni el alto
-   táctil de .vc-mini (que además se reusa en Ficha de producto y Recuento de stock, así que no
-   se toca su padding acá). */
-#vc-ov .vc-row{padding:8px 10px;margin-bottom:6px}
+/* Tarjeta de lote: blanca sobre el fondo gris del módulo, con jerarquía clara
+   producto → fecha/stock → estado → acciones (estas últimas separadas por un divisor). */
+#vc-ov .vc-row{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:10px}
+#vc-ov .vc-row .nom{font-size:15.5px;font-weight:700;line-height:1.3;letter-spacing:-.01em}
+#vc-ov .vc-row .cat{font-size:12.5px;margin-top:5px}
+/* Fecha y stock en una sola línea con íconos, como en la referencia (envuelve solo si no entra) */
+#vc-ov .vc-meta{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:6px}
+#vc-ov .vc-meta-it{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--muted);font-weight:500}
+#vc-ov .vc-meta-it svg{flex:none;opacity:.75}
+#vc-ov .vc-meta-it b{color:var(--ink);font-weight:700}
+/* Línea de estado: insignia rellena + texto de acción al lado */
+#vc-ov .vc-estado-linea{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:8px}
+#vc-ov .vc-estado{display:inline-flex;align-items:center;flex:none;padding:3px 10px;border-radius:20px;font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#fff;white-space:nowrap}
+#vc-ov .vc-estado.v{background:var(--vc-vencido)}
+#vc-ov .vc-estado.h,#vc-ov .vc-estado.d3{background:var(--vc-urgente)}
+#vc-ov .vc-estado.d7{background:var(--vc-proximo);color:#6B4E00}
+#vc-ov .vc-estado.ok{background:var(--vc-vigente)}
+#vc-ov .vc-accion-tx{font-size:12.5px;color:var(--muted);font-weight:500}
 .vc-row .nom{font-weight:700;font-size:13.5px}
 .vc-row .cat{font-size:11.5px;color:var(--muted);margin-top:2px}
 .vc-row .vc-stock-actual{color:var(--ink2);font-weight:600}
@@ -394,16 +428,20 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .gon-progress span{font-size:12px;font-weight:700;color:var(--muted);white-space:nowrap}
 /* Vencimientos — barra de progreso en 3 piezas (título / conteo+% / barra), en vez del único
    <span> combinado de antes — mismo cálculo de vcRender, solo repartido en más elementos. */
-#vc-ov .gon-progress{flex-direction:column;align-items:stretch;gap:4px}
-#vc-ov .gon-progress-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em}
-#vc-ov .gon-progress-row{display:flex;justify-content:space-between;align-items:baseline}
-#vc-ov #vc-prog-pct{font-weight:800;color:var(--ink)}
+#vc-ov .gon-progress{flex-direction:column;align-items:stretch;gap:3px;margin-bottom:14px}
+#vc-ov .gon-progress-title{font-family:'Manrope';font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
+#vc-ov .gon-progress-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+#vc-ov #vc-prog-count{font-size:13px;font-weight:500;color:var(--muted)}
+#vc-ov #vc-prog-pct{font-family:'Manrope';font-size:15px;font-weight:800;color:var(--ink)}
+#vc-ov .gon-bar{flex:none;height:6px;margin-top:5px;background:#E9E9F2}
 .gon-cat{margin-bottom:14px}
 .gon-cat-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 6px;flex-wrap:wrap}
 .gon-cat-head .cat-nom{font-weight:800;font-size:14px}
 .gon-counts{display:flex;gap:5px;flex-wrap:wrap}
-#vc-ov .gon-cat-head{padding-bottom:6px;border-bottom:1px solid var(--line)}
-#vc-ov .gon-counts{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700;color:var(--muted)}
+#vc-ov .gon-cat{margin-bottom:18px}
+#vc-ov .gon-cat-head{padding-bottom:8px;margin-bottom:10px;border-bottom:1px solid var(--line)}
+#vc-ov .gon-cat-head .cat-nom{font-size:16px;letter-spacing:-.01em}
+#vc-ov .gon-counts{background:#EEF2F7;border-radius:20px;padding:4px 11px;font-size:12px;font-weight:600;color:#54637A}
 .gon-badge{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:99px;white-space:nowrap}
 .gon-badge.v{background:#fdecec;color:#b42318}
 .gon-badge.h{background:#fff2e0;color:#b54708}
@@ -441,14 +479,21 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .vc-mini:active{background:var(--paper)}
 .vc-mini-verde{border-color:var(--verde);color:var(--verde)}
 .vc-mini-rojo{border-color:var(--rojo);color:var(--rojo)}
-#vc-ov .vc-btns-mini{margin-top:6px}
-/* Recolor de los 5 botones de acción de Vencimientos (mismo texto/ícono/handler de siempre,
-   solo cambia el color). Merma y Eliminar lote no están acá — quedan igual que antes. */
-.vc-mini-vencido{border-color:var(--vc-vencido);color:var(--vc-vencido)}
-.vc-mini-retirar{border-color:var(--vc-retirar);color:var(--vc-retirar)}
-.vc-mini-stock{border-color:var(--vc-stock);color:var(--vc-stock)}
-.vc-mini-fecha{border-color:var(--vc-fecha);color:var(--vc-fecha)}
-.vc-mini-mas{border-color:var(--vc-mas);color:var(--vc-mas)}
+/* Acciones de Vencimientos: ícono a la IZQUIERDA de la etiqueta (no apilados), fondo tintado
+   del color de cada acción y ancho natural — como en las imágenes de referencia. Escopado a
+   #vc-ov: .vc-mini también se usa en Ficha de producto y Recepción, que quedan igual que antes.
+   Cada botón conserva su texto, su ícono y su handler; sólo cambia el color y la disposición. */
+#vc-ov .vc-btns-mini{gap:8px;margin-top:11px;padding-top:11px;border-top:1px solid var(--line2)}
+#vc-ov .vc-mini{flex-direction:row;justify-content:center;flex:1 1 auto;min-width:0;gap:7px;padding:10px 14px;border-radius:10px;font-family:'Inter';font-size:13px;font-weight:600;line-height:1.2}
+#vc-ov .vc-mini-vencido{background:var(--vc-vencido-bg);border-color:var(--vc-vencido-bd);color:var(--vc-vencido)}
+#vc-ov .vc-mini-retirar{background:var(--vc-retirar-bg);border-color:var(--vc-retirar-bd);color:var(--vc-retirar)}
+#vc-ov .vc-mini-stock{background:var(--vc-stock-bg);border-color:var(--vc-stock-bd);color:var(--vc-stock)}
+#vc-ov .vc-mini-fecha{background:var(--vc-fecha-bg);border-color:var(--vc-fecha-bd);color:var(--vc-fecha)}
+#vc-ov .vc-mini-mas{background:#fff;border-color:var(--vc-mas-bd);color:var(--vc-mas)}
+#vc-ov .vc-mini-rojo{background:var(--vc-merma-bg);border-color:var(--vc-merma-bd);color:var(--vc-merma)}
+/* "Eliminar lote" dentro de la caja "Más": ancho completo, como en la referencia */
+#vc-ov [data-masbox]{padding:9px}
+#vc-ov [data-masbox] .vc-mini{flex:1;justify-content:center}
 /* Precio actual → sugerido → Aplicar (punto 6) — una sola línea compacta, sin ocupar el
    espacio vertical de un bloque separado como antes hacía .accion con el precio pegado al
    texto de la acción. */
@@ -460,6 +505,12 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .vc-aplicar-precio:disabled{opacity:.6}
 .vc-aplicar-precio.vc-aplicado{background:var(--exito,var(--verde))}
 .vc-pct-off{margin-top:2px;font-size:10.5px;font-weight:800;color:var(--verde);font-family:'JetBrains Mono'}
+/* En Vencimientos la rebaja se pinta en ámbar, no en verde: acá el color de "vencimiento" es
+   el naranja (el verde queda reservado para acciones confirmadas del resto de la app). */
+#vc-ov .vc-precio-linea{margin-top:9px;padding:9px 11px;background:var(--vc-vencido-bg);border:1px solid var(--vc-vencido-bd);border-radius:10px;font-size:13px}
+#vc-ov .vc-precio-sug{color:#EA580C;font-size:16px}
+#vc-ov .vc-aplicar-precio{background:var(--vc-vencido);padding:7px 15px;font-size:12.5px;border-radius:9px}
+#vc-ov .vc-pct-off{color:#EA580C;font-size:11.5px;margin-top:5px}
 /* Descuentos activos — fila de gestión (vendido/merma parcial + registrar), compacta como el
    resto de .vc-mini; reutiliza .vc-row/.nom/.cat/.vc-precio-linea, no duplica esos estilos. */
 .da-gestion-row{display:flex;gap:6px;margin-top:8px;align-items:center}
@@ -680,6 +731,15 @@ input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
    Armar pedido (usa el id #prov-x, no esta clase, y ya se comporta bien). */
 #vc-ov .prov-x{display:none}
 #vc-ov .prov-x.on{display:flex}
+/* Buscador del módulo: campo más alto y redondeado, lupa a la izquierda y la cámara como
+   botón con su propio recuadro a la derecha, como en la referencia. */
+#vc-ov .prov-all{font-size:14px;font-weight:500;border-radius:12px;padding-top:13px;padding-bottom:13px;padding-left:38px;padding-right:96px}
+#vc-ov .prov-icon{left:14px;color:var(--muted)}
+#vc-ov .prov-icon svg{width:17px;height:17px}
+#vc-ov .prov-scan{right:8px;width:36px;height:32px;border:1.5px solid var(--line);border-radius:9px;background:#fff;color:var(--ink)}
+#vc-ov .prov-scan svg{width:17px;height:17px}
+#vc-ov .prov-mic{right:50px;width:28px;height:28px}
+#vc-ov .prov-x{right:82px;width:26px;height:26px}
 .prov-mic{position:absolute;top:50%;right:52px;transform:translateY(-50%);width:19px;height:19px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:10.5px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
 .prov-mic:active{background:var(--line);color:var(--ink)}
 .prov-mic.listening{background:var(--rojo);color:#fff;animation:micpulse 1s infinite}
@@ -706,10 +766,16 @@ input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .seg button{border:none;background:#fff;padding:8px 11px;font-size:12px;font-weight:600;font-family:'JetBrains Mono';cursor:pointer;color:var(--muted);border-right:1px solid var(--line)}
 .seg button:last-child{border-right:none}.seg button.active{background:var(--ink);color:#fff}
 /* Vencimientos: tabs y filtros de días usan el navy propio del módulo en vez del negro
-   genérico de .seg — escopado por id para no afectar los otros .seg de la app (Recepción,
-   Ventas por día, etc.). */
-#vc-viewseg button.active,#vc-diasfilter button.active{background:var(--vc-activo)}
-#vc-pend-badge,#vc-desc-badge{display:inline-flex;align-items:center;justify-content:center;min-width:15px;height:15px;margin-left:4px;padding:0 4px;border-radius:8px;background:var(--rojo);color:#fff;font-size:9px;font-weight:800;vertical-align:middle}
+   genérico de .seg, tipografía Inter (no la monoespaciada) y más aire — escopado por id para
+   no afectar los otros .seg de la app (Recepción, Ventas por día, Crear producto, etc.). */
+#vc-viewseg,#vc-diasfilter{border-radius:12px}
+#vc-viewseg button,#vc-diasfilter button{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-family:'Inter';font-size:13px;font-weight:600;padding:12px 8px;color:#5B6675}
+#vc-viewseg button.active,#vc-diasfilter button.active{background:var(--vc-activo);color:#fff}
+/* Los filtros de días van como recuadros sueltos separados, no como segmentos pegados */
+#vc-diasfilter{border:none;background:transparent;gap:8px;overflow:visible}
+#vc-diasfilter button{border:1.5px solid var(--line);border-right:1.5px solid var(--line);border-radius:12px;background:#fff;white-space:nowrap;padding:12px 4px;gap:5px}
+#vc-diasfilter button.active{border-color:var(--vc-activo)}
+#vc-pend-badge,#vc-desc-badge{display:inline-flex;align-items:center;justify-content:center;min-width:21px;height:19px;margin-left:2px;padding:0 6px;border-radius:7px;background:#EF4444;color:#fff;font-size:11px;font-weight:800;vertical-align:middle}
 #vc-pend-badge:empty,#vc-desc-badge:empty{display:none}
 .hint{font-size:10.5px;color:var(--muted);margin-top:3px}
 .wrap{display:grid;grid-template-columns:1fr 340px;gap:16px;padding:16px;align-items:start;max-width:1520px;margin:0 auto;width:100%}
@@ -1832,10 +1898,10 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
     </div>
     <div class="mm-ov hidden" id="vc-ov">
       <div class="mm-card">
-        <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mm-head-ic"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>Revisión de vencimientos</h3></div>
+        <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mm-head-ic"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>Revisión de vencimientos</h3><button type="button" class="vc-cerrar-x" id="vc-cerrar" aria-label="Cerrar"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
 
         <div id="vc-list-view">
-          <div class="mm-topbar"><div class="vc-toprow"><button class="loadbtn acc" id="vc-add-btn" style="flex:1">+ Nuevo lote</button><button class="loadbtn" id="vc-cerrar" style="flex:1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Cerrar</button></div></div>
+          <div class="mm-topbar"><div class="vc-toprow"><button class="loadbtn acc" id="vc-add-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nuevo lote</button></div></div>
           <div class="mm-body">
           <div class="seg" id="vc-viewseg" style="display:flex;width:100%;margin:0 0 10px">
             <button type="button" data-view="lista" class="active" style="flex:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="4" width="16" height="17" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="17" x2="13" y2="17"/></svg> Lista</button>
@@ -1854,10 +1920,10 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <!-- Filtros rápidos por antigüedad — reemplazan el filtro de categoría que antes solo
                existía en "Por góndola" (módulo eliminado, fusionado acá). "Todos" es el default. -->
           <div class="seg" id="vc-diasfilter" style="display:flex;width:100%;margin:0 0 8px">
-            <button type="button" data-dias="7" style="flex:1">≤ 7 días</button>
-            <button type="button" data-dias="15" style="flex:1">≤ 15 días</button>
-            <button type="button" data-dias="30" style="flex:1">≤ 30 días</button>
-            <button type="button" data-dias="0" class="active" style="flex:1">Todos</button>
+            <button type="button" data-dias="7" style="flex:1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>≤ 7 días</button>
+            <button type="button" data-dias="15" style="flex:1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>≤ 15 días</button>
+            <button type="button" data-dias="30" style="flex:1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>≤ 30 días</button>
+            <button type="button" data-dias="0" class="active" style="flex:1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor" stroke="none"/></svg>Todos</button>
           </div>
           <!-- Barra de progreso de revisión — antes solo vivía en "Por góndola"; ahora es la
                única vista, así que la barra cubre siempre todo lo visible según los filtros
@@ -4218,7 +4284,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-23.1';
+const APP_VERSION='2026-08-23.2';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -10459,10 +10525,13 @@ function _gonBucket(dias){
 // _gonBucket+_diasVenc tal cual (mismo cálculo que ya ordena la lista) y las clases .gon-badge
 // ya definidas — existían desde el viejo "Por góndola" pero no se estaban usando en ninguna
 // vista. Solo presentación: no agrega ningún cálculo de estado nuevo.
+// Etiqueta corta por bucket, según el código de colores del brief: vencido = ámbar/naranja,
+// urgente = rojo, próximo a vencer = amarillo, normal = verde.
+const VC_ESTADO_LBL={v:'Vencido',h:'Urgente',d3:'Urgente',d7:'Próximo'};
 function vcEstadoBadge(l){
   const b=_gonBucket(_diasVenc(l.fechaVencimiento));
-  if(!b)return '<span class="gon-badge d7">Vigente</span>';
-  return `<span class="gon-badge ${b.k}">${b.lbl}</span>`;
+  if(!b)return '<span class="vc-estado ok">Vigente</span>';
+  return `<span class="vc-estado ${b.k}">${VC_ESTADO_LBL[b.k]||b.lbl}</span>`;
 }
 function vcSetView(v){
   document.querySelectorAll('#vc-viewseg button').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
@@ -10726,7 +10795,7 @@ function vcRender(lotes,containerId,esBusqueda){
       if(fill)fill.style.width=pct+'%';
       if(countEl){
         const provFiltro=_vcLFiltro.prov;
-        countEl.textContent=hechos+'/'+total+' revisados'+(provFiltro?' · '+provFiltro:'');
+        countEl.textContent=hechos+' de '+total+' revisados'+(provFiltro?' · '+provFiltro:'');
       }
       if(pctEl)pctEl.textContent=pct+'%';
     }
@@ -10808,16 +10877,25 @@ function vcFilaHtml(l){
         <span class="vc-precio-sug">${peso(l.precioRecomendado)}${l.costoOrigen==='estimado'?' <span class="est">(costo estimado)</span>':''}</span>
         <button type="button" class="vc-aplicar-precio" data-aplicar="${l.filaIndex}" data-sku="${l.sku}" data-precio="${l.precioRecomendado}">Aplicar</button>
       </div>${pctOff!=null?`<div class="vc-pct-off">${pctOff}% OFF</div>`:''}`
-    :(l.accion&&l.accion!=='—'?`<div class="accion">${l.accion}</div>`:'');
-  const stockActual=vcStockActualDe(l);
-  const stockLinea=stockActual!=null
-    ?`<div class="cat vc-stock-actual">📦 Stock actual: <b>${fmt.format(stockActual)}</b> ${l.unidad||'un'}</div>`
     :'';
+  const stockActual=vcStockActualDe(l);
+  // Fecha y stock en una sola línea con íconos (antes eran dos párrafos sueltos, uno con emoji).
+  const dias=_diasVenc(l.fechaVencimiento);
+  const diasTx=dias==null?'':(dias<0?` (venció hace ${Math.abs(dias)} día${Math.abs(dias)===1?'':'s'})`:dias===0?' (vence hoy)':` (en ${dias} día${dias===1?'':'s'})`);
+  const metaLinea=`<div class="vc-meta">
+        <span class="vc-meta-it"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>${l.fechaVencimiento?('Vence '+l.fechaVencimiento+diasTx):'Sin fecha de vencimiento'} · ${l.cantidad} ${l.unidad}${l.lote?' · lote '+l.lote:''}</span>
+        ${stockActual!=null?`<span class="vc-meta-it"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/></svg>Stock actual: <b>${fmt.format(stockActual)} ${l.unidad||'un'}</b></span>`:''}
+      </div>`;
+  // Insignia de estado + texto de acción en la misma línea (el texto de acción ya no se pinta
+  // aparte: cuando hay recomendación de precio, ese bloque lo reemplaza como antes).
+  const accionTx=(!bloquePrecio&&l.accion&&l.accion!=='—')?`<span class="vc-accion-tx">${l.accion}</span>`:'';
+  const badge=l.estado!=='Retirado'?vcEstadoBadge(l):'';
+  const estadoLinea=(badge||accionTx)?`<div class="vc-estado-linea">${badge}${accionTx}</div>`:'';
   return `
     <div class="vc-row" data-fi-row="${l.filaIndex}">
-      <div class="nom">${l.prioridad} ${l.nombre}${l.estado!=='Retirado'?' '+vcEstadoBadge(l):''}</div>
-      <div class="cat">${l.fechaVencimiento?('vence '+l.fechaVencimiento):'sin vencimiento'} · ${l.cantidad} ${l.unidad}${l.lote?' · lote '+l.lote:''}</div>
-      ${stockLinea}
+      <div class="nom">${l.prioridad||''} ${l.nombre}</div>
+      ${metaLinea}
+      ${estadoLinea}
       ${bloquePrecio}
       ${notaExtra}
       <div class="btns vc-btns-mini">${botones||''}${stockActual!=null?`<button class="vc-mini vc-mini-stock" data-editstock="${l.filaIndex}" data-sku="${l.sku}" data-stock="${stockActual}" title="Ajustar stock"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="1.5"/><path d="M7 8V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/></svg><span>Ajustar stock</span></button>`:''}<button class="vc-mini vc-mini-fecha" data-editf="${l.filaIndex}" data-fv="${l.fechaVencimiento}" title="Editar fecha"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg><span>Fecha</span></button><button class="vc-mini vc-mini-mas" data-mas="${l.filaIndex}" title="Más opciones"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span>Más</span></button></div>
