@@ -421,7 +421,6 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .vc-mini:active{background:var(--paper)}
 .vc-mini-verde{border-color:var(--verde);color:var(--verde)}
 .vc-mini-rojo{border-color:var(--rojo);color:var(--rojo)}
-.vc-mini-gold{border-color:var(--gold);color:var(--gold)}
 /* Precio actual → sugerido → Aplicar (punto 6) — una sola línea compacta, sin ocupar el
    espacio vertical de un bloque separado como antes hacía .accion con el precio pegado al
    texto de la acción. */
@@ -4175,7 +4174,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-21.4';
+const APP_VERSION='2026-08-21.5';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -10728,10 +10727,10 @@ function vcFilaHtml(l){
     // ofrece el mismo botón "Retirar" manual — antes solo aparecía con estado==='Vencido' y las
     // tarjetas "Por vencer" (aviso ya urgente/muy atrasado) quedaban sin ninguna acción.
     // "Vendido" se agrega para el caso real de que el producto se haya vendido en caja antes de
-    // vencer — con color propio (gold, no el verde normal de Vendido) y confirmación específica
-    // en vcWireFilas, porque acá "Vendido" es la excepción: lo esperado en esta categoría es
-    // "Retirar" → cambio con el proveedor, no una venta.
-    botones=`<button class="vc-mini vc-mini-gold" data-act="ok" data-i="${l.filaIndex}" title="Vendido"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Vendido</span></button>
+    // vencer — mismo verde de siempre (consistencia visual en todo el módulo), con una
+    // confirmación específica en vcWireFilas que hace de salvaguarda real, porque acá "Vendido"
+    // es la excepción: lo esperado en esta categoría es "Retirar" → cambio con el proveedor.
+    botones=`<button class="vc-mini vc-mini-verde" data-act="ok" data-i="${l.filaIndex}" title="Vendido"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Vendido</span></button>
        <button class="vc-mini" data-act="retirar" data-i="${l.filaIndex}" data-cant="${l.cantidad}" title="Retirar de la góndola (sin eliminar el lote)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/></svg><span>Retirar</span></button>`;
   }else{
     botones=`<button class="vc-mini vc-mini-verde" data-act="ok" data-i="${l.filaIndex}" title="Vendido"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Vendido</span></button>
