@@ -255,6 +255,14 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 #vc-list-view,#vc-form-view{display:flex;flex-direction:column;flex:1;min-height:0}
 .mm-head h3{font-family:'Manrope';font-weight:800;font-size:16px;display:flex;align-items:center;gap:9px}
 .mm-head-ic{flex:none;color:var(--brand-2,#8FA67B)}
+/* Rediseño visual de Revisión de vencimientos — todo escopado a #vc-ov para no afectar el resto
+   de los modales que comparten .mm-head/.mm-topbar/.seg/.prov-x/.loadbtn (Recepción, Crear
+   producto, Ficha de producto, etc.). Colores propios de este módulo, sin reusar --ambar/--azul
+   globales (ya significan otra cosa en el resto de la app). */
+#vc-ov{--vc-activo:#123B5D;--vc-vencido:#F59E0B;--vc-retirar:#D97706;--vc-stock:#2563EB;--vc-fecha:#7C3AED;--vc-mas:#64748B}
+#vc-ov .mm-head{padding:12px 16px 0 16px;margin-bottom:8px}
+#vc-ov .mm-head h3{font-size:14px}
+#vc-ov .mm-topbar{margin-bottom:8px}
 .mm-field{margin-bottom:12px}
 .mm-field label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:5px}
 .mm-search{position:relative}
@@ -350,6 +358,10 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .mm-save:disabled{opacity:.45;cursor:not-allowed}
 .mm-save.saving{opacity:.7}
 .vc-row{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+/* Tarjetas más compactas — solo padding/márgenes, sin tocar tamaños de fuente ni el alto
+   táctil de .vc-mini (que además se reusa en Ficha de producto y Recuento de stock, así que no
+   se toca su padding acá). */
+#vc-ov .vc-row{padding:8px 10px;margin-bottom:6px}
 .vc-row .nom{font-weight:700;font-size:13.5px}
 .vc-row .cat{font-size:11.5px;color:var(--muted);margin-top:2px}
 .vc-row .vc-stock-actual{color:var(--ink2);font-weight:600}
@@ -380,10 +392,18 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .gon-bar{flex:1;height:8px;background:var(--gris-bg);border-radius:99px;overflow:hidden}
 .gon-bar>div{height:100%;background:var(--verde);width:0;transition:width .25s}
 .gon-progress span{font-size:12px;font-weight:700;color:var(--muted);white-space:nowrap}
+/* Vencimientos — barra de progreso en 3 piezas (título / conteo+% / barra), en vez del único
+   <span> combinado de antes — mismo cálculo de vcRender, solo repartido en más elementos. */
+#vc-ov .gon-progress{flex-direction:column;align-items:stretch;gap:4px}
+#vc-ov .gon-progress-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em}
+#vc-ov .gon-progress-row{display:flex;justify-content:space-between;align-items:baseline}
+#vc-ov #vc-prog-pct{font-weight:800;color:var(--ink)}
 .gon-cat{margin-bottom:14px}
 .gon-cat-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 6px;flex-wrap:wrap}
 .gon-cat-head .cat-nom{font-weight:800;font-size:14px}
 .gon-counts{display:flex;gap:5px;flex-wrap:wrap}
+#vc-ov .gon-cat-head{padding-bottom:6px;border-bottom:1px solid var(--line)}
+#vc-ov .gon-counts{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700;color:var(--muted)}
 .gon-badge{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:99px;white-space:nowrap}
 .gon-badge.v{background:#fdecec;color:#b42318}
 .gon-badge.h{background:#fff2e0;color:#b54708}
@@ -421,6 +441,14 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .vc-mini:active{background:var(--paper)}
 .vc-mini-verde{border-color:var(--verde);color:var(--verde)}
 .vc-mini-rojo{border-color:var(--rojo);color:var(--rojo)}
+#vc-ov .vc-btns-mini{margin-top:6px}
+/* Recolor de los 5 botones de acción de Vencimientos (mismo texto/ícono/handler de siempre,
+   solo cambia el color). Merma y Eliminar lote no están acá — quedan igual que antes. */
+.vc-mini-vencido{border-color:var(--vc-vencido);color:var(--vc-vencido)}
+.vc-mini-retirar{border-color:var(--vc-retirar);color:var(--vc-retirar)}
+.vc-mini-stock{border-color:var(--vc-stock);color:var(--vc-stock)}
+.vc-mini-fecha{border-color:var(--vc-fecha);color:var(--vc-fecha)}
+.vc-mini-mas{border-color:var(--vc-mas);color:var(--vc-mas)}
 /* Precio actual → sugerido → Aplicar (punto 6) — una sola línea compacta, sin ocupar el
    espacio vertical de un bloque separado como antes hacía .accion con el precio pegado al
    texto de la acción. */
@@ -646,6 +674,12 @@ input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .prov-all{width:100%;min-width:0;font-weight:600;padding-right:78px;padding-left:24px;font-size:12.5px;text-overflow:ellipsis}
 .prov-x{position:absolute;top:50%;right:4px;transform:translateY(-50%);width:24px;height:24px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
 .prov-x:active{background:var(--line);color:var(--ink)}
+/* Vencimientos: el JS ya calcula correctamente la clase .on según si hay texto escrito
+   (vcWireBuscadorInteligente), pero la regla de arriba no tenía display:none por defecto y la
+   X quedaba siempre visible. Fix solo acá — escopado a #vc-ov para no tocar el buscador de
+   Armar pedido (usa el id #prov-x, no esta clase, y ya se comporta bien). */
+#vc-ov .prov-x{display:none}
+#vc-ov .prov-x.on{display:flex}
 .prov-mic{position:absolute;top:50%;right:52px;transform:translateY(-50%);width:19px;height:19px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:10.5px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
 .prov-mic:active{background:var(--line);color:var(--ink)}
 .prov-mic.listening{background:var(--rojo);color:#fff;animation:micpulse 1s infinite}
@@ -671,6 +705,12 @@ input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .seg{display:inline-flex;border:1.5px solid var(--line);border-radius:8px;overflow:hidden}
 .seg button{border:none;background:#fff;padding:8px 11px;font-size:12px;font-weight:600;font-family:'JetBrains Mono';cursor:pointer;color:var(--muted);border-right:1px solid var(--line)}
 .seg button:last-child{border-right:none}.seg button.active{background:var(--ink);color:#fff}
+/* Vencimientos: tabs y filtros de días usan el navy propio del módulo en vez del negro
+   genérico de .seg — escopado por id para no afectar los otros .seg de la app (Recepción,
+   Ventas por día, etc.). */
+#vc-viewseg button.active,#vc-diasfilter button.active{background:var(--vc-activo)}
+#vc-pend-badge,#vc-desc-badge{display:inline-flex;align-items:center;justify-content:center;min-width:15px;height:15px;margin-left:4px;padding:0 4px;border-radius:8px;background:var(--rojo);color:#fff;font-size:9px;font-weight:800;vertical-align:middle}
+#vc-pend-badge:empty,#vc-desc-badge:empty{display:none}
 .hint{font-size:10.5px;color:var(--muted);margin-top:3px}
 .wrap{display:grid;grid-template-columns:1fr 340px;gap:16px;padding:16px;align-items:start;max-width:1520px;margin:0 auto;width:100%}
 #tab-pedido .wrap{grid-template-columns:1fr}
@@ -1795,7 +1835,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mm-head-ic"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>Revisión de vencimientos</h3></div>
 
         <div id="vc-list-view">
-          <div class="mm-topbar"><div class="vc-toprow"><button class="loadbtn acc" id="vc-add-btn" style="flex:1">+ Nuevo lote</button><button class="loadbtn" id="vc-cerrar" style="flex:1">Cerrar</button></div></div>
+          <div class="mm-topbar"><div class="vc-toprow"><button class="loadbtn acc" id="vc-add-btn" style="flex:1">+ Nuevo lote</button><button class="loadbtn" id="vc-cerrar" style="flex:1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Cerrar</button></div></div>
           <div class="mm-body">
           <div class="seg" id="vc-viewseg" style="display:flex;width:100%;margin:0 0 10px">
             <button type="button" data-view="lista" class="active" style="flex:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="4" width="16" height="17" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="17" x2="13" y2="17"/></svg> Lista</button>
@@ -1814,15 +1854,19 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <!-- Filtros rápidos por antigüedad — reemplazan el filtro de categoría que antes solo
                existía en "Por góndola" (módulo eliminado, fusionado acá). "Todos" es el default. -->
           <div class="seg" id="vc-diasfilter" style="display:flex;width:100%;margin:0 0 8px">
-            <button type="button" data-dias="7" style="flex:1">7 días</button>
-            <button type="button" data-dias="15" style="flex:1">15 días</button>
-            <button type="button" data-dias="30" style="flex:1">1 mes</button>
+            <button type="button" data-dias="7" style="flex:1">≤ 7 días</button>
+            <button type="button" data-dias="15" style="flex:1">≤ 15 días</button>
+            <button type="button" data-dias="30" style="flex:1">≤ 30 días</button>
             <button type="button" data-dias="0" class="active" style="flex:1">Todos</button>
           </div>
           <!-- Barra de progreso de revisión — antes solo vivía en "Por góndola"; ahora es la
                única vista, así que la barra cubre siempre todo lo visible según los filtros
                activos (días + proveedor), no una categoría suelta. -->
-          <div class="gon-progress" style="margin-bottom:10px"><div class="gon-bar"><div id="vc-prog-fill"></div></div><span id="vc-prog-lbl">0/0 revisados</span></div>
+          <div class="gon-progress" style="margin-bottom:10px">
+            <span class="gon-progress-title">Revisión de lotes</span>
+            <div class="gon-progress-row"><span id="vc-prog-count">0/0 revisados</span><span id="vc-prog-pct">0%</span></div>
+            <div class="gon-bar"><div id="vc-prog-fill"></div></div>
+          </div>
           <div id="vc-list"><div class="vc-empty">Cargando…</div></div>
           </div>
           <div id="vc-view-pendientes" class="hidden">
@@ -4174,7 +4218,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-21.5';
+const APP_VERSION='2026-08-23.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -10411,6 +10455,15 @@ function _gonBucket(dias){
   if(dias<=7)return {k:'d7',ord:3,lbl:'Vence en '+dias+'d'};
   return null;   // >7 días: aún no requiere revisión física
 }
+// Insignia de estado por lote (Vencido/Vence hoy/Vence en Xd/Vigente), reutilizando
+// _gonBucket+_diasVenc tal cual (mismo cálculo que ya ordena la lista) y las clases .gon-badge
+// ya definidas — existían desde el viejo "Por góndola" pero no se estaban usando en ninguna
+// vista. Solo presentación: no agrega ningún cálculo de estado nuevo.
+function vcEstadoBadge(l){
+  const b=_gonBucket(_diasVenc(l.fechaVencimiento));
+  if(!b)return '<span class="gon-badge d7">Vigente</span>';
+  return `<span class="gon-badge ${b.k}">${b.lbl}</span>`;
+}
 function vcSetView(v){
   document.querySelectorAll('#vc-viewseg button').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
   document.getElementById('vc-view-lista').classList.toggle('hidden',v!=='lista');
@@ -10659,20 +10712,23 @@ function vcRender(lotes,containerId,esBusqueda){
   // el total de referencia es el recuento hecho al aplicar el filtro actual (_vcProgTotal).
   if(!esPendientes){
     const fill=document.getElementById('vc-prog-fill');
-    const lbl=document.getElementById('vc-prog-lbl');
+    const countEl=document.getElementById('vc-prog-count');
+    const pctEl=document.getElementById('vc-prog-pct');
     if(esBusqueda){
       if(fill)fill.style.width='0%';
-      if(lbl)lbl.textContent=lotes.length+' resultado'+(lotes.length===1?'':'s')+' para la búsqueda';
+      if(countEl)countEl.textContent=lotes.length+' resultado'+(lotes.length===1?'':'s')+' para la búsqueda';
+      if(pctEl)pctEl.textContent='';
     }else{
       const total=_vcProgTotal||lotes.length;
       const pendientesAhora=lotes.length;
       const hechos=Math.max(0,total-pendientesAhora);
       const pct=total?Math.round(hechos/total*100):0;
       if(fill)fill.style.width=pct+'%';
-      if(lbl){
+      if(countEl){
         const provFiltro=_vcLFiltro.prov;
-        lbl.textContent=hechos+'/'+total+' revisados — '+pct+'%'+(provFiltro?' · '+provFiltro:'');
+        countEl.textContent=hechos+'/'+total+' revisados'+(provFiltro?' · '+provFiltro:'');
       }
+      if(pctEl)pctEl.textContent=pct+'%';
     }
   }
   if(!lotes.length){box.innerHTML='<div class="vc-empty">'+(esPendientes?'Sin productos pendientes de reposición':'Nada por revisar con este filtro')+'</div>';return;}
@@ -10730,12 +10786,12 @@ function vcFilaHtml(l){
     // vencer — mismo verde de siempre (consistencia visual en todo el módulo), con una
     // confirmación específica en vcWireFilas que hace de salvaguarda real, porque acá "Vendido"
     // es la excepción: lo esperado en esta categoría es "Retirar" → cambio con el proveedor.
-    botones=`<button class="vc-mini vc-mini-verde" data-act="ok" data-i="${l.filaIndex}" title="Vendido"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Vendido</span></button>
-       <button class="vc-mini" data-act="retirar" data-i="${l.filaIndex}" data-cant="${l.cantidad}" title="Retirar de la góndola (sin eliminar el lote)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/></svg><span>Retirar</span></button>`;
+    botones=`<button class="vc-mini vc-mini-vencido" data-act="ok" data-i="${l.filaIndex}" title="Vendido"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Vendido</span></button>
+       <button class="vc-mini vc-mini-retirar" data-act="retirar" data-i="${l.filaIndex}" data-cant="${l.cantidad}" title="Retirar de la góndola (sin eliminar el lote)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/></svg><span>Retirar</span></button>`;
   }else{
-    botones=`<button class="vc-mini vc-mini-verde" data-act="ok" data-i="${l.filaIndex}" title="Vendido"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Vendido</span></button>
+    botones=`<button class="vc-mini vc-mini-vencido" data-act="ok" data-i="${l.filaIndex}" title="Vendido"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Vendido</span></button>
        <button class="vc-mini vc-mini-rojo" data-act="merma" data-i="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" data-lote="${l.lote||''}" title="Merma"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><span>Merma</span></button>
-       <button class="vc-mini" data-act="retirar" data-i="${l.filaIndex}" data-cant="${l.cantidad}" title="Retirar de la góndola (sin eliminar el lote)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/></svg><span>Retirar</span></button>`;
+       <button class="vc-mini vc-mini-retirar" data-act="retirar" data-i="${l.filaIndex}" data-cant="${l.cantidad}" title="Retirar de la góndola (sin eliminar el lote)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/></svg><span>Retirar</span></button>`;
   }
   const precioActual=vcPrecioActualDe(l);
   // Precio actual → sugerido con descuento → Aplicar (punto 6) — solo si hay recomendación
@@ -10759,12 +10815,12 @@ function vcFilaHtml(l){
     :'';
   return `
     <div class="vc-row" data-fi-row="${l.filaIndex}">
-      <div class="nom">${l.prioridad} ${l.nombre}</div>
+      <div class="nom">${l.prioridad} ${l.nombre}${l.estado!=='Retirado'?' '+vcEstadoBadge(l):''}</div>
       <div class="cat">${l.fechaVencimiento?('vence '+l.fechaVencimiento):'sin vencimiento'} · ${l.cantidad} ${l.unidad}${l.lote?' · lote '+l.lote:''}</div>
       ${stockLinea}
       ${bloquePrecio}
       ${notaExtra}
-      <div class="btns vc-btns-mini">${botones||''}${stockActual!=null?`<button class="vc-mini" data-editstock="${l.filaIndex}" data-sku="${l.sku}" data-stock="${stockActual}" title="Ajustar stock"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="1.5"/><path d="M7 8V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/></svg><span>Ajustar stock</span></button>`:''}<button class="vc-mini" data-editf="${l.filaIndex}" data-fv="${l.fechaVencimiento}" title="Editar fecha"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>Fecha</span></button><button class="vc-mini vc-mini-rojo" data-elim="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" data-nom="${nom}" title="Eliminar lote"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>Eliminar lote</span></button></div>
+      <div class="btns vc-btns-mini">${botones||''}${stockActual!=null?`<button class="vc-mini vc-mini-stock" data-editstock="${l.filaIndex}" data-sku="${l.sku}" data-stock="${stockActual}" title="Ajustar stock"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="1.5"/><path d="M7 8V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/></svg><span>Ajustar stock</span></button>`:''}<button class="vc-mini vc-mini-fecha" data-editf="${l.filaIndex}" data-fv="${l.fechaVencimiento}" title="Editar fecha"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg><span>Fecha</span></button><button class="vc-mini vc-mini-mas" data-mas="${l.filaIndex}" title="Más opciones"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span>Más</span></button></div>
       <div class="vc-editbox hidden" data-editbox="${l.filaIndex}">
         <span class="vc-editlbl">Nueva fecha de vencimiento:</span>
         <div class="fecha-wrap">
@@ -10789,6 +10845,9 @@ function vcFilaHtml(l){
           <input type="number" step="any" inputmode="decimal" id="vc-rt-${l.filaIndex}" class="fecha-seg" style="width:100px" autocomplete="off">
           <button type="button" class="btn-ok vc-ef-save" data-saveretir="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" style="white-space:nowrap">Retirar</button>
         </div>
+      </div>
+      <div class="vc-editbox hidden" data-masbox="${l.filaIndex}">
+        <button class="vc-mini vc-mini-rojo" data-elim="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" data-nom="${nom}" title="Eliminar lote"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>Eliminar lote</span></button>
       </div>
       ${esCambio && l.estado==='Retirado'?`<div class="vc-editbox hidden" data-cambiadobox="${l.filaIndex}">
         <span class="vc-editlbl">¿Cuántas ${l.unidad||'unidades'} trajo el proveedor (de ${l.cantidad})?</span>
@@ -10963,6 +11022,14 @@ function vcWireFilas(box){
         const inp=document.getElementById('vc-es-'+fi);
         if(inp){inp.value='';inp.placeholder=b.dataset.stock||'0';inp.focus();}
       }
+    };
+  });
+  // Más: mismo patrón toggle que Retirar/Ajustar stock/Fecha — abre la cajita con "Eliminar
+  // lote" (movida acá desde la fila principal, misma acción de siempre).
+  box.querySelectorAll('[data-mas]').forEach(b=>{
+    b.onclick=()=>{
+      const bx=box.querySelector(`[data-masbox="${b.dataset.mas}"]`);
+      if(bx)bx.classList.toggle('hidden');
     };
   });
   box.querySelectorAll('[data-savestock]').forEach(b=>{
