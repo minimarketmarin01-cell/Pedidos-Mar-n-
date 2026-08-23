@@ -273,16 +273,15 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
   --vc-merma:#DC2626;  --vc-merma-bg:#FEF2F2;  --vc-merma-bd:#F6C9C9;
   --vc-urgente:#EF4444;--vc-proximo:#EAB308;   --vc-vigente:#16A34A;
 }
-/* Encabezado: la ✕ vive dentro de .mm-head (que ya es space-between), y "+ Nuevo lote" queda
-   solo en la barra de abajo como botón sólido de identidad. */
+/* Encabezado: título + ícono arriba; "+ Nuevo lote" y "✕ Cerrar" abajo, en una sola fila al
+   ~50% cada uno (vc-toprow ya define flex:1 por botón, index.html:~447). */
 #vc-ov .mm-head{padding:14px 16px 0 16px;margin-bottom:10px}
 #vc-ov .mm-head h3{font-size:19px;letter-spacing:-.015em}
 #vc-ov .mm-head-ic{color:var(--vc-activo)}
-#vc-ov .vc-cerrar-x{flex:none;width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;border:1.5px solid var(--line);background:#fff;border-radius:11px;color:var(--ink);cursor:pointer;padding:0}
-#vc-ov .vc-cerrar-x:active{background:var(--paper)}
 #vc-ov .mm-topbar{margin-bottom:10px}
-#vc-ov #vc-add-btn{flex:none;background:var(--vc-activo);border-color:var(--vc-activo);color:#fff;font-size:14px;font-weight:700;padding:10px 18px;border-radius:11px;box-shadow:none}
+#vc-ov #vc-add-btn{background:var(--vc-activo);border-color:var(--vc-activo);color:#fff;font-size:14px;font-weight:700;padding:11px 14px;border-radius:11px;box-shadow:none;justify-content:center}
 #vc-ov #vc-add-btn:active{background:#0d2c46}
+#vc-ov #vc-cerrar{font-size:14px;font-weight:700;padding:11px 14px;border-radius:11px;box-shadow:none;justify-content:center}
 .mm-field{margin-bottom:12px}
 .mm-field label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:5px}
 .mm-search{position:relative}
@@ -483,17 +482,26 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
    del color de cada acción y ancho natural — como en las imágenes de referencia. Escopado a
    #vc-ov: .vc-mini también se usa en Ficha de producto y Recepción, que quedan igual que antes.
    Cada botón conserva su texto, su ícono y su handler; sólo cambia el color y la disposición. */
-#vc-ov .vc-btns-mini{gap:8px;margin-top:11px;padding-top:11px;border-top:1px solid var(--line2)}
-#vc-ov .vc-mini{flex-direction:row;justify-content:center;flex:1 1 auto;min-width:0;gap:7px;padding:10px 14px;border-radius:10px;font-family:'Inter';font-size:13px;font-weight:600;line-height:1.2}
+/* Las 5 acciones (Vendido/Retirar/Ajustar stock/Fecha/Más) deben entrar en una sola fila
+   incluso en un celular angosto (~360-390px) — nowrap explícito + padding/gap/fuente ajustados
+   al espacio real disponible (ver verificación con Playwright). min-width:0 permite que cada
+   botón se achique en vez de forzar el wrap de la fila completa. */
+#vc-ov .vc-btns-mini{flex-wrap:nowrap;gap:5px;margin-top:11px;padding-top:11px;border-top:1px solid var(--line2)}
+#vc-ov .vc-mini{flex-direction:row;justify-content:center;flex:1 1 0;min-width:0;gap:2px;padding:8px 2px;border-radius:9px;font-family:'Inter';font-size:10.5px;font-weight:600;line-height:1.15;overflow:hidden}
+#vc-ov .vc-mini svg{flex:none;width:13px;height:13px}
+#vc-ov .vc-mini span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #vc-ov .vc-mini-vencido{background:var(--vc-vencido-bg);border-color:var(--vc-vencido-bd);color:var(--vc-vencido)}
 #vc-ov .vc-mini-retirar{background:var(--vc-retirar-bg);border-color:var(--vc-retirar-bd);color:var(--vc-retirar)}
 #vc-ov .vc-mini-stock{background:var(--vc-stock-bg);border-color:var(--vc-stock-bd);color:var(--vc-stock)}
 #vc-ov .vc-mini-fecha{background:var(--vc-fecha-bg);border-color:var(--vc-fecha-bd);color:var(--vc-fecha)}
 #vc-ov .vc-mini-mas{background:#fff;border-color:var(--vc-mas-bd);color:var(--vc-mas)}
 #vc-ov .vc-mini-rojo{background:var(--vc-merma-bg);border-color:var(--vc-merma-bd);color:var(--vc-merma)}
-/* "Eliminar lote" dentro de la caja "Más": ancho completo, como en la referencia */
-#vc-ov [data-masbox]{padding:9px}
-#vc-ov [data-masbox] .vc-mini{flex:1;justify-content:center}
+/* Caja "Más": Merma (si aplica) y Eliminar lote lado a lado; el bloque de precio sugerido
+   (cuando existe) va primero, ya sin ocupar espacio permanente en la tarjeta. */
+#vc-ov [data-masbox]{padding:10px}
+#vc-ov .vc-mas-row{display:flex;gap:8px}
+#vc-ov .vc-mas-row .vc-mini{flex:1;justify-content:center;padding:10px 8px;font-size:12.5px;gap:6px}
+#vc-ov [data-masbox] .vc-precio-linea{margin-top:0;margin-bottom:8px}
 /* Precio actual → sugerido → Aplicar (punto 6) — una sola línea compacta, sin ocupar el
    espacio vertical de un bloque separado como antes hacía .accion con el precio pegado al
    texto de la acción. */
@@ -1898,10 +1906,10 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
     </div>
     <div class="mm-ov hidden" id="vc-ov">
       <div class="mm-card">
-        <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mm-head-ic"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>Revisión de vencimientos</h3><button type="button" class="vc-cerrar-x" id="vc-cerrar" aria-label="Cerrar"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+        <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mm-head-ic"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>Revisión de vencimientos</h3></div>
 
         <div id="vc-list-view">
-          <div class="mm-topbar"><div class="vc-toprow"><button class="loadbtn acc" id="vc-add-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nuevo lote</button></div></div>
+          <div class="mm-topbar"><div class="vc-toprow"><button class="loadbtn acc" id="vc-add-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nuevo lote</button><button class="loadbtn" id="vc-cerrar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Cerrar</button></div></div>
           <div class="mm-body">
           <div class="seg" id="vc-viewseg" style="display:flex;width:100%;margin:0 0 10px">
             <button type="button" data-view="lista" class="active" style="flex:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="4" width="16" height="17" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="17" x2="13" y2="17"/></svg> Lista</button>
@@ -4284,7 +4292,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-23.2';
+const APP_VERSION='2026-08-23.3';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -10859,9 +10867,14 @@ function vcFilaHtml(l){
        <button class="vc-mini vc-mini-retirar" data-act="retirar" data-i="${l.filaIndex}" data-cant="${l.cantidad}" title="Retirar de la góndola (sin eliminar el lote)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/></svg><span>Retirar</span></button>`;
   }else{
     botones=`<button class="vc-mini vc-mini-vencido" data-act="ok" data-i="${l.filaIndex}" title="Vendido"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Vendido</span></button>
-       <button class="vc-mini vc-mini-rojo" data-act="merma" data-i="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" data-lote="${l.lote||''}" title="Merma"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><span>Merma</span></button>
        <button class="vc-mini vc-mini-retirar" data-act="retirar" data-i="${l.filaIndex}" data-cant="${l.cantidad}" title="Retirar de la góndola (sin eliminar el lote)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/></svg><span>Retirar</span></button>`;
   }
+  // "Merma" no es una acción esperada en categorías "cambio con proveedor" (no aplica: se
+  // gestiona como cambio, no como pérdida propia) — solo se ofrece, dentro de "Más", en las
+  // categorías normales, igual que antes.
+  const mermaBtn=!esCambio
+    ?`<button class="vc-mini vc-mini-rojo" data-act="merma" data-i="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" data-lote="${l.lote||''}" title="Merma"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><span>Merma</span></button>`
+    :'';
   const precioActual=vcPrecioActualDe(l);
   // Precio actual → sugerido con descuento → Aplicar (punto 6) — solo si hay recomendación
   // real y precio actual conocido; si no, se sigue mostrando el texto de acción tal cual
@@ -10886,9 +10899,11 @@ function vcFilaHtml(l){
         <span class="vc-meta-it"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>${l.fechaVencimiento?('Vence '+l.fechaVencimiento+diasTx):'Sin fecha de vencimiento'} · ${l.cantidad} ${l.unidad}${l.lote?' · lote '+l.lote:''}</span>
         ${stockActual!=null?`<span class="vc-meta-it"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/></svg>Stock actual: <b>${fmt.format(stockActual)} ${l.unidad||'un'}</b></span>`:''}
       </div>`;
-  // Insignia de estado + texto de acción en la misma línea (el texto de acción ya no se pinta
-  // aparte: cuando hay recomendación de precio, ese bloque lo reemplaza como antes).
-  const accionTx=(!bloquePrecio&&l.accion&&l.accion!=='—')?`<span class="vc-accion-tx">${l.accion}</span>`:'';
+  // Insignia de estado + texto de acción en la misma línea. El bloque de precio sugerido ya
+  // no se pinta en la tarjeta (punto 4 del brief) — vive dentro de "Más" junto con Merma y
+  // Eliminar lote, así que el texto de "accion" se muestra siempre que exista, sin depender de
+  // si hay o no recomendación de precio.
+  const accionTx=(l.accion&&l.accion!=='—')?`<span class="vc-accion-tx">${l.accion}</span>`:'';
   const badge=l.estado!=='Retirado'?vcEstadoBadge(l):'';
   const estadoLinea=(badge||accionTx)?`<div class="vc-estado-linea">${badge}${accionTx}</div>`:'';
   return `
@@ -10896,9 +10911,8 @@ function vcFilaHtml(l){
       <div class="nom">${l.prioridad||''} ${l.nombre}</div>
       ${metaLinea}
       ${estadoLinea}
-      ${bloquePrecio}
       ${notaExtra}
-      <div class="btns vc-btns-mini">${botones||''}${stockActual!=null?`<button class="vc-mini vc-mini-stock" data-editstock="${l.filaIndex}" data-sku="${l.sku}" data-stock="${stockActual}" title="Ajustar stock"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="1.5"/><path d="M7 8V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/></svg><span>Ajustar stock</span></button>`:''}<button class="vc-mini vc-mini-fecha" data-editf="${l.filaIndex}" data-fv="${l.fechaVencimiento}" title="Editar fecha"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg><span>Fecha</span></button><button class="vc-mini vc-mini-mas" data-mas="${l.filaIndex}" title="Más opciones"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span>Más</span></button></div>
+      <div class="btns vc-btns-mini">${botones||''}${stockActual!=null?`<button class="vc-mini vc-mini-stock" data-editstock="${l.filaIndex}" data-sku="${l.sku}" data-stock="${stockActual}" title="Ajustar stock"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="1.5"/><path d="M7 8V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/></svg><span>Ajustar</span></button>`:''}<button class="vc-mini vc-mini-fecha" data-editf="${l.filaIndex}" data-fv="${l.fechaVencimiento}" title="Editar fecha"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg><span>Fecha</span></button><button class="vc-mini vc-mini-mas" data-mas="${l.filaIndex}" title="Más opciones"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span>Más</span></button></div>
       <div class="vc-editbox hidden" data-editbox="${l.filaIndex}">
         <span class="vc-editlbl">Nueva fecha de vencimiento:</span>
         <div class="fecha-wrap">
@@ -10925,7 +10939,11 @@ function vcFilaHtml(l){
         </div>
       </div>
       <div class="vc-editbox hidden" data-masbox="${l.filaIndex}">
-        <button class="vc-mini vc-mini-rojo" data-elim="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" data-nom="${nom}" title="Eliminar lote"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>Eliminar lote</span></button>
+        ${bloquePrecio}
+        <div class="vc-mas-row">
+          ${mermaBtn}
+          <button class="vc-mini vc-mini-rojo" data-elim="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" data-nom="${nom}" title="Eliminar lote"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>Eliminar lote</span></button>
+        </div>
       </div>
       ${esCambio && l.estado==='Retirado'?`<div class="vc-editbox hidden" data-cambiadobox="${l.filaIndex}">
         <span class="vc-editlbl">¿Cuántas ${l.unidad||'unidades'} trajo el proveedor (de ${l.cantidad})?</span>
