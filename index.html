@@ -318,16 +318,16 @@ html.carrito-fijo #ed-ov .mm-card,html.carrito-fijo #mc-ov .mm-card,html.carrito
 .mm-section.mm-section--bare{background:none;border:none;padding:0;margin-bottom:2px}
 .mm-section.mm-section--bare .mm-section-head{margin-bottom:8px}
 /* Bliss OS (html.carrito-fijo — misma clase que ya usa el resto de la app, no un @media nuevo,
-   ver nota junto a CARRITO_BREAKPOINT sobre @media poco confiable en ese dispositivo): 2
-   columnas fijas por posición (nth-child), no grid automático — con solo 5-6 secciones de alto
-   desigual, auto-flow puede reordenar tarjetas o dejar huecos visibles; emparejar a mano por
-   índice es más predecible dado que el número de secciones es fijo. */
+   ver nota junto a CARRITO_BREAKPOINT sobre @media poco confiable en ese dispositivo): el
+   formulario sigue siendo de 1 sola columna (misma .mm-sections{flex-direction:column} de
+   siempre) — solo se limita el ancho y se centra, como una hoja de formulario con fondo visible
+   a los lados, en vez de un dashboard de 2 columnas. Antes se probó una grilla de 2 columnas acá
+   mismo, pero se descartó: perdía la sensación de app móvil ampliada y separaba Precio de
+   Información básica, que deben leerse en el mismo orden vertical que en celular. */
 html.carrito-fijo #cp-ov .mm-sections,
 html.carrito-fijo #rc-ov .mm-sections{
-  max-width:900px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start
+  max-width:520px;margin:0 auto
 }
-html.carrito-fijo #cp-ov .mm-sections>.mm-section:nth-child(5){grid-column:1/-1}
-html.carrito-fijo #rc-ov #rc-detalle .mm-sections>.mm-section:nth-child(3){grid-column:1/-1}
 .mm-search{position:relative}
 .mm-search input,.prov-all{border:1.5px solid var(--line);border-radius:10px;font-size:15px;padding-top:11px;padding-bottom:11px;background:#fff;color:var(--text);font-family:'Inter'}
 /* Ajuste header de filtros de Pedidos: el buscador (44px de alto real por el padding de
@@ -4384,7 +4384,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-24.5';
+const APP_VERSION='2026-08-24.6';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
