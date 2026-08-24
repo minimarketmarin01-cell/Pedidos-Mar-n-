@@ -249,6 +249,27 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
    (Merma, Insumos, Crear producto, Calculadora, etc.) sigue igual. */
 #rc-ov,#vc-ov,#mas-ov{align-items:stretch;background:var(--paper)}
 #rc-ov .mm-card,#vc-ov .mm-card,#mas-ov .mm-card,#fp-ov .mm-card{width:100%;max-width:100%;height:100%;max-height:100%;border-radius:0}
+/* En Bliss OS (pantalla ancha táctil, ~1024px) el resto de los modales quedaba angosto y
+   centrado — .mm-card tiene un tope de max-width:480px pensado para celular, que en una
+   pantalla de ese ancho deja la mayor parte vacía a los costados. Se saca ese tope (pasan a
+   ocupar el 100% del ancho, ya que width:100% ya estaba puesto en .mm-card) solo en Bliss OS;
+   el alto y el anclaje como hoja inferior no cambian, así que esto es puramente de ancho.
+   Se detecta Bliss OS con la MISMA clase html.carrito-fijo que ya usa el resto de la app
+   (_aplicarLayoutCarrito/_aplicarModo más abajo, basada en window.innerWidth) en vez de un
+   @media nuevo — @media(min-width) ya se documentó como poco confiable en BlissOS (ver nota
+   junto a CARRITO_BREAKPOINT). Quedan afuera a propósito los diálogos ya angostados por su
+   cuenta (pv-ov, rn-ov, confirm-ov, cp2-ov, con max-width propio de 340-420px vía estilo
+   inline) — son confirmaciones cortas, no pantallas de contenido, y verse angostos ahí es
+   intencional. */
+html.carrito-fijo #mm-ov .mm-card,html.carrito-fijo #abc-ov .mm-card,html.carrito-fijo #sc-ov .mm-card,
+html.carrito-fijo #rneg-ov .mm-card,html.carrito-fijo #hm-ov .mm-card,html.carrito-fijo #in-ov .mm-card,
+html.carrito-fijo #pr-ov .mm-card,html.carrito-fijo #ll-ov .mm-card,html.carrito-fijo #abcr-ov .mm-card,
+html.carrito-fijo #rz-ov .mm-card,html.carrito-fijo #rd-ov .mm-card,html.carrito-fijo #vd-ov .mm-card,
+html.carrito-fijo #mmc-ov .mm-card,html.carrito-fijo #calprov-ov .mm-card,html.carrito-fijo #sm-ov .mm-card,
+html.carrito-fijo #rk-ov .mm-card,html.carrito-fijo #cp-ov .mm-card,html.carrito-fijo #gp-ov .mm-card,
+html.carrito-fijo #ed-ov .mm-card,html.carrito-fijo #mc-ov .mm-card,html.carrito-fijo #fc-ov .mm-card{
+  max-width:100%
+}
 .mm-head{display:flex;justify-content:space-between;align-items:center;padding:16px 16px 0 16px;flex:none;margin-bottom:12px}
 .mm-topbar{padding:0 16px;flex:none;margin-bottom:10px}
 .mm-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 16px 22px;flex:1;min-height:0}
@@ -4292,7 +4313,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-23.3';
+const APP_VERSION='2026-08-23.4';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
