@@ -305,6 +305,29 @@ html.carrito-fijo #ed-ov .mm-card,html.carrito-fijo #mc-ov .mm-card,html.carrito
 #vc-ov #vc-cerrar{font-size:14px;font-weight:700;padding:11px 14px;border-radius:11px;box-shadow:none;justify-content:center}
 .mm-field{margin-bottom:12px}
 .mm-field label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:5px}
+/* Tarjetas de sección Material Design dentro de mm-body (Crear producto / Recepción) — solo
+   agrupan visualmente los .mm-field ya existentes bajo un encabezado, no tocan ids ni lógica.
+   Se comparte a propósito entre #cp-ov y #rc-ov (mismo pedido: misma estructura visual). */
+.mm-sections{display:flex;flex-direction:column;gap:12px}
+.mm-section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 14px 2px}
+.mm-section-head{display:flex;align-items:center;gap:7px;margin:0 0 12px;font-size:12px;font-weight:800;color:var(--verde);text-transform:uppercase;letter-spacing:.03em}
+.mm-section-head svg{flex:none;width:15px;height:15px}
+/* "bare": para envolver bloques que YA dibujan su propia tarjeta (el .pc-calc-box dorado de
+   PcWidget, o .mm-picked) — solo agrega el encabezado verde, sin fondo/borde propio, para no
+   anidar tarjeta dentro de tarjeta. */
+.mm-section.mm-section--bare{background:none;border:none;padding:0;margin-bottom:2px}
+.mm-section.mm-section--bare .mm-section-head{margin-bottom:8px}
+/* Bliss OS (html.carrito-fijo — misma clase que ya usa el resto de la app, no un @media nuevo,
+   ver nota junto a CARRITO_BREAKPOINT sobre @media poco confiable en ese dispositivo): 2
+   columnas fijas por posición (nth-child), no grid automático — con solo 5-6 secciones de alto
+   desigual, auto-flow puede reordenar tarjetas o dejar huecos visibles; emparejar a mano por
+   índice es más predecible dado que el número de secciones es fijo. */
+html.carrito-fijo #cp-ov .mm-sections,
+html.carrito-fijo #rc-ov .mm-sections{
+  max-width:900px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start
+}
+html.carrito-fijo #cp-ov .mm-sections>.mm-section:nth-child(5){grid-column:1/-1}
+html.carrito-fijo #rc-ov #rc-detalle .mm-sections>.mm-section:nth-child(3){grid-column:1/-1}
 .mm-search{position:relative}
 .mm-search input,.prov-all{border:1.5px solid var(--line);border-radius:10px;font-size:15px;padding-top:11px;padding-bottom:11px;background:#fff;color:var(--text);font-family:'Inter'}
 /* Ajuste header de filtros de Pedidos: el buscador (44px de alto real por el padding de
@@ -2199,36 +2222,45 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <button type="button" data-modo="ajustar" style="flex:1">Ajustar stock</button>
         </div>
 
-        <div class="mm-field" style="margin-bottom:8px">
-          <label>Producto</label>
-          <div class="mm-search">
-            <input id="rc-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off" style="padding-right:132px">
-            <button class="mm-x" id="rc-lx" type="button" aria-label="Limpiar" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-            <button class="mm-mic" id="rc-mic" type="button" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
-            <button class="mm-scan cam-btn" id="rc-scan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
-          </div>
-          <div class="mm-picked" id="rc-picked">
-            <div class="nom" id="rc-nom">—</div>
-            <div class="cat" id="rc-cat">—</div>
-            <div class="cat" id="rc-stock" style="font-weight:700;color:var(--ink);margin-top:3px">Stock actual: —</div>
-            <div class="mm-field hidden" id="rc-nombre-box" style="margin-top:6px">
-              <label>Corregir nombre del producto</label>
-              <div style="display:flex;gap:6px">
-                <input id="rc-nombre-input" style="flex:1;min-width:0;padding:7px 9px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px" autocomplete="off">
-                <button class="loadbtn" id="rc-nombre-guardar" type="button" style="white-space:nowrap;padding:7px 10px;font-size:12px">Guardar</button>
+        <div class="mm-sections">
+          <section class="mm-section mm-section--bare">
+            <div class="mm-section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/></svg>Producto</div>
+            <div class="mm-field" style="margin-bottom:8px">
+              <label>Producto</label>
+              <div class="mm-search">
+                <input id="rc-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off" style="padding-right:132px">
+                <button class="mm-x" id="rc-lx" type="button" aria-label="Limpiar" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                <button class="mm-mic" id="rc-mic" type="button" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
+                <button class="mm-scan cam-btn" id="rc-scan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
               </div>
+              <div class="mm-picked" id="rc-picked">
+                <div class="nom" id="rc-nom">—</div>
+                <div class="cat" id="rc-cat">—</div>
+                <div class="cat" id="rc-stock" style="font-weight:700;color:var(--ink);margin-top:3px">Stock actual: —</div>
+                <div class="mm-field hidden" id="rc-nombre-box" style="margin-top:6px">
+                  <label>Corregir nombre del producto</label>
+                  <div style="display:flex;gap:6px">
+                    <input id="rc-nombre-input" style="flex:1;min-width:0;padding:7px 9px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px" autocomplete="off">
+                    <button class="loadbtn" id="rc-nombre-guardar" type="button" style="white-space:nowrap;padding:7px 10px;font-size:12px">Guardar</button>
+                  </div>
+                </div>
+                <div class="cat" id="rc-costo-actual" style="margin-top:2px">Costo actual: —</div>
+                <div class="cat" id="rc-precio-actual" style="margin-top:2px">Precio actual: —</div>
+                <div class="cat" id="rc-margen-actual" style="margin-top:2px">Margen actual: —</div>
+              </div>
+              <div id="rc-results"></div>
+              <button id="rc-activar-inv" class="hidden" type="button" style="width:100%;margin:8px 0 0;padding:8px 10px;border-radius:9px;border:1.5px solid var(--azul);background:var(--azul-bg);color:var(--azul);font-weight:700;font-size:12.5px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 7.5-2"/></svg> Activar inventario</button>
             </div>
-            <div class="cat" id="rc-costo-actual" style="margin-top:2px">Costo actual: —</div>
-            <div class="cat" id="rc-precio-actual" style="margin-top:2px">Precio actual: —</div>
-            <div class="cat" id="rc-margen-actual" style="margin-top:2px">Margen actual: —</div>
-            <div class="cat" id="rc-proveedores" style="margin-top:6px;font-weight:700;color:var(--ink)">Proveedor(es): —</div>
+          </section>
+
+          <section class="mm-section">
+            <div class="mm-section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="12" rx="2"/><circle cx="8.5" cy="14" r="1.3"/><circle cx="15.5" cy="14" r="1.3"/><path d="M12 8V4"/><circle cx="12" cy="3" r="1.2"/></svg>Proveedor</div>
+            <div class="cat" id="rc-proveedores" style="font-weight:700;color:var(--ink)">Proveedor(es): —</div>
             <div style="display:flex;gap:6px;margin-top:6px">
               <select id="rc-provid-select" style="flex:1;min-width:0;padding:7px 9px;border:1.5px solid var(--line);border-radius:8px;font-size:12px"><option value="">Agregar proveedor…</option></select>
               <button class="loadbtn" id="rc-provid-add" type="button" style="white-space:nowrap;padding:7px 10px;font-size:12px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Agregar</button>
             </div>
-          </div>
-          <div id="rc-results"></div>
-          <button id="rc-activar-inv" class="hidden" type="button" style="width:100%;margin:8px 0 0;padding:8px 10px;border-radius:9px;border:1.5px solid var(--azul);background:var(--azul-bg);color:var(--azul);font-weight:700;font-size:12.5px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 7.5-2"/></svg> Activar inventario</button>
+          </section>
         </div>
 
         <!-- Modo "Ajustar stock": solo aparece cuando ya se eligió un producto (rc-picked),
@@ -2244,44 +2276,56 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
              búsqueda o escaneo) — permanece oculto hasta entonces, así el módulo abre
              mostrando SOLO el buscador, sin el resto del formulario compitiendo por espacio. -->
         <div id="rc-detalle" class="hidden">
-        <div class="mm-field" id="rc-cantidad-field" style="margin-bottom:8px">
-          <label>Cantidad recibida</label>
-          <div style="display:flex;gap:6px;margin-bottom:6px">
-            <button type="button" class="rc-modo-btn active" id="rc-modo-unidad" data-modo="unidad" style="border-color:var(--wa-d);background:var(--wa-bg,var(--verde-bg));color:var(--wa-d)">Por unidad</button>
-            <button type="button" class="rc-modo-btn" id="rc-modo-caja" data-modo="caja">Por caja/Display</button>
-          </div>
-          <div class="mm-qty" style="height:38px">
-            <button class="qbtn rc-qty-hold" id="rc-qty-menos" type="button" style="height:100%">−</button>
-            <input id="rc-cantidad" inputmode="decimal" placeholder="0" disabled>
-            <span class="unidad" id="rc-unidad">u</span>
-            <button class="qbtn rc-qty-hold" id="rc-qty-mas" type="button" style="height:100%">+</button>
-          </div>
-          <div id="rc-caja-campos" class="hidden" style="display:flex;gap:8px;margin-top:6px">
-            <div style="flex:1">
-              <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:2px">UNIDADES POR CAJA</div>
-              <input id="rc-unidades-caja" inputmode="numeric" placeholder="Ej: 24" style="width:100%;height:34px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;font-family:'JetBrains Mono';box-sizing:border-box">
+        <div class="mm-sections">
+          <section class="mm-section">
+            <div class="mm-section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="14" height="10" rx="1"/><path d="M15 9h4l3 3.5V16h-7z"/><circle cx="6" cy="18.5" r="1.6"/><circle cx="17.5" cy="18.5" r="1.6"/></svg>Cantidad recibida</div>
+            <div class="mm-field" id="rc-cantidad-field" style="margin-bottom:8px">
+              <label>Cantidad recibida</label>
+              <div style="display:flex;gap:6px;margin-bottom:6px">
+                <button type="button" class="rc-modo-btn active" id="rc-modo-unidad" data-modo="unidad" style="border-color:var(--wa-d);background:var(--wa-bg,var(--verde-bg));color:var(--wa-d)">Por unidad</button>
+                <button type="button" class="rc-modo-btn" id="rc-modo-caja" data-modo="caja">Por caja/Display</button>
+              </div>
+              <div class="mm-qty" style="height:38px">
+                <button class="qbtn rc-qty-hold" id="rc-qty-menos" type="button" style="height:100%">−</button>
+                <input id="rc-cantidad" inputmode="decimal" placeholder="0" disabled>
+                <span class="unidad" id="rc-unidad">u</span>
+                <button class="qbtn rc-qty-hold" id="rc-qty-mas" type="button" style="height:100%">+</button>
+              </div>
+              <div id="rc-caja-campos" class="hidden" style="display:flex;gap:8px;margin-top:6px">
+                <div style="flex:1">
+                  <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:2px">UNIDADES POR CAJA</div>
+                  <input id="rc-unidades-caja" inputmode="numeric" placeholder="Ej: 24" style="width:100%;height:34px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;font-family:'JetBrains Mono';box-sizing:border-box">
+                </div>
+              </div>
+              <div class="cat" id="rc-stock-total-hint" style="margin-top:5px"></div>
             </div>
-          </div>
-          <div class="cat" id="rc-stock-total-hint" style="margin-top:5px"></div>
-        </div>
-        <div class="mm-field" style="margin-bottom:4px">
-          <label>Fecha de vencimiento <span style="color:var(--rojo)">*</span></label>
-          <div class="fecha-wrap">
-            <input id="rc-fecha-dd" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="DD" autocomplete="off">
-            <span class="fecha-sep">/</span>
-            <input id="rc-fecha-mm" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="off">
-            <span class="fecha-sep">/</span>
-            <input id="rc-fecha-aaaa" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="AA" autocomplete="off">
-            <button type="button" class="fecha-cal-btn" id="rc-fecha-cal" aria-label="Elegir en calendario"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></button>
-            <input type="date" id="rc-fecha" class="fecha-date-hidden" tabindex="-1">
-          </div>
-        </div>
-        <div class="mm-field hidden" id="rc-sin-track-msg" style="margin-bottom:8px">
-          <div style="background:var(--azul-bg);border-radius:9px;padding:10px;color:var(--azul);font-size:12.5px;font-weight:600;line-height:1.35">Para registrar una recepción, primero activa "Seguir inventario".</div>
-        </div>
+          </section>
 
-        <div id="rc-pc-mount"></div>
-        <div id="rc-movs" class="hidden" style="margin-top:8px"></div>
+          <section class="mm-section mm-section--bare">
+            <div class="mm-section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Costo y precio de venta</div>
+            <div id="rc-pc-mount"></div>
+          </section>
+
+          <section class="mm-section">
+            <div class="mm-section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Datos adicionales</div>
+            <div class="mm-field" style="margin-bottom:4px">
+              <label>Fecha de vencimiento <span style="color:var(--rojo)">*</span></label>
+              <div class="fecha-wrap">
+                <input id="rc-fecha-dd" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="DD" autocomplete="off">
+                <span class="fecha-sep">/</span>
+                <input id="rc-fecha-mm" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="off">
+                <span class="fecha-sep">/</span>
+                <input id="rc-fecha-aaaa" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="AA" autocomplete="off">
+                <button type="button" class="fecha-cal-btn" id="rc-fecha-cal" aria-label="Elegir en calendario"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></button>
+                <input type="date" id="rc-fecha" class="fecha-date-hidden" tabindex="-1">
+              </div>
+            </div>
+            <div class="mm-field hidden" id="rc-sin-track-msg" style="margin-bottom:8px">
+              <div style="background:var(--azul-bg);border-radius:9px;padding:10px;color:var(--azul);font-size:12.5px;font-weight:600;line-height:1.35">Para registrar una recepción, primero activa "Seguir inventario".</div>
+            </div>
+            <div id="rc-movs" class="hidden" style="margin-top:8px"></div>
+          </section>
+        </div>
         </div>
 
         </div>
@@ -2692,164 +2736,185 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
   <div class="mm-card">
     <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mm-head-ic"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Crear producto</h3></div>
     <div class="mm-body">
-      <div class="mm-field">
-        <label>Código de barras (opcional, pero recomendado primero)</label>
-        <div class="mm-search">
-          <input id="cp-barcode" placeholder="Escanea o escribe" autocomplete="off" style="padding-right:58px">
-          <button class="mm-scan cam-btn" id="cp-scan" type="button" aria-label="Escanear"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
-        </div>
-        <div style="font-size:11px;color:var(--muted);margin-top:5px">Si el código se reconoce, el nombre se completa solo.</div>
-      </div>
-      <div class="mm-field">
-        <label>Nombre *</label>
-        <input id="cp-nombre" placeholder="Ej: 7 up 2.0L" autocomplete="off" class="mm-input">
-      </div>
-      <div class="mm-field">
-        <label>Categoría *</label>
-        <div style="display:flex;gap:8px">
-          <div class="cat-combo" id="cat-combo">
-            <input id="cp-cat-input" class="cat-combo-input" placeholder="Elige una categoría…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox" style="padding-right:60px">
-            <button type="button" class="search-x hidden" id="cp-cat-x" aria-label="Borrar" style="right:30px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-            <svg class="cat-combo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-            <select id="cp-cat" style="display:none"><option value="">Cargando…</option></select>
-            <div class="cat-combo-menu hidden" id="cat-combo-menu" role="listbox"></div>
+      <div class="mm-sections">
+        <section class="mm-section">
+          <div class="mm-section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Información básica</div>
+          <div class="mm-field">
+            <label>Nombre *</label>
+            <input id="cp-nombre" placeholder="Ej: 7 up 2.0L" autocomplete="off" class="mm-input">
           </div>
-          <button class="loadbtn" id="cp-cat-nueva" type="button" style="white-space:nowrap"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nueva</button>
-        </div>
-        <div id="cp-cat-nuevabox" class="hidden" style="gap:8px;margin-top:8px">
-          <input id="cp-cat-nuevanom" placeholder="Nombre de la categoría nueva" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
-          <button class="btn-ok loadbtn" id="cp-cat-crear" type="button" style="white-space:nowrap">Crear</button>
-        </div>
-      </div>
-      <div class="mm-field">
-        <label>Vendido por</label><br>
-        <div class="seg" id="cp-venta"><button type="button" data-v="u" class="active">Unidad</button><button type="button" data-v="kg">Peso (kg)</button></div>
-      </div>
-      <div class="mm-field" id="cp-cantidad-field" style="margin-bottom:8px">
-        <label>Cantidad inicial (opcional)</label>
-        <div style="display:flex;gap:6px;margin-bottom:6px">
-          <button type="button" class="rc-modo-btn active" id="cp-modo-unidad" data-modo="unidad" style="border-color:var(--wa-d);background:var(--wa-bg,var(--verde-bg));color:var(--wa-d)">Por unidad</button>
-          <button type="button" class="rc-modo-btn" id="cp-modo-caja" data-modo="caja">Por caja</button>
-        </div>
-        <div class="mm-qty" style="height:38px">
-          <button class="qbtn cp-qty-hold" id="cp-qty-menos" type="button" style="height:100%">−</button>
-          <input id="cp-cantidad" inputmode="decimal" placeholder="0" autocomplete="off">
-          <span class="unidad" id="cp-unidad">u</span>
-          <button class="qbtn cp-qty-hold" id="cp-qty-mas" type="button" style="height:100%">+</button>
-        </div>
-        <div id="cp-caja-campos" class="hidden" style="display:flex;gap:8px;margin-top:6px">
-          <div style="flex:1">
-            <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:2px">UNIDADES POR CAJA</div>
-            <input id="cp-unidades-caja" inputmode="numeric" placeholder="Ej: 24" style="width:100%;height:34px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;font-family:'JetBrains Mono';box-sizing:border-box">
+          <div class="mm-field">
+            <label>Categoría *</label>
+            <div style="display:flex;gap:8px">
+              <div class="cat-combo" id="cat-combo">
+                <input id="cp-cat-input" class="cat-combo-input" placeholder="Elige una categoría…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox" style="padding-right:60px">
+                <button type="button" class="search-x hidden" id="cp-cat-x" aria-label="Borrar" style="right:30px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                <svg class="cat-combo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                <select id="cp-cat" style="display:none"><option value="">Cargando…</option></select>
+                <div class="cat-combo-menu hidden" id="cat-combo-menu" role="listbox"></div>
+              </div>
+              <button class="loadbtn" id="cp-cat-nueva" type="button" style="white-space:nowrap"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nueva</button>
+            </div>
+            <div id="cp-cat-nuevabox" class="hidden" style="gap:8px;margin-top:8px">
+              <input id="cp-cat-nuevanom" placeholder="Nombre de la categoría nueva" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+              <button class="btn-ok loadbtn" id="cp-cat-crear" type="button" style="white-space:nowrap">Crear</button>
+            </div>
           </div>
-        </div>
-        <div class="cat" id="cp-stock-total-hint" style="margin-top:5px"></div>
-      </div>
-      <div id="cp-pc-mount"></div>
-      <div class="mm-field">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-          <label style="margin:0">Proveedor y Sector (opcional)</label>
-          <button class="loadbtn" id="cp-ps-sugerir" type="button" style="white-space:nowrap"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="3" y="8" width="18" height="12" rx="2"/><circle cx="8.5" cy="14" r="1.3"/><circle cx="15.5" cy="14" r="1.3"/><path d="M12 8V4"/><circle cx="12" cy="3" r="1.2"/></svg> Sugerir con IA</button>
-        </div>
-        <div id="cp-ps-hint" class="hidden" style="font-size:11px;color:var(--muted);margin:5px 0"></div>
-        <div style="display:flex;gap:8px;margin-top:6px">
-          <div class="cat-combo" id="cp-prov-combo">
-            <input id="cp-proveedor-input" class="cat-combo-input" placeholder="Buscar proveedor…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
-            <svg class="cat-combo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-            <select id="cp-proveedor" style="display:none"><option value="">Sin proveedor</option></select>
-            <div class="cat-combo-menu hidden" id="cp-prov-menu" role="listbox"></div>
+          <div class="mm-field">
+            <label>Vendido por</label><br>
+            <div class="seg" id="cp-venta"><button type="button" data-v="u" class="active">Unidad</button><button type="button" data-v="kg">Peso (kg)</button></div>
           </div>
-          <button class="loadbtn" id="cp-prov-nueva" type="button" style="white-space:nowrap"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nuevo</button>
-        </div>
-        <div id="cp-prov-nuevabox" class="hidden" style="gap:8px;margin-top:8px">
-          <input id="cp-prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
-          <button class="btn-ok loadbtn" id="cp-prov-crear" type="button" style="white-space:nowrap">Crear</button>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:8px">
-          <div class="cat-combo" id="cp-sector-combo">
-            <input id="cp-sector-input" class="cat-combo-input" placeholder="Buscar sector…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
-            <svg class="cat-combo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-            <select id="cp-sector" style="display:none"><option value="">Sin sector</option></select>
-            <div class="cat-combo-menu hidden" id="cp-sector-menu" role="listbox"></div>
+        </section>
+
+        <section class="mm-section mm-section--bare">
+          <div class="mm-section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Precio</div>
+          <div id="cp-pc-mount"></div>
+        </section>
+
+        <section class="mm-section">
+          <div class="mm-section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg>Identificación</div>
+          <div class="mm-field">
+            <label>Código de barras (opcional, pero recomendado primero)</label>
+            <div class="mm-search">
+              <input id="cp-barcode" placeholder="Escanea o escribe" autocomplete="off" style="padding-right:58px">
+              <button class="mm-scan cam-btn" id="cp-scan" type="button" aria-label="Escanear"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:5px">Si el código se reconoce, el nombre se completa solo.</div>
           </div>
-          <button class="loadbtn" id="cp-sector-nueva" type="button" style="white-space:nowrap"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nuevo</button>
-        </div>
-        <div id="cp-sector-nuevabox" class="hidden" style="gap:8px;margin-top:8px">
-          <input id="cp-sector-nuevonom" placeholder="Nombre del sector nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
-          <button class="btn-ok loadbtn" id="cp-sector-crear" type="button" style="white-space:nowrap">Crear</button>
-        </div>
-      </div>
-      <div class="mm-field">
-        <label class="cp-toggle">Seguir inventario <input type="checkbox" id="cp-track" checked></label>
-      </div>
-      <div class="mm-field hidden" id="cp-stock-field">
-        <label>Stock inicial</label>
-        <input id="cp-stock" inputmode="decimal" placeholder="0" autocomplete="off" class="mm-input">
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">Se completa solo desde "Cantidad inicial" arriba.</div>
-      </div>
-      <div class="mm-field" id="cp-stock-min-field">
-        <label>Inventario bajo / Stock mínimo</label>
-        <input id="cp-stock-min" inputmode="decimal" placeholder="Ej: 5" autocomplete="off" class="mm-input">
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">Cuando el stock llegue a este número o menos, Loyverse genera la alerta de inventario bajo.</div>
-      </div>
-      <div class="mm-field" id="cp-fecha-field">
-        <label>Fecha de vencimiento (opcional)</label>
-        <div class="fecha-wrap">
-          <input id="cp-fecha-dd" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="DD" autocomplete="off">
-          <span class="fecha-sep">/</span>
-          <input id="cp-fecha-mm" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="off">
-          <span class="fecha-sep">/</span>
-          <input id="cp-fecha-aaaa" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="AA" autocomplete="off">
-          <button type="button" class="fecha-cal-btn" id="cp-fecha-cal" aria-label="Elegir en calendario"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></button>
-          <input type="date" id="cp-fecha" class="fecha-date-hidden" tabindex="-1">
-        </div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">Si la pones, el stock inicial queda registrado como lote y aparece en Vencimientos.</div>
-      </div>
-      <div class="mm-field">
-        <label class="cp-toggle">IVA 19% <input type="checkbox" id="cp-iva" checked></label>
-      </div>
-      <div class="mm-field">
-        <label class="cp-toggle">Producto activo (a la venta) <input type="checkbox" id="cp-activo" checked></label>
-      </div>
-      <div class="mm-field">
-        <label>Imagen (opcional)</label>
-        <div style="display:flex;gap:8px">
-          <button type="button" class="loadbtn" id="cp-img-camara-btn" style="flex:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg> Tomar foto</button>
-          <button type="button" class="loadbtn" id="cp-img-galeria-btn" style="flex:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21.44 11.05l-9.19 9.19a5 5 0 0 1-7.07-7.07l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95l-9.2 9.19a1.5 1.5 0 0 1-2.12-2.12l8.49-8.48"/></svg> Adjuntar de galería</button>
-        </div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">Si el código de barras tiene imagen en el catálogo (OpenFoodFacts/UPCitemdb), se precarga sola abajo.</div>
-        <input type="file" accept="image/*" id="cp-img-galeria" style="display:none">
-        <input type="file" accept="image/*" capture="environment" id="cp-img-camara" style="display:none">
-        <div id="cp-img-elegida" class="hidden" style="margin-top:9px;display:flex;align-items:center;gap:10px;padding:8px 10px;border:1.5px solid var(--wa);border-radius:10px;background:var(--exito-bg)">
-          <img id="cp-img-preview" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0">
-          <span style="font-size:12px;color:var(--wa-d);font-weight:700;flex:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg> Imagen lista — se sube al crear el producto</span>
-          <button type="button" id="cp-img-quitar" style="background:none;border:none;color:var(--muted);font-size:11px;text-decoration:underline;cursor:pointer">Quitar</button>
-        </div>
-        <!-- Foto recién tomada: se confirma antes de mandarla a quitar el fondo (no se procesa
-             sola, para no gastar créditos de remove.bg con fotos borrosas o repetidas). -->
-        <div id="cp-camara-preview-box" class="hidden" style="margin-top:9px;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper)">
-          <img id="cp-camara-preview-img" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#fff;display:block;margin-bottom:8px">
-          <div style="display:flex;gap:8px">
-            <button type="button" id="cp-camara-confirmar" class="btn-confirmar-img"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg> Confirmar y quitar fondo</button>
-            <button type="button" id="cp-camara-repetir" style="padding:9px 14px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12.5px;cursor:pointer">↺ Repetir</button>
+          <div style="font-size:11.5px;color:var(--muted);margin:2px 0 10px">El código interno (SKU) se genera <b>automáticamente</b> y es único — no se edita a mano.</div>
+        </section>
+
+        <section class="mm-section">
+          <div class="mm-section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="1.5"/><path d="M7 8V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/></svg>Inventario</div>
+          <div class="mm-field" id="cp-cantidad-field" style="margin-bottom:8px">
+            <label>Cantidad inicial (opcional)</label>
+            <div style="display:flex;gap:6px;margin-bottom:6px">
+              <button type="button" class="rc-modo-btn active" id="cp-modo-unidad" data-modo="unidad" style="border-color:var(--wa-d);background:var(--wa-bg,var(--verde-bg));color:var(--wa-d)">Por unidad</button>
+              <button type="button" class="rc-modo-btn" id="cp-modo-caja" data-modo="caja">Por caja</button>
+            </div>
+            <div class="mm-qty" style="height:38px">
+              <button class="qbtn cp-qty-hold" id="cp-qty-menos" type="button" style="height:100%">−</button>
+              <input id="cp-cantidad" inputmode="decimal" placeholder="0" autocomplete="off">
+              <span class="unidad" id="cp-unidad">u</span>
+              <button class="qbtn cp-qty-hold" id="cp-qty-mas" type="button" style="height:100%">+</button>
+            </div>
+            <div id="cp-caja-campos" class="hidden" style="display:flex;gap:8px;margin-top:6px">
+              <div style="flex:1">
+                <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:2px">UNIDADES POR CAJA</div>
+                <input id="cp-unidades-caja" inputmode="numeric" placeholder="Ej: 24" style="width:100%;height:34px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;font-family:'JetBrains Mono';box-sizing:border-box">
+              </div>
+            </div>
+            <div class="cat" id="cp-stock-total-hint" style="margin-top:5px"></div>
           </div>
-        </div>
-        <div id="cp-fondo-procesando" class="hidden" style="margin-top:9px;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);display:flex;align-items:center;gap:8px">
-          <span class="sync-ic spin" style="display:inline-flex">⟳</span>
-          <span style="font-size:12.5px;color:var(--muted)">Quitando el fondo con remove.bg…</span>
-        </div>
-        <!-- Resultado con fondo blanco: al tocar "Usar esta imagen" queda como la imagen del
-             producto (en _cpImagenBase64) — se sube recién al crear el producto, igual que
-             cualquier otra imagen elegida aquí; no se sube por su cuenta a Loyverse. -->
-        <div id="cp-fondo-resultado-box" class="hidden" style="margin-top:9px;padding:10px;border:1.5px solid var(--wa);border-radius:10px;background:var(--exito-bg)">
-          <img id="cp-fondo-resultado-img" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#fff;display:block;margin-bottom:8px;border:1px solid var(--line)">
-          <div style="display:flex;gap:8px">
-            <button type="button" id="cp-fondo-usar" class="btn-confirmar-img"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg> Usar esta imagen</button>
-            <button type="button" id="cp-fondo-descartar" style="padding:9px 14px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12.5px;cursor:pointer">Descartar</button>
+          <div class="mm-field">
+            <label class="cp-toggle">Seguir inventario <input type="checkbox" id="cp-track" checked></label>
           </div>
-        </div>
+          <div class="mm-field hidden" id="cp-stock-field">
+            <label>Stock inicial</label>
+            <input id="cp-stock" inputmode="decimal" placeholder="0" autocomplete="off" class="mm-input">
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">Se completa solo desde "Cantidad inicial" arriba.</div>
+          </div>
+          <div class="mm-field" id="cp-stock-min-field">
+            <label>Inventario bajo / Stock mínimo</label>
+            <input id="cp-stock-min" inputmode="decimal" placeholder="Ej: 5" autocomplete="off" class="mm-input">
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">Cuando el stock llegue a este número o menos, Loyverse genera la alerta de inventario bajo.</div>
+          </div>
+          <div class="mm-field" id="cp-fecha-field">
+            <label>Fecha de vencimiento (opcional)</label>
+            <div class="fecha-wrap">
+              <input id="cp-fecha-dd" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="DD" autocomplete="off">
+              <span class="fecha-sep">/</span>
+              <input id="cp-fecha-mm" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="off">
+              <span class="fecha-sep">/</span>
+              <input id="cp-fecha-aaaa" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="AA" autocomplete="off">
+              <button type="button" class="fecha-cal-btn" id="cp-fecha-cal" aria-label="Elegir en calendario"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></button>
+              <input type="date" id="cp-fecha" class="fecha-date-hidden" tabindex="-1">
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">Si la pones, el stock inicial queda registrado como lote y aparece en Vencimientos.</div>
+          </div>
+        </section>
+
+        <section class="mm-section">
+          <div class="mm-section-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>Configuración adicional</div>
+          <div class="mm-field">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <label style="margin:0">Proveedor y Sector (opcional)</label>
+              <button class="loadbtn" id="cp-ps-sugerir" type="button" style="white-space:nowrap"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="3" y="8" width="18" height="12" rx="2"/><circle cx="8.5" cy="14" r="1.3"/><circle cx="15.5" cy="14" r="1.3"/><path d="M12 8V4"/><circle cx="12" cy="3" r="1.2"/></svg> Sugerir con IA</button>
+            </div>
+            <div id="cp-ps-hint" class="hidden" style="font-size:11px;color:var(--muted);margin:5px 0"></div>
+            <div style="display:flex;gap:8px;margin-top:6px">
+              <div class="cat-combo" id="cp-prov-combo">
+                <input id="cp-proveedor-input" class="cat-combo-input" placeholder="Buscar proveedor…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+                <svg class="cat-combo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                <select id="cp-proveedor" style="display:none"><option value="">Sin proveedor</option></select>
+                <div class="cat-combo-menu hidden" id="cp-prov-menu" role="listbox"></div>
+              </div>
+              <button class="loadbtn" id="cp-prov-nueva" type="button" style="white-space:nowrap"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nuevo</button>
+            </div>
+            <div id="cp-prov-nuevabox" class="hidden" style="gap:8px;margin-top:8px">
+              <input id="cp-prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+              <button class="btn-ok loadbtn" id="cp-prov-crear" type="button" style="white-space:nowrap">Crear</button>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <div class="cat-combo" id="cp-sector-combo">
+                <input id="cp-sector-input" class="cat-combo-input" placeholder="Buscar sector…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+                <svg class="cat-combo-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                <select id="cp-sector" style="display:none"><option value="">Sin sector</option></select>
+                <div class="cat-combo-menu hidden" id="cp-sector-menu" role="listbox"></div>
+              </div>
+              <button class="loadbtn" id="cp-sector-nueva" type="button" style="white-space:nowrap"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nuevo</button>
+            </div>
+            <div id="cp-sector-nuevabox" class="hidden" style="gap:8px;margin-top:8px">
+              <input id="cp-sector-nuevonom" placeholder="Nombre del sector nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+              <button class="btn-ok loadbtn" id="cp-sector-crear" type="button" style="white-space:nowrap">Crear</button>
+            </div>
+          </div>
+          <div class="mm-field">
+            <label class="cp-toggle">IVA 19% <input type="checkbox" id="cp-iva" checked></label>
+          </div>
+          <div class="mm-field">
+            <label class="cp-toggle">Producto activo (a la venta) <input type="checkbox" id="cp-activo" checked></label>
+          </div>
+          <div class="mm-field">
+            <label>Imagen (opcional)</label>
+            <div style="display:flex;gap:8px">
+              <button type="button" class="loadbtn" id="cp-img-camara-btn" style="flex:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg> Tomar foto</button>
+              <button type="button" class="loadbtn" id="cp-img-galeria-btn" style="flex:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21.44 11.05l-9.19 9.19a5 5 0 0 1-7.07-7.07l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95l-9.2 9.19a1.5 1.5 0 0 1-2.12-2.12l8.49-8.48"/></svg> Adjuntar de galería</button>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">Si el código de barras tiene imagen en el catálogo (OpenFoodFacts/UPCitemdb), se precarga sola abajo.</div>
+            <input type="file" accept="image/*" id="cp-img-galeria" style="display:none">
+            <input type="file" accept="image/*" capture="environment" id="cp-img-camara" style="display:none">
+            <div id="cp-img-elegida" class="hidden" style="margin-top:9px;display:flex;align-items:center;gap:10px;padding:8px 10px;border:1.5px solid var(--wa);border-radius:10px;background:var(--exito-bg)">
+              <img id="cp-img-preview" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0">
+              <span style="font-size:12px;color:var(--wa-d);font-weight:700;flex:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg> Imagen lista — se sube al crear el producto</span>
+              <button type="button" id="cp-img-quitar" style="background:none;border:none;color:var(--muted);font-size:11px;text-decoration:underline;cursor:pointer">Quitar</button>
+            </div>
+            <!-- Foto recién tomada: se confirma antes de mandarla a quitar el fondo (no se procesa
+                 sola, para no gastar créditos de remove.bg con fotos borrosas o repetidas). -->
+            <div id="cp-camara-preview-box" class="hidden" style="margin-top:9px;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper)">
+              <img id="cp-camara-preview-img" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#fff;display:block;margin-bottom:8px">
+              <div style="display:flex;gap:8px">
+                <button type="button" id="cp-camara-confirmar" class="btn-confirmar-img"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg> Confirmar y quitar fondo</button>
+                <button type="button" id="cp-camara-repetir" style="padding:9px 14px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12.5px;cursor:pointer">↺ Repetir</button>
+              </div>
+            </div>
+            <div id="cp-fondo-procesando" class="hidden" style="margin-top:9px;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);display:flex;align-items:center;gap:8px">
+              <span class="sync-ic spin" style="display:inline-flex">⟳</span>
+              <span style="font-size:12.5px;color:var(--muted)">Quitando el fondo con remove.bg…</span>
+            </div>
+            <!-- Resultado con fondo blanco: al tocar "Usar esta imagen" queda como la imagen del
+                 producto (en _cpImagenBase64) — se sube recién al crear el producto, igual que
+                 cualquier otra imagen elegida aquí; no se sube por su cuenta a Loyverse. -->
+            <div id="cp-fondo-resultado-box" class="hidden" style="margin-top:9px;padding:10px;border:1.5px solid var(--wa);border-radius:10px;background:var(--exito-bg)">
+              <img id="cp-fondo-resultado-img" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#fff;display:block;margin-bottom:8px;border:1px solid var(--line)">
+              <div style="display:flex;gap:8px">
+                <button type="button" id="cp-fondo-usar" class="btn-confirmar-img"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg> Usar esta imagen</button>
+                <button type="button" id="cp-fondo-descartar" style="padding:9px 14px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12.5px;cursor:pointer">Descartar</button>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
-      <div style="font-size:11.5px;color:var(--muted);margin:2px 0 10px">El código interno (SKU) se genera <b>automáticamente</b> y es único — no se edita a mano.</div>
       <button class="mm-save" id="cp-guardar" disabled>Crear producto</button>
       <button class="loadbtn" id="cp-cerrar" style="width:100%;margin-top:8px">Cancelar</button>
     </div>
@@ -4319,7 +4384,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-24.4';
+const APP_VERSION='2026-08-24.5';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
