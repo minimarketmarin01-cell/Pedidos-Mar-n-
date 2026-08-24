@@ -4319,7 +4319,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-24.2';
+const APP_VERSION='2026-08-24.3';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -11529,14 +11529,21 @@ async function vcMarcarCambiado(filaIndex,nombre,cantidadTotal,unidad,cantidadCa
 // igual (ya no aparece en Pendientes) pero queda registrado con un motivo distinto, para
 // poder diferenciarlo de un cambio real en reportes futuros.
 async function vcMarcarDescuento(filaIndex,nombre,sku,cantidad){
-  // Sugerencia de monto: costo con IVA del producto (el que trae Loyverse — ver
-  // rcShowPicked/DB.items, siempre viene bruto) multiplicado por la cantidad del lote, como
-  // estimación de cuánto debería ser el descuento en la factura. Es solo un valor precargado
-  // y editable en el prompt — el usuario puede corregirlo o borrarlo antes de aceptar.
   const it=(DB.items||[]).find(x=>x.ref===sku);
   const costoConIva=(it&&it.coste)?Number(it.coste):0;
-  const cant=Number(cantidad)||0;
-  const sugerido=(costoConIva&&cant)?Math.round(costoConIva*cant):null;
+  const cantidadLote=Number(cantidad)||0;
+  // Primero pregunta cuántas unidades tuvieron descuento (prellenado con el total del lote,
+  // por si el proveedor solo descontó una parte) — este número es el que se usa para calcular
+  // el monto sugerido del segundo prompt, no solo la cantidad total del lote a ciegas.
+  let cantTxt=prompt('¿Cuántas unidades de "'+(nombre||'este producto')+'" tuvieron descuento?'+(cantidadLote?' (de '+cantidadLote+' en este lote)':''),cantidadLote?String(cantidadLote):'');
+  if(cantTxt===null)return;   // canceló el prompt: no cierra el lote
+  cantTxt=cantTxt.trim().replace(',','.');
+  const cantConDescuento=cantTxt?(Number(cantTxt)||0):cantidadLote;
+  // Sugerencia de monto: costo con IVA del producto (el que trae Loyverse — ver
+  // rcShowPicked/DB.items, siempre viene bruto) multiplicado por la cantidad recién ingresada,
+  // como estimación de cuánto debería ser el descuento en la factura. Es solo un valor
+  // precargado y editable en el prompt — el usuario puede corregirlo o borrarlo antes de aceptar.
+  const sugerido=(costoConIva&&cantConDescuento)?Math.round(costoConIva*cantConDescuento):null;
   let montoTxt=prompt('¿Cuánto fue el descuento en la factura para "'+(nombre||'este producto')+'"? (déjalo vacío si no lo sabes todavía)',sugerido!=null?String(sugerido):'');
   if(montoTxt===null)return;   // canceló el prompt: no cierra el lote
   montoTxt=montoTxt.trim().replace(/[^\d.]/g,'');
