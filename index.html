@@ -4319,7 +4319,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-23.6';
+const APP_VERSION='2026-08-24.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -12406,13 +12406,18 @@ function rcShowPicked(it){
   rcState.costoOriginal=it.coste||0;
   rcState.precioOriginal=it.precio||0;
   rcState.precioTocado=false;
-  // El costo prellenado (it.coste) es el que ya está guardado en Loyverse, y eso SIEMPRE es
-  // neto — por eso el toggle arranca en "sin IVA". Si el usuario borra y escribe un costo
-  // nuevo tomado de una factura (que trae IVA), ahí sí cambia a "Costo con IVA".
-  // EXCEPCIÓN: las facturas de CCU y Coca-Cola ya vienen con el IVA incluido en el valor
-  // de costo — para esos proveedores el toggle arranca directo en "Con IVA".
-  const _provNorm=String(it.prov||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-  const _esProveedorConIva=/\bccu\b/.test(_provNorm)||_provNorm.includes('coca cola')||_provNorm.includes('cocacola');
+  // El costo prellenado (it.coste) es el que ya está guardado en Loyverse, y eso SIEMPRE viene
+  // CON IVA incluido (bruto) — así lo guarda Loyverse. Para proveedores normales se muestra y
+  // se trabaja por defecto con el neto (costoOriginal/1.19), así que el toggle arranca en
+  // "Sin IVA" y el campo Costo se prellena ya dividido (ver más abajo, tras rcMontarPrecio()).
+  // EXCEPCIÓN: las facturas de CCU, Coca-Cola y BOOM ya vienen con el IVA incluido y así se
+  // trabaja con ellas — para esos proveedores el toggle arranca directo en "Con IVA" y el
+  // campo Costo se prellena tal cual, sin dividir.
+  // El .replace(/[-_]/g,' ') es necesario porque el nombre real del proveedor se guarda como
+  // "Coca-Cola" (con guion, ver DB abajo): sin normalizar el guion a espacio, ni 'coca cola'
+  // ni 'cocacola' calzaban contra "coca-cola" y la deteccion nunca activaba el modo "Con IVA".
+  const _provNorm=String(it.prov||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[-_]/g,' ');
+  const _esProveedorConIva=/\bccu\b/.test(_provNorm)||_provNorm.includes('coca cola')||_provNorm.includes('cocacola')||/\bboom\b/.test(_provNorm);
   rcState.ivaModo=_esProveedorConIva?'con':'sin';
   rcState.ilaAplica=false; // elegir un producto nuevo no debe heredar el ILA del anterior
   rcState.margenTocado=false;
@@ -12424,7 +12429,15 @@ function rcShowPicked(it){
   // widget muestra.
   rcMontarPrecio();
   const cIdx=document.getElementById('rc-costo');
-  if(cIdx){cIdx.value=rcState.costoOriginal||'';cIdx.dispatchEvent(new Event('input',{bubbles:true}));}
+  if(cIdx){
+    // costoOriginal es siempre el bruto (con IVA) que trae Loyverse — si el modo arranca en
+    // "sin IVA" (proveedores normales) se muestra el neto (costoOriginal/1.19); si arranca en
+    // "con IVA" (CCU/Coca-Cola/BOOM) se muestra tal cual. Ver rcConvertirCostoIva() para la
+    // conversión al alternar el toggle después de elegido el producto.
+    const _bruto=rcState.costoOriginal||0;
+    cIdx.value=_bruto?(rcState.ivaModo==='sin'?Math.round((_bruto/1.19)*100)/100:_bruto):'';
+    cIdx.dispatchEvent(new Event('input',{bubbles:true}));
+  }
   const pIdx=document.getElementById('rc-precio');if(pIdx){pIdx.value=rcState.precioOriginal||'';pIdx.dispatchEvent(new Event('input',{bubbles:true}));}
   // Referencia para "¿el usuario cambió algo?" (rcCalcularCambiosCostoPrecio): NO se compara
   // contra costoOriginal/precioOriginal directo, porque rcCostoNeto() devuelve el costo BRUTO
@@ -12984,8 +12997,13 @@ function rcMontarPrecio(){
   // engancha aparte — se agrega DESPUÉS del onclick propio del widget, por lo que corre a
   // continuación de que ya haya actualizado rcState.ivaModo.
   document.getElementById('rc-costo').addEventListener('input',rcActualizarCostoUnitarioHint);
-  document.getElementById('rc-iva-con').addEventListener('click',rcActualizarCostoUnitarioHint);
-  document.getElementById('rc-iva-sin').addEventListener('click',rcActualizarCostoUnitarioHint);
+  // Convierte el valor VISIBLE del campo Costo al alternar el toggle (PcWidget.setIva, arriba,
+  // solo cambia cómo se interpreta el número — acá además lo recalculamos para que Recepción
+  // trabaje con costo neto o bruto según corresponda, nunca aplicando el 19% dos veces). Se
+  // agrega DESPUÉS del onclick propio del widget, por lo que corre a continuación de que ya
+  // haya actualizado rcState.ivaModo.
+  document.getElementById('rc-iva-con').addEventListener('click',()=>{rcConvertirCostoIva('con');rcActualizarCostoUnitarioHint();});
+  document.getElementById('rc-iva-sin').addEventListener('click',()=>{rcConvertirCostoIva('sin');rcActualizarCostoUnitarioHint();});
   document.getElementById('rc-ila').addEventListener('change',rcActualizarCostoUnitarioHint);
   // Cada vez que el usuario edita "Costo" a mano, se recalcula el costo por unidad "de fábrica"
   // (con el modo/cantidad/unidades actuales), para poder reconstruir el valor correcto si
@@ -13054,6 +13072,20 @@ function rcRecalcularCostoConModo(){
   // "costo por unidad" (mostrarUnidadCaja:false); acá solo se dispara su recálculo cuando
   // cambia el modo, las unidades por caja o la cantidad de cajas, para que la vista se
   // actualice.
+  costoInp.dispatchEvent(new Event('input',{bubbles:true}));
+}
+// Convierte el valor VISIBLE de "Costo" al alternar Con IVA/Sin IVA, para nunca aplicar el 19%
+// dos veces: el número que hay en el campo justo ANTES del toggle se interpreta según el modo
+// que se está dejando (neto si venía de "sin", bruto si venía de "con") y se recalcula al modo
+// nuevo — funciona tanto para el costo recién traído de Loyverse (ya prellenado neto/bruto
+// según corresponda, ver rcShowPicked) como para un costo escrito a mano por el usuario.
+function rcConvertirCostoIva(modoNuevo){
+  const costoInp=document.getElementById('rc-costo');
+  if(!costoInp)return;
+  const actual=Number(costoInp.value)||0;
+  if(!actual)return;
+  const nuevo=modoNuevo==='con'?actual*1.19:actual/1.19;
+  costoInp.value=Math.round(nuevo*100)/100;
   costoInp.dispatchEvent(new Event('input',{bubbles:true}));
 }
 // Costo BRUTO real para el guardado (rc-guardar) — a diferencia del widget (que asume
