@@ -4319,7 +4319,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-24.3';
+const APP_VERSION='2026-08-24.4';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -10905,6 +10905,15 @@ function vcFilaHtml(l){
   const mermaBtn=!esCambio
     ?`<button class="vc-mini vc-mini-rojo" data-act="merma" data-i="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" data-lote="${l.lote||''}" title="Merma"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><span>Merma</span></button>`
     :'';
+  // Contraparte de "Merma" para categorías "cambio con proveedor": ahí Merma no se ofrece
+  // (arriba), pero a veces el negocio prefiere consumir el producto vencido internamente en vez
+  // de esperar el cambio/descuento del proveedor. Reutiliza EXACTO el mismo modal y acción
+  // "merma" del backend (ver vcWireFilas, data-act="consumointerno") con el motivo
+  // "consumo_interno" ya preseleccionado — misma trazabilidad Vencimiento → Retirado → Merma
+  // que ya tiene el flujo de Merma normal, solo cambia el motivo de registro.
+  const consumoInternoBtn=(esCambio&&l.estado==='Retirado')
+    ?`<button class="vc-mini vc-mini-rojo" data-act="consumointerno" data-i="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" data-lote="${l.lote||''}" title="Consumo interno"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8Z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg><span>Consumo interno</span></button>`
+    :'';
   const precioActual=vcPrecioActualDe(l);
   // Precio actual → sugerido con descuento → Aplicar (punto 6) — solo si hay recomendación
   // real y precio actual conocido; si no, se sigue mostrando el texto de acción tal cual
@@ -10972,6 +10981,7 @@ function vcFilaHtml(l){
         ${bloquePrecio}
         <div class="vc-mas-row">
           ${mermaBtn}
+          ${consumoInternoBtn}
           <button class="vc-mini vc-mini-rojo" data-elim="${l.filaIndex}" data-sku="${l.sku}" data-cant="${l.cantidad}" data-nom="${nom}" title="Eliminar lote"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>Eliminar lote</span></button>
         </div>
       </div>
@@ -11042,6 +11052,17 @@ function vcWireFilas(box){
     closeVenc();
     mmPrefill(b.dataset.sku,b.dataset.cant,b.dataset.lote,b.dataset.i);
     openMerma(true);
+  });
+  // Consumo interno (solo en categorías "cambio con proveedor" ya Retiradas — ver
+  // consumoInternoBtn en vcFilaHtml): mismo flujo que "Merma" de arriba, incluido el cierre
+  // diferido hasta guardar de verdad, pero además preselecciona el motivo "Consumo interno" en
+  // el modal para no obligar a elegirlo a mano.
+  box.querySelectorAll('[data-act="consumointerno"]').forEach(b=>b.onclick=()=>{
+    closeVenc();
+    mmPrefill(b.dataset.sku,b.dataset.cant,b.dataset.lote,b.dataset.i);
+    openMerma(true);
+    const motivoBtn=document.querySelector('.mm-motivo[data-m="consumo_interno"]');
+    if(motivoBtn)motivoBtn.click();
   });
   // Cambiado: mismo patrón que Retirar/Ajustar stock — abre un mini-formulario en vez del
   // prompt() de antes, con cantidad (precargada con el total del lote) y fecha de vencimiento
