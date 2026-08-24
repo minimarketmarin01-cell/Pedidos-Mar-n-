@@ -3455,7 +3455,15 @@ function avisoYaPedidoEnOtroProveedor(it,nombreProveedorActual){
 function normTxt(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
 function currentItems(){
   let base;
-  if(state.search){const words=normTxt(state.search).trim().split(/\s+/).filter(Boolean);base=DB.items.filter(i=>{const hay=normTxt(i.nombre);const ref=String(i.ref||'');const bc=i.barcode?String(i.barcode):'';return words.every(w=>hay.includes(w)||ref.includes(w)||bc.includes(w));});}
+  if(state.search){const words=normTxt(state.search).trim().split(/\s+/).filter(Boolean);base=DB.items.filter(i=>{
+    // El placeholder del buscador dice "Proveedor o producto…" — si se escribe un proveedor
+    // completo (ej. "Global Food") sin elegirlo del desplegable, esto sigue en modo búsqueda
+    // libre (currentItems solo usa itemsFor(state.prov) cuando NO hay texto, ver más abajo), así
+    // que el proveedor tiene que formar parte de lo que se compara acá — si no, "buscar" un
+    // proveedor por su nombre devolvía solo los pocos productos cuyo NOMBRE de producto
+    // contuviera esas palabras (casi ninguno), en vez del catálogo real de ese proveedor.
+    const provTxt=normTxt([i.proveedorNombre,i.prov,...(i.proveedorNombresExtra||[]),...(i.provsExtra||[])].filter(Boolean).join(' '));
+    const hay=normTxt(i.nombre)+' '+provTxt;const ref=String(i.ref||'');const bc=i.barcode?String(i.barcode):'';return words.every(w=>hay.includes(w)||ref.includes(w)||bc.includes(w));});}
   else if(state.allProv)base=DB.items;
   else base=itemsFor(state.prov);
   // Filtro "solo favoritos" (ver toggleFavorito/#fav-toggle) — se combina con lo anterior en
@@ -4313,7 +4321,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-23.4';
+const APP_VERSION='2026-08-23.5';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
