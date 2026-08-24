@@ -360,7 +360,6 @@ html.carrito-fijo #ed-ov .mm-card,html.carrito-fijo #mc-ov .mm-card,html.carrito
 .fecha-cal-btn{flex:none;width:46px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);font-size:19px;cursor:pointer}
 .fecha-seg{flex:none;padding:11px 2px;border:1.5px solid var(--line);border-radius:10px;font-size:17px;font-family:'JetBrains Mono';font-weight:700;text-align:center;width:46px}
 .fecha-seg:focus{border-color:var(--wa);outline:none}
-.fecha-seg-y{width:66px}
 .fecha-sep{align-self:center;color:var(--muted);font-weight:700;font-size:16px}
 .fecha-cal-btn:active{background:var(--line)}
 .fecha-hint{font-size:10.5px;color:var(--muted);margin-top:4px;letter-spacing:.02em}
@@ -1221,7 +1220,6 @@ html.modo-bliss #prov-all{font-size:17px}
    quedaban fuera de pantalla. Estas reglas devuelven los anchos fijos con más peso. */
 .fc-field .fecha-wrap{flex-wrap:nowrap;align-items:center;min-width:0}
 .fc-field .fecha-wrap input.fecha-seg{width:46px;flex:none;padding:11px 2px;font-size:17px;text-align:center}
-.fc-field .fecha-wrap input.fecha-seg-y{width:66px}
 .fc-field .fecha-wrap input.fecha-date-hidden{width:1px;padding:0;border:none;min-width:0}
 .fc-field .fecha-wrap .fecha-cal-btn{flex:none;width:46px}
 /* Datos reales del producto vinculado */
@@ -2034,7 +2032,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
               <span class="fecha-sep">/</span>
               <input id="vc-fecha-mm" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="off">
               <span class="fecha-sep">/</span>
-              <input id="vc-fecha-aaaa" class="fecha-seg fecha-seg-y" inputmode="numeric" maxlength="4" placeholder="AAAA" autocomplete="off">
+              <input id="vc-fecha-aaaa" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="AA" autocomplete="off">
               <button type="button" class="fecha-cal-btn" id="vc-fecha-cal" aria-label="Elegir en calendario"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></button>
               <input type="date" id="vc-fecha" class="fecha-date-hidden" tabindex="-1">
             </div>
@@ -2273,7 +2271,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
             <span class="fecha-sep">/</span>
             <input id="rc-fecha-mm" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="off">
             <span class="fecha-sep">/</span>
-            <input id="rc-fecha-aaaa" class="fecha-seg fecha-seg-y" inputmode="numeric" maxlength="4" placeholder="AAAA" autocomplete="off">
+            <input id="rc-fecha-aaaa" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="AA" autocomplete="off">
             <button type="button" class="fecha-cal-btn" id="rc-fecha-cal" aria-label="Elegir en calendario"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></button>
             <input type="date" id="rc-fecha" class="fecha-date-hidden" tabindex="-1">
           </div>
@@ -2801,7 +2799,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <span class="fecha-sep">/</span>
           <input id="cp-fecha-mm" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="off">
           <span class="fecha-sep">/</span>
-          <input id="cp-fecha-aaaa" class="fecha-seg fecha-seg-y" inputmode="numeric" maxlength="4" placeholder="AAAA" autocomplete="off">
+          <input id="cp-fecha-aaaa" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="AA" autocomplete="off">
           <button type="button" class="fecha-cal-btn" id="cp-fecha-cal" aria-label="Elegir en calendario"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></button>
           <input type="date" id="cp-fecha" class="fecha-date-hidden" tabindex="-1">
         </div>
@@ -4321,7 +4319,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-23.5';
+const APP_VERSION='2026-08-23.6';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -6222,7 +6220,7 @@ function fpPaneLotes(f){
         <span class="fecha-sep">/</span>
         <input id="fp-ef-mm-${l.filaIndex}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="off">
         <span class="fecha-sep">/</span>
-        <input id="fp-ef-aaaa-${l.filaIndex}" class="fecha-seg fecha-seg-y" inputmode="numeric" maxlength="4" placeholder="AAAA" autocomplete="off">
+        <input id="fp-ef-aaaa-${l.filaIndex}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="AA" autocomplete="off">
         <button type="button" class="btn-ok" data-fp-savef="${l.filaIndex}" style="white-space:nowrap">Guardar</button>
       </div>
     </div>
@@ -6246,7 +6244,7 @@ function fpWireLotes(box){
       if(p.length===3){
         document.getElementById('fp-ef-dd-'+fi).value=p[0];
         document.getElementById('fp-ef-mm-'+fi).value=p[1];
-        document.getElementById('fp-ef-aaaa-'+fi).value=p[2];
+        document.getElementById('fp-ef-aaaa-'+fi).value=p[2].slice(-2);
       }
     }
   });
@@ -6259,8 +6257,8 @@ function fpWireLotes(box){
       const dd=document.getElementById('fp-ef-dd-'+fi).value;
       const mm=document.getElementById('fp-ef-mm-'+fi).value;
       const aaaa=document.getElementById('fp-ef-aaaa-'+fi).value;
-      if(dd.length!==2||mm.length!==2||aaaa.length!==4){showToast('Completa día, mes y año');return;}
-      fpEditarFechaLote(fi,dd+'/'+mm+'/'+aaaa);
+      if(dd.length!==2||mm.length!==2||aaaa.length!==2){showToast('Completa día, mes y año');return;}
+      fpEditarFechaLote(fi,dd+'/'+mm+'/20'+aaaa);
     };
   });
 }
@@ -8933,7 +8931,7 @@ function fcRenderResultados(){
           <span class="fecha-sep">/</span>
           <input id="fcf-mm-${it.id}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="off">
           <span class="fecha-sep">/</span>
-          <input id="fcf-yy-${it.id}" class="fecha-seg fecha-seg-y" inputmode="numeric" maxlength="4" placeholder="AAAA" autocomplete="off">
+          <input id="fcf-yy-${it.id}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="AA" autocomplete="off">
           <button type="button" class="fecha-cal-btn" id="fcf-cal-${it.id}" aria-label="Elegir en calendario"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></button>
           <input type="date" id="fcf-${it.id}" class="fecha-date-hidden" tabindex="-1" data-f="fecha_vencimiento" value="${it.fecha_vencimiento||''}">
         </div>
@@ -9147,7 +9145,7 @@ async function fcAutocompletarDesdeProducto(row,ref){
         const dd=document.getElementById('fcf-dd-'+id),mm=document.getElementById('fcf-mm-'+id),
               yy=document.getElementById('fcf-yy-'+id),hid=document.getElementById('fcf-'+id);
         if(dd&&mm&&yy&&hid){
-          dd.value=partes[0];mm.value=partes[1];yy.value=partes[2];
+          dd.value=partes[0];mm.value=partes[1];yy.value=partes[2].slice(-2);
           hid.value=partes[2]+'-'+partes[1]+'-'+partes[0];
         }
       }
@@ -10640,12 +10638,15 @@ function wireFechaSegmentada(ddId,mmId,yyId,hiddenId,calId){
   const dd=document.getElementById(ddId),mm=document.getElementById(mmId),yy=document.getElementById(yyId),
         hidden=document.getElementById(hiddenId),cal=calId?document.getElementById(calId):null;
   if(!dd||!mm||!yy||!hidden)return;
+  // El año se escribe con 2 dígitos (ej. "27") y se completa con el siglo 20 al armar
+  // cualquier fecha real (acá, y también al volver del calendario nativo más abajo) — mismo
+  // criterio que ya usaba la fecha del "Cambiado" en Vencimientos (vc-cc-aa).
   function sync(){
-    hidden.value=(dd.value.length===2&&mm.value.length===2&&yy.value.length===4)?(yy.value+'-'+mm.value+'-'+dd.value):'';
+    hidden.value=(dd.value.length===2&&mm.value.length===2&&yy.value.length===2)?('20'+yy.value+'-'+mm.value+'-'+dd.value):'';
     hidden.dispatchEvent(new Event('input',{bubbles:true}));
     hidden.dispatchEvent(new Event('change',{bubbles:true}));
   }
-  [[dd,2,mm],[mm,2,yy],[yy,4,null]].forEach(([inp,max,next])=>{
+  [[dd,2,mm],[mm,2,yy],[yy,2,null]].forEach(([inp,max,next])=>{
     inp.addEventListener('input',()=>{
       inp.value=inp.value.replace(/[^\d]/g,'').slice(0,max);
       if(inp.value.length>=max&&next)next.focus();
@@ -10665,7 +10666,7 @@ function wireFechaSegmentada(ddId,mmId,yyId,hiddenId,calId){
   });
   if(cal)cal.onclick=()=>{if(hidden.showPicker){try{hidden.showPicker();return;}catch(e){}}hidden.click();};
   hidden.addEventListener('change',()=>{
-    if(hidden.value){const p=hidden.value.split('-');yy.value=p[0];mm.value=p[1];dd.value=p[2];}
+    if(hidden.value){const p=hidden.value.split('-');yy.value=p[0].slice(-2);mm.value=p[1];dd.value=p[2];}
   });
 }
 wireFechaSegmentada('rc-fecha-dd','rc-fecha-mm','rc-fecha-aaaa','rc-fecha','rc-fecha-cal');
@@ -10949,7 +10950,7 @@ function vcFilaHtml(l){
           <span class="fecha-sep">/</span>
           <input id="vc-ef-mm-${l.filaIndex}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="off">
           <span class="fecha-sep">/</span>
-          <input id="vc-ef-aaaa-${l.filaIndex}" class="fecha-seg fecha-seg-y" inputmode="numeric" maxlength="4" placeholder="AAAA" autocomplete="off">
+          <input id="vc-ef-aaaa-${l.filaIndex}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="AA" autocomplete="off">
           <button type="button" class="btn-ok vc-ef-save" data-savef="${l.filaIndex}" style="white-space:nowrap">Guardar</button>
         </div>
       </div>
@@ -11113,7 +11114,7 @@ function vcWireFilas(box){
       if(p.length===3){
         document.getElementById('vc-ef-dd-'+fi).value=p[0];
         document.getElementById('vc-ef-mm-'+fi).value=p[1];
-        document.getElementById('vc-ef-aaaa-'+fi).value=p[2];
+        document.getElementById('vc-ef-aaaa-'+fi).value=p[2].slice(-2);
       }
     }
   });
@@ -11128,8 +11129,8 @@ function vcWireFilas(box){
       const dd=document.getElementById('vc-ef-dd-'+fi).value;
       const mm=document.getElementById('vc-ef-mm-'+fi).value;
       const aaaa=document.getElementById('vc-ef-aaaa-'+fi).value;
-      if(dd.length!==2||mm.length!==2||aaaa.length!==4){showToast('Completa día, mes y año');return;}
-      vcEditarFecha(fi,dd+'/'+mm+'/'+aaaa);
+      if(dd.length!==2||mm.length!==2||aaaa.length!==2){showToast('Completa día, mes y año');return;}
+      vcEditarFecha(fi,dd+'/'+mm+'/20'+aaaa);
     };
   });
   // Ajustar stock: mismo patrón que Editar fecha — abre un mini-formulario con un solo campo,
@@ -12368,7 +12369,7 @@ function rcAplicarBorrador(d){
     const[aaaa,mm,dd]=d.fecha.split('-');
     if(dd)document.getElementById('rc-fecha-dd').value=dd;
     if(mm)document.getElementById('rc-fecha-mm').value=mm;
-    if(aaaa)document.getElementById('rc-fecha-aaaa').value=aaaa;
+    if(aaaa)document.getElementById('rc-fecha-aaaa').value=aaaa.slice(-2);
   }
   rcState.precioTocado=!!d.precioTocado;rcState.margenTocado=!!d.margenTocado;
   // Se restaura al final: si el recálculo automático del widget (disparado por los eventos de
@@ -13244,7 +13245,7 @@ async function llLoad(){
           <span class="fecha-sep">/</span>
           <input id="ll-fecha-mm-${it.filaIndex}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="off" style="font-size:14px;padding:9px 2px;width:38px">
           <span class="fecha-sep">/</span>
-          <input id="ll-fecha-aaaa-${it.filaIndex}" class="fecha-seg fecha-seg-y" inputmode="numeric" maxlength="4" placeholder="AAAA" autocomplete="off" style="font-size:14px;padding:9px 2px;width:56px">
+          <input id="ll-fecha-aaaa-${it.filaIndex}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="AA" autocomplete="off" style="font-size:14px;padding:9px 2px;width:56px">
           <button type="button" class="fecha-cal-btn" id="ll-fecha-cal-${it.filaIndex}" aria-label="Elegir en calendario" style="width:40px;font-size:16px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></button>
           <input type="date" id="ll-fecha-${it.filaIndex}" class="fecha-date-hidden" tabindex="-1">
         </div>
