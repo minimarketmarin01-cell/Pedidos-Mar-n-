@@ -4319,7 +4319,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-24.1';
+const APP_VERSION='2026-08-24.2';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -10882,7 +10882,7 @@ function vcFilaHtml(l){
   let botones,notaExtra='';
   if(esCambio && l.estado==='Retirado'){
     botones=`<button class="vc-mini" data-actm="cambiado" data-i="${l.filaIndex}" data-nom="${nom}" data-cant="${l.cantidad}" data-unidad="${l.unidad}" title="Marcar como cambiado"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Cambiado</span></button>
-       <button class="vc-mini" data-actm="descuento" data-i="${l.filaIndex}" data-nom="${nom}" title="Descuento en factura"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span>Descuento</span></button>`;
+       <button class="vc-mini" data-actm="descuento" data-i="${l.filaIndex}" data-nom="${nom}" data-sku="${l.sku}" data-cant="${l.cantidad}" title="Descuento en factura"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span>Descuento</span></button>`;
     notaExtra='<div class="cat" style="color:var(--azul);font-weight:700;font-size:11px">Ya se retiró y se descontó del stock — esperando al proveedor</div>';
   }else if(esCambio){
     // Vencido o Por vencer (aviso del proveedor, incluidos los estados "urgente"/"muy atrasado"):
@@ -11098,7 +11098,7 @@ function vcWireFilas(box){
       vcMarcarCambiado(fi,nom,cantTotal,unidad,num,nuevaFecha);
     };
   });
-  box.querySelectorAll('[data-actm="descuento"]').forEach(b=>b.onclick=()=>vcMarcarDescuento(b.dataset.i,b.dataset.nom));
+  box.querySelectorAll('[data-actm="descuento"]').forEach(b=>b.onclick=()=>vcMarcarDescuento(b.dataset.i,b.dataset.nom,b.dataset.sku,b.dataset.cant));
   box.querySelectorAll('[data-elim]').forEach(b=>b.onclick=()=>vcEliminarLote(b.dataset.elim,b.dataset.sku,b.dataset.cant,b.dataset.nom));
   box.querySelectorAll('[data-aplicar]').forEach(b=>b.onclick=()=>vcAplicarPrecio(b));
   // Editar fecha: abre el mini-formulario con la fecha actual precargada en los 3 campos
@@ -11528,8 +11528,16 @@ async function vcMarcarCambiado(filaIndex,nombre,cantidadTotal,unidad,cantidadCa
 // aplicó un descuento/nota de crédito en la próxima factura por lo vencido. Cierra el lote
 // igual (ya no aparece en Pendientes) pero queda registrado con un motivo distinto, para
 // poder diferenciarlo de un cambio real en reportes futuros.
-async function vcMarcarDescuento(filaIndex,nombre){
-  let montoTxt=prompt('¿Cuánto fue el descuento en la factura para "'+(nombre||'este producto')+'"? (déjalo vacío si no lo sabes todavía)');
+async function vcMarcarDescuento(filaIndex,nombre,sku,cantidad){
+  // Sugerencia de monto: costo con IVA del producto (el que trae Loyverse — ver
+  // rcShowPicked/DB.items, siempre viene bruto) multiplicado por la cantidad del lote, como
+  // estimación de cuánto debería ser el descuento en la factura. Es solo un valor precargado
+  // y editable en el prompt — el usuario puede corregirlo o borrarlo antes de aceptar.
+  const it=(DB.items||[]).find(x=>x.ref===sku);
+  const costoConIva=(it&&it.coste)?Number(it.coste):0;
+  const cant=Number(cantidad)||0;
+  const sugerido=(costoConIva&&cant)?Math.round(costoConIva*cant):null;
+  let montoTxt=prompt('¿Cuánto fue el descuento en la factura para "'+(nombre||'este producto')+'"? (déjalo vacío si no lo sabes todavía)',sugerido!=null?String(sugerido):'');
   if(montoTxt===null)return;   // canceló el prompt: no cierra el lote
   montoTxt=montoTxt.trim().replace(/[^\d.]/g,'');
   const monto=montoTxt?Number(montoTxt):null;
