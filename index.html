@@ -406,6 +406,20 @@ html.carrito-fijo #rc-ov .mm-sections{
 .mm-resp button{flex:1;border:1.5px solid var(--line);background:var(--card);border-radius:10px;padding:9px;font-size:13px;font-weight:600;cursor:pointer}
 .mm-resp button.sel{background:var(--azul);color:#fff;border-color:var(--azul)}
 .mm-save{width:100%;background:var(--brand-grad);color:#fff;border:none;border-radius:var(--radius-btn);padding:13px;font-size:15px;font-weight:700;font-family:'Manrope';cursor:pointer;margin-top:4px;box-shadow:var(--shadow-brand)}
+/* Imprimir etiquetas (#et-ov) — tamaño de etiqueta (ancho/alto en mm) y vista previa. El
+   recuadro de vista previa (.et-preview-box) solo centra y da fondo; el tamaño real en pantalla
+   de .et-label se fija en JS (etRenderPreview) a partir de ancho/alto en mm, con la MISMA
+   función de render que arma el HTML que se manda a imprimir — así no hay sorpresas entre lo
+   que se ve acá y lo que sale impreso. */
+.et-size-lbl{font-size:10px;color:var(--muted);font-weight:700;margin-bottom:2px}
+.et-size-input{width:100%;height:34px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;font-family:'JetBrains Mono';box-sizing:border-box}
+.et-preview-box{display:flex;justify-content:center;align-items:center;padding:14px;background:var(--paper);border-radius:10px;overflow:auto}
+.et-label{border:1.5px solid var(--ink);border-radius:2px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-sizing:border-box;padding:2px 4px;overflow:hidden;flex:none}
+.et-label .et-nom{font-size:9px;font-weight:700;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;line-height:1.1}
+.et-label .et-precio{font-size:11px;font-weight:800;line-height:1.1}
+.et-label .et-bc{width:88%}
+.et-label .et-cod{font-size:7px;font-family:'JetBrains Mono';letter-spacing:.03em;line-height:1}
+.et-label .et-fecha{font-size:7px;color:var(--muted);line-height:1}
 /* Input de texto genérico de formulario — antes repetido con el mismo style="..." inline en
    varios campos de distintos módulos (Vencimientos, Crear producto, Renombrar, Ficha de
    producto); centralizado acá para que un cambio de diseño futuro no requiera editar cada
@@ -1904,6 +1918,80 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         </div>
       </div>
     </div>
+    <div class="mm-ov hidden" id="et-ov">
+      <div class="mm-card">
+        <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mm-head-ic"><rect x="3" y="7" width="18" height="4" rx="1"/><line x1="6" y1="7" x2="6" y2="11"/><line x1="9" y1="7" x2="9" y2="11"/><line x1="12" y1="7" x2="12" y2="11"/><line x1="16" y1="7" x2="16" y2="11"/><line x1="19" y1="7" x2="19" y2="11"/><path d="M4 15h16v6H4z"/></svg>Imprimir etiquetas</h3></div>
+        <div class="mm-body">
+
+        <div class="mm-field">
+          <label>Producto</label>
+          <div class="mm-search">
+            <input id="et-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off">
+            <button class="mm-mic" id="et-mic" type="button" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
+            <button class="mm-scan cam-btn" id="et-scan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
+          </div>
+          <div class="mm-picked" id="et-picked">
+            <div class="nom" id="et-nom">—</div>
+            <div class="cat" id="et-cat">—</div>
+          </div>
+          <div id="et-results"></div>
+        </div>
+
+        <div class="mm-field" id="et-fecha-field">
+          <label>Fecha de vencimiento (opcional)</label>
+          <div class="fecha-wrap">
+            <input id="et-fecha-dd" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="DD" autocomplete="off">
+            <span class="fecha-sep">/</span>
+            <input id="et-fecha-mm" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="off">
+            <span class="fecha-sep">/</span>
+            <input id="et-fecha-aaaa" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="AA" autocomplete="off">
+            <button type="button" class="fecha-cal-btn" id="et-fecha-cal" aria-label="Elegir en calendario"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></button>
+            <input type="date" id="et-fecha" class="fecha-date-hidden" tabindex="-1">
+          </div>
+        </div>
+
+        <div class="mm-field">
+          <label>Cantidad de etiquetas</label>
+          <div class="mm-qty">
+            <button class="qbtn" id="et-qty-menos" type="button">−</button>
+            <input id="et-cantidad" inputmode="numeric" value="1">
+            <span class="unidad">u</span>
+            <button class="qbtn" id="et-qty-mas" type="button">+</button>
+          </div>
+        </div>
+
+        <div class="mm-field">
+          <label>Tamaño de etiqueta (mm)</label>
+          <div style="display:flex;gap:8px">
+            <div style="flex:1">
+              <div class="et-size-lbl">ANCHO</div>
+              <input id="et-ancho" inputmode="numeric" class="et-size-input">
+            </div>
+            <div style="flex:1">
+              <div class="et-size-lbl">ALTO</div>
+              <input id="et-alto" inputmode="numeric" class="et-size-input">
+            </div>
+          </div>
+        </div>
+
+        <div class="mm-field">
+          <label>Vista previa</label>
+          <div class="et-preview-box">
+            <div class="et-label" id="et-preview-label">
+              <div class="et-nom" id="et-p-nom">—</div>
+              <div class="et-precio" id="et-p-precio">—</div>
+              <div class="et-bc" id="et-p-bc"></div>
+              <div class="et-cod" id="et-p-cod">—</div>
+              <div class="et-fecha hidden" id="et-p-fecha"></div>
+            </div>
+          </div>
+        </div>
+
+        <button class="mm-save" id="et-imprimir" disabled>Imprimir etiquetas</button>
+        <button class="loadbtn" id="et-cancelar" style="width:100%;margin-top:8px">Cancelar</button>
+        </div>
+      </div>
+    </div>
     <div class="mm-ov hidden" id="abc-ov">
       <div class="mm-card">
         <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mm-head-ic"><path d="M20.6 12.1 12.7 4.2a2 2 0 0 0-1.4-.6H5a1 1 0 0 0-1 1v6.3c0 .5.2 1 .6 1.4l7.9 7.9a2 2 0 0 0 2.8 0l5.3-5.3a2 2 0 0 0 0-2.8Z"/><circle cx="8" cy="8.5" r="1.5"/></svg>Precio sugerido (ABC)</h3></div>
@@ -2457,6 +2545,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <button id="mas-q-reportedia"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg><br>Reportes del día</button>
         <button id="mas-q-ventasdia"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg><br>Ventas por día</button>
         <button id="mas-q-mermasdia"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><br>Mermas por día</button>
+        <button id="mas-q-etiquetas"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="7" width="18" height="4" rx="1"/><line x1="6" y1="7" x2="6" y2="11"/><line x1="9" y1="7" x2="9" y2="11"/><line x1="12" y1="7" x2="12" y2="11"/><line x1="16" y1="7" x2="16" y2="11"/><line x1="19" y1="7" x2="19" y2="11"/><path d="M4 15h16v6H4z"/></svg><br>Imprimir etiquetas</button>
       </div>
       <div class="method" style="margin:0;padding:16px 18px">
         <div class="scale-head" id="ayuda-head" style="background:linear-gradient(100deg,#2a2118,#3a2c1a);margin:-16px -18px 0;padding:12px 18px;border-radius:var(--radius-card) var(--radius-card) 0 0"><div><div class="t">ℹ️ Cómo funciona tu app</div></div><svg class="accordion-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
@@ -4392,7 +4481,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-24.7';
+const APP_VERSION='2026-08-25.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -10509,6 +10598,220 @@ document.getElementById('mm-save').onclick=async()=>{
   btn.disabled=false;btn.classList.remove('saving');btn.textContent='Guardar merma';
   mmValidar();
 };
+
+// ===================== IMPRIMIR ETIQUETAS =====================
+// Código de barras generado a mano (Code 39, "3 de 9") porque este archivo no tiene NINGUNA
+// dependencia externa (ni un solo <script src>) y así debe seguir siendo — no se agrega una
+// librería por CDN, que además fallaría sin conexión en el local. Code 39 se eligió sobre
+// Code128 porque su tabla es mucho más chica y fácil de verificar a mano (cada carácter tiene
+// exactamente 3 de sus 9 elementos "anchos" — de ahí el nombre — se puede confirmar cada fila),
+// y cubre sobradamente los casos reales: códigos de barra escaneados (siempre numéricos) y
+// referencias/SKU internas (numéricas o alfanuméricas cortas).
+const Barcode39=(function(){
+  // Cada patrón: 9 dígitos (bar,espacio,bar,espacio,bar,espacio,bar,espacio,bar), 0=angosto,1=ancho.
+  const PATRONES={
+    '0':'000110100','1':'100100001','2':'001100001','3':'101100000','4':'000110001',
+    '5':'100110000','6':'001110000','7':'000100101','8':'100100100','9':'001100100',
+    'A':'100001001','B':'001001001','C':'101001000','D':'000011001','E':'100011000',
+    'F':'001011000','G':'000001101','H':'100001100','I':'001001100','J':'000011100',
+    'K':'100000011','L':'001000011','M':'101000010','N':'000010011','O':'100010010',
+    'P':'001010010','Q':'000000111','R':'100000110','S':'001000110','T':'000010110',
+    'U':'110000001','V':'011000001','W':'111000000','X':'010010001','Y':'110010000',
+    'Z':'011010000','-':'010000101','.':'110000100',' ':'011000100','*':'010010100'
+  };
+  // Solo los caracteres de la tabla de arriba — cualquier otra cosa (minúsculas, símbolos no
+  // soportados) se pasa a mayúscula o se descarta, para nunca romper el render.
+  function sanear(valor){
+    const up=String(valor||'').toUpperCase();
+    let out='';
+    for(const ch of up)if(PATRONES[ch]!==undefined)out+=ch;
+    return out||'0';
+  }
+  // Arma el SVG del código de barras. "alto" es solo la unidad interna del viewBox (con
+  // preserveAspectRatio="none" el contenedor real en CSS/HTML manda el tamaño físico final).
+  function svg(valor,alto){
+    alto=alto||40;
+    const contenido=sanear(valor);
+    const secuencia=('*'+contenido+'*').split('');
+    let x=0;const barras=[];
+    secuencia.forEach((ch,i)=>{
+      const patron=PATRONES[ch];
+      for(let k=0;k<9;k++){
+        const ancho=patron[k]==='1'?2.5:1; // ratio ancho:angosto ~2.5:1
+        if(k%2===0)barras.push(`<rect x="${x.toFixed(2)}" y="0" width="${ancho.toFixed(2)}" height="${alto}"/>`);
+        x+=ancho;
+      }
+      if(i<secuencia.length-1)x+=1; // espacio entre caracteres (1 unidad angosta)
+    });
+    return `<svg viewBox="0 0 ${x.toFixed(2)} ${alto}" preserveAspectRatio="none" style="width:100%;height:100%;display:block">${barras.join('')}</svg>`;
+  }
+  return {svg,sanear};
+})();
+
+const ET_TAMANO_LS_KEY='et_tamano_etiqueta_v1';
+const etState={item:null};
+function etFindItems(q){
+  q=(q||'').toLowerCase().trim();
+  if(!q)return [];
+  const words=q.split(/\s+/).filter(Boolean);
+  return (DB.items||[]).filter(i=>{
+    const hay=(i.nombre||'').toLowerCase();const ref=String(i.ref||'');const bc=i.barcode?String(i.barcode):'';
+    return words.every(w=>hay.includes(w)||ref.includes(w)||bc.includes(w));
+  }).slice(0,25);
+}
+function etRenderResults(list){
+  const box=document.getElementById('et-results');
+  if(!list.length){box.innerHTML='';return;}
+  box.innerHTML=list.map(it=>`<div class="mm-motivo" style="display:block;margin-bottom:6px;cursor:pointer" data-ref="${it.ref}">${it.nombre} <span style="color:var(--muted);font-weight:400">· ${it.prov}</span></div>`).join('');
+  box.querySelectorAll('[data-ref]').forEach(el=>el.onclick=()=>etPick(el.dataset.ref));
+}
+function etPick(ref){
+  const it=(DB.items||[]).find(i=>i.ref===ref);
+  if(!it)return;
+  etState.item=it;
+  document.getElementById('et-search').value=it.nombre;
+  document.getElementById('et-results').innerHTML='';
+  document.getElementById('et-picked').classList.add('on');
+  document.getElementById('et-nom').textContent=it.nombre;
+  document.getElementById('et-cat').textContent=(it.prov||'')+(it.barcode?' · '+it.barcode:'');
+  etRenderPreview();
+  etValidar();
+}
+// Código a imprimir/dibujar: el código de barras escaneado si existe, si no la REF/SKU interna
+// — mismo fallback que ya usan otras pantallas de la app (barcode||ref).
+function etCodigoDe(it){return (it&&(it.barcode||it.ref))||'';}
+function etCargarTamano(){
+  try{
+    const raw=localStorage.getItem(ET_TAMANO_LS_KEY);
+    if(raw){const d=JSON.parse(raw);if(d&&d.ancho&&d.alto)return d;}
+  }catch(e){}
+  return {ancho:58,alto:15}; // rollo autoadhesivo 58mm de la tiquetera, 1.5cm de alto por defecto
+}
+function etGuardarTamano(){
+  const ancho=Number(document.getElementById('et-ancho').value)||58;
+  const alto=Number(document.getElementById('et-alto').value)||15;
+  try{localStorage.setItem(ET_TAMANO_LS_KEY,JSON.stringify({ancho,alto}));}catch(e){}
+}
+// Vista previa: usa LOS MISMOS datos (nombre/precio/código/fecha) y el mismo Barcode39.svg que
+// después arma etImprimir() — así lo que se ve acá es exactamente lo que sale impreso.
+function etRenderPreview(){
+  const it=etState.item;
+  const ancho=Number(document.getElementById('et-ancho').value)||58;
+  const alto=Number(document.getElementById('et-alto').value)||15;
+  const mmPx=3.6; // conversión aproximada mm→px solo para que la vista previa se vea a escala
+  const label=document.getElementById('et-preview-label');
+  label.style.width=(ancho*mmPx)+'px';
+  label.style.height=(alto*mmPx)+'px';
+  document.getElementById('et-p-nom').textContent=it?it.nombre:'—';
+  document.getElementById('et-p-precio').textContent=it&&it.precio!=null?peso(it.precio):'—';
+  const codigo=it?etCodigoDe(it):'';
+  document.getElementById('et-p-bc').innerHTML=codigo?Barcode39.svg(codigo,28):'';
+  document.getElementById('et-p-cod').textContent=codigo||'—';
+  const dd=document.getElementById('et-fecha-dd').value,mm=document.getElementById('et-fecha-mm').value,aa=document.getElementById('et-fecha-aaaa').value;
+  const fechaEl=document.getElementById('et-p-fecha');
+  if(dd.length===2&&mm.length===2&&aa.length===2){
+    fechaEl.textContent='Vence: '+dd+'/'+mm+'/20'+aa;
+    fechaEl.classList.remove('hidden');
+  }else{
+    fechaEl.classList.add('hidden');
+  }
+}
+function etValidar(){
+  const cant=Number(document.getElementById('et-cantidad').value)||0;
+  document.getElementById('et-imprimir').disabled=!(etState.item&&cant>0);
+}
+function etReset(){
+  etState.item=null;
+  document.getElementById('et-search').value='';
+  document.getElementById('et-results').innerHTML='';
+  document.getElementById('et-picked').classList.remove('on');
+  document.getElementById('et-cantidad').value='1';
+  document.getElementById('et-fecha-dd').value='';
+  document.getElementById('et-fecha-mm').value='';
+  document.getElementById('et-fecha-aaaa').value='';
+  document.getElementById('et-fecha').value='';
+  const t=etCargarTamano();
+  document.getElementById('et-ancho').value=t.ancho;
+  document.getElementById('et-alto').value=t.alto;
+  etRenderPreview();
+  etValidar();
+}
+function etAbrir(skipReset){if(!skipReset){try{etReset();}catch(e){}}abrirModal('et-ov');}
+function etCerrar(){cerrarModal('et-ov');}
+
+// Arma el HTML autocontenido de la(s) etiqueta(s) y lo manda a imprimir en un iframe oculto —
+// se aisla en un iframe (en vez de @media print sobre el documento completo) porque esta app
+// tiene muchísimos elementos position:fixed (todos los .mm-ov, la barra inferior) que compiten
+// con las reglas de impresión; imprimir un fragmento aislado es la técnica estándar para evitar
+// pelear con ese CSS. El iframe se remueve solo después de imprimir.
+function etImprimir(){
+  const it=etState.item;
+  if(!it)return;
+  const cantidad=Math.max(1,Math.min(50,Number(document.getElementById('et-cantidad').value)||1));
+  const ancho=Number(document.getElementById('et-ancho').value)||58;
+  const alto=Number(document.getElementById('et-alto').value)||15;
+  const codigo=etCodigoDe(it);
+  const dd=document.getElementById('et-fecha-dd').value,mm=document.getElementById('et-fecha-mm').value,aa=document.getElementById('et-fecha-aaaa').value;
+  const fechaTxt=(dd.length===2&&mm.length===2&&aa.length===2)?('Vence: '+dd+'/'+mm+'/20'+aa):'';
+  const nomEsc=(it.nombre||'').replace(/</g,'&lt;');
+  const precioTxt=it.precio!=null?peso(it.precio):'';
+  const unaEtiqueta=`
+    <div class="et-label">
+      <div class="et-nom">${nomEsc}</div>
+      ${precioTxt?`<div class="et-precio">${precioTxt}</div>`:''}
+      ${codigo?`<div class="et-bc">${Barcode39.svg(codigo,7)}</div><div class="et-cod">${codigo}</div>`:''}
+      ${fechaTxt?`<div class="et-fecha">${fechaTxt}</div>`:''}
+    </div>`;
+  const html=`<!doctype html><html><head><meta charset="utf-8"><style>
+    @page{size:${ancho}mm ${alto}mm;margin:0}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:Arial,Helvetica,sans-serif}
+    .et-label{width:${ancho}mm;height:${alto}mm;border:0.4mm solid #000;padding:0.8mm 1.5mm;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;page-break-after:always}
+    .et-label:last-child{page-break-after:auto}
+    .et-nom{font-size:2.4mm;font-weight:bold;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;line-height:1.15}
+    .et-precio{font-size:3mm;font-weight:800;line-height:1.15}
+    .et-bc{width:90%;height:7mm}
+    .et-cod{font-size:1.8mm;font-family:monospace;letter-spacing:.3px;line-height:1.1}
+    .et-fecha{font-size:1.8mm;line-height:1.1}
+    </style></head><body>${unaEtiqueta.repeat(cantidad)}</body></html>`;
+  const iframe=document.createElement('iframe');
+  iframe.style.position='fixed';iframe.style.right='0';iframe.style.bottom='0';
+  iframe.style.width='0';iframe.style.height='0';iframe.style.border='0';
+  document.body.appendChild(iframe);
+  const doc=iframe.contentDocument||iframe.contentWindow.document;
+  doc.open();doc.write(html);doc.close();
+  const limpiar=()=>{if(iframe.parentNode)iframe.parentNode.removeChild(iframe);};
+  iframe.contentWindow.onafterprint=limpiar;
+  setTimeout(()=>{
+    try{iframe.contentWindow.focus();iframe.contentWindow.print();}catch(e){}
+    setTimeout(limpiar,60000); // red de seguridad si el navegador no dispara afterprint
+  },200);
+}
+
+document.getElementById('mas-q-etiquetas').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');etAbrir();};
+document.getElementById('et-cancelar').onclick=etCerrar;
+document.getElementById('et-search').oninput=e=>etRenderResults(etFindItems(e.target.value));
+document.getElementById('et-scan').onclick=()=>{
+  etCerrar();
+  openScanner(code=>{
+    etAbrir(true);
+    document.getElementById('et-search').value=code;
+    const list=etFindItems(code);
+    if(list.length===1)etPick(list[0].ref); else etRenderResults(list);
+  }, etAbrir.bind(null,true));
+};
+document.getElementById('et-mic').onclick=()=>voiceSearch(document.getElementById('et-mic'),text=>{
+  document.getElementById('et-search').value=text;
+  etRenderResults(etFindItems(text));
+});
+document.getElementById('et-qty-menos').onclick=()=>{const i=document.getElementById('et-cantidad');i.value=Math.max(1,(Number(i.value)||1)-1);etValidar();};
+document.getElementById('et-qty-mas').onclick=()=>{const i=document.getElementById('et-cantidad');i.value=Math.min(50,(Number(i.value)||1)+1);etValidar();};
+document.getElementById('et-cantidad').oninput=etValidar;
+document.getElementById('et-ancho').oninput=()=>{etGuardarTamano();etRenderPreview();};
+document.getElementById('et-alto').oninput=()=>{etGuardarTamano();etRenderPreview();};
+wireFechaSegmentada('et-fecha-dd','et-fecha-mm','et-fecha-aaaa','et-fecha','et-fecha-cal');
+['et-fecha-dd','et-fecha-mm','et-fecha-aaaa'].forEach(id=>document.getElementById(id).addEventListener('input',etRenderPreview));
+document.getElementById('et-imprimir').onclick=etImprimir;
 
 // ===================== VENCIMIENTOS =====================
 const vcNew={item:null};
