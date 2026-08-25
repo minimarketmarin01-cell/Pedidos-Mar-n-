@@ -414,12 +414,20 @@ html.carrito-fijo #rc-ov .mm-sections{
 .et-size-lbl{font-size:10px;color:var(--muted);font-weight:700;margin-bottom:2px}
 .et-size-input{width:100%;height:34px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;font-family:'JetBrains Mono';box-sizing:border-box}
 .et-preview-box{display:flex;justify-content:center;align-items:center;padding:14px;background:var(--paper);border-radius:10px;overflow:auto}
-.et-label{border:1.5px solid var(--ink);border-radius:2px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-sizing:border-box;padding:2px 4px;overflow:hidden;flex:none}
-.et-label .et-nom{font-size:9px;font-weight:700;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;line-height:1.1}
-.et-label .et-precio{font-size:11px;font-weight:800;line-height:1.1}
-.et-label .et-bc{width:88%}
-.et-label .et-cod{font-size:7px;font-family:'JetBrains Mono';letter-spacing:.03em;line-height:1}
-.et-label .et-fecha{font-size:7px;color:var(--muted);line-height:1}
+/* .et-bc con flex:1;min-height:0 se queda con TODO el alto que sobra después de las filas de
+   arriba/abajo (que son flex:none, tamaño fijo) — así el código de barras siempre ocupa el
+   máximo posible en vez de quedar apretado si el resto del contenido no entra a la primera,
+   que fue justo el bug reportado: con todo en una sola columna sin repartir así, en una
+   etiqueta de 15mm de alto el contenido no entraba y flexbox achicaba TODO por igual
+   (barras incluidas) para que entrara, dejándolas finitas y amontonadas. */
+.et-label{border:1.5px solid var(--ink);border-radius:2px;background:#fff;display:flex;flex-direction:column;align-items:stretch;box-sizing:border-box;padding:2px 3px;overflow:hidden}
+.et-label .et-top{display:flex;justify-content:space-between;align-items:baseline;gap:4px;flex:none}
+.et-label .et-nom{font-size:8px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
+.et-label .et-precio{font-size:10px;font-weight:800;line-height:1.1;flex:none}
+.et-label .et-bc{flex:1;min-height:0;width:97%;margin:2px auto}
+.et-label .et-bottom{display:flex;justify-content:space-between;align-items:center;gap:4px;flex:none}
+.et-label .et-cod{font-size:6.5px;font-family:'JetBrains Mono';letter-spacing:.03em;line-height:1}
+.et-label .et-fecha{font-size:6.5px;color:var(--muted);line-height:1}
 /* Input de texto genérico de formulario — antes repetido con el mismo style="..." inline en
    varios campos de distintos módulos (Vencimientos, Crear producto, Renombrar, Ficha de
    producto); centralizado acá para que un cambio de diseño futuro no requiera editar cada
@@ -1948,6 +1956,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
             <button type="button" class="fecha-cal-btn" id="et-fecha-cal" aria-label="Elegir en calendario"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></button>
             <input type="date" id="et-fecha" class="fecha-date-hidden" tabindex="-1">
           </div>
+          <div class="cat" id="et-fecha-hint" style="margin-top:5px"></div>
         </div>
 
         <div class="mm-field">
@@ -1978,11 +1987,15 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <label>Vista previa</label>
           <div class="et-preview-box">
             <div class="et-label" id="et-preview-label">
-              <div class="et-nom" id="et-p-nom">—</div>
-              <div class="et-precio" id="et-p-precio">—</div>
+              <div class="et-top">
+                <div class="et-nom" id="et-p-nom">—</div>
+                <div class="et-precio" id="et-p-precio">—</div>
+              </div>
               <div class="et-bc" id="et-p-bc"></div>
-              <div class="et-cod" id="et-p-cod">—</div>
-              <div class="et-fecha hidden" id="et-p-fecha"></div>
+              <div class="et-bottom">
+                <div class="et-cod" id="et-p-cod">—</div>
+                <div class="et-fecha hidden" id="et-p-fecha"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -4481,7 +4494,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-25.1';
+const APP_VERSION='2026-08-25.2';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -10674,12 +10687,50 @@ function etPick(ref){
   document.getElementById('et-picked').classList.add('on');
   document.getElementById('et-nom').textContent=it.nombre;
   document.getElementById('et-cat').textContent=(it.prov||'')+(it.barcode?' · '+it.barcode:'');
+  document.getElementById('et-fecha-dd').value='';
+  document.getElementById('et-fecha-mm').value='';
+  document.getElementById('et-fecha-aaaa').value='';
+  document.getElementById('et-fecha').value='';
   etRenderPreview();
   etValidar();
+  etImportarFechaVencimiento(it.ref);
 }
 // Código a imprimir/dibujar: el código de barras escaneado si existe, si no la REF/SKU interna
 // — mismo fallback que ya usan otras pantallas de la app (barcode||ref).
 function etCodigoDe(it){return (it&&(it.barcode||it.ref))||'';}
+// La fecha de vencimiento no es una propiedad plana del producto (un mismo producto puede tener
+// varios lotes con fechas distintas) — vive en sus lotes activos, igual que en Vencimientos y en
+// la pestaña "Lotes" de la Ficha de producto. Se reutiliza action=ficha_producto (mismo endpoint
+// que ya usan Recepción/Ficha, ver rcRenderMovimientos/fpAbrir) para traer f.lotes de ESTE
+// producto puntual, sin depender de que el módulo Vencimientos ya se haya abierto esta sesión
+// (que es lo que llenaría _vcTodos). f.lotes ya viene ordenado con el más próximo a vencer
+// primero (mismo criterio que usa fpPaneLotes para marcar el primero con ⏰), así que se importa
+// ese — queda precargado pero sigue siendo editable a mano si hace falta otro lote.
+async function etImportarFechaVencimiento(ref){
+  const hint=document.getElementById('et-fecha-hint');
+  hint.textContent='Buscando fecha de vencimiento del producto…';
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=ficha_producto&sku='+encodeURIComponent(ref));
+    const j=await res.json();
+    // Si mientras tanto se eligió OTRO producto, esta respuesta ya es vieja — no pisar nada.
+    if(!etState.item||etState.item.ref!==ref)return;
+    if(!j||!j.ok||!j.ficha){hint.textContent='No se pudo cargar la fecha de vencimiento — puedes escribirla a mano.';return;}
+    const lotes=j.ficha.lotes||[];
+    if(!lotes.length){hint.textContent='Este producto no tiene lotes de vencimiento activos.';return;}
+    const partes=String(lotes[0].fechaVencimiento||'').split('/'); // DD/MM/AAAA
+    if(partes.length!==3){hint.textContent='';return;}
+    document.getElementById('et-fecha-dd').value=partes[0];
+    document.getElementById('et-fecha-mm').value=partes[1];
+    document.getElementById('et-fecha-aaaa').value=partes[2].slice(-2);
+    document.getElementById('et-fecha').value=partes[2]+'-'+partes[1]+'-'+partes[0];
+    hint.textContent=lotes.length>1
+      ?'Importada del lote más próximo a vencer (tiene '+lotes.length+' lotes activos) — editable.'
+      :'Importada del producto — editable.';
+    etRenderPreview();
+  }catch(e){
+    if(etState.item&&etState.item.ref===ref)hint.textContent='Error de conexión al buscar la fecha de vencimiento — puedes escribirla a mano.';
+  }
+}
 function etCargarTamano(){
   try{
     const raw=localStorage.getItem(ET_TAMANO_LS_KEY);
@@ -10730,6 +10781,7 @@ function etReset(){
   document.getElementById('et-fecha-mm').value='';
   document.getElementById('et-fecha-aaaa').value='';
   document.getElementById('et-fecha').value='';
+  document.getElementById('et-fecha-hint').textContent='';
   const t=etCargarTamano();
   document.getElementById('et-ancho').value=t.ancho;
   document.getElementById('et-alto').value=t.alto;
@@ -10757,22 +10809,33 @@ function etImprimir(){
   const precioTxt=it.precio!=null?peso(it.precio):'';
   const unaEtiqueta=`
     <div class="et-label">
-      <div class="et-nom">${nomEsc}</div>
-      ${precioTxt?`<div class="et-precio">${precioTxt}</div>`:''}
-      ${codigo?`<div class="et-bc">${Barcode39.svg(codigo,7)}</div><div class="et-cod">${codigo}</div>`:''}
-      ${fechaTxt?`<div class="et-fecha">${fechaTxt}</div>`:''}
+      <div class="et-top">
+        <div class="et-nom">${nomEsc}</div>
+        ${precioTxt?`<div class="et-precio">${precioTxt}</div>`:''}
+      </div>
+      ${codigo?`<div class="et-bc">${Barcode39.svg(codigo,7)}</div>`:''}
+      <div class="et-bottom">
+        ${codigo?`<div class="et-cod">${codigo}</div>`:''}
+        ${fechaTxt?`<div class="et-fecha">${fechaTxt}</div>`:''}
+      </div>
     </div>`;
+  // .et-bc con flex:1;min-height:0 se queda con todo el alto que sobra después de las filas de
+  // arriba/abajo (tamaño fijo, flex:none) — mismo criterio que la vista previa en pantalla, para
+  // que las barras salgan lo más anchas/altas posibles y nunca terminen apretadas por falta de
+  // espacio vertical en una etiqueta baja (15mm).
   const html=`<!doctype html><html><head><meta charset="utf-8"><style>
     @page{size:${ancho}mm ${alto}mm;margin:0}
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:Arial,Helvetica,sans-serif}
-    .et-label{width:${ancho}mm;height:${alto}mm;border:0.4mm solid #000;padding:0.8mm 1.5mm;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;page-break-after:always}
+    .et-label{width:${ancho}mm;height:${alto}mm;border:0.4mm solid #000;padding:0.6mm 1mm;display:flex;flex-direction:column;overflow:hidden;page-break-after:always}
     .et-label:last-child{page-break-after:auto}
-    .et-nom{font-size:2.4mm;font-weight:bold;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;line-height:1.15}
-    .et-precio{font-size:3mm;font-weight:800;line-height:1.15}
-    .et-bc{width:90%;height:7mm}
-    .et-cod{font-size:1.8mm;font-family:monospace;letter-spacing:.3px;line-height:1.1}
-    .et-fecha{font-size:1.8mm;line-height:1.1}
+    .et-top{display:flex;justify-content:space-between;align-items:baseline;gap:1mm;flex:none}
+    .et-nom{font-size:2.2mm;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1;line-height:1.15}
+    .et-precio{font-size:2.6mm;font-weight:800;line-height:1.15;flex:none}
+    .et-bc{flex:1;min-height:0;width:97%;margin:0.4mm auto}
+    .et-bottom{display:flex;justify-content:space-between;align-items:center;gap:1mm;flex:none}
+    .et-cod{font-size:1.6mm;font-family:monospace;letter-spacing:.3px;line-height:1.1}
+    .et-fecha{font-size:1.6mm;line-height:1.1}
     </style></head><body>${unaEtiqueta.repeat(cantidad)}</body></html>`;
   const iframe=document.createElement('iframe');
   iframe.style.position='fixed';iframe.style.right='0';iframe.style.bottom='0';
