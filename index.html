@@ -420,11 +420,11 @@ html.carrito-fijo #rc-ov .mm-sections{
    que fue justo el bug reportado: con todo en una sola columna sin repartir así, en una
    etiqueta de 15mm de alto el contenido no entraba y flexbox achicaba TODO por igual
    (barras incluidas) para que entrara, dejándolas finitas y amontonadas. */
-.et-label{border:1.5px solid var(--ink);border-radius:5px;background:#fff;display:flex;flex-direction:column;align-items:stretch;box-sizing:border-box;padding:2px 3px;overflow:hidden}
+.et-label{border:1.5px solid var(--ink);border-radius:5px;background:#fff;display:flex;flex-direction:column;align-items:stretch;box-sizing:border-box;padding:2px 3px;gap:3px;overflow:hidden}
 .et-label .et-top{display:flex;justify-content:space-between;align-items:baseline;gap:4px;flex:none}
 .et-label .et-nom{font-size:8px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
 .et-label .et-precio{font-size:10px;font-weight:800;line-height:1.1;flex:none}
-.et-label .et-bc{flex:1;min-height:0;width:97%;margin:2px auto}
+.et-label .et-bc{flex:1;min-height:0;width:97%;margin:0 auto}
 .et-label .et-bottom{display:flex;justify-content:space-between;align-items:center;gap:4px;flex:none}
 .et-label .et-cod{font-size:6.5px;font-family:'JetBrains Mono';letter-spacing:.03em;line-height:1}
 .et-label .et-fecha{font-size:6.5px;color:var(--muted);line-height:1}
@@ -4503,7 +4503,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-25.3';
+const APP_VERSION='2026-08-25.4';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -10739,7 +10739,7 @@ const ET_TEXTO_PRESETS={
   normal:{nom:2.5,precio:2.9,cod:2.0},
   grande:{nom:3.0,precio:3.4,cod:2.4}
 };
-const etState={item:null};
+const etState={item:null,fechaCargando:false};
 function etFindItems(q){
   q=(q||'').toLowerCase().trim();
   if(!q)return [];
@@ -10770,6 +10770,11 @@ function etPick(ref){
   document.getElementById('et-fecha').value='';
   etRenderPreview();
   etValidar();
+  // Se deshabilita "Imprimir etiquetas" hasta que se sepa si hay fecha para importar o no —
+  // etImportarFechaVencimiento es async (un fetch real) y si no se espera, el usuario puede
+  // apretar Imprimir antes de que vuelva, dejando la etiqueta sin "Vence: …" sin darse cuenta.
+  etState.fechaCargando=true;
+  etValidar();
   etImportarFechaVencimiento(it.ref);
 }
 // Código a imprimir/dibujar: el código de barras escaneado si existe, si no la REF/SKU interna
@@ -10786,16 +10791,21 @@ function etCodigoDe(it){return (it&&(it.barcode||it.ref))||'';}
 async function etImportarFechaVencimiento(ref){
   const hint=document.getElementById('et-fecha-hint');
   hint.textContent='Buscando fecha de vencimiento del producto…';
+  // Libera fechaCargando (y rehabilita "Imprimir etiquetas") solo si esta respuesta sigue
+  // siendo la vigente — si mientras tanto se eligió OTRO producto, esa elección más nueva ya
+  // tiene su propio fechaCargando en curso y no hay que pisarlo.
+  const terminar=()=>{
+    if(etState.item&&etState.item.ref===ref){etState.fechaCargando=false;etValidar();}
+  };
   try{
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=ficha_producto&sku='+encodeURIComponent(ref));
     const j=await res.json();
-    // Si mientras tanto se eligió OTRO producto, esta respuesta ya es vieja — no pisar nada.
     if(!etState.item||etState.item.ref!==ref)return;
-    if(!j||!j.ok||!j.ficha){hint.textContent='No se pudo cargar la fecha de vencimiento — puedes escribirla a mano.';return;}
+    if(!j||!j.ok||!j.ficha){hint.textContent='No se pudo cargar la fecha de vencimiento — puedes escribirla a mano.';terminar();return;}
     const lotes=j.ficha.lotes||[];
-    if(!lotes.length){hint.textContent='Este producto no tiene lotes de vencimiento activos.';return;}
+    if(!lotes.length){hint.textContent='Este producto no tiene lotes de vencimiento activos.';terminar();return;}
     const partes=String(lotes[0].fechaVencimiento||'').split('/'); // DD/MM/AAAA
-    if(partes.length!==3){hint.textContent='';return;}
+    if(partes.length!==3){hint.textContent='';terminar();return;}
     document.getElementById('et-fecha-dd').value=partes[0];
     document.getElementById('et-fecha-mm').value=partes[1];
     document.getElementById('et-fecha-aaaa').value=partes[2].slice(-2);
@@ -10804,8 +10814,10 @@ async function etImportarFechaVencimiento(ref){
       ?'Importada del lote más próximo a vencer (tiene '+lotes.length+' lotes activos) — editable.'
       :'Importada del producto — editable.';
     etRenderPreview();
+    terminar();
   }catch(e){
     if(etState.item&&etState.item.ref===ref)hint.textContent='Error de conexión al buscar la fecha de vencimiento — puedes escribirla a mano.';
+    terminar();
   }
 }
 function etCargarTamano(){
@@ -10854,10 +10866,11 @@ function etRenderPreview(){
 }
 function etValidar(){
   const cant=Number(document.getElementById('et-cantidad').value)||0;
-  document.getElementById('et-imprimir').disabled=!(etState.item&&cant>0);
+  document.getElementById('et-imprimir').disabled=!(etState.item&&cant>0)||etState.fechaCargando;
 }
 function etReset(){
   etState.item=null;
+  etState.fechaCargando=false;
   document.getElementById('et-search').value='';
   document.getElementById('et-results').innerHTML='';
   document.getElementById('et-picked').classList.remove('on');
@@ -10915,12 +10928,12 @@ function etImprimir(){
     @page{size:${ancho}mm ${alto}mm;margin:0}
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:Arial,Helvetica,sans-serif}
-    .et-label{width:${ancho}mm;height:${alto}mm;border:0.4mm solid #000;border-radius:1.2mm;padding:0.6mm 1mm;display:flex;flex-direction:column;overflow:hidden;page-break-after:always}
+    .et-label{width:${ancho}mm;height:${alto}mm;border:0.4mm solid #000;border-radius:1.2mm;padding:0.6mm 1mm;display:flex;flex-direction:column;gap:0.8mm;overflow:hidden;page-break-after:always}
     .et-label:last-child{page-break-after:auto}
     .et-top{display:flex;justify-content:space-between;align-items:baseline;gap:1mm;flex:none}
     .et-nom{font-size:${preset.nom}mm;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1;line-height:1.15}
     .et-precio{font-size:${preset.precio}mm;font-weight:800;line-height:1.15;flex:none}
-    .et-bc{flex:1;min-height:0;width:97%;margin:0.4mm auto}
+    .et-bc{flex:1;min-height:0;width:97%;margin:0 auto}
     .et-bottom{display:flex;justify-content:space-between;align-items:center;gap:1mm;flex:none}
     .et-cod{font-size:${preset.cod}mm;font-family:monospace;letter-spacing:.3px;line-height:1.1}
     .et-fecha{font-size:${preset.cod}mm;line-height:1.1}
