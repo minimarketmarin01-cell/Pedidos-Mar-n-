@@ -4505,7 +4505,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-25.6';
+const APP_VERSION='2026-08-25.7';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -10737,10 +10737,78 @@ const EAN13=(function(){
   }
   return {svg,esValido};
 })();
-// Elige la simbología correcta según el código: EAN-13 para códigos de fábrica reales (12-13
-// dígitos numéricos, el caso normal de casi todos los productos), Code 39 como respaldo para
-// SKU internas cortas alfanuméricas (donde el problema de ancho de arriba no aplica).
+
+// Code 128 (subconjunto B) — se usa SOLO para el caso puntual que ni el ancho de módulos ni la
+// altura de guardas de EAN-13 pueden resolver: un código guardado con 13 dígitos y el primero en
+// '0'. Ese patrón de barras es, por diseño del propio estándar, físicamente idéntico al de un
+// UPC-A de los 12 dígitos restantes (verificado matemáticamente, dos veces, con métodos
+// independientes) — un lector que lo interprete como UPC-A transmite 12 dígitos, sin el 0, y no
+// matchea el código guardado en Loyverse. Se confirmó además escaneando en la caja: ni el arreglo
+// de ancho ni el de guardas cambiaron el resultado. Code 128 no tiene esa ambigüedad: codifica
+// los 13 caracteres literales, con el 0 incluido, así que un lector Code 128 SIEMPRE transmite el
+// código completo tal cual está guardado.
+//
+// La tabla de barras (BARS) NO se transcribió de memoria — se bajó tal cual, byte a byte, del
+// archivo fuente real de JsBarcode (librería open-source ampliamente usada y probada en
+// producción para generación de códigos de barras: https://github.com/lindell/JsBarcode,
+// src/barcodes/CODE128/constants.js), evitando el riesgo de transcripción que en su momento
+// descartó usar Code128 en este archivo (con una tabla de ~107 filas, verificar cada una de
+// memoria sin conexión era demasiado riesgoso). Cada entrada es un patrón de módulos (string de
+// 0s y 1s, mismo formato que ya usan Barcode39/EAN13 en este archivo) — 11 módulos por símbolo,
+// salvo el último (STOP) que tiene 13. Antes de usarla acá se verificó codificando y
+// decodificando (con un decodificador propio, construido por búsqueda inversa sobre esta misma
+// tabla) varios códigos reales de esta conversación — todos recuperaron el texto original exacto
+// con el checksum correcto.
+const Code128=(function(){
+  const BARS=[
+    '11011001100','11001101100','11001100110','10010011000','10010001100','10001001100','10011001000','10011000100',
+    '10001100100','11001001000','11001000100','11000100100','10110011100','10011011100','10011001110','10111001100',
+    '10011101100','10011100110','11001110010','11001011100','11001001110','11011100100','11001110100','11101101110',
+    '11101001100','11100101100','11100100110','11101100100','11100110100','11100110010','11011011000','11011000110',
+    '11000110110','10100011000','10001011000','10001000110','10110001000','10001101000','10001100010','11010001000',
+    '11000101000','11000100010','10110111000','10110001110','10001101110','10111011000','10111000110','10001110110',
+    '11101110110','11010001110','11000101110','11011101000','11011100010','11011101110','11101011000','11101000110',
+    '11100010110','11101101000','11101100010','11100011010','11101111010','11001000010','11110001010','10100110000',
+    '10100001100','10010110000','10010000110','10000101100','10000100110','10110010000','10110000100','10011010000',
+    '10011000010','10000110100','10000110010','11000010010','11001010000','11110111010','11000010100','10001111010',
+    '10100111100','10010111100','10010011110','10111100100','10011110100','10011110010','11110100100','11110010100',
+    '11110010010','11011011110','11011110110','11110110110','10101111000','10100011110','10001011110','10111101000',
+    '10111100010','11110101000','11110100010','10111011110','10111101110','11101011110','11110101110','11010000100',
+    '11010010000','11010011100','1100011101011'
+  ];
+  const START_B=104, STOP=106;
+  // Subconjunto B: cada carácter ASCII 32-126 (todo lo imprimible que puede tener un código de
+  // barras o una REF interna) se codifica directo como su código ASCII menos 32.
+  function valorDe(ch){
+    const cod=ch.charCodeAt(0);
+    if(cod<32||cod>126)return null;
+    return cod-32;
+  }
+  function svg(texto,alto){
+    alto=alto||40;
+    const chars=String(texto||'').split('');
+    for(const ch of chars){if(valorDe(ch)===null)return '';}
+    const datos=chars.map(valorDe);
+    let checksum=START_B;
+    datos.forEach((v,i)=>{checksum+=v*(i+1);});
+    checksum=checksum%103;
+    const simbolos=[START_B,...datos,checksum,STOP];
+    const modulos=simbolos.map(v=>BARS[v]).join('');
+    const barras=[];
+    for(let x=0;x<modulos.length;x++){
+      if(modulos[x]==='1')barras.push(`<rect x="${x}" y="0" width="1" height="${alto}"/>`);
+    }
+    return `<svg viewBox="0 0 ${modulos.length} ${alto}" preserveAspectRatio="none" style="width:100%;height:100%;display:block">${barras.join('')}</svg>`;
+  }
+  return {svg};
+})();
+// Elige la simbología correcta según el código: Code 128 para el caso puntual de un código de
+// 13 dígitos que empieza en '0' (ver comentario arriba — es el único caso donde EAN-13 no puede
+// funcionar, sin importar cómo se dibuje), EAN-13 para el resto de los códigos de fábrica reales
+// (12-13 dígitos numéricos, el caso normal de casi todos los productos), Code 39 como respaldo
+// para SKU internas cortas alfanuméricas (donde el problema de ancho no aplica).
 function etBarcodeSvg(codigo,alto){
+  if(/^0\d{12}$/.test(String(codigo||'')))return Code128.svg(codigo,alto);
   return EAN13.esValido(codigo)?EAN13.svg(codigo,alto):Barcode39.svg(codigo,alto);
 }
 
