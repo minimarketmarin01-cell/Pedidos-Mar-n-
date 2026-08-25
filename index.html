@@ -420,7 +420,7 @@ html.carrito-fijo #rc-ov .mm-sections{
    que fue justo el bug reportado: con todo en una sola columna sin repartir así, en una
    etiqueta de 15mm de alto el contenido no entraba y flexbox achicaba TODO por igual
    (barras incluidas) para que entrara, dejándolas finitas y amontonadas. */
-.et-label{border:1.5px solid var(--ink);border-radius:5px;background:#fff;display:flex;flex-direction:column;align-items:stretch;box-sizing:border-box;padding:2px 3px;gap:3px;overflow:hidden}
+.et-label{border:1.5px solid var(--ink);border-radius:5px;background:#fff;display:flex;flex-direction:column;align-items:stretch;box-sizing:border-box;padding:2px 3px;gap:1.5px;overflow:hidden}
 .et-label .et-top{display:flex;justify-content:space-between;align-items:baseline;gap:4px;flex:none}
 .et-label .et-nom{font-size:8px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
 .et-label .et-precio{font-size:10px;font-weight:800;line-height:1.1;flex:none}
@@ -4503,7 +4503,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-25.4';
+const APP_VERSION='2026-08-25.5';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -10706,6 +10706,13 @@ const EAN13=(function(){
   function esValido(codigo){return !!normalizar(codigo);}
   // Nunca se recalcula el dígito verificador: se dibujan literalmente los 13 dígitos que ya
   // tiene el producto, para no arriesgarse a imprimir un código distinto al que usa Loyverse.
+  // Las 3 guardas (inicio, centro, fin — posiciones de módulo 0-2, 45-49 y 92-94 de las 95
+  // totales) se dibujan a la altura completa y sobresalen por abajo de las barras de dígitos
+  // (85% de esa altura) — es la convención real de todo código EAN-13/UPC-A (no decorativa: es
+  // la señal que usan los lectores para anclar la lectura). Antes se dibujaban todas las barras
+  // a la misma altura, y es lo que probablemente hacía que un lector la leyera como si fuera un
+  // UPC-A ambiguo de 12 dígitos en vez de un EAN-13 completo con el 0 inicial.
+  const GUARDAS=new Set([0,1,2,45,46,47,48,49,92,93,94]);
   function svg(codigo,alto){
     alto=alto||40;
     const c=normalizar(codigo);
@@ -10716,9 +10723,13 @@ const EAN13=(function(){
     modulos+='01010'; // guarda central
     for(let i=0;i<6;i++)modulos+=R[c[7+i]];
     modulos+='101'; // guarda de fin
+    const altoDigito=alto*0.85;
     const barras=[];
     for(let x=0;x<modulos.length;x++){
-      if(modulos[x]==='1')barras.push(`<rect x="${x}" y="0" width="1" height="${alto}"/>`);
+      if(modulos[x]==='1'){
+        const h=GUARDAS.has(x)?alto:altoDigito;
+        barras.push(`<rect x="${x}" y="0" width="1" height="${h}"/>`);
+      }
     }
     return `<svg viewBox="0 0 ${modulos.length} ${alto}" preserveAspectRatio="none" style="width:100%;height:100%;display:block">${barras.join('')}</svg>`;
   }
@@ -10735,9 +10746,9 @@ const ET_TAMANO_LS_KEY='et_tamano_etiqueta_v1';
 // Tabla única (en mm) de tamaños de texto — la usan tanto la vista previa (multiplicada por
 // mmPx) como la impresión (directo en mm), para que nunca se puedan desincronizar.
 const ET_TEXTO_PRESETS={
-  pequeno:{nom:1.9,precio:2.3,cod:1.4},
-  normal:{nom:2.5,precio:2.9,cod:2.0},
-  grande:{nom:3.0,precio:3.4,cod:2.4}
+  pequeno:{nom:3.8,precio:4.6,cod:2.8},
+  normal:{nom:5.0,precio:5.8,cod:4.0},
+  grande:{nom:6.0,precio:6.8,cod:4.8}
 };
 const etState={item:null,fechaCargando:false};
 function etFindItems(q){
@@ -10825,7 +10836,11 @@ function etCargarTamano(){
     const raw=localStorage.getItem(ET_TAMANO_LS_KEY);
     if(raw){const d=JSON.parse(raw);if(d&&d.ancho&&d.alto)return {ancho:d.ancho,alto:d.alto,texto:ET_TEXTO_PRESETS[d.texto]?d.texto:'normal'};}
   }catch(e){}
-  return {ancho:58,alto:15,texto:'normal'}; // rollo autoadhesivo 58mm de la tiquetera, 1.5cm de alto por defecto
+  // ancho: 58mm, el ancho físico real del rollo autoadhesivo de la tiquetera (no cambia). alto:
+  // 22mm por defecto — con texto al doble (ET_TEXTO_PRESETS) no entraba en los 15mm originales
+  // sin volver a apretar el código de barras; como se imprime de un rollo continuo no hay límite
+  // físico real en el alto, solo rinden menos etiquetas por metro de rollo. Sigue siendo editable.
+  return {ancho:58,alto:22,texto:'normal'};
 }
 function etGuardarTamano(){
   const ancho=Number(document.getElementById('et-ancho').value)||58;
@@ -10923,12 +10938,12 @@ function etImprimir(){
   // .et-bc con flex:1;min-height:0 se queda con todo el alto que sobra después de las filas de
   // arriba/abajo (tamaño fijo, flex:none) — mismo criterio que la vista previa en pantalla, para
   // que las barras salgan lo más anchas/altas posibles y nunca terminen apretadas por falta de
-  // espacio vertical en una etiqueta baja (15mm).
+  // espacio vertical.
   const html=`<!doctype html><html><head><meta charset="utf-8"><style>
     @page{size:${ancho}mm ${alto}mm;margin:0}
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:Arial,Helvetica,sans-serif}
-    .et-label{width:${ancho}mm;height:${alto}mm;border:0.4mm solid #000;border-radius:1.2mm;padding:0.6mm 1mm;display:flex;flex-direction:column;gap:0.8mm;overflow:hidden;page-break-after:always}
+    .et-label{width:${ancho}mm;height:${alto}mm;border:0.4mm solid #000;border-radius:1.2mm;padding:0.6mm 1mm;display:flex;flex-direction:column;gap:0.4mm;overflow:hidden;page-break-after:always}
     .et-label:last-child{page-break-after:auto}
     .et-top{display:flex;justify-content:space-between;align-items:baseline;gap:1mm;flex:none}
     .et-nom{font-size:${preset.nom}mm;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1;line-height:1.15}
