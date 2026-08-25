@@ -419,12 +419,14 @@ html.carrito-fijo #rc-ov .mm-sections{
    máximo posible en vez de quedar apretado si el resto del contenido no entra a la primera,
    que fue justo el bug reportado: con todo en una sola columna sin repartir así, en una
    etiqueta de 15mm de alto el contenido no entraba y flexbox achicaba TODO por igual
-   (barras incluidas) para que entrara, dejándolas finitas y amontonadas. */
+   (barras incluidas) para que entrara, dejándolas finitas y amontonadas. El ancho al 85% (no
+   100%) deja además una "zona de silencio" real a los costados — el margen en blanco que pide
+   el estándar EAN-13 para que un lector sepa dónde empieza y termina el código. */
 .et-label{border:1.5px solid var(--ink);border-radius:5px;background:#fff;display:flex;flex-direction:column;align-items:stretch;box-sizing:border-box;padding:2px 3px;gap:1.5px;overflow:hidden}
 .et-label .et-top{display:flex;justify-content:space-between;align-items:baseline;gap:4px;flex:none}
 .et-label .et-nom{font-size:8px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
 .et-label .et-precio{font-size:10px;font-weight:800;line-height:1.1;flex:none}
-.et-label .et-bc{flex:1;min-height:0;width:97%;margin:0 auto}
+.et-label .et-bc{flex:1;min-height:0;width:85%;margin:0 auto}
 .et-label .et-bottom{display:flex;justify-content:space-between;align-items:center;gap:4px;flex:none}
 .et-label .et-cod{font-size:6.5px;font-family:'JetBrains Mono';letter-spacing:.03em;line-height:1}
 .et-label .et-fecha{font-size:6.5px;color:var(--muted);line-height:1}
@@ -4503,7 +4505,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-25.5';
+const APP_VERSION='2026-08-25.6';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -10938,7 +10940,9 @@ function etImprimir(){
   // .et-bc con flex:1;min-height:0 se queda con todo el alto que sobra después de las filas de
   // arriba/abajo (tamaño fijo, flex:none) — mismo criterio que la vista previa en pantalla, para
   // que las barras salgan lo más anchas/altas posibles y nunca terminen apretadas por falta de
-  // espacio vertical.
+  // espacio vertical. El ancho al 85% (no 100%) deja una "zona de silencio" real a los costados
+  // — el margen en blanco que pide el estándar EAN-13 para que un lector sepa dónde empieza y
+  // termina el código.
   const html=`<!doctype html><html><head><meta charset="utf-8"><style>
     @page{size:${ancho}mm ${alto}mm;margin:0}
     *{margin:0;padding:0;box-sizing:border-box}
@@ -10948,7 +10952,7 @@ function etImprimir(){
     .et-top{display:flex;justify-content:space-between;align-items:baseline;gap:1mm;flex:none}
     .et-nom{font-size:${preset.nom}mm;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1;line-height:1.15}
     .et-precio{font-size:${preset.precio}mm;font-weight:800;line-height:1.15;flex:none}
-    .et-bc{flex:1;min-height:0;width:97%;margin:0 auto}
+    .et-bc{flex:1;min-height:0;width:85%;margin:0 auto}
     .et-bottom{display:flex;justify-content:space-between;align-items:center;gap:1mm;flex:none}
     .et-cod{font-size:${preset.cod}mm;font-family:monospace;letter-spacing:.3px;line-height:1.1}
     .et-fecha{font-size:${preset.cod}mm;line-height:1.1}
