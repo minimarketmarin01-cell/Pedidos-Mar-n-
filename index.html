@@ -420,7 +420,7 @@ html.carrito-fijo #rc-ov .mm-sections{
    que fue justo el bug reportado: con todo en una sola columna sin repartir así, en una
    etiqueta de 15mm de alto el contenido no entraba y flexbox achicaba TODO por igual
    (barras incluidas) para que entrara, dejándolas finitas y amontonadas. */
-.et-label{border:1.5px solid var(--ink);border-radius:2px;background:#fff;display:flex;flex-direction:column;align-items:stretch;box-sizing:border-box;padding:2px 3px;overflow:hidden}
+.et-label{border:1.5px solid var(--ink);border-radius:5px;background:#fff;display:flex;flex-direction:column;align-items:stretch;box-sizing:border-box;padding:2px 3px;overflow:hidden}
 .et-label .et-top{display:flex;justify-content:space-between;align-items:baseline;gap:4px;flex:none}
 .et-label .et-nom{font-size:8px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
 .et-label .et-precio{font-size:10px;font-weight:800;line-height:1.1;flex:none}
@@ -1980,6 +1980,15 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
               <div class="et-size-lbl">ALTO</div>
               <input id="et-alto" inputmode="numeric" class="et-size-input">
             </div>
+          </div>
+        </div>
+
+        <div class="mm-field">
+          <label>Tamaño de texto</label>
+          <div class="mm-resp" id="et-texto">
+            <button data-t="pequeno">Pequeño</button>
+            <button data-t="normal">Normal</button>
+            <button data-t="grande">Grande</button>
           </div>
         </div>
 
@@ -4494,7 +4503,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-25.2';
+const APP_VERSION='2026-08-25.3';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -10661,7 +10670,75 @@ const Barcode39=(function(){
   return {svg,sanear};
 })();
 
+// Código de barras EAN-13 (código de fábrica real, ej. el que ya trae escaneado la mayoría de
+// los productos en `barcode`). Se agrega porque Code 39 (arriba) para un código de 13 dígitos
+// numéricos sale ~2.3x más ancho que un EAN-13 real (~216 "unidades angostas" contra apenas 95
+// módulos de ancho fijo de EAN-13, sin importar el contenido) — en una etiqueta de 58mm eso
+// significa barras mucho más angostas de lo necesario, al punto de quedar por debajo de lo que
+// una lectora puede resolver de forma confiable. Mismo motivo que en su momento descartó Code128
+// (tabla de ~107 filas imposible de verificar de memoria sin conexión): acá la tabla es de solo
+// 10 filas (L), y las otras dos (G y R) NO se transcriben a mano — se derivan matemáticamente de
+// L (G=reverse(complement(L)), R=complement(L)), reduciendo el riesgo de un error de memoria a
+// una sola tabla chica en vez de tres.
+const EAN13=(function(){
+  const L={
+    '0':'0001101','1':'0011001','2':'0010011','3':'0111101','4':'0100011',
+    '5':'0110001','6':'0101111','7':'0111011','8':'0110111','9':'0001011'
+  };
+  function complement(s){return s.split('').map(c=>c==='0'?'1':'0').join('');}
+  function reverse(s){return s.split('').reverse().join('');}
+  const G={},R={};
+  Object.keys(L).forEach(d=>{R[d]=complement(L[d]);G[d]=reverse(R[d]);});
+  // Patrón de paridad L/G de los 6 dígitos izquierdos según el primer dígito (que no se dibuja
+  // directo — así es como EAN-13 codifica 13 dígitos en un espacio pensado para 12). El caso
+  // dígito '0' (LLLLLL, sin ninguna G) es el más citado y verificado del estándar — es también
+  // el caso de todo código convertido desde UPC-A, como el de la foto de referencia del usuario.
+  const PARIDAD={
+    '0':'LLLLLL','1':'LLGLGG','2':'LLGGLG','3':'LLGGGL','4':'LGLLGG',
+    '5':'LGGLLG','6':'LGGGLL','7':'LGLGLG','8':'LGLGGL','9':'LGGLGL'
+  };
+  // Acepta 12 (UPC-A sin el 0 inicial) o 13 dígitos numéricos.
+  function normalizar(codigo){
+    let c=String(codigo||'').replace(/\D/g,'');
+    if(c.length===12)c='0'+c;
+    return /^\d{13}$/.test(c)?c:null;
+  }
+  function esValido(codigo){return !!normalizar(codigo);}
+  // Nunca se recalcula el dígito verificador: se dibujan literalmente los 13 dígitos que ya
+  // tiene el producto, para no arriesgarse a imprimir un código distinto al que usa Loyverse.
+  function svg(codigo,alto){
+    alto=alto||40;
+    const c=normalizar(codigo);
+    if(!c)return '';
+    const patronParidad=PARIDAD[c[0]];
+    let modulos='101'; // guarda de inicio
+    for(let i=0;i<6;i++)modulos+=(patronParidad[i]==='L'?L:G)[c[1+i]];
+    modulos+='01010'; // guarda central
+    for(let i=0;i<6;i++)modulos+=R[c[7+i]];
+    modulos+='101'; // guarda de fin
+    const barras=[];
+    for(let x=0;x<modulos.length;x++){
+      if(modulos[x]==='1')barras.push(`<rect x="${x}" y="0" width="1" height="${alto}"/>`);
+    }
+    return `<svg viewBox="0 0 ${modulos.length} ${alto}" preserveAspectRatio="none" style="width:100%;height:100%;display:block">${barras.join('')}</svg>`;
+  }
+  return {svg,esValido};
+})();
+// Elige la simbología correcta según el código: EAN-13 para códigos de fábrica reales (12-13
+// dígitos numéricos, el caso normal de casi todos los productos), Code 39 como respaldo para
+// SKU internas cortas alfanuméricas (donde el problema de ancho de arriba no aplica).
+function etBarcodeSvg(codigo,alto){
+  return EAN13.esValido(codigo)?EAN13.svg(codigo,alto):Barcode39.svg(codigo,alto);
+}
+
 const ET_TAMANO_LS_KEY='et_tamano_etiqueta_v1';
+// Tabla única (en mm) de tamaños de texto — la usan tanto la vista previa (multiplicada por
+// mmPx) como la impresión (directo en mm), para que nunca se puedan desincronizar.
+const ET_TEXTO_PRESETS={
+  pequeno:{nom:1.9,precio:2.3,cod:1.4},
+  normal:{nom:2.5,precio:2.9,cod:2.0},
+  grande:{nom:3.0,precio:3.4,cod:2.4}
+};
 const etState={item:null};
 function etFindItems(q){
   q=(q||'').toLowerCase().trim();
@@ -10734,14 +10811,16 @@ async function etImportarFechaVencimiento(ref){
 function etCargarTamano(){
   try{
     const raw=localStorage.getItem(ET_TAMANO_LS_KEY);
-    if(raw){const d=JSON.parse(raw);if(d&&d.ancho&&d.alto)return d;}
+    if(raw){const d=JSON.parse(raw);if(d&&d.ancho&&d.alto)return {ancho:d.ancho,alto:d.alto,texto:ET_TEXTO_PRESETS[d.texto]?d.texto:'normal'};}
   }catch(e){}
-  return {ancho:58,alto:15}; // rollo autoadhesivo 58mm de la tiquetera, 1.5cm de alto por defecto
+  return {ancho:58,alto:15,texto:'normal'}; // rollo autoadhesivo 58mm de la tiquetera, 1.5cm de alto por defecto
 }
 function etGuardarTamano(){
   const ancho=Number(document.getElementById('et-ancho').value)||58;
   const alto=Number(document.getElementById('et-alto').value)||15;
-  try{localStorage.setItem(ET_TAMANO_LS_KEY,JSON.stringify({ancho,alto}));}catch(e){}
+  const selBtn=document.querySelector('#et-texto button.sel');
+  const texto=(selBtn&&ET_TEXTO_PRESETS[selBtn.dataset.t])?selBtn.dataset.t:'normal';
+  try{localStorage.setItem(ET_TAMANO_LS_KEY,JSON.stringify({ancho,alto,texto}));}catch(e){}
 }
 // Vista previa: usa LOS MISMOS datos (nombre/precio/código/fecha) y el mismo Barcode39.svg que
 // después arma etImprimir() — así lo que se ve acá es exactamente lo que sale impreso.
@@ -10753,10 +10832,16 @@ function etRenderPreview(){
   const label=document.getElementById('et-preview-label');
   label.style.width=(ancho*mmPx)+'px';
   label.style.height=(alto*mmPx)+'px';
+  const selBtn=document.querySelector('#et-texto button.sel');
+  const preset=ET_TEXTO_PRESETS[selBtn&&selBtn.dataset.t]||ET_TEXTO_PRESETS.normal;
+  document.getElementById('et-p-nom').style.fontSize=(preset.nom*mmPx)+'px';
+  document.getElementById('et-p-precio').style.fontSize=(preset.precio*mmPx)+'px';
+  document.getElementById('et-p-cod').style.fontSize=(preset.cod*mmPx)+'px';
+  document.getElementById('et-p-fecha').style.fontSize=(preset.cod*mmPx)+'px';
   document.getElementById('et-p-nom').textContent=it?it.nombre:'—';
   document.getElementById('et-p-precio').textContent=it&&it.precio!=null?peso(it.precio):'—';
   const codigo=it?etCodigoDe(it):'';
-  document.getElementById('et-p-bc').innerHTML=codigo?Barcode39.svg(codigo,28):'';
+  document.getElementById('et-p-bc').innerHTML=codigo?etBarcodeSvg(codigo,28):'';
   document.getElementById('et-p-cod').textContent=codigo||'—';
   const dd=document.getElementById('et-fecha-dd').value,mm=document.getElementById('et-fecha-mm').value,aa=document.getElementById('et-fecha-aaaa').value;
   const fechaEl=document.getElementById('et-p-fecha');
@@ -10785,6 +10870,7 @@ function etReset(){
   const t=etCargarTamano();
   document.getElementById('et-ancho').value=t.ancho;
   document.getElementById('et-alto').value=t.alto;
+  document.querySelectorAll('#et-texto button').forEach(b=>b.classList.toggle('sel',b.dataset.t===t.texto));
   etRenderPreview();
   etValidar();
 }
@@ -10807,13 +10893,15 @@ function etImprimir(){
   const fechaTxt=(dd.length===2&&mm.length===2&&aa.length===2)?('Vence: '+dd+'/'+mm+'/20'+aa):'';
   const nomEsc=(it.nombre||'').replace(/</g,'&lt;');
   const precioTxt=it.precio!=null?peso(it.precio):'';
+  const selBtn=document.querySelector('#et-texto button.sel');
+  const preset=ET_TEXTO_PRESETS[selBtn&&selBtn.dataset.t]||ET_TEXTO_PRESETS.normal;
   const unaEtiqueta=`
     <div class="et-label">
       <div class="et-top">
         <div class="et-nom">${nomEsc}</div>
         ${precioTxt?`<div class="et-precio">${precioTxt}</div>`:''}
       </div>
-      ${codigo?`<div class="et-bc">${Barcode39.svg(codigo,7)}</div>`:''}
+      ${codigo?`<div class="et-bc">${etBarcodeSvg(codigo,7)}</div>`:''}
       <div class="et-bottom">
         ${codigo?`<div class="et-cod">${codigo}</div>`:''}
         ${fechaTxt?`<div class="et-fecha">${fechaTxt}</div>`:''}
@@ -10827,15 +10915,15 @@ function etImprimir(){
     @page{size:${ancho}mm ${alto}mm;margin:0}
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:Arial,Helvetica,sans-serif}
-    .et-label{width:${ancho}mm;height:${alto}mm;border:0.4mm solid #000;padding:0.6mm 1mm;display:flex;flex-direction:column;overflow:hidden;page-break-after:always}
+    .et-label{width:${ancho}mm;height:${alto}mm;border:0.4mm solid #000;border-radius:1.2mm;padding:0.6mm 1mm;display:flex;flex-direction:column;overflow:hidden;page-break-after:always}
     .et-label:last-child{page-break-after:auto}
     .et-top{display:flex;justify-content:space-between;align-items:baseline;gap:1mm;flex:none}
-    .et-nom{font-size:2.2mm;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1;line-height:1.15}
-    .et-precio{font-size:2.6mm;font-weight:800;line-height:1.15;flex:none}
+    .et-nom{font-size:${preset.nom}mm;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1;line-height:1.15}
+    .et-precio{font-size:${preset.precio}mm;font-weight:800;line-height:1.15;flex:none}
     .et-bc{flex:1;min-height:0;width:97%;margin:0.4mm auto}
     .et-bottom{display:flex;justify-content:space-between;align-items:center;gap:1mm;flex:none}
-    .et-cod{font-size:1.6mm;font-family:monospace;letter-spacing:.3px;line-height:1.1}
-    .et-fecha{font-size:1.6mm;line-height:1.1}
+    .et-cod{font-size:${preset.cod}mm;font-family:monospace;letter-spacing:.3px;line-height:1.1}
+    .et-fecha{font-size:${preset.cod}mm;line-height:1.1}
     </style></head><body>${unaEtiqueta.repeat(cantidad)}</body></html>`;
   const iframe=document.createElement('iframe');
   iframe.style.position='fixed';iframe.style.right='0';iframe.style.bottom='0';
@@ -10872,6 +10960,12 @@ document.getElementById('et-qty-mas').onclick=()=>{const i=document.getElementBy
 document.getElementById('et-cantidad').oninput=etValidar;
 document.getElementById('et-ancho').oninput=()=>{etGuardarTamano();etRenderPreview();};
 document.getElementById('et-alto').oninput=()=>{etGuardarTamano();etRenderPreview();};
+document.querySelectorAll('#et-texto button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#et-texto button').forEach(x=>x.classList.remove('sel'));
+  b.classList.add('sel');
+  etGuardarTamano();
+  etRenderPreview();
+});
 wireFechaSegmentada('et-fecha-dd','et-fecha-mm','et-fecha-aaaa','et-fecha','et-fecha-cal');
 ['et-fecha-dd','et-fecha-mm','et-fecha-aaaa'].forEach(id=>document.getElementById(id).addEventListener('input',etRenderPreview));
 document.getElementById('et-imprimir').onclick=etImprimir;
