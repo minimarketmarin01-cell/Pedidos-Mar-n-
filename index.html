@@ -2452,7 +2452,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <!-- Guardar/Cancelar fuera de .mm-body (que scrollea) — quedan siempre visibles
              abajo, sin depender de hasta dónde haya bajado el usuario. El botón Guardar
              solo aparece cuando ya hay un producto elegido (ver rc-detalle arriba). -->
-        <div style="padding:8px 16px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--line);flex:none">
+        <div id="rc-footer" style="padding:8px 16px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--line);flex:none;background:var(--card)">
           <button class="mm-save hidden" id="rc-guardar" disabled style="padding:11px">Guardar y sumar stock</button>
           <button class="loadbtn" id="rc-cancelar" style="width:100%;margin-top:6px;padding:9px">Cancelar</button>
         </div>
@@ -13460,6 +13460,61 @@ function closeRecibir(){
 
 document.getElementById('btn-recibir').onclick=openRecibir;
 document.getElementById('rc-cancelar').onclick=closeRecibir;
+// ===================== Recepción: "Guardar" siempre visible sobre el teclado =====================
+// #rc-ov es position:fixed;inset:0 con altura 100% del layout viewport; el footer #rc-footer
+// (Guardar/Cancelar) queda pegado a su fondo por flexbox — eso YA lo mantiene visible y respeta
+// safe-area-inset-bottom cuando NO hay teclado (ese caso no se toca, ya funciona bien). El
+// problema es solo con el teclado abierto: en Android moderno el layout viewport no se achica
+// (solo el visualViewport sí), así que el footer queda tapado detrás del teclado. Se corrige
+// reubicándolo con position:fixed justo encima del solape, y se restaura apenas el teclado se
+// cierra. Se autoverifica en cada evento si #rc-ov sigue abierto, así que un solo listener de
+// por vida de la página alcanza — no hace falta engancharse a cada open/close del modal (hay
+// varios puntos de entrada/salida) ni desconectar nada.
+(function(){
+  var vv=window.visualViewport;
+  var footerEl=null,bodyEl=null,basePB=null,rafId=null;
+
+  function rcOvAbierto(){
+    var ov=document.getElementById('rc-ov');
+    return !!ov&&!ov.classList.contains('hidden');
+  }
+  function restaurar(){
+    if(footerEl){
+      footerEl.style.position='';footerEl.style.left='';footerEl.style.right='';
+      footerEl.style.bottom='';footerEl.style.zIndex='';
+    }
+    if(bodyEl&&basePB!==null){bodyEl.style.paddingBottom=basePB;basePB=null;}
+  }
+  function ajustar(){
+    rafId=null;
+    if(!rcOvAbierto()){restaurar();return;}
+    footerEl=footerEl||document.getElementById('rc-footer');
+    bodyEl=bodyEl||document.querySelector('#rc-ov .mm-body');
+    if(!footerEl)return;
+    var solape=vv?Math.max(0,Math.round(window.innerHeight-(vv.height+vv.offsetTop))):0;
+    if(solape>150){ // umbral alto a propósito: ignora la barra de URL/nav (~50-60px), solo reacciona al teclado
+      if(basePB===null)basePB=bodyEl?bodyEl.style.paddingBottom:'';
+      footerEl.style.position='fixed';footerEl.style.left='0';footerEl.style.right='0';
+      footerEl.style.bottom=solape+'px';footerEl.style.zIndex='5';
+      if(bodyEl)bodyEl.style.paddingBottom=(footerEl.offsetHeight+16)+'px';
+    } else {
+      restaurar();
+    }
+  }
+  function programarAjuste(){
+    if(rafId)return; // evita apilar trabajo si resize+scroll de visualViewport llegan casi juntos
+    rafId=requestAnimationFrame(ajustar);
+  }
+  if(vv){
+    vv.addEventListener('resize',programarAjuste);
+    vv.addEventListener('scroll',programarAjuste);
+  } else {
+    // Sin visualViewport (navegador viejo/Bliss OS antiguo): ahí el propio window SÍ se achica
+    // con el teclado, así que el flexbox existente ya lo resuelve — solo se limpia cualquier
+    // estilo fijo que hubiera quedado de una ejecución previa.
+    window.addEventListener('resize',function(){if(rcOvAbierto())restaurar();});
+  }
+})();
 // Restaura costo/cantidad/fecha que el usuario ya había escrito en Recepción antes de irse
 // a crear el producto — se usa tanto si cancela como si guarda con éxito.
 function rcRestaurarPendiente(refNuevo){
