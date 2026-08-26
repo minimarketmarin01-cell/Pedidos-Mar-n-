@@ -3053,14 +3053,15 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <button type="button" class="fc-tab-btn active" id="gp-tab-gestionar" data-gp-modo="gestionar">Proveedores</button>
           <button type="button" class="fc-tab-btn" id="gp-tab-config" data-gp-modo="config">Configuración</button>
         </div>
-        <div id="gp-nuevo-box" style="display:flex;gap:8px;margin-bottom:12px">
-          <input id="gp-nuevo-nombre" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
-          <button class="btn-ok loadbtn" id="gp-nuevo-crear" type="button" style="white-space:nowrap"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Crear</button>
-        </div>
         <div id="gp-tab-hint" class="cat hidden" style="margin:-4px 0 12px">Elige un proveedor para configurar el mínimo de pedido de sus productos.</div>
+        <!-- Buscador + crear fusionados en un solo cuadro: el mismo campo filtra la lista en
+             vivo, y el botón de la derecha cambia solo — "×" para limpiar si el texto coincide
+             con algún proveedor existente, "+ Crear" si no coincide con ninguno (nunca se
+             muestran los dos juntos, comparten la misma posición). Ver _gpFiltrarProveedores(). -->
         <div class="mm-search" style="margin:0 0 10px">
-          <input id="gp-search" placeholder="Buscar proveedor…" autocomplete="off" style="padding-right:44px">
+          <input id="gp-search" placeholder="Buscar o crear proveedor…" autocomplete="off" style="padding-right:80px">
           <button class="mm-x" id="gp-x" type="button" aria-label="Limpiar" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          <button class="btn-ok loadbtn" id="gp-crear" type="button" style="display:none;position:absolute;top:50%;right:6px;transform:translateY(-50%);padding:6px 10px;font-size:12px;white-space:nowrap;z-index:2"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Crear</button>
         </div>
         <div id="gp-lista"><div class="vc-empty">Cargando…</div></div>
         <div id="gp-reasignar-box" class="hidden" style="margin-top:12px;padding:12px;border:1.5px solid var(--ambar);border-radius:10px;background:var(--ambar-bg)">
@@ -4505,7 +4506,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-25.8';
+const APP_VERSION='2026-08-25.9';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -7300,7 +7301,6 @@ function _gpCambiarModo(modo){
   _gpModo=modo;
   document.getElementById('gp-tab-gestionar').classList.toggle('active',modo==='gestionar');
   document.getElementById('gp-tab-config').classList.toggle('active',modo==='config');
-  document.getElementById('gp-nuevo-box').classList.toggle('hidden',modo==='config');
   document.getElementById('gp-tab-hint').classList.toggle('hidden',modo!=='config');
   if(_gpCargado)_gpFiltrarProveedores();
 }
@@ -7315,6 +7315,7 @@ function gpAbrir(){
   _gpCargado=false;   // fuerza una carga fresca cada vez que se abre el módulo desde cero
   document.getElementById('gp-search').value='';
   document.getElementById('gp-x').style.display='none';
+  document.getElementById('gp-crear').style.display='none';
   // Recuerda desde dónde se abrió el módulo (Inicio o Pedidos), para que el retroceso final
   // (Lista de proveedores → pantalla anterior) vuelva ahí — antes siempre caía a Pedidos sin
   // importar el origen real, porque cerrarModal() usa 'pedido' como destino genérico para
@@ -7326,7 +7327,6 @@ function gpAbrir(){
   // en cada apertura) — solo refleja el estado visual, gpRender() ya lo hace correcto.
   document.getElementById('gp-tab-gestionar').classList.toggle('active',_gpModo==='gestionar');
   document.getElementById('gp-tab-config').classList.toggle('active',_gpModo==='config');
-  document.getElementById('gp-nuevo-box').classList.toggle('hidden',_gpModo==='config');
   document.getElementById('gp-tab-hint').classList.toggle('hidden',_gpModo!=='config');
   abrirModal('gp-ov');
   _gpMostrarNivel('proveedores');
@@ -7430,15 +7430,33 @@ function _gpFiltrarProveedores(){
   // reportó que escribir en el buscador mientras cargaba dejaba la pantalla atascada
   // mostrando "Todavía no hay proveedores creados" sin forma de reintentar.
   if(!_gpCargado)return;
-  const q=normTxt((document.getElementById('gp-search').value||'').trim());
-  document.getElementById('gp-x').style.display=q?'flex':'none';
-  gpRender(q?_gpLista.filter(p=>normTxt(p.nombre).includes(q)):_gpLista);
+  const raw=(document.getElementById('gp-search').value||'').trim();
+  const q=normTxt(raw);
+  const filtrada=q?_gpLista.filter(p=>normTxt(p.nombre).includes(q)):_gpLista;
+  gpRender(filtrada);
+  // El botón de la derecha del buscador cambia solo entre "×" (limpiar) y "+ Crear" — nunca se
+  // muestran los dos juntos. "+ Crear" solo aparece cuando lo escrito no coincide con NINGÚN
+  // proveedor existente (ni siquiera parcial — si hay resultados filtrados, se sigue navegando
+  // esa lista con "×" para limpiar) y en la pestaña "Proveedores" (en "Configuración" no tiene
+  // sentido crear uno nuevo, mismo criterio que antes ocultaba el cuadro de crear separado ahí).
+  const sinCoincidencias=!!q&&filtrada.length===0;
+  const mostrarCrear=_gpModo==='gestionar'&&sinCoincidencias;
+  document.getElementById('gp-x').style.display=(raw&&!mostrarCrear)?'flex':'none';
+  document.getElementById('gp-crear').style.display=mostrarCrear?'flex':'none';
 }
 document.getElementById('gp-search').addEventListener('input',_gpFiltrarProveedores);
 document.getElementById('gp-search').addEventListener('keyup',_gpFiltrarProveedores);
+forzarMayusculaInput(document.getElementById('gp-search'));
+document.getElementById('gp-search').addEventListener('keydown',ev=>{
+  if(ev.key==='Enter'&&document.getElementById('gp-crear').style.display!=='none'){
+    ev.preventDefault();
+    document.getElementById('gp-crear').click();
+  }
+});
 document.getElementById('gp-x').onclick=()=>{
   document.getElementById('gp-search').value='';
   document.getElementById('gp-x').style.display='none';
+  document.getElementById('gp-crear').style.display='none';
   if(_gpCargado)gpRender();
 };
 // ==== Nivel 2 — Productos del proveedor ====
@@ -7775,14 +7793,16 @@ async function gpConfirmarEliminacion(modo){
     }else showToast(''+((j&&j.error)||'No se pudo eliminar'));
   }catch(e){showToast('Error de conexión al eliminar');}
 }
-document.getElementById('gp-nuevo-crear').onclick=async()=>{
-  const inp=document.getElementById('gp-nuevo-nombre');
+document.getElementById('gp-crear').onclick=async()=>{
+  const inp=document.getElementById('gp-search');
   const nombre=(inp.value||'').trim();
   if(!nombre){showToast('Escribe el nombre del proveedor');return;}
-  const btn=document.getElementById('gp-nuevo-crear');btn.disabled=true;
+  const btn=document.getElementById('gp-crear');btn.disabled=true;
   try{
     const prov=await psCrearProveedorInline(nombre);
     inp.value='';
+    document.getElementById('gp-crear').style.display='none';
+    document.getElementById('gp-x').style.display='none';
     showToast('Proveedor creado: '+prov.nombre);
     gpCargar();
   }catch(e){showToast(''+e.message);}
