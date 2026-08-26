@@ -4505,7 +4505,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-25.7';
+const APP_VERSION='2026-08-25.8';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -7467,8 +7467,35 @@ function gpRenderProductos(lista){
   cont.innerHTML=lista.map(it=>`
     <div class="fp-row" data-gp-prod-ref="${it.ref}" style="cursor:pointer">
       <span class="k">${it.nombre}</span>
-      <span class="v" style="color:var(--muted);font-size:11.5px">${gpStockTxt(it)}</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="v" style="color:var(--muted);font-size:11.5px">${gpStockTxt(it)}</span>
+        <button type="button" class="mc-dr-eliminar" data-gp-prod-eliminar="${it.ref}" data-id="${it.id||''}" title="Eliminar producto"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
+      </div>
     </div>`).join('');
+}
+// Copia casi textual de rkEliminarProducto (index.html:6896) — mismo guard de id de Loyverse,
+// mismo timeout, mismo payload eliminar_productos. Única diferencia real: al terminar OK filtra
+// _gpProdListaCompleta (la lista en memoria de este proveedor) y repinta esta pantalla en vez de
+// rkRender(), para que la fila desaparezca sin tener que volver a entrar al proveedor.
+async function gpEliminarProducto(ref,id,nombre,fila){
+  if(!id){showToast('Este producto no tiene id de Loyverse — sincroniza con Catálogo antes de eliminarlo');return;}
+  if(fila)fila.style.opacity='.5';
+  const ctrl=new AbortController();
+  const to=setTimeout(()=>ctrl.abort(),45000);
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'eliminar_productos',payload:{items:[{sku:ref,id,nombre}]}}),signal:ctrl.signal});
+    const j=await res.json();
+    const r=j&&j.resultados&&j.resultados[0];
+    if(!j||!j.ok||!r||!r.ok)throw new Error((r&&r.error)||(j&&j.error)||'No se pudo eliminar');
+    showToast('"'+nombre+'" eliminado de Loyverse y de la webapp');
+    DB.items=(DB.items||[]).filter(it=>it.ref!==ref);
+    persist();
+    _gpProdListaCompleta=(_gpProdListaCompleta||[]).filter(it=>it.ref!==ref);
+    gpRenderProductos(_gpProdListaCompleta);
+  }catch(e){
+    showToast(e.name==='AbortError'?'Tardó demasiado en responder — revisa si se eliminó antes de reintentar':(''+e.message));
+    if(fila)fila.style.opacity='';
+  }finally{clearTimeout(to);}
 }
 // Stock actual del producto, mismo dato que ya usa toda la app (it.stock/it.track) — sin
 // pasar por el formateador regional de miles (fmt, es-CL) porque ese usa coma decimal
@@ -7539,6 +7566,22 @@ document.getElementById('fp-pane-minimo').addEventListener('click',_gpCfgOnClick
 document.getElementById('fp-pane-minimo').addEventListener('change',_gpCfgOnChange);
 document.getElementById('gp-prod-lista').addEventListener('click',ev=>{
   if(_gpModo==='config'){_gpCfgOnClick(ev);return;}
+  const btnDel=ev.target.closest('[data-gp-prod-eliminar]');
+  if(btnDel){
+    ev.preventDefault();ev.stopPropagation();
+    const ref=btnDel.dataset.gpProdEliminar,id=btnDel.dataset.id;
+    const it=DB.items.find(x=>x.ref===ref);
+    const nombre=it?it.nombre:ref;
+    const fila=btnDel.closest('.fp-row');
+    confirmarAccion({
+      titulo:'Eliminar producto',
+      mensaje:'Se eliminará "'+nombre+'" de Loyverse y de la webapp de forma permanente. Esta acción no se puede deshacer.',
+      textoConfirmar:'Eliminar definitivamente',
+      peligro:true,
+      onConfirm:()=>gpEliminarProducto(ref,id,nombre,fila)
+    });
+    return;
+  }
   const fila=ev.target.closest('[data-gp-prod-ref]');
   if(!fila)return;
   // Nivel 2 → Nivel 3: reutiliza fpAbrir/fp-ov tal cual (mismo editor que el resto de la
