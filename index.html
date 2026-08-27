@@ -4518,7 +4518,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-25.15';
+const APP_VERSION='2026-08-25.16';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -5684,6 +5684,7 @@ function fpPaneGeneral(f){
       '</div>'+
       '<div id="fp-fondo-resultado-box" class="hidden" style="margin-top:9px;padding:10px;border:1.5px solid var(--wa);border-radius:10px;background:var(--exito-bg)">'+
         '<img id="fp-fondo-resultado-img" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#fff;display:block;margin-bottom:8px;border:1px solid var(--line)">'+
+        htmlAjustesFoto('fp')+
         '<div style="display:flex;gap:8px">'+
           '<button type="button" id="fp-fondo-aplicar" class="btn-confirmar-img"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg> Aplicar al producto</button>'+
           '<button type="button" id="fp-fondo-descartar" style="padding:9px 14px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12.5px;cursor:pointer">Descartar</button>'+
@@ -5775,7 +5776,12 @@ function fpPaneGeneral(f){
       }
     }catch(e){showToast('No se pudo procesar esa imagen');}
   });
-  let _fpFotoTomadaB64=null,_fpFondoResultadoB64=null;
+  let _fpFotoTomadaB64=null,_fpFondoResultadoB64=null,_fpFondoCanvasBase=null;
+  const _fpAjustesFotoUI=wireAjustesFotoProducto('fp',ajustes=>{
+    if(!_fpFondoCanvasBase)return;
+    _fpFondoResultadoB64=aplicarAjusteColorProducto(_fpFondoCanvasBase,ajustes);
+    document.getElementById('fp-fondo-resultado-img').src='data:image/png;base64,'+_fpFondoResultadoB64;
+  });
   document.getElementById('fp-img-camara-btn').onclick=()=>document.getElementById('fp-img-camara').click();
   document.getElementById('fp-img-camara').addEventListener('change',async(ev)=>{
     const file=ev.target.files&&ev.target.files[0];
@@ -5804,10 +5810,12 @@ function fpPaneGeneral(f){
       document.getElementById('fp-fondo-procesando').classList.add('hidden');
       if(j&&j.ok&&j.image_base64){
         try{
-          const mejorada=await mejorarImagenProducto(j.image_base64,j.content_type);
-          _fpFondoResultadoB64=mejorada;
-          document.getElementById('fp-fondo-resultado-img').src='data:image/png;base64,'+mejorada;
+          _fpFondoCanvasBase=await prepararLienzoBaseProducto(j.image_base64,j.content_type);
+          _fpAjustesFotoUI.restablecer();
+          _fpFondoResultadoB64=aplicarAjusteColorProducto(_fpFondoCanvasBase,AJUSTAR_FOTO_DEFAULT);
+          document.getElementById('fp-fondo-resultado-img').src='data:image/png;base64,'+_fpFondoResultadoB64;
         }catch(e){
+          _fpFondoCanvasBase=null;
           _fpFondoResultadoB64=j.image_base64;
           document.getElementById('fp-fondo-resultado-img').src='data:'+(j.content_type||'image/png')+';base64,'+j.image_base64;
         }
@@ -5823,7 +5831,7 @@ function fpPaneGeneral(f){
     }
   };
   document.getElementById('fp-fondo-descartar').onclick=()=>{
-    _fpFondoResultadoB64=null;_fpFotoTomadaB64=null;
+    _fpFondoResultadoB64=null;_fpFotoTomadaB64=null;_fpFondoCanvasBase=null;
     document.getElementById('fp-fondo-resultado-box').classList.add('hidden');
   };
   document.getElementById('fp-fondo-aplicar').onclick=async()=>{
@@ -5836,7 +5844,7 @@ function fpPaneGeneral(f){
       if(j&&j.ok){
         showToast('Imagen (fondo blanco) subida a Loyverse');
         document.getElementById('fp-fondo-resultado-box').classList.add('hidden');
-        _fpFondoResultadoB64=null;_fpFotoTomadaB64=null;
+        _fpFondoResultadoB64=null;_fpFotoTomadaB64=null;_fpFondoCanvasBase=null;
         const existente=document.getElementById('fp-img-actual');
         if(existente)existente.src=j.imagen_url; else fpAbrir(p.sku);
       }else{
@@ -8278,15 +8286,14 @@ function cpReset(){
 var _cpImagenUrl=null;
 var _cpImagenBase64=null; // imagen elegida desde la galería (ya comprimida), alternativa a _cpImagenUrl
 var _cpImagenContentType='image/jpeg'; // tipo real de _cpImagenBase64: jpeg (galería) o png (quitar fondo + mejorar)
-// Mejora una foto de producto con fondo blanco (resultado de remove.bg): sube ligeramente
-// contraste y saturación (colores del producto más vivos, sin quemar el blanco de fondo) y
-// agrega una sombra proyectada suave debajo del producto — mismo efecto visual que catálogos
-// de e-commerce. Todo con Canvas, sin servicios externos ni costo. Recibe base64 SIN el
-// prefijo data:..., devuelve base64 PNG también sin prefijo.
-// Prepara la foto final de catálogo a partir del PNG ya recortado por remove.bg (con
-// transparencia REAL — ver accionQuitarFondoProducto en el Worker, que ya no le pide a
-// remove.bg que rellene el fondo, precisamente para que este paso pueda leer el canal alpha
-// real y trabajar con precisión). Pasos, en orden:
+// Prepara el lienzo BASE de una foto de producto con fondo blanco (resultado de remove.bg):
+// recorte exacto + centrado + fondo blanco + sombra proyectada suave — mismo efecto visual que
+// catálogos de e-commerce, todo con Canvas, sin servicios externos ni costo. NO incluye
+// todavía la corrección de color (contraste/saturación/brillo): eso es un paso aparte
+// (aplicarAjusteColorProducto, más abajo) para que los sliders manuales de brillo/contraste/
+// color puedan reaplicar solo ese último paso, liviano, sin repetir el recorte cada vez que el
+// usuario mueve un control. Recibe base64 SIN el prefijo data:..., devuelve un <canvas>.
+// Pasos, en orden:
 //   1) Detecta la caja delimitadora exacta del producto (bbox de píxeles no transparentes)
 //      — esto es lo que permite recortar SIN perder ningún borde ni detalle fino: no se
 //      basa en un margen fijo, sino en dónde realmente termina el producto en cada lado.
@@ -8295,13 +8302,21 @@ var _cpImagenContentType='image/jpeg'; // tipo real de _cpImagenBase64: jpeg (ga
 //   3) Fondo blanco puro (#FFFFFF) sólido detrás.
 //   4) Sombra elíptica suave y difuminada, apoyada justo debajo del producto (no un halo
 //      parejo alrededor de todo el contorno).
-//   5) Corrección de imagen: contraste, saturación, brillo, y un afinado leve de nitidez
-//      (unsharp mask simplificado) — sin alterar la forma, el color base ni las proporciones.
 // Si por cualquier motivo el recorte de remove.bg no trae transparencia utilizable (bbox
 // degenerado, imagen completamente opaca), se hace un segundo intento con un umbral de alpha
 // más permisivo antes de rendirse y usar la imagen completa tal cual llegó — nunca deja al
 // usuario sin resultado.
-function mejorarImagenProducto(base64PNG,contentType){
+// Ajustes de color por defecto (aplicados automáticamente al procesar cada foto) — mismos
+// valores que antes vivían fijos dentro del filtro; ahora también son el punto de partida de
+// los sliders manuales (ver AJUSTAR_FOTO_DEFAULT/aplicarAjusteColorProducto más abajo), y el
+// botón "↺ Restablecer automático" vuelve exactamente a estos valores.
+const AJUSTAR_FOTO_DEFAULT={contraste:118,saturacion:135,brillo:118};
+// Prepara el lienzo base de catálogo (recorte exacto por bbox + centrado ~85% + fondo blanco +
+// sombra), SIN aplicar todavía la corrección de color — separado de aplicarAjusteColorProducto
+// para que los sliders manuales de brillo/contraste/color puedan reaplicar solo el filtro de
+// color en vivo mientras el usuario mueve un control, sin repetir el recorte/sombra (que sí
+// tiene un costo real: recorre cada píxel del canvas para calcular el bbox) en cada movimiento.
+function prepararLienzoBaseProducto(base64PNG,contentType){
   return new Promise((resolve,reject)=>{
     const img=new Image();
     img.onload=()=>{
@@ -8377,36 +8392,94 @@ function mejorarImagenProducto(base64PNG,contentType){
         // rectángulo real donde hay contenido, ni un píxel más ni uno menos) y centrado.
         ctx.drawImage(img,bbox.minX,bbox.minY,anchoProd,altoProd,destX,destY,destW,destH);
 
-        // ---- Corrección de imagen: contraste, saturación, brillo/exposición y un afinado de
-        // nitidez leve — recompuesto en un segundo canvas porque Canvas no permite aplicar
-        // "filter" retroactivamente sobre lo ya pintado (incluida la sombra). Valores subidos
-        // de nuevo (contrast 1.15→1.18, saturate 1.22→1.35, brightness 1.10→1.18) — reportado
-        // que las fotos seguían viéndose apagadas/oscuras tras la primera subida; esta ronda
-        // sube más la exposición y sobre todo la saturación (los colores del producto son lo
-        // que más se notaba plano), manteniendo el contraste con un incremento menor para no
-        // quemar el blanco de fondo ni las zonas ya claras del producto.
-        const canvas2=document.createElement('canvas');
-        canvas2.width=w;canvas2.height=h;
-        const ctx2=canvas2.getContext('2d');
-        ctx2.filter='contrast(1.18) saturate(1.35) brightness(1.18)';
-        ctx2.drawImage(canvas,0,0);
-
-        // Afinado de nitidez (unsharp mask simplificado): resta una versión desenfocada de la
-        // imagen a sí misma para realzar bordes, sin tocar el color base ni la forma — mismo
-        // principio que usan las apps de foto de producto profesionales.
-        try{
-          const nitida=aplicarNitidezSuave(ctx2,w,h);
-          resolve(nitida.split(',')[1]);
-        }catch(e){
-          // Si el afinado falla por cualquier motivo, se entrega igual el resultado sin ese
-          // último paso — nunca se bloquea el flujo completo por un detalle final.
-          resolve(canvas2.toDataURL('image/png',0.95).split(',')[1]);
-        }
+        resolve(canvas);
       }catch(e){reject(e);}
     };
     img.onerror=()=>reject(new Error('No se pudo procesar la imagen para mejorarla'));
     img.src='data:'+(contentType||'image/png')+';base64,'+base64PNG;
   });
+}
+// Corrección de imagen (contraste, saturación, brillo/exposición) + afinado de nitidez leve,
+// sobre un lienzo YA preparado por prepararLienzoBaseProducto — recompuesto en un segundo
+// canvas porque Canvas no permite aplicar "filter" retroactivamente sobre lo ya pintado
+// (incluida la sombra). `ajustes` son porcentajes tipo slider (100 = sin cambio; ver
+// AJUSTAR_FOTO_DEFAULT para los valores automáticos), separados de la fase de recorte para
+// que un control manual pueda reaplicar solo este paso, liviano, en cada movimiento.
+function aplicarAjusteColorProducto(canvasBase,ajustes){
+  const w=canvasBase.width,h=canvasBase.height;
+  const a=Object.assign({},AJUSTAR_FOTO_DEFAULT,ajustes||{});
+  const canvas2=document.createElement('canvas');
+  canvas2.width=w;canvas2.height=h;
+  const ctx2=canvas2.getContext('2d');
+  ctx2.filter='contrast('+(a.contraste/100)+') saturate('+(a.saturacion/100)+') brightness('+(a.brillo/100)+')';
+  ctx2.drawImage(canvasBase,0,0);
+  // Afinado de nitidez (unsharp mask simplificado): resta una versión desenfocada de la
+  // imagen a sí misma para realzar bordes, sin tocar el color base ni la forma — mismo
+  // principio que usan las apps de foto de producto profesionales.
+  try{
+    return aplicarNitidezSuave(ctx2,w,h).split(',')[1];
+  }catch(e){
+    // Si el afinado falla por cualquier motivo, se entrega igual el resultado sin ese último
+    // paso — nunca se bloquea el flujo completo por un detalle final.
+    return canvas2.toDataURL('image/png',0.95).split(',')[1];
+  }
+}
+// Markup de los 3 sliders de ajuste manual (brillo/contraste/color) + botón "Restablecer
+// automático" — reutilizado por Ficha de producto (inyectado inline en la plantilla de
+// fp-fondo-resultado-box) y Crear producto (inyectado una vez al cargar la página, después del
+// <img id="cp-fondo-resultado-img"> estático). Valores iniciales de los sliders = mismos
+// ajustes automáticos (AJUSTAR_FOTO_DEFAULT) que ya se aplican solos al procesar la foto.
+function htmlAjustesFoto(prefix){
+  const fila=(clave,etiqueta)=>
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'+
+      '<label style="font-size:11px;color:var(--muted);font-weight:700;width:60px;flex:none">'+etiqueta+'</label>'+
+      '<input type="range" min="50" max="200" value="'+AJUSTAR_FOTO_DEFAULT[clave]+'" id="'+prefix+'-adj-'+clave+'" style="flex:1;accent-color:var(--wa)">'+
+      '<span id="'+prefix+'-adj-'+clave+'-val" style="font-size:11px;color:var(--ink);font-family:\'JetBrains Mono\';width:38px;text-align:right;flex:none">'+AJUSTAR_FOTO_DEFAULT[clave]+'%</span>'+
+    '</div>';
+  return '<div style="margin-bottom:6px">'+
+    fila('brillo','Brillo')+fila('contraste','Contraste')+fila('saturacion','Color')+
+    '<button type="button" id="'+prefix+'-adj-reset" style="background:none;border:none;color:var(--wa-d);font-size:11px;font-weight:700;text-decoration:underline;cursor:pointer;padding:0">↺ Restablecer automático</button>'+
+  '</div>';
+}
+// Wiring genérico de los 3 sliders de ajuste manual (brillo/contraste/color) + botón
+// "↺ Restablecer automático" de la tarjeta de resultado (#<prefix>-fondo-resultado-box) —
+// reutilizado por Ficha de producto (prefix 'fp') y Crear producto (prefix 'cp'), mismo patrón
+// de foto en los dos flujos. onCambio(ajustes) es responsabilidad de cada llamador: recalcula
+// la imagen final a partir de SU lienzo base cacheado (prepararLienzoBaseProducto) y actualiza
+// su propio <img> de resultado y su variable _*FondoResultadoB64 — este wiring no toca eso,
+// solo lee los sliders y expone un helper para resetearlos al tomar una foto nueva.
+function wireAjustesFotoProducto(prefix,onCambio){
+  const claves=['brillo','contraste','saturacion'];
+  function leerAjustes(){
+    const a={};
+    claves.forEach(k=>{
+      const el=document.getElementById(prefix+'-adj-'+k);
+      a[k]=el?Number(el.value):AJUSTAR_FOTO_DEFAULT[k];
+    });
+    return a;
+  }
+  function actualizarEtiquetas(){
+    claves.forEach(k=>{
+      const el=document.getElementById(prefix+'-adj-'+k);
+      const lbl=document.getElementById(prefix+'-adj-'+k+'-val');
+      if(el&&lbl)lbl.textContent=el.value+'%';
+    });
+  }
+  function restablecer(){
+    claves.forEach(k=>{
+      const el=document.getElementById(prefix+'-adj-'+k);
+      if(el)el.value=AJUSTAR_FOTO_DEFAULT[k];
+    });
+    actualizarEtiquetas();
+  }
+  claves.forEach(k=>{
+    const el=document.getElementById(prefix+'-adj-'+k);
+    if(el)el.oninput=()=>{actualizarEtiquetas();onCambio(leerAjustes());};
+  });
+  const resetBtn=document.getElementById(prefix+'-adj-reset');
+  if(resetBtn)resetBtn.onclick=()=>{restablecer();onCambio(Object.assign({},AJUSTAR_FOTO_DEFAULT));};
+  actualizarEtiquetas();
+  return {restablecer};
 }
 // Afinado de nitidez simple (unsharp mask con un solo paso de blur): calcula una versión
 // desenfocada del lienzo actual y la resta ponderadamente del original para realzar bordes.
@@ -8483,7 +8556,16 @@ document.getElementById('cp-img-quitar').onclick=()=>{
 // Igual patrón que en la Ficha del producto, con la diferencia de que aquí el resultado NO
 // se sube solo a Loyverse (el producto todavía no existe) — queda guardado en _cpImagenBase64
 // y se sube junto con el resto de los datos cuando se toca "Crear producto".
-var _cpFotoTomadaB64=null,_cpFondoResultadoB64=null;
+var _cpFotoTomadaB64=null,_cpFondoResultadoB64=null,_cpFondoCanvasBase=null;
+// Sliders de ajuste manual (brillo/contraste/color): el bloque #cp-fondo-resultado-box es
+// estático en el HTML (el producto todavía no existe, no hay un fpPaneGeneral que lo repinte),
+// así que el markup se inyecta una sola vez acá, después del <img> de resultado.
+document.getElementById('cp-fondo-resultado-img').insertAdjacentHTML('afterend',htmlAjustesFoto('cp'));
+const _cpAjustesFotoUI=wireAjustesFotoProducto('cp',ajustes=>{
+  if(!_cpFondoCanvasBase)return;
+  _cpFondoResultadoB64=aplicarAjusteColorProducto(_cpFondoCanvasBase,ajustes);
+  document.getElementById('cp-fondo-resultado-img').src='data:image/png;base64,'+_cpFondoResultadoB64;
+});
 document.getElementById('cp-img-camara-btn').onclick=()=>document.getElementById('cp-img-camara').click();
 document.getElementById('cp-img-camara').addEventListener('change',async(ev)=>{
   const file=ev.target.files&&ev.target.files[0];
@@ -8512,10 +8594,12 @@ document.getElementById('cp-camara-confirmar').onclick=async()=>{
     document.getElementById('cp-fondo-procesando').classList.add('hidden');
     if(j&&j.ok&&j.image_base64){
       try{
-        const mejorada=await mejorarImagenProducto(j.image_base64,j.content_type);
-        _cpFondoResultadoB64=mejorada;
-        document.getElementById('cp-fondo-resultado-img').src='data:image/png;base64,'+mejorada;
+        _cpFondoCanvasBase=await prepararLienzoBaseProducto(j.image_base64,j.content_type);
+        _cpAjustesFotoUI.restablecer();
+        _cpFondoResultadoB64=aplicarAjusteColorProducto(_cpFondoCanvasBase,AJUSTAR_FOTO_DEFAULT);
+        document.getElementById('cp-fondo-resultado-img').src='data:image/png;base64,'+_cpFondoResultadoB64;
       }catch(e){
+        _cpFondoCanvasBase=null;
         _cpFondoResultadoB64=j.image_base64;
         document.getElementById('cp-fondo-resultado-img').src='data:'+(j.content_type||'image/png')+';base64,'+j.image_base64;
       }
@@ -8531,7 +8615,7 @@ document.getElementById('cp-camara-confirmar').onclick=async()=>{
   }
 };
 document.getElementById('cp-fondo-descartar').onclick=()=>{
-  _cpFondoResultadoB64=null;_cpFotoTomadaB64=null;
+  _cpFondoResultadoB64=null;_cpFotoTomadaB64=null;_cpFondoCanvasBase=null;
   document.getElementById('cp-fondo-resultado-box').classList.add('hidden');
 };
 document.getElementById('cp-fondo-usar').onclick=()=>{
@@ -8540,7 +8624,7 @@ document.getElementById('cp-fondo-usar').onclick=()=>{
   document.getElementById('cp-img-preview').src='data:image/png;base64,'+_cpFondoResultadoB64;
   document.getElementById('cp-img-elegida').classList.remove('hidden');
   document.getElementById('cp-fondo-resultado-box').classList.add('hidden');
-  _cpFondoResultadoB64=null;_cpFotoTomadaB64=null;
+  _cpFondoResultadoB64=null;_cpFotoTomadaB64=null;_cpFondoCanvasBase=null;
 };
 
 function cpSetVenta(v){
