@@ -2346,9 +2346,14 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
                 <button class="mm-scan cam-btn" id="rc-scan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
               </div>
               <div class="mm-picked" id="rc-picked">
-                <div class="nom" id="rc-nom">—</div>
-                <div class="cat" id="rc-cat">—</div>
-                <div class="cat" id="rc-stock" style="font-weight:700;color:var(--ink);margin-top:3px">Stock actual: —</div>
+                <div style="display:flex;gap:10px;align-items:flex-start">
+                  <img id="rc-img" class="card-thumb hidden" alt="">
+                  <div style="flex:1;min-width:0">
+                    <div class="nom" id="rc-nom">—</div>
+                    <div class="cat" id="rc-cat">—</div>
+                    <div class="cat" id="rc-stock" style="font-weight:700;color:var(--ink);margin-top:3px">Stock actual: —</div>
+                  </div>
+                </div>
                 <div class="mm-field hidden" id="rc-nombre-box" style="margin-top:6px">
                   <label>Corregir nombre del producto</label>
                   <div style="display:flex;gap:6px">
@@ -2398,6 +2403,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
                 <span class="unidad" id="rc-unidad">u</span>
                 <button class="qbtn rc-qty-hold" id="rc-qty-mas" type="button" style="height:100%">+</button>
               </div>
+              <div class="mm-costo-ok hidden" id="rc-stock-preview" style="margin-top:6px"></div>
               <div id="rc-caja-campos" class="hidden" style="display:flex;gap:8px;margin-top:6px">
                 <div style="flex:1">
                   <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:2px">UNIDADES POR CAJA</div>
@@ -4506,7 +4512,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-25.9';
+const APP_VERSION='2026-08-25.10';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -13123,6 +13129,18 @@ function rcShowPicked(it){
   document.getElementById('rc-cat').textContent=it.prov+(it.barcode?' · '+it.barcode:'');
   const stockTxt=(it.stock==null)?'sin control':(it.stock+(it.peso?' kg':' u'));
   document.getElementById('rc-stock').textContent='Stock actual: '+stockTxt;
+  // Imagen del producto (si el catálogo trae una) — solo referencia visual para no confundir
+  // productos parecidos al recepcionar; si no hay imagen o la URL falla, se oculta sin dejar
+  // un espacio vacío ni un ícono de reemplazo.
+  const rcImg=document.getElementById('rc-img');
+  if(it.imagen){
+    rcImg.onerror=()=>{rcImg.classList.add('hidden');};
+    rcImg.src=it.imagen;
+    rcImg.classList.remove('hidden');
+  }else{
+    rcImg.classList.add('hidden');
+    rcImg.removeAttribute('src');
+  }
   // Corregir nombre acá: igual que costo/precio (siempre editables sin importar el stock),
   // reutiliza la acción "editar_producto" ya existente — mismo trato, sin gate por stock.
   document.getElementById('rc-nombre-box').classList.remove('hidden');
@@ -13735,6 +13753,22 @@ function rcRenderResumen(){
     hint.innerHTML='<span style="color:var(--rojo)">Escribe las unidades por caja para calcular el total.</span>';
   }else{
     hint.textContent='';
+  }
+  // Previsualización "Stock actual → Después de recibir" — solo visual, no participa del
+  // guardado (rcGuardar sigue calculando el stock nuevo del lado del servidor, ver
+  // sumarStockFresco en el backend). Se apoya en el mismo cálculo de unidades reales
+  // (cant×uCaja en modo caja, cant solo en modo unidad) que ya usa el hint de arriba.
+  const preview=document.getElementById('rc-stock-preview');
+  if(preview){
+    const it=rcState.item;
+    const cantUnidades=rcState.modo==='caja'?(cant*uCaja):cant;
+    if(it&&it.stock!=null&&cantUnidades>0){
+      const u=it.peso?'kg':'u';
+      preview.innerHTML='Stock actual: <b>'+it.stock+' '+u+'</b> → Después de recibir: <b>'+(it.stock+cantUnidades)+' '+u+'</b>';
+      preview.classList.remove('hidden');
+    }else{
+      preview.classList.add('hidden');
+    }
   }
 }
 
