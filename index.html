@@ -2346,8 +2346,8 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
                 <button class="mm-scan cam-btn" id="rc-scan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
               </div>
               <div class="mm-picked" id="rc-picked">
-                <div style="display:flex;gap:10px;align-items:flex-start">
-                  <img id="rc-img" class="card-thumb hidden" alt="">
+                <div style="display:flex;gap:12px;align-items:center">
+                  <img id="rc-img" class="card-thumb hidden" alt="" style="width:100px;height:100px;object-fit:contain;border-radius:12px;flex:none">
                   <div style="flex:1;min-width:0">
                     <div class="nom" id="rc-nom">—</div>
                     <div class="cat" id="rc-cat">—</div>
@@ -4512,7 +4512,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-25.10';
+const APP_VERSION='2026-08-25.11';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
