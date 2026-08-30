@@ -4341,7 +4341,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-25.18';
+const APP_VERSION='2026-08-25.19';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -11130,6 +11130,7 @@ document.getElementById('rneg-cerrar').onclick=()=>document.getElementById('rneg
 // ===================== HISTORIAL DE MERMAS =====================
 const MOTIVO_LBL={liquidado:'Liquidado',vencido:'Vencido',dañado:'Dañado',robo:'Robo',consumo_interno:'Consumo interno',cambio_proveedor:'Cambio c/ proveedor',otro:'Otro'};
 let _hmTodos=[];   // historial completo en memoria; el buscador filtra sobre esta copia
+let _hmTotalGlobal=0,_hmSumaGlobal=0;   // total/$ SIN filtrar (los que manda el servidor), para mostrar cuando el buscador está vacío
 function hmPintar(items){
   const box=document.getElementById('hm-list');
     box.innerHTML=items.map(it=>{
@@ -11163,16 +11164,33 @@ function hmPintar(items){
     box.querySelectorAll('.hm-motbtn').forEach(b=>b.onclick=()=>hmCorregir(b.dataset.fi,b.dataset.newmot));
     box.querySelectorAll('.hm-del').forEach(b=>b.onclick=(ev)=>{ev.stopPropagation();hmEliminar(b.dataset.fi,b.dataset.nombre);});
 }
+// El resumen de arriba (cantidad y $) ahora se recalcula según lo que esté filtrado en el
+// buscador — antes siempre mostraba el total general de TODO el historial (mermas + consumo
+// interno + lo que sea), incluso con una búsqueda activa, lo que mezclaba en un solo número
+// cosas que no son comparables (ej. café consumido para la máquina, que sí genera venta, con
+// mermas reales sin contrapartida). Sin buscador escrito, se sigue mostrando el total general
+// tal cual manda el servidor (_hmTotalGlobal/_hmSumaGlobal); con texto escrito, se suma solo
+// lo que matchea, sobre los ítems ya cargados en memoria (_hmTodos).
 function hmAplicarFiltro(){
   const inp=document.getElementById('hm-lsearch');
   const q=(inp?inp.value:'').toLowerCase().trim();
   const x=document.getElementById('hm-lx'); if(x)x.style.display=q?'block':'none';
-  if(!q){hmPintar(_hmTodos);return;}
-  const words=q.split(/\s+/).filter(Boolean);
-  const filt=_hmTodos.filter(it=>{
-    const s=((it.nombre||'')+' '+(it.categoria||'')+' '+(it.responsable||'')+' '+(it.motivo||'')).toLowerCase();
-    return words.every(w=>s.includes(w));
-  });
+  const lbl=document.getElementById('hm-lbl'),val=document.getElementById('hm-val');
+  let filt;
+  if(!q){
+    filt=_hmTodos;
+    lbl.textContent=_hmTotalGlobal+' merma'+(_hmTotalGlobal===1?'':'s')+' registrada'+(_hmTotalGlobal===1?'':'s')+(_hmTodos.length<_hmTotalGlobal?' · mostrando las últimas '+_hmTodos.length:'');
+    val.textContent=peso(_hmSumaGlobal);
+  }else{
+    const words=q.split(/\s+/).filter(Boolean);
+    filt=_hmTodos.filter(it=>{
+      const s=((it.nombre||'')+' '+(it.categoria||'')+' '+(it.responsable||'')+' '+(it.motivo||'')).toLowerCase();
+      return words.every(w=>s.includes(w));
+    });
+    const sumaFiltrada=filt.reduce((s,it)=>s+(Number(it.costoTotal)||0),0);
+    lbl.textContent=filt.length+' resultado'+(filt.length===1?'':'s')+(_hmTodos.length<_hmTotalGlobal?' (de los últimos '+_hmTodos.length+' cargados)':'');
+    val.textContent=peso(sumaFiltrada);
+  }
   hmPintar(filt);
 }
 
@@ -11185,8 +11203,7 @@ async function hmLoad(){
     if(!j||!j.ok){lbl.textContent='Error al cargar.';return;}
     const h=j.historial;
     if(!h.total){lbl.textContent='Sin mermas registradas todavía';box.innerHTML='<div class="vc-empty">Cuando registres una merma, aparecerá aquí.</div>';return;}
-    lbl.textContent=h.total+' merma'+(h.total===1?'':'s')+' registrada'+(h.total===1?'':'s')+(h.items.length<h.total?' · mostrando las últimas '+h.items.length:'');
-    val.textContent=peso(h.sumaCostoTotal);
+    _hmTotalGlobal=h.total;_hmSumaGlobal=h.sumaCostoTotal;
     _hmTodos=h.items||[];
     hmAplicarFiltro();
   }catch(e){lbl.textContent='Error de conexión.';}
