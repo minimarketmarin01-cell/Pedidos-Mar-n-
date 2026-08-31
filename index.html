@@ -4477,7 +4477,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-30.10';
+const APP_VERSION='2026-08-30.11';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -11154,12 +11154,14 @@ async function scLoad(){
     scRenderList();
   }catch(e){sum.textContent='Error de conexión.';}
 }
-// Proveedor a mostrar/agrupar: prioriza el proveedor real de la WebApp (DB.items.proveedorNombre,
-// el mismo campo que usa Armar pedido) y cae a la categoría de Loyverse si el producto todavía no
-// tiene proveedor real asignado — mismo criterio que vcProveedorDe (Vencimientos).
+// Proveedor a mostrar/agrupar: SOLO el proveedor real de la WebApp (DB.items.proveedorNombre, el
+// mismo campo que usa Armar pedido) — a diferencia de vcProveedorDe (Vencimientos), acá SIN
+// respaldo en la categoría de Loyverse: ese respaldo hacía que productos sin proveedor real
+// asignado se buscaran/sugirieran por su categoría de Loyverse disfrazada de "proveedor", que es
+// justo lo que se pidió sacar. "Sin proveedor real" es un estado válido, como "sin sector".
 function scProveedorDe(it){
   const dbIt=(DB.items||[]).find(x=>x.ref===it.ref);
-  return (dbIt&&dbIt.proveedorNombre)||it.prov||'Sin proveedor';
+  return (dbIt&&dbIt.proveedorNombre)||null;
 }
 // Sector (pasillo/estantería, ej. LACTEOS/VERDURAS/LIMPIEZA) — eje de clasificación DISTINTO del
 // proveedor o la categoría de Loyverse. A diferencia de scProveedorDe, sin respaldo: "sin sector"
@@ -11169,10 +11171,10 @@ function scSectorDe(it){
   const dbIt=(DB.items||[]).find(x=>x.ref===it.ref);
   return (dbIt&&dbIt.sector)||null;
 }
-// Filtra por texto (nombre/REF/código de barras/proveedor real de la WebApp/categoría/sector)
-// y/o por proveedor o sector exacto — mismo criterio que vcAplicarFiltroInteligente
-// (Vencimientos), adaptado a la forma de estos items (ref/nombre/prov/peso, sin barcode ni
-// sector directo — se busca en DB.items).
+// Filtra por texto (nombre/REF/código de barras/proveedor real de la WebApp/sector — la
+// categoría de Loyverse queda AFUERA a propósito) y/o por proveedor o sector exacto — mismo
+// criterio que vcAplicarFiltroInteligente (Vencimientos), adaptado a la forma de estos items
+// (ref/nombre/prov/peso, sin barcode ni sector directo — se busca en DB.items).
 function scAplicarFiltroInteligente(items,filtro){
   let lista=items;
   if(filtro.prov)lista=lista.filter(it=>scProveedorDe(it)===filtro.prov);
@@ -11182,7 +11184,7 @@ function scAplicarFiltroInteligente(items,filtro){
     const words=q.split(/\s+/).filter(Boolean);
     lista=lista.filter(it=>{
       const dbIt=(DB.items||[]).find(x=>x.ref===it.ref);
-      const s=normTxt((it.nombre||'')+' '+(it.ref||'')+' '+((dbIt&&dbIt.barcode)||'')+' '+scProveedorDe(it)+' '+(scSectorDe(it)||''));
+      const s=normTxt((it.nombre||'')+' '+(it.ref||'')+' '+((dbIt&&dbIt.barcode)||'')+' '+(scProveedorDe(it)||'')+' '+(scSectorDe(it)||''));
       return words.every(w=>s.includes(w));
     });
   }
