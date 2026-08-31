@@ -2302,6 +2302,20 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <input id="pr-costo" inputmode="decimal" placeholder="$0" style="width:100%;height:38px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;font-family:'JetBrains Mono';box-sizing:border-box">
         </div>
 
+        <div class="mm-field hidden" id="pr-fecha-field" style="margin-bottom:8px">
+          <label>Fecha de vencimiento (opcional)</label>
+          <div class="fecha-wrap">
+            <input id="pr-fecha-dd" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="DD" autocomplete="off">
+            <span class="fecha-sep">/</span>
+            <input id="pr-fecha-mm" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="off">
+            <span class="fecha-sep">/</span>
+            <input id="pr-fecha-aaaa" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="AA" autocomplete="off">
+            <button type="button" class="fecha-cal-btn" id="pr-fecha-cal" aria-label="Elegir en calendario"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></button>
+            <input type="date" id="pr-fecha" class="fecha-date-hidden" tabindex="-1">
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Si la pones, queda registrada como lote y aparece en Vencimientos.</div>
+        </div>
+
         <div class="mm-field" style="margin-bottom:8px">
           <label>Responsable</label>
           <div class="mm-resp" id="pr-resp">
@@ -4445,7 +4459,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-30.7';
+const APP_VERSION='2026-08-30.8';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -9999,6 +10013,7 @@ function wireFechaSegmentada(ddId,mmId,yyId,hiddenId,calId){
 wireFechaSegmentada('rc-fecha-dd','rc-fecha-mm','rc-fecha-aaaa','rc-fecha','rc-fecha-cal');
 wireFechaSegmentada('vc-fecha-dd','vc-fecha-mm','vc-fecha-aaaa','vc-fecha','vc-fecha-cal');
 wireFechaSegmentada('cp-fecha-dd','cp-fecha-mm','cp-fecha-aaaa','cp-fecha','cp-fecha-cal');
+wireFechaSegmentada('pr-fecha-dd','pr-fecha-mm','pr-fecha-aaaa','pr-fecha','pr-fecha-cal');
 async function vcLoad(){
   const box=document.getElementById('vc-list');
   box.innerHTML='<div class="vc-empty">Cargando…</div>';
@@ -11494,6 +11509,7 @@ function prAbrir(){
   document.getElementById('pr-cantidad').value='';
   document.getElementById('pr-costo').value='';
   document.getElementById('pr-costo-field').classList.add('hidden');
+  prLimpiarFecha();
   document.querySelectorAll('#pr-resp button').forEach(b=>b.classList.remove('sel'));
   prSetDireccion(null);
   abrirModal('pr-ov');
@@ -11517,7 +11533,17 @@ function prSetDireccion(dir){
     :dir==='entrada'
     ?'Entra stock a Marín — se registra como deuda pendiente, hasta que se lo devuelvas a Los Cumpas.'
     :'Elegí una dirección antes de continuar — de esto depende si el stock sube o baja.';
+  // La fecha de vencimiento solo tiene sentido cuando entra stock de verdad al local
+  // ("Los Cumpas me prestan") — en "salida" no hay nada que vencer acá.
+  document.getElementById('pr-fecha-field').classList.toggle('hidden',dir!=='entrada');
+  if(dir!=='entrada')prLimpiarFecha();
   prValidar();
+}
+function prLimpiarFecha(){
+  document.getElementById('pr-fecha').value='';
+  document.getElementById('pr-fecha-dd').value='';
+  document.getElementById('pr-fecha-mm').value='';
+  document.getElementById('pr-fecha-aaaa').value='';
 }
 document.getElementById('pr-dir-salida').onclick=()=>prSetDireccion('salida');
 document.getElementById('pr-dir-entrada').onclick=()=>prSetDireccion('entrada');
@@ -11587,13 +11613,15 @@ document.getElementById('pr-guardar').onclick=async()=>{
   try{
     const payload={
       sku:prState.item.ref, direccion:prState.dir, cantidad:Number(document.getElementById('pr-cantidad').value)||0,
-      costoManual:Number(document.getElementById('pr-costo').value)||0, responsable:prState.resp
+      costoManual:Number(document.getElementById('pr-costo').value)||0, responsable:prState.resp,
+      fechaVencimiento:prState.dir==='entrada'?fmtDateInputToDDMMAAAA(document.getElementById('pr-fecha').value):''
     };
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'registrar_prestamo',payload})});
     const j=await res.json();
     if(j&&j.ok){
       let msg=(prState.dir==='salida'?'Salida registrada: ':'Entrada registrada: ')+j.nombre+' · '+j.cantidad+(j.unidad||'');
       if(j.avisoStock)msg+=' · '+j.avisoStock;
+      if(j.avisoLote)msg+=' · '+j.avisoLote;
       showToast(msg);
       prState.item=null;
       document.getElementById('pr-search').value='';
@@ -11601,6 +11629,7 @@ document.getElementById('pr-guardar').onclick=async()=>{
       document.getElementById('pr-detalle').classList.add('hidden');
       document.getElementById('pr-cantidad').value='';
       document.getElementById('pr-costo').value='';
+      prLimpiarFecha();
       document.querySelectorAll('#pr-resp button').forEach(x=>x.classList.remove('sel'));
       prState.resp='';
       prCargarPendientes();
