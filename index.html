@@ -2107,7 +2107,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mm-head-ic"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Costeo de producción</h3></div>
         <div class="mm-topbar"><button class="loadbtn" id="cf-cerrar" style="width:100%">Cerrar</button></div>
         <div class="mm-body">
-        <div class="cf-warn">Al aplicar, el costo calculado se escribe directo en Loyverse (no solo aquí). Revisa el desglose antes de aplicar.</div>
+        <div class="cf-warn">Al aplicar, el costo calculado y el precio de venta sugerido se escriben directo en Loyverse (no solo aquí). Revisa el desglose antes de aplicar.</div>
 
         <div class="mm-field" style="margin-bottom:8px">
           <label>Producto elaborado</label>
@@ -2189,7 +2189,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         </div>
         <div class="pc-hint" id="cf-precio-comparacion" style="margin:-4px 0 8px"></div>
 
-        <button class="mm-save" id="cf-aplicar" disabled>Aplicar costo al producto</button>
+        <button class="mm-save" id="cf-aplicar" disabled>Aplicar costo y precio al producto</button>
         </div>
       </div>
     </div>
@@ -4445,7 +4445,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-30.6';
+const APP_VERSION='2026-08-30.7';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -11681,9 +11681,10 @@ async function prCorregirDireccion(id,btn,direccionActual,sku,cantidad,costoUnit
 
 // ===================== CALCULADORA DE COSTEO DE PRODUCCIÓN =====================
 // Producción propia en el local (ensaladas, etc.): calcula el costo por unidad de un lote
-// (materia prima + mano de obra + envase + fijo) y lo aplica directo al producto en Loyverse
-// reutilizando action:'editar_precio' (mismo endpoint que "Sin costo"/Ficha/Recepción, sin
-// duplicar sincronización). Prefijo cf = "costo de fabricación".
+// (materia prima + mano de obra + envase + fijo), sugiere un precio de venta según el margen
+// objetivo, y aplica ambos directo al producto en Loyverse reutilizando action:'editar_precio'
+// (mismo endpoint que "Sin costo"/Ficha/Recepción, sin duplicar sincronización). Prefijo cf =
+// "costo de fabricación".
 let cfState={item:null,total:0};
 function cfFijoDefaultGet(){try{return Number(localStorage.getItem('marin_cf_fijo_default'))||0;}catch(e){return 0;}}
 function cfFijoDefaultSet(v){try{localStorage.setItem('marin_cf_fijo_default',String(v||0));}catch(e){}}
@@ -11889,19 +11890,26 @@ document.getElementById('cf-aplicar').onclick=async()=>{
   if(!it)return;
   const btn=document.getElementById('cf-aplicar');
   const costoNuevo=Math.round(cfState.total);
+  const precioNuevo=Math.round(Number(document.getElementById('cf-precio-sugerido').value)||0);
   btn.disabled=true;btn.textContent='Aplicando…';
   const ctrl=new AbortController();
   const to=setTimeout(()=>ctrl.abort(),25000);
   try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_precio',payload:{sku:it.ref,costo:costoNuevo}}),signal:ctrl.signal});
+    const payload={sku:it.ref,costo:costoNuevo};
+    if(precioNuevo>0)payload.precio=precioNuevo;
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_precio',payload:payload}),signal:ctrl.signal});
     const j=await res.json();
     if(j&&j.ok){
       if(j.sinCambios){
-        showToast('Sin cambios para aplicar (el costo ya era ese)');
+        showToast('Sin cambios para aplicar (el costo y el precio ya eran esos)');
       }else{
         const itLocal=(DB.items||[]).find(x=>x.ref===it.ref);
-        if(itLocal){itLocal.coste=j.costo;persist();}
-        let msg='Costo aplicado: '+it.nombre+' → '+peso(j.costo);
+        if(itLocal){
+          if(j.costo!=null)itLocal.coste=j.costo;
+          if(j.precio!=null)itLocal.precio=j.precio;
+          persist();
+        }
+        let msg='Aplicado: '+it.nombre+' → costo '+peso(j.costo)+(j.precio!=null?' · precio '+peso(j.precio):'');
         if(j.advertencia)msg+=' · '+j.advertencia;
         showToast(msg);
         render();
@@ -11916,13 +11924,13 @@ document.getElementById('cf-aplicar').onclick=async()=>{
       });
       cerrarModal('cf-ov');
     }else{
-      showToast('Error: '+((j&&j.error)||'no se pudo aplicar el costo'));
+      showToast('Error: '+((j&&j.error)||'no se pudo aplicar el costo y precio'));
     }
   }catch(e){
-    showToast(e&&e.name==='AbortError'?'El servidor tardó demasiado (timeout). Verifica antes de repetir — el costo pudo haberse guardado.':'Error de conexión al aplicar el costo');
+    showToast(e&&e.name==='AbortError'?'El servidor tardó demasiado (timeout). Verifica antes de repetir — el costo y precio pudieron haberse guardado.':'Error de conexión al aplicar el costo y precio');
   }finally{
     clearTimeout(to);
-    btn.disabled=false;btn.textContent='Aplicar costo al producto';
+    btn.disabled=false;btn.textContent='Aplicar costo y precio al producto';
     try{cfValidar();}catch(_){}
   }
 };
