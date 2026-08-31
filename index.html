@@ -2161,10 +2161,30 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <div class="pc-hint">Se recuerda entre usos — normalmente se define una vez al mes.</div>
         </div>
 
+        <div class="mm-field" style="margin-bottom:8px">
+          <label>Máquina exhibidora refrigerada (prendida 24h/día)</label>
+          <div style="display:flex;gap:8px">
+            <div style="flex:1">
+              <input id="cf-exhib-watts" inputmode="decimal" placeholder="0" aria-label="Watts" style="width:100%;height:38px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;font-family:'JetBrains Mono';box-sizing:border-box">
+              <div class="pc-hint" style="text-align:center">Watts</div>
+            </div>
+            <div style="flex:1">
+              <input id="cf-exhib-kwh" inputmode="decimal" placeholder="$0" aria-label="Costo por kWh" style="width:100%;height:38px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;font-family:'JetBrains Mono';box-sizing:border-box">
+              <div class="pc-hint" style="text-align:center">$/kWh</div>
+            </div>
+            <div style="flex:1">
+              <input id="cf-exhib-unidades" inputmode="decimal" placeholder="0" aria-label="Unidades por mes" style="width:100%;height:38px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;font-family:'JetBrains Mono';box-sizing:border-box">
+              <div class="pc-hint" style="text-align:center">Unid./mes</div>
+            </div>
+          </div>
+          <div class="pc-hint">Se recuerda entre usos. Watts: mirá la etiqueta de la máquina. $/kWh: el de tu boleta de luz. Unid./mes: cuánto pasa por esa máquina en total al mes.</div>
+        </div>
+
         <div class="cf-kpi-grid">
           <div class="cf-kpi"><div class="cf-kpi-lbl">Materia prima/u</div><div class="cf-kpi-val" id="cf-d-materia">$0</div></div>
           <div class="cf-kpi"><div class="cf-kpi-lbl">Mano de obra/u</div><div class="cf-kpi-val" id="cf-d-mano">$0</div></div>
           <div class="cf-kpi"><div class="cf-kpi-lbl">Envase/u</div><div class="cf-kpi-val" id="cf-d-envase">$0</div></div>
+          <div class="cf-kpi"><div class="cf-kpi-lbl">Exhibidora/u</div><div class="cf-kpi-val" id="cf-d-exhib">$0</div></div>
           <div class="cf-kpi"><div class="cf-kpi-lbl">Fijo/u</div><div class="cf-kpi-val" id="cf-d-fijo">$0</div></div>
         </div>
         <div class="cf-total">
@@ -4428,7 +4448,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-30.3';
+const APP_VERSION='2026-08-30.4';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -4775,7 +4795,7 @@ async function cloudSync(silent,live,full,origen){
       if(esPollDeFondo&&editando)return true;
       _ultimoPayloadFirma=firma;
 
-      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras,j.costeoProducto);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(j.costeoFijoDefault!=null)cfFijoDefaultSet(j.costeoFijoDefault);
+      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras,j.costeoProducto);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(j.costeoFijoDefault!=null)cfFijoDefaultSet(j.costeoFijoDefault);if(j.costeoExhibidora)cfExhibDefaultSet(j.costeoExhibidora);
       INVMAP=invMapFromItems(DB.items);
       SRC='nube · '+new Date().toLocaleString('es-CL');
       // FIX: antes esto era "state.edits={}" incondicional, así que CUALQUIER sync
@@ -4888,7 +4908,7 @@ async function pollFondo(){
     if(firma===_ultimoPayloadFirma)return; // nada cambió, no hay nada que repintar
     _ultimoPayloadFirma=firma;
 
-    DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras,j.costeoProducto);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(j.costeoFijoDefault!=null)cfFijoDefaultSet(j.costeoFijoDefault);
+    DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras,j.costeoProducto);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(j.costeoFijoDefault!=null)cfFijoDefaultSet(j.costeoFijoDefault);if(j.costeoExhibidora)cfExhibDefaultSet(j.costeoExhibidora);
     INVMAP=invMapFromItems(DB.items);
     SRC='nube · '+new Date().toLocaleString('es-CL');
     setLastSync(Date.now());
@@ -9055,7 +9075,7 @@ async function recargarHistorial(){
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=recargar_historial');
     const j=await res.json();
     if(j&&j.ok){
-      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras,j.costeoProducto);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(j.costeoFijoDefault!=null)cfFijoDefaultSet(j.costeoFijoDefault);
+      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras,j.costeoProducto);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(j.costeoFijoDefault!=null)cfFijoDefaultSet(j.costeoFijoDefault);if(j.costeoExhibidora)cfExhibDefaultSet(j.costeoExhibidora);
       INVMAP=invMapFromItems(DB.items);
       state.edits={};
       persist();render();
@@ -11670,12 +11690,18 @@ async function prCorregirDireccion(id,btn,direccionActual,sku,cantidad,costoUnit
 let cfState={item:null,total:0};
 function cfFijoDefaultGet(){try{return Number(localStorage.getItem('marin_cf_fijo_default'))||0;}catch(e){return 0;}}
 function cfFijoDefaultSet(v){try{localStorage.setItem('marin_cf_fijo_default',String(v||0));}catch(e){}}
-// Guarda el "costo fijo por unidad" en el servidor (tabla config_costeo) para que se sincronice
-// entre dispositivos — se llama solo al aplicar un costo (no en cada tecleo, para no
-// bombardear el servidor). "Mejor esfuerzo": si falla, el valor sigue funcionando igual desde
-// localStorage en este dispositivo, simplemente no viaja a los demás hasta el próximo intento.
-function cfFijoGuardarServidor(v){
-  fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'guardar_costeo_fijo_default',payload:{costoFijoDefault:v}})}).catch(()=>{});
+// Datos de la máquina exhibidora refrigerada (watts, $/kWh, unidades vendidas/mes) — igual
+// filosofía que cfFijoDefaultGet/Set: un solo valor global recordado entre usos, ya que la
+// máquina y el volumen mensual no cambian de un lote a otro.
+function cfExhibDefaultGet(){try{return JSON.parse(localStorage.getItem('marin_cf_exhib_default')||'{}');}catch(e){return {};}}
+function cfExhibDefaultSet(d){try{localStorage.setItem('marin_cf_exhib_default',JSON.stringify({watts:Number(d&&d.watts)||0,kwh:Number(d&&d.kwh)||0,unidadesMes:Number(d&&d.unidadesMes)||0}));}catch(e){}}
+// Guarda el "costo fijo por unidad" y los datos de la exhibidora en el servidor (tabla
+// config_costeo) para que se sincronicen entre dispositivos — se llama solo al aplicar un
+// costo (no en cada tecleo, para no bombardear el servidor). "Mejor esfuerzo": si falla, el
+// valor sigue funcionando igual desde localStorage en este dispositivo, simplemente no viaja a
+// los demás hasta el próximo intento.
+function cfFijoGuardarServidor(v,exhibWatts,exhibKwh,exhibUnidadesMes){
+  fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'guardar_costeo_fijo_default',payload:{costoFijoDefault:v,exhibWatts:exhibWatts||0,exhibKwh:exhibKwh||0,exhibUnidadesMes:exhibUnidadesMes||0}})}).catch(()=>{});
 }
 // Guarda los datos del lote (materia/unidades/minutos/sueldo/envase) PARA ESE PRODUCTO en el
 // servidor (tabla config_costeo_producto) — mismo "mejor esfuerzo" que cfFijoGuardarServidor,
@@ -11696,6 +11722,10 @@ function cfAbrir(){
   ['cf-materia','cf-unidades','cf-horas','cf-mins','cf-sueldo','cf-envase'].forEach(id=>{document.getElementById(id).value='';});
   const fijoDefault=cfFijoDefaultGet();
   document.getElementById('cf-fijo').value=fijoDefault>0?fijoDefault:'';
+  const exhibDefault=cfExhibDefaultGet();
+  document.getElementById('cf-exhib-watts').value=exhibDefault.watts>0?exhibDefault.watts:'';
+  document.getElementById('cf-exhib-kwh').value=exhibDefault.kwh>0?exhibDefault.kwh:'';
+  document.getElementById('cf-exhib-unidades').value=exhibDefault.unidadesMes>0?exhibDefault.unidadesMes:'';
   abrirModal('cf-ov');
   cfCalcular();
   setTimeout(()=>document.getElementById('cf-search').focus(),150);
@@ -11748,16 +11778,27 @@ function cfCalcular(){
   const sueldo=Number(document.getElementById('cf-sueldo').value)||0;
   const envase=Number(document.getElementById('cf-envase').value)||0;
   const fijo=Number(document.getElementById('cf-fijo').value)||0;
+  const exhibWatts=Number(document.getElementById('cf-exhib-watts').value)||0;
+  const exhibKwh=Number(document.getElementById('cf-exhib-kwh').value)||0;
+  const exhibUnidadesMes=Number(document.getElementById('cf-exhib-unidades').value)||0;
   const materiaU=unidades>0?materia/unidades:0;
   const manoU=unidades>0?(minutos/60*sueldo)/unidades:0;
-  const total=materiaU+manoU+envase+fijo;
+  // Exhibidora prendida 24h/día, 30 días/mes → consumo mensual en kWh, convertido a $ con la
+  // tarifa, y recién ahí prorrateado entre las unidades que pasan por ella en un mes (NO las
+  // unidades de este lote — la máquina sigue consumiendo esté o no este lote en particular).
+  const exhibConsumoMensualKwh=(exhibWatts/1000)*24*30;
+  const exhibCostoMensual=exhibConsumoMensualKwh*exhibKwh;
+  const exhibU=exhibUnidadesMes>0?exhibCostoMensual/exhibUnidadesMes:0;
+  const total=materiaU+manoU+envase+exhibU+fijo;
   document.getElementById('cf-d-materia').textContent=peso(materiaU);
   document.getElementById('cf-d-mano').textContent=peso(manoU);
   document.getElementById('cf-d-envase').textContent=peso(envase);
+  document.getElementById('cf-d-exhib').textContent=peso(exhibU);
   document.getElementById('cf-d-fijo').textContent=peso(fijo);
   document.getElementById('cf-total-val').textContent=peso(total);
   cfState.total=total;
   cfFijoDefaultSet(fijo);
+  cfExhibDefaultSet({watts:exhibWatts,kwh:exhibKwh,unidadesMes:exhibUnidadesMes});
   cfActualizarAlerta();
   cfValidar();
 }
@@ -11768,7 +11809,7 @@ function cfValidar(){
 }
 document.getElementById('cf-cerrar').onclick=()=>cerrarModal('cf-ov');
 document.getElementById('mas-q-costeo').onclick=cfAbrir;
-['cf-materia','cf-unidades','cf-horas','cf-mins','cf-sueldo','cf-envase','cf-fijo'].forEach(id=>{
+['cf-materia','cf-unidades','cf-horas','cf-mins','cf-sueldo','cf-envase','cf-fijo','cf-exhib-watts','cf-exhib-kwh','cf-exhib-unidades'].forEach(id=>{
   document.getElementById(id).addEventListener('input',cfCalcular);
 });
 document.getElementById('cf-search').addEventListener('input',ev=>{
@@ -11831,7 +11872,12 @@ document.getElementById('cf-aplicar').onclick=async()=>{
         showToast(msg);
         render();
       }
-      cfFijoGuardarServidor(Number(document.getElementById('cf-fijo').value)||0);
+      cfFijoGuardarServidor(
+        Number(document.getElementById('cf-fijo').value)||0,
+        Number(document.getElementById('cf-exhib-watts').value)||0,
+        Number(document.getElementById('cf-exhib-kwh').value)||0,
+        Number(document.getElementById('cf-exhib-unidades').value)||0
+      );
       cfProductoGuardarServidor(it.ref,{
         materia:Number(document.getElementById('cf-materia').value)||0,
         unidades:Number(document.getElementById('cf-unidades').value)||0,
