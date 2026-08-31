@@ -827,6 +827,17 @@ input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 #vc-ov .prov-scan svg{width:17px;height:17px}
 #vc-ov .prov-mic{right:50px;width:28px;height:28px}
 #vc-ov .prov-x{right:82px;width:26px;height:26px}
+/* Productos sin costo: mismo buscador inteligente y mismo escopado que Vencimientos (arriba),
+   para que el campo se vea y comporte igual en toda la app. */
+#sc-ov .prov-x{display:none}
+#sc-ov .prov-x.on{display:flex}
+#sc-ov .prov-all{font-size:14px;font-weight:500;border-radius:12px;padding-top:13px;padding-bottom:13px;padding-left:38px;padding-right:96px}
+#sc-ov .prov-icon{left:14px;color:var(--muted)}
+#sc-ov .prov-icon svg{width:17px;height:17px}
+#sc-ov .prov-scan{right:8px;width:36px;height:32px;border:1.5px solid var(--line);border-radius:9px;background:#fff;color:var(--ink)}
+#sc-ov .prov-scan svg{width:17px;height:17px}
+#sc-ov .prov-mic{right:50px;width:28px;height:28px}
+#sc-ov .prov-x{right:82px;width:26px;height:26px}
 .prov-mic{position:absolute;top:50%;right:52px;transform:translateY(-50%);width:19px;height:19px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);font-size:10.5px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;padding:0}
 .prov-mic:active{background:var(--line);color:var(--ink)}
 .prov-mic.listening{background:var(--rojo);color:#fff;animation:micpulse 1s infinite}
@@ -2096,7 +2107,14 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <div class="mm-topbar"><button class="loadbtn" id="sc-cerrar" style="width:100%">Cerrar</button></div>
         <div class="mm-body">
         <div class="sc-warn">Al guardar, el costo se escribe directo en Loyverse (no solo aquí). Revisa el valor antes de guardar.</div>
-        <select id="sc-filtro-cat" style="width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:13px;background:#fff;margin-bottom:8px"><option value="">Todas las categorías</option></select>
+        <div class="prov-combo" id="sc-combo" style="margin-bottom:8px">
+          <span class="prov-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13.5 13.5 20a1.5 1.5 0 0 1-2.1 0L4 12.6V4h8.6l7.4 7.4a1.5 1.5 0 0 1 0 2.1Z"/><circle cx="8.3" cy="8.3" r="1.3"/></svg></span>
+          <input class="prov-all" id="sc-search" placeholder="Producto, código o proveedor…" autocomplete="off" inputmode="text">
+          <button class="prov-mic" id="sc-mic" type="button" tabindex="-1" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
+          <button class="prov-scan cam-btn" id="sc-scan" type="button" tabindex="-1" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
+          <button class="prov-x" id="sc-x" type="button" tabindex="-1" aria-label="Borrar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          <div class="prov-menu hidden" id="sc-menu"></div>
+        </div>
         <div class="sc-summary" id="sc-summary">Cargando…</div>
         <div id="sc-list"></div>
         </div>
@@ -4459,7 +4477,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-30.8';
+const APP_VERSION='2026-08-30.9';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -11132,24 +11150,96 @@ async function scLoad(){
     if(!j||!j.ok){sum.textContent='Error al cargar.';return;}
     const rep=j.reporte;
     _scItemsAll=rep.items||[];
-    scPoblarFiltroCat(_scItemsAll);
     if(!rep.total){box.innerHTML='<div class="vc-empty">Todos los productos tienen costo cargado</div>';sum.textContent='';return;}
     scRenderList();
   }catch(e){sum.textContent='Error de conexión.';}
 }
-function scPoblarFiltroCat(items){
-  const sel=document.getElementById('sc-filtro-cat');
-  if(!sel)return;
-  const actual=sel.value;
-  const cats=[...new Set(items.map(it=>it.prov||'SIN CATEGORÍA'))].sort((a,b)=>a.localeCompare(b,'es'));
-  sel.innerHTML='<option value="">Todas las categorías</option>'+cats.map(c=>`<option value="${c.replace(/"/g,'&quot;')}">${c}</option>`).join('');
-  if(cats.includes(actual))sel.value=actual;
+// Proveedor a mostrar/agrupar: prioriza el proveedor real de la WebApp (DB.items.proveedorNombre,
+// el mismo campo que usa Armar pedido) y cae a la categoría de Loyverse si el producto todavía no
+// tiene proveedor real asignado — mismo criterio que vcProveedorDe (Vencimientos).
+function scProveedorDe(it){
+  const dbIt=(DB.items||[]).find(x=>x.ref===it.ref);
+  return (dbIt&&dbIt.proveedorNombre)||it.prov||'Sin proveedor';
 }
+// Filtra por texto (nombre/REF/código de barras/proveedor real de la WebApp/categoría) y/o por
+// proveedor exacto — mismo criterio que vcAplicarFiltroInteligente (Vencimientos), adaptado a la
+// forma de estos items (ref/nombre/prov/peso, sin barcode directo — se busca en DB.items).
+function scAplicarFiltroInteligente(items,filtro){
+  let lista=items;
+  if(filtro.prov)lista=lista.filter(it=>scProveedorDe(it)===filtro.prov);
+  const q=normTxt(filtro.search).trim();
+  if(q){
+    const words=q.split(/\s+/).filter(Boolean);
+    lista=lista.filter(it=>{
+      const dbIt=(DB.items||[]).find(x=>x.ref===it.ref);
+      const s=normTxt((it.nombre||'')+' '+(it.ref||'')+' '+((dbIt&&dbIt.barcode)||'')+' '+scProveedorDe(it));
+      return words.every(w=>s.includes(w));
+    });
+  }
+  return lista;
+}
+// Buscador inteligente (nombre+código+proveedor en un solo campo, con desplegable de proveedores
+// sugeridos) — mismo patrón visual/JS que vcWireBuscadorInteligente (Vencimientos), pero
+// autocontenido acá porque el reabrir tras escanear apunta a #sc-ov, no a #vc-ov.
+const _scFiltro={search:'',prov:''};
+function scWireBuscadorInteligente(){
+  const inp=document.getElementById('sc-search');
+  const menu=document.getElementById('sc-menu');
+  const x=document.getElementById('sc-x');
+  function proveedoresDisponibles(){
+    return [...new Set(_scItemsAll.map(scProveedorDe).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+  }
+  function abrirMenu(textoFiltro){
+    const q=normTxt(textoFiltro||'').trim();
+    const provs=proveedoresDisponibles().filter(p=>!q||normTxt(p).indexOf(q)>-1);
+    menu.innerHTML='';
+    if(!provs.length){menu.classList.add('hidden');return;}
+    provs.forEach(p=>{
+      const d=document.createElement('div');
+      d.className='prov-opt';
+      d.textContent=p;
+      d.onclick=ev=>{
+        ev.preventDefault();ev.stopPropagation();
+        _scFiltro.prov=p;_scFiltro.search='';
+        inp.value=p;x.classList.remove('on');menu.classList.add('hidden');inp.blur();
+        scRenderList();
+      };
+      menu.appendChild(d);
+    });
+    menu.classList.remove('hidden');
+  }
+  inp.onfocus=()=>abrirMenu(inp.value);
+  inp.oninput=()=>{
+    abrirMenu(inp.value);
+    _scFiltro.search=inp.value.trim();_scFiltro.prov='';
+    x.classList.toggle('on',!!_scFiltro.search);
+    clearTimeout(inp._t);inp._t=setTimeout(scRenderList,200);
+  };
+  document.addEventListener('pointerdown',ev=>{
+    if(!menu.classList.contains('hidden')&&!inp.parentElement.contains(ev.target))menu.classList.add('hidden');
+  },true);
+  x.onclick=ev=>{
+    ev.preventDefault();ev.stopPropagation();
+    inp.value='';_scFiltro.search='';_scFiltro.prov='';x.classList.remove('on');menu.classList.add('hidden');
+    scRenderList();inp.focus();
+  };
+  document.getElementById('sc-mic').onclick=()=>voiceSearch(document.getElementById('sc-mic'),text=>{
+    inp.value=text;_scFiltro.search=text;_scFiltro.prov='';x.classList.toggle('on',!!text);scRenderList();
+  });
+  document.getElementById('sc-scan').onclick=()=>{
+    const reopen=()=>{document.getElementById('sc-ov').classList.remove('hidden');};
+    document.getElementById('sc-ov').classList.add('hidden');
+    openScanner(code=>{
+      reopen();inp.value=code;_scFiltro.search=code;_scFiltro.prov='';
+      x.classList.add('on');scRenderList();
+    },reopen);
+  };
+}
+scWireBuscadorInteligente();
 function scRenderList(){
   const box=document.getElementById('sc-list'),sum=document.getElementById('sc-summary');
-  const filtroCat=document.getElementById('sc-filtro-cat')?document.getElementById('sc-filtro-cat').value:'';
   const draft=scDraftGet();
-  const base=filtroCat?_scItemsAll.filter(it=>(it.prov||'SIN CATEGORÍA')===filtroCat):_scItemsAll;
+  const base=scAplicarFiltroInteligente(_scItemsAll,_scFiltro);
   // pendientes/saltados van al final, para que lo urgente quede arriba
   const items=[...base].sort((a,b)=>{
     const sa=draft[a.ref]&&draft[a.ref].skipped?1:0, sb=draft[b.ref]&&draft[b.ref].skipped?1:0;
@@ -11158,12 +11248,13 @@ function scRenderList(){
   });
   const nSkip=items.filter(it=>draft[it.ref]&&draft[it.ref].skipped).length;
   const nPeso=items.filter(it=>it.peso).length;
+  const filtroActivo=_scFiltro.prov||_scFiltro.search;
   if(!items.length){
-    box.innerHTML='<div class="vc-empty">'+(filtroCat?'No hay productos sin costo en esta categoría.':'Todos los productos tienen costo cargado')+'</div>';
-    sum.textContent=filtroCat?'0 productos en "'+filtroCat+'"':'';
+    box.innerHTML='<div class="vc-empty">'+(filtroActivo?'No hay productos sin costo que coincidan con la búsqueda.':'Todos los productos tienen costo cargado')+'</div>';
+    sum.textContent=filtroActivo?'0 resultados':'';
     return;
   }
-  sum.textContent=items.length+' producto'+(items.length===1?'':'s')+' sin costo'+(filtroCat?' en "'+filtroCat+'"':'')+' · '+nPeso+' vendidos por peso'+(nSkip?(' · '+nSkip+' pendientes que saltaste'):'');
+  sum.textContent=items.length+' producto'+(items.length===1?'':'s')+' sin costo'+(_scFiltro.prov?' de "'+_scFiltro.prov+'"':'')+' · '+nPeso+' vendidos por peso'+(nSkip?(' · '+nSkip+' pendientes que saltaste'):'');
   box.innerHTML=items.map(it=>{
     const dv=draft[it.ref]||{};
     const skipped=!!dv.skipped;
@@ -11186,7 +11277,6 @@ function scRenderList(){
     scRenderList();
   });
 }
-document.getElementById('sc-filtro-cat').addEventListener('change',scRenderList);
 async function scGuardar(ref){
   const inp=document.getElementById('sc-in-'+ref);
   const btn=document.querySelector('#sc-row-'+ref+' button:not(.sc-skip)');
