@@ -2109,7 +2109,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <div class="sc-warn">Al guardar, el costo se escribe directo en Loyverse (no solo aquí). Revisa el valor antes de guardar.</div>
         <div class="prov-combo" id="sc-combo" style="margin-bottom:8px">
           <span class="prov-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13.5 13.5 20a1.5 1.5 0 0 1-2.1 0L4 12.6V4h8.6l7.4 7.4a1.5 1.5 0 0 1 0 2.1Z"/><circle cx="8.3" cy="8.3" r="1.3"/></svg></span>
-          <input class="prov-all" id="sc-search" placeholder="Producto, código o proveedor…" autocomplete="off" inputmode="text">
+          <input class="prov-all" id="sc-search" placeholder="Producto, código, proveedor o sector…" autocomplete="off" inputmode="text">
           <button class="prov-mic" id="sc-mic" type="button" tabindex="-1" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
           <button class="prov-scan cam-btn" id="sc-scan" type="button" tabindex="-1" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
           <button class="prov-x" id="sc-x" type="button" tabindex="-1" aria-label="Borrar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
@@ -4477,7 +4477,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-30.9';
+const APP_VERSION='2026-08-30.10';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -11161,27 +11161,38 @@ function scProveedorDe(it){
   const dbIt=(DB.items||[]).find(x=>x.ref===it.ref);
   return (dbIt&&dbIt.proveedorNombre)||it.prov||'Sin proveedor';
 }
-// Filtra por texto (nombre/REF/código de barras/proveedor real de la WebApp/categoría) y/o por
-// proveedor exacto — mismo criterio que vcAplicarFiltroInteligente (Vencimientos), adaptado a la
-// forma de estos items (ref/nombre/prov/peso, sin barcode directo — se busca en DB.items).
+// Sector (pasillo/estantería, ej. LACTEOS/VERDURAS/LIMPIEZA) — eje de clasificación DISTINTO del
+// proveedor o la categoría de Loyverse. A diferencia de scProveedorDe, sin respaldo: "sin sector"
+// es un estado real (producto todavía sin clasificar), no algo que haya que disimular con un
+// valor de reemplazo.
+function scSectorDe(it){
+  const dbIt=(DB.items||[]).find(x=>x.ref===it.ref);
+  return (dbIt&&dbIt.sector)||null;
+}
+// Filtra por texto (nombre/REF/código de barras/proveedor real de la WebApp/categoría/sector)
+// y/o por proveedor o sector exacto — mismo criterio que vcAplicarFiltroInteligente
+// (Vencimientos), adaptado a la forma de estos items (ref/nombre/prov/peso, sin barcode ni
+// sector directo — se busca en DB.items).
 function scAplicarFiltroInteligente(items,filtro){
   let lista=items;
   if(filtro.prov)lista=lista.filter(it=>scProveedorDe(it)===filtro.prov);
+  if(filtro.sector)lista=lista.filter(it=>scSectorDe(it)===filtro.sector);
   const q=normTxt(filtro.search).trim();
   if(q){
     const words=q.split(/\s+/).filter(Boolean);
     lista=lista.filter(it=>{
       const dbIt=(DB.items||[]).find(x=>x.ref===it.ref);
-      const s=normTxt((it.nombre||'')+' '+(it.ref||'')+' '+((dbIt&&dbIt.barcode)||'')+' '+scProveedorDe(it));
+      const s=normTxt((it.nombre||'')+' '+(it.ref||'')+' '+((dbIt&&dbIt.barcode)||'')+' '+scProveedorDe(it)+' '+(scSectorDe(it)||''));
       return words.every(w=>s.includes(w));
     });
   }
   return lista;
 }
-// Buscador inteligente (nombre+código+proveedor en un solo campo, con desplegable de proveedores
-// sugeridos) — mismo patrón visual/JS que vcWireBuscadorInteligente (Vencimientos), pero
-// autocontenido acá porque el reabrir tras escanear apunta a #sc-ov, no a #vc-ov.
-const _scFiltro={search:'',prov:''};
+// Buscador inteligente (nombre+código+proveedor+sector en un solo campo, con desplegable de
+// proveedores y sectores sugeridos) — mismo patrón visual/JS que vcWireBuscadorInteligente
+// (Vencimientos), pero autocontenido acá porque el reabrir tras escanear apunta a #sc-ov, no a
+// #vc-ov. Un solo filtro exacto activo a la vez (prov O sector), igual que ya regía prov solo.
+const _scFiltro={search:'',prov:'',sector:''};
 function scWireBuscadorInteligente(){
   const inp=document.getElementById('sc-search');
   const menu=document.getElementById('sc-menu');
@@ -11189,29 +11200,38 @@ function scWireBuscadorInteligente(){
   function proveedoresDisponibles(){
     return [...new Set(_scItemsAll.map(scProveedorDe).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
   }
+  function sectoresDisponibles(){
+    return [...new Set(_scItemsAll.map(scSectorDe).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+  }
   function abrirMenu(textoFiltro){
     const q=normTxt(textoFiltro||'').trim();
     const provs=proveedoresDisponibles().filter(p=>!q||normTxt(p).indexOf(q)>-1);
+    const sectores=sectoresDisponibles().filter(s=>!q||normTxt(s).indexOf(q)>-1);
     menu.innerHTML='';
-    if(!provs.length){menu.classList.add('hidden');return;}
-    provs.forEach(p=>{
+    if(!provs.length&&!sectores.length){menu.classList.add('hidden');return;}
+    const opt=(valor,tipo,onPick)=>{
       const d=document.createElement('div');
       d.className='prov-opt';
-      d.textContent=p;
+      d.appendChild(document.createTextNode(valor));
+      const n=document.createElement('span');
+      n.className='n';n.textContent=tipo;
+      d.appendChild(n);
       d.onclick=ev=>{
         ev.preventDefault();ev.stopPropagation();
-        _scFiltro.prov=p;_scFiltro.search='';
-        inp.value=p;x.classList.remove('on');menu.classList.add('hidden');inp.blur();
+        onPick();
+        inp.value=valor;x.classList.remove('on');menu.classList.add('hidden');inp.blur();
         scRenderList();
       };
       menu.appendChild(d);
-    });
+    };
+    provs.forEach(p=>opt(p,'proveedor',()=>{_scFiltro.prov=p;_scFiltro.sector='';_scFiltro.search='';}));
+    sectores.forEach(s=>opt(s,'sector',()=>{_scFiltro.sector=s;_scFiltro.prov='';_scFiltro.search='';}));
     menu.classList.remove('hidden');
   }
   inp.onfocus=()=>abrirMenu(inp.value);
   inp.oninput=()=>{
     abrirMenu(inp.value);
-    _scFiltro.search=inp.value.trim();_scFiltro.prov='';
+    _scFiltro.search=inp.value.trim();_scFiltro.prov='';_scFiltro.sector='';
     x.classList.toggle('on',!!_scFiltro.search);
     clearTimeout(inp._t);inp._t=setTimeout(scRenderList,200);
   };
@@ -11220,17 +11240,17 @@ function scWireBuscadorInteligente(){
   },true);
   x.onclick=ev=>{
     ev.preventDefault();ev.stopPropagation();
-    inp.value='';_scFiltro.search='';_scFiltro.prov='';x.classList.remove('on');menu.classList.add('hidden');
+    inp.value='';_scFiltro.search='';_scFiltro.prov='';_scFiltro.sector='';x.classList.remove('on');menu.classList.add('hidden');
     scRenderList();inp.focus();
   };
   document.getElementById('sc-mic').onclick=()=>voiceSearch(document.getElementById('sc-mic'),text=>{
-    inp.value=text;_scFiltro.search=text;_scFiltro.prov='';x.classList.toggle('on',!!text);scRenderList();
+    inp.value=text;_scFiltro.search=text;_scFiltro.prov='';_scFiltro.sector='';x.classList.toggle('on',!!text);scRenderList();
   });
   document.getElementById('sc-scan').onclick=()=>{
     const reopen=()=>{document.getElementById('sc-ov').classList.remove('hidden');};
     document.getElementById('sc-ov').classList.add('hidden');
     openScanner(code=>{
-      reopen();inp.value=code;_scFiltro.search=code;_scFiltro.prov='';
+      reopen();inp.value=code;_scFiltro.search=code;_scFiltro.prov='';_scFiltro.sector='';
       x.classList.add('on');scRenderList();
     },reopen);
   };
@@ -11248,13 +11268,14 @@ function scRenderList(){
   });
   const nSkip=items.filter(it=>draft[it.ref]&&draft[it.ref].skipped).length;
   const nPeso=items.filter(it=>it.peso).length;
-  const filtroActivo=_scFiltro.prov||_scFiltro.search;
+  const filtroActivo=_scFiltro.prov||_scFiltro.sector||_scFiltro.search;
   if(!items.length){
     box.innerHTML='<div class="vc-empty">'+(filtroActivo?'No hay productos sin costo que coincidan con la búsqueda.':'Todos los productos tienen costo cargado')+'</div>';
     sum.textContent=filtroActivo?'0 resultados':'';
     return;
   }
-  sum.textContent=items.length+' producto'+(items.length===1?'':'s')+' sin costo'+(_scFiltro.prov?' de "'+_scFiltro.prov+'"':'')+' · '+nPeso+' vendidos por peso'+(nSkip?(' · '+nSkip+' pendientes que saltaste'):'');
+  const etiquetaFiltro=_scFiltro.prov?' de "'+_scFiltro.prov+'"':(_scFiltro.sector?' del sector "'+_scFiltro.sector+'"':'');
+  sum.textContent=items.length+' producto'+(items.length===1?'':'s')+' sin costo'+etiquetaFiltro+' · '+nPeso+' vendidos por peso'+(nSkip?(' · '+nSkip+' pendientes que saltaste'):'');
   box.innerHTML=items.map(it=>{
     const dv=draft[it.ref]||{};
     const skipped=!!dv.skipped;
