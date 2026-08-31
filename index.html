@@ -2192,6 +2192,23 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <div class="cf-total-val" id="cf-total-val">$0</div>
         </div>
 
+        <div class="mm-field" style="margin-bottom:8px">
+          <label>Margen objetivo (%)</label>
+          <input id="cf-margen" inputmode="decimal" placeholder="65" style="width:100%;height:38px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;font-family:'JetBrains Mono';box-sizing:border-box">
+          <div class="pc-round-row" id="cf-margen-chips" style="margin-top:8px">
+            <button type="button" class="pc-round-chip" data-m="50">50%</button>
+            <button type="button" class="pc-round-chip" data-m="60">60%</button>
+            <button type="button" class="pc-round-chip" data-m="65">65%</button>
+            <button type="button" class="pc-round-chip" data-m="70">70%</button>
+          </div>
+          <div class="pc-hint">Para productos elaborados (con mano de obra) lo típico es apuntar a 60-70%.</div>
+        </div>
+        <div class="cf-total" style="background:var(--gold-bg,#F3F0E2);border-color:var(--gold,#8A7A4E)">
+          <div class="cf-total-lbl" style="color:var(--gold,#8A7A4E)">Precio de venta sugerido</div>
+          <div class="cf-total-val" id="cf-precio-sugerido">$0</div>
+        </div>
+        <div class="pc-hint" id="cf-precio-comparacion" style="margin:-4px 0 8px"></div>
+
         <button class="mm-save" id="cf-aplicar" disabled>Aplicar costo al producto</button>
         </div>
       </div>
@@ -4448,7 +4465,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-30.4';
+const APP_VERSION='2026-08-30.5';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -11726,6 +11743,7 @@ function cfAbrir(){
   document.getElementById('cf-exhib-watts').value=exhibDefault.watts>0?exhibDefault.watts:'';
   document.getElementById('cf-exhib-kwh').value=exhibDefault.kwh>0?exhibDefault.kwh:'';
   document.getElementById('cf-exhib-unidades').value=exhibDefault.unidadesMes>0?exhibDefault.unidadesMes:'';
+  document.getElementById('cf-margen').value=cfMargenDefaultGet();
   abrirModal('cf-ov');
   cfCalcular();
   setTimeout(()=>document.getElementById('cf-search').focus(),150);
@@ -11756,6 +11774,7 @@ function cfPick(ref){
     cfCalcular();
   }else{
     cfActualizarAlerta();
+    cfActualizarPrecioSugerido();
     cfValidar();
   }
 }
@@ -11768,6 +11787,30 @@ function cfActualizarAlerta(){
   }else{
     box.classList.add('hidden');
   }
+}
+// "Margen objetivo" recordado entre usos (localStorage, no servidor — a diferencia del fijo/
+// exhibidora, esto es más una preferencia personal de cómo pensar el precio que un costo real,
+// no hace falta sincronizarlo entre dispositivos). Reusa PriceCalc.precioDesdeMargen/
+// margenDesdePrecio — las mismas fórmulas que ya usa PcWidget en Ficha/Recepción/Crear
+// producto, en vez de inventar el cálculo de nuevo acá.
+function cfMargenDefaultGet(){try{return Number(localStorage.getItem('marin_cf_margen_default'))||65;}catch(e){return 65;}}
+function cfMargenDefaultSet(v){try{localStorage.setItem('marin_cf_margen_default',String(v||65));}catch(e){}}
+function cfActualizarPrecioSugerido(){
+  const margen=Number(document.getElementById('cf-margen').value)||0;
+  const sugerido=PriceCalc.precioDesdeMargen(cfState.total,margen);
+  document.getElementById('cf-precio-sugerido').textContent=sugerido!=null?peso(sugerido):'—';
+  document.querySelectorAll('#cf-margen-chips [data-m]').forEach(btn=>{
+    btn.classList.toggle('active',Number(btn.dataset.m)===margen);
+  });
+  const it=cfState.item;
+  const cmp=document.getElementById('cf-precio-comparacion');
+  if(it&&it.precio!=null){
+    const margenActual=PriceCalc.margenDesdePrecio(it.precio,cfState.total);
+    cmp.textContent='Precio actual: '+peso(it.precio)+' · margen con el costo de arriba: '+(margenActual!=null?margenActual.toFixed(1)+'%':'—');
+  }else{
+    cmp.textContent='';
+  }
+  cfMargenDefaultSet(margen);
 }
 function cfCalcular(){
   const materia=Number(document.getElementById('cf-materia').value)||0;
@@ -11800,6 +11843,7 @@ function cfCalcular(){
   cfFijoDefaultSet(fijo);
   cfExhibDefaultSet({watts:exhibWatts,kwh:exhibKwh,unidadesMes:exhibUnidadesMes});
   cfActualizarAlerta();
+  cfActualizarPrecioSugerido();
   cfValidar();
 }
 function cfValidar(){
@@ -11811,6 +11855,13 @@ document.getElementById('cf-cerrar').onclick=()=>cerrarModal('cf-ov');
 document.getElementById('mas-q-costeo').onclick=cfAbrir;
 ['cf-materia','cf-unidades','cf-horas','cf-mins','cf-sueldo','cf-envase','cf-fijo','cf-exhib-watts','cf-exhib-kwh','cf-exhib-unidades'].forEach(id=>{
   document.getElementById(id).addEventListener('input',cfCalcular);
+});
+document.getElementById('cf-margen').addEventListener('input',cfActualizarPrecioSugerido);
+document.querySelectorAll('#cf-margen-chips [data-m]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.getElementById('cf-margen').value=btn.dataset.m;
+    cfActualizarPrecioSugerido();
+  });
 });
 document.getElementById('cf-search').addEventListener('input',ev=>{
   const q=ev.target.value;
