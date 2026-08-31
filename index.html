@@ -2135,8 +2135,17 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
           <input id="cf-unidades" inputmode="decimal" placeholder="0" style="width:100%;height:38px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;font-family:'JetBrains Mono';box-sizing:border-box">
         </div>
         <div class="mm-field" style="margin-bottom:8px">
-          <label>Minutos de mano de obra invertidos en el lote</label>
-          <input id="cf-minutos" inputmode="decimal" placeholder="0" style="width:100%;height:38px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;font-family:'JetBrains Mono';box-sizing:border-box">
+          <label>Tiempo de mano de obra invertido en el lote</label>
+          <div style="display:flex;gap:8px">
+            <div style="flex:1">
+              <input id="cf-horas" inputmode="numeric" placeholder="0" aria-label="Horas" style="width:100%;height:38px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;font-family:'JetBrains Mono';box-sizing:border-box">
+              <div class="pc-hint" style="text-align:center">Horas</div>
+            </div>
+            <div style="flex:1">
+              <input id="cf-mins" inputmode="numeric" placeholder="0" aria-label="Minutos" max="59" style="width:100%;height:38px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;font-family:'JetBrains Mono';box-sizing:border-box">
+              <div class="pc-hint" style="text-align:center">Min</div>
+            </div>
+          </div>
         </div>
         <div class="mm-field" style="margin-bottom:8px">
           <label>Sueldo por hora de quien lo preparó</label>
@@ -4419,7 +4428,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-30.2';
+const APP_VERSION='2026-08-30.3';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -4632,7 +4641,7 @@ function renderABCResumen(){
 })();
 
 // Convierte los datos del endpoint (items + ventas) al formato DB que usa el dashboard
-function buildDBfromCloud(items, ventas, pendientes, provsExtra, provsIdsExtra, provsNombresExtra, multiplos, empaques, palabras){
+function buildDBfromCloud(items, ventas, pendientes, provsExtra, provsIdsExtra, provsNombresExtra, multiplos, empaques, palabras, costeoProducto){
   // Mínimos/empaques/palabras configurados a mano (ver tagConOverride) — se guardan en
   // DB.multiplosProducto/DB.empaquesProducto/DB.palabrasProducto ANTES de armar items_arr
   // (tagConOverride los lee de ahí), y también viajan en el objeto DB final devuelto más abajo,
@@ -4724,7 +4733,7 @@ function buildDBfromCloud(items, ventas, pendientes, provsExtra, provsIdsExtra, 
   const provsReal=Object.values(psReal).sort((a,b)=>String(a.prov).localeCompare(String(b.prov),'es'));
 
   const meta=ventas&&ventas.meta?ventas.meta:{min:'',max:'',ndays:0};
-  return {meta:{min:meta.min,max:meta.max,ndays:meta.ndays,nitems:items_arr.length,nprov:provs.length},items:items_arr,provs:provs,provsReal:provsReal,pendBySku:pendBySku,pendByBarcode:pendByBarcode,multiplosProducto:multiplosObj,empaquesProducto:empaquesObj,palabrasProducto:palabrasObj};
+  return {meta:{min:meta.min,max:meta.max,ndays:meta.ndays,nitems:items_arr.length,nprov:provs.length},items:items_arr,provs:provs,provsReal:provsReal,pendBySku:pendBySku,pendByBarcode:pendByBarcode,multiplosProducto:multiplosObj,empaquesProducto:empaquesObj,palabrasProducto:palabrasObj,costeoProducto:costeoProducto||{}};
 }
 // Devuelve el registro de "pedido pendiente" de un producto (por sku, o por barcode si otro
 // proveedor lo vende bajo un sku distinto), o null si no tiene nada pedido en camino.
@@ -4766,7 +4775,7 @@ async function cloudSync(silent,live,full,origen){
       if(esPollDeFondo&&editando)return true;
       _ultimoPayloadFirma=firma;
 
-      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(j.costeoFijoDefault!=null)cfFijoDefaultSet(j.costeoFijoDefault);
+      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras,j.costeoProducto);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(j.costeoFijoDefault!=null)cfFijoDefaultSet(j.costeoFijoDefault);
       INVMAP=invMapFromItems(DB.items);
       SRC='nube · '+new Date().toLocaleString('es-CL');
       // FIX: antes esto era "state.edits={}" incondicional, así que CUALQUIER sync
@@ -4879,7 +4888,7 @@ async function pollFondo(){
     if(firma===_ultimoPayloadFirma)return; // nada cambió, no hay nada que repintar
     _ultimoPayloadFirma=firma;
 
-    DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(j.costeoFijoDefault!=null)cfFijoDefaultSet(j.costeoFijoDefault);
+    DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras,j.costeoProducto);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(j.costeoFijoDefault!=null)cfFijoDefaultSet(j.costeoFijoDefault);
     INVMAP=invMapFromItems(DB.items);
     SRC='nube · '+new Date().toLocaleString('es-CL');
     setLastSync(Date.now());
@@ -9046,7 +9055,7 @@ async function recargarHistorial(){
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=recargar_historial');
     const j=await res.json();
     if(j&&j.ok){
-      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(j.costeoFijoDefault!=null)cfFijoDefaultSet(j.costeoFijoDefault);
+      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras,j.costeoProducto);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(j.costeoFijoDefault!=null)cfFijoDefaultSet(j.costeoFijoDefault);
       INVMAP=invMapFromItems(DB.items);
       state.edits={};
       persist();render();
@@ -11668,6 +11677,15 @@ function cfFijoDefaultSet(v){try{localStorage.setItem('marin_cf_fijo_default',St
 function cfFijoGuardarServidor(v){
   fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'guardar_costeo_fijo_default',payload:{costoFijoDefault:v}})}).catch(()=>{});
 }
+// Guarda los datos del lote (materia/unidades/minutos/sueldo/envase) PARA ESE PRODUCTO en el
+// servidor (tabla config_costeo_producto) — mismo "mejor esfuerzo" que cfFijoGuardarServidor,
+// y también actualiza DB.costeoProducto localmente para que quede disponible al toque, sin
+// esperar el próximo sync, si se vuelve a elegir el mismo producto en esta sesión.
+function cfProductoGuardarServidor(sku,datos){
+  DB.costeoProducto=DB.costeoProducto||{};
+  DB.costeoProducto[sku]=datos;
+  fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'guardar_costeo_producto',payload:Object.assign({sku:sku},datos)})}).catch(()=>{});
+}
 function cfAbrir(){
   document.getElementById('mas-ov').classList.add('hidden');
   cfState={item:null,total:0};
@@ -11675,13 +11693,18 @@ function cfAbrir(){
   document.getElementById('cf-results').innerHTML='';
   document.getElementById('cf-picked').classList.remove('on');
   document.getElementById('cf-alerta').classList.add('hidden');
-  ['cf-materia','cf-unidades','cf-minutos','cf-sueldo','cf-envase'].forEach(id=>{document.getElementById(id).value='';});
+  ['cf-materia','cf-unidades','cf-horas','cf-mins','cf-sueldo','cf-envase'].forEach(id=>{document.getElementById(id).value='';});
   const fijoDefault=cfFijoDefaultGet();
   document.getElementById('cf-fijo').value=fijoDefault>0?fijoDefault:'';
   abrirModal('cf-ov');
   cfCalcular();
   setTimeout(()=>document.getElementById('cf-search').focus(),150);
 }
+// Al elegir un producto, precarga los valores del último lote calculado PARA ESE producto
+// (DB.costeoProducto, sincronizado desde el servidor — ver cfProductoGuardarServidor) — así no
+// hay que volver a tipear materia prima/unidades/tiempo/sueldo/envase cada vez que se recalcula
+// el mismo producto. Si el producto nunca se calculó antes, deja los campos como estén (vacíos,
+// recién limpiados por cfAbrir).
 function cfPick(ref){
   const it=(DB.items||[]).find(i=>i.ref===ref);
   if(!it)return;
@@ -11692,8 +11715,19 @@ function cfPick(ref){
   document.getElementById('cf-nom').textContent=it.nombre;
   document.getElementById('cf-costoventa').textContent=
     'Costo actual: '+(it.coste>0?peso(it.coste):'—')+' · Precio de venta: '+(it.precio!=null?peso(it.precio):'—');
-  cfActualizarAlerta();
-  cfValidar();
+  const guardado=DB.costeoProducto&&DB.costeoProducto[ref];
+  if(guardado){
+    document.getElementById('cf-materia').value=guardado.materia||'';
+    document.getElementById('cf-unidades').value=guardado.unidades||'';
+    document.getElementById('cf-horas').value=guardado.minutos?Math.floor(guardado.minutos/60)||'':'';
+    document.getElementById('cf-mins').value=guardado.minutos?(guardado.minutos%60)||'':'';
+    document.getElementById('cf-sueldo').value=guardado.sueldo||'';
+    document.getElementById('cf-envase').value=guardado.envase||'';
+    cfCalcular();
+  }else{
+    cfActualizarAlerta();
+    cfValidar();
+  }
 }
 function cfActualizarAlerta(){
   const box=document.getElementById('cf-alerta');
@@ -11708,7 +11742,9 @@ function cfActualizarAlerta(){
 function cfCalcular(){
   const materia=Number(document.getElementById('cf-materia').value)||0;
   const unidades=Number(document.getElementById('cf-unidades').value)||0;
-  const minutos=Number(document.getElementById('cf-minutos').value)||0;
+  const horas=Number(document.getElementById('cf-horas').value)||0;
+  const mins=Number(document.getElementById('cf-mins').value)||0;
+  const minutos=horas*60+mins;
   const sueldo=Number(document.getElementById('cf-sueldo').value)||0;
   const envase=Number(document.getElementById('cf-envase').value)||0;
   const fijo=Number(document.getElementById('cf-fijo').value)||0;
@@ -11732,7 +11768,7 @@ function cfValidar(){
 }
 document.getElementById('cf-cerrar').onclick=()=>cerrarModal('cf-ov');
 document.getElementById('mas-q-costeo').onclick=cfAbrir;
-['cf-materia','cf-unidades','cf-minutos','cf-sueldo','cf-envase','cf-fijo'].forEach(id=>{
+['cf-materia','cf-unidades','cf-horas','cf-mins','cf-sueldo','cf-envase','cf-fijo'].forEach(id=>{
   document.getElementById(id).addEventListener('input',cfCalcular);
 });
 document.getElementById('cf-search').addEventListener('input',ev=>{
@@ -11796,6 +11832,13 @@ document.getElementById('cf-aplicar').onclick=async()=>{
         render();
       }
       cfFijoGuardarServidor(Number(document.getElementById('cf-fijo').value)||0);
+      cfProductoGuardarServidor(it.ref,{
+        materia:Number(document.getElementById('cf-materia').value)||0,
+        unidades:Number(document.getElementById('cf-unidades').value)||0,
+        minutos:(Number(document.getElementById('cf-horas').value)||0)*60+(Number(document.getElementById('cf-mins').value)||0),
+        sueldo:Number(document.getElementById('cf-sueldo').value)||0,
+        envase:Number(document.getElementById('cf-envase').value)||0
+      });
       cerrarModal('cf-ov');
     }else{
       showToast('Error: '+((j&&j.error)||'no se pudo aplicar el costo'));
