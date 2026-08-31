@@ -4419,7 +4419,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-30.1';
+const APP_VERSION='2026-08-30.2';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -4766,7 +4766,7 @@ async function cloudSync(silent,live,full,origen){
       if(esPollDeFondo&&editando)return true;
       _ultimoPayloadFirma=firma;
 
-      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);
+      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(j.costeoFijoDefault!=null)cfFijoDefaultSet(j.costeoFijoDefault);
       INVMAP=invMapFromItems(DB.items);
       SRC='nube · '+new Date().toLocaleString('es-CL');
       // FIX: antes esto era "state.edits={}" incondicional, así que CUALQUIER sync
@@ -4879,7 +4879,7 @@ async function pollFondo(){
     if(firma===_ultimoPayloadFirma)return; // nada cambió, no hay nada que repintar
     _ultimoPayloadFirma=firma;
 
-    DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);
+    DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(j.costeoFijoDefault!=null)cfFijoDefaultSet(j.costeoFijoDefault);
     INVMAP=invMapFromItems(DB.items);
     SRC='nube · '+new Date().toLocaleString('es-CL');
     setLastSync(Date.now());
@@ -9046,7 +9046,7 @@ async function recargarHistorial(){
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=recargar_historial');
     const j=await res.json();
     if(j&&j.ok){
-      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);
+      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(j.costeoFijoDefault!=null)cfFijoDefaultSet(j.costeoFijoDefault);
       INVMAP=invMapFromItems(DB.items);
       state.edits={};
       persist();render();
@@ -11661,6 +11661,13 @@ async function prCorregirDireccion(id,btn,direccionActual,sku,cantidad,costoUnit
 let cfState={item:null,total:0};
 function cfFijoDefaultGet(){try{return Number(localStorage.getItem('marin_cf_fijo_default'))||0;}catch(e){return 0;}}
 function cfFijoDefaultSet(v){try{localStorage.setItem('marin_cf_fijo_default',String(v||0));}catch(e){}}
+// Guarda el "costo fijo por unidad" en el servidor (tabla config_costeo) para que se sincronice
+// entre dispositivos — se llama solo al aplicar un costo (no en cada tecleo, para no
+// bombardear el servidor). "Mejor esfuerzo": si falla, el valor sigue funcionando igual desde
+// localStorage en este dispositivo, simplemente no viaja a los demás hasta el próximo intento.
+function cfFijoGuardarServidor(v){
+  fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'guardar_costeo_fijo_default',payload:{costoFijoDefault:v}})}).catch(()=>{});
+}
 function cfAbrir(){
   document.getElementById('mas-ov').classList.add('hidden');
   cfState={item:null,total:0};
@@ -11788,6 +11795,7 @@ document.getElementById('cf-aplicar').onclick=async()=>{
         showToast(msg);
         render();
       }
+      cfFijoGuardarServidor(Number(document.getElementById('cf-fijo').value)||0);
       cerrarModal('cf-ov');
     }else{
       showToast('Error: '+((j&&j.error)||'no se pudo aplicar el costo'));
