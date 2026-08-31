@@ -4477,7 +4477,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-08-30.11';
+const APP_VERSION='2026-08-30.12';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -11281,10 +11281,11 @@ function scRenderList(){
   box.innerHTML=items.map(it=>{
     const dv=draft[it.ref]||{};
     const skipped=!!dv.skipped;
+    const sectorTxt=scSectorDe(it)||'Sin sector';
     return `
     <div class="sc-row${skipped?' skipped':''}" id="sc-row-${it.ref}">
       <div class="nom">${it.nombre}</div>
-      <div class="cat">${it.prov}${it.peso?' · ⚖️ vendido por kg':''}${skipped?' · <span style="color:var(--gold)">pendiente</span>':''}</div>
+      <div class="cat">${sectorTxt}${it.peso?' · ⚖️ vendido por kg':''}${skipped?' · <span style="color:var(--gold)">pendiente</span>':''}</div>
       <div class="inrow">
         <input type="text" inputmode="numeric" placeholder="Costo${it.peso?' por kg':''} ($)" id="sc-in-${it.ref}" value="${dv.costo||''}">
         <button class="sc-skip" data-ref="${it.ref}">${skipped?'↺ Retomar':'Saltar por ahora'}</button>
