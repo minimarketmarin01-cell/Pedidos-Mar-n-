@@ -4487,7 +4487,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-09-02.1';
+const APP_VERSION='2026-09-04.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -13457,6 +13457,12 @@ async function rdCargar(){
     box.innerHTML=items.map(it=>{
       const hora=(String(it.fecha||'').split(' ')[1])||'';
       const cant=(it.cantidad!=null&&it.cantidad!=='')?(' · '+it.cantidad+' u'):(it.stock!=null?(' · stock: '+it.stock):'');
+      // "Sin fecha": el motivo que arma accionLoteNuevo solo incluye "vence" cuando la
+      // recepción sí tuvo fecha de vencimiento — misma señal que ya usa el resto del sistema
+      // (ver vcLoad, que filtra por fechaVencimiento vacío). El lote ya existe en el backend
+      // (accionLoteNuevo siempre inserta en vencimientos, con o sin fecha) — este botón solo
+      // lleva a donde ya se puede completar la fecha sin volver a sumar stock.
+      const sinFecha=it.accion==='recepcion_stock'&&!/vence/i.test(String(it.motivo||''));
       return `<div class="fp-row" style="flex-direction:column;align-items:stretch;gap:2px;padding:9px 0">
         <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
           <span style="font-weight:700;font-size:12.5px">${rdEtiquetaAccion(it.accion)}</span>
@@ -13465,12 +13471,26 @@ async function rdCargar(){
         <div style="font-size:12.5px">${(it.nombre||it.sku||'').replace(/</g,'&lt;')}${cant}</div>
         ${it.motivo?`<div style="font-size:11px;color:var(--muted)">${String(it.motivo).replace(/</g,'&lt;')}</div>`:''}
         <div style="font-size:10.5px;color:var(--muted)">${it.responsable||'—'}</div>
+        ${sinFecha?`<button type="button" class="rd-fecha-btn loadbtn" data-sku="${String(it.sku||'').replace(/"/g,'&quot;')}" style="align-self:flex-start;margin-top:4px;padding:6px 10px;font-size:11.5px">📅 Agregar fecha</button>`:''}
       </div>`;
     }).join('');
   }catch(e){box.innerHTML='<div class="vc-empty">Error al cargar. Intenta de nuevo.</div>';}
 }
 document.getElementById('mas-q-reportedia').onclick=rdAbrir;
 document.getElementById('rd-cerrar').onclick=()=>cerrarModal('rd-ov');
+document.getElementById('rd-list').addEventListener('click',async(e)=>{
+  const btn=e.target.closest('.rd-fecha-btn');
+  if(!btn)return;
+  const sku=btn.dataset.sku;
+  if(!sku)return;
+  cerrarModal('rd-ov');
+  await fpAbrir(sku);
+  const lotesToggle=document.getElementById('fp-lotes-toggle');
+  if(lotesToggle&&!lotesToggle.classList.contains('hidden')){
+    lotesToggle.click(); // mismo camino que tocarlo a mano: expande y pinta Lotes (ver fpPintar)
+    showToast('Buscá el lote "Sin fecha" en Lotes y tocá "Fecha" para completarlo');
+  }
+});
 document.getElementById('rd-fecha').onchange=rdCargar;
 document.getElementById('rz-prov').onchange=rzRender;
 document.getElementById('rz-clase').onchange=rzRender;
