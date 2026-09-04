@@ -4487,7 +4487,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-09-04.1';
+const APP_VERSION='2026-09-04.2';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -6379,7 +6379,8 @@ function fpPaneLotes(f){
     <div style="display:flex;align-items:flex-start;gap:10px">
       <div class="sm-info">
         <div class="nom">${i===0?'⏰ ':''}${l.lote?('Lote '+l.lote):'Sin lote'} · ${fmt1(l.cantidad)} u</div>
-        <div class="meta">Vence ${l.fechaVencimiento} · ${l.accion||l.estado}</div>
+        <div class="meta">${l.fechaVencimiento?('Vence '+l.fechaVencimiento):'Sin fecha de vencimiento'} · ${l.accion||l.estado}</div>
+        ${l.fechaIngreso?`<div class="meta">Ingresó ${l.fechaIngreso}</div>`:''}
       </div>
       ${fpBadgeLote(l)}
     </div>
@@ -13457,12 +13458,13 @@ async function rdCargar(){
     box.innerHTML=items.map(it=>{
       const hora=(String(it.fecha||'').split(' ')[1])||'';
       const cant=(it.cantidad!=null&&it.cantidad!=='')?(' · '+it.cantidad+' u'):(it.stock!=null?(' · stock: '+it.stock):'');
-      // "Sin fecha": el motivo que arma accionLoteNuevo solo incluye "vence" cuando la
-      // recepción sí tuvo fecha de vencimiento — misma señal que ya usa el resto del sistema
-      // (ver vcLoad, que filtra por fechaVencimiento vacío). El lote ya existe en el backend
-      // (accionLoteNuevo siempre inserta en vencimientos, con o sin fecha) — este botón solo
-      // lleva a donde ya se puede completar la fecha sin volver a sumar stock.
-      const sinFecha=it.accion==='recepcion_stock'&&!/vence/i.test(String(it.motivo||''));
+      // Vínculo directo al lote (auditoria.vencimientos_id, ver backend): recepciones nuevas
+      // traen loteId + el estado REAL del lote (no el texto motivo, que queda congelado) — para
+      // esas se puede completar la fecha ahí mismo sin navegar (rdMostrarFormularioFecha).
+      const tieneLoteId=it.accion==='recepcion_stock'&&it.loteId&&!it.loteFechaVencimiento;
+      // Filas viejas (creadas antes de que existiera el vínculo) no tienen loteId — se
+      // mantiene la heurística por texto y el atajo que abre la Ficha (comportamiento previo).
+      const legacySinFecha=it.accion==='recepcion_stock'&&!it.loteId&&!/vence/i.test(String(it.motivo||''));
       return `<div class="fp-row" style="flex-direction:column;align-items:stretch;gap:2px;padding:9px 0">
         <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
           <span style="font-weight:700;font-size:12.5px">${rdEtiquetaAccion(it.accion)}</span>
@@ -13471,17 +13473,69 @@ async function rdCargar(){
         <div style="font-size:12.5px">${(it.nombre||it.sku||'').replace(/</g,'&lt;')}${cant}</div>
         ${it.motivo?`<div style="font-size:11px;color:var(--muted)">${String(it.motivo).replace(/</g,'&lt;')}</div>`:''}
         <div style="font-size:10.5px;color:var(--muted)">${it.responsable||'—'}</div>
-        ${sinFecha?`<button type="button" class="rd-fecha-btn loadbtn" data-sku="${String(it.sku||'').replace(/"/g,'&quot;')}" style="align-self:flex-start;margin-top:4px;padding:6px 10px;font-size:11.5px">📅 Agregar fecha</button>`:''}
+        ${tieneLoteId?`<div class="rd-fecha-area" id="rd-fecha-area-${it.loteId}" style="margin-top:4px"><button type="button" class="rd-fecha-btn loadbtn" data-lote-id="${it.loteId}" style="align-self:flex-start;padding:6px 10px;font-size:11.5px">📅 Agregar fecha</button></div>`:''}
+        ${legacySinFecha?`<button type="button" class="rd-fecha-btn loadbtn" data-sku="${String(it.sku||'').replace(/"/g,'&quot;')}" style="align-self:flex-start;margin-top:4px;padding:6px 10px;font-size:11.5px">📅 Agregar fecha</button>`:''}
       </div>`;
     }).join('');
   }catch(e){box.innerHTML='<div class="vc-empty">Error al cargar. Intenta de nuevo.</div>';}
 }
 document.getElementById('mas-q-reportedia').onclick=rdAbrir;
 document.getElementById('rd-cerrar').onclick=()=>cerrarModal('rd-ov');
+// Despliega, DENTRO de la misma fila de Reportes del día, el mini-formulario de fecha —
+// mismo patrón que ya usa Ficha de producto (fpWireLotes/fp-ef-*), con ids propios (rd-ef-*)
+// para no chocar si ambas pantallas llegaran a estar montadas a la vez.
+function rdMostrarFormularioFecha(loteId,areaEl){
+  if(!areaEl)return;
+  areaEl.innerHTML=`<div class="vc-editlbl" style="margin-bottom:4px">Fecha de vencimiento:</div>
+    <div class="fecha-wrap">
+      <input id="rd-ef-dd-${loteId}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="DD" autocomplete="off">
+      <span class="fecha-sep">/</span>
+      <input id="rd-ef-mm-${loteId}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="off">
+      <span class="fecha-sep">/</span>
+      <input id="rd-ef-aaaa-${loteId}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="AA" autocomplete="off">
+      <button type="button" class="btn-ok rd-fecha-guardar" data-lote-id="${loteId}" style="white-space:nowrap">Guardar</button>
+    </div>`;
+  const dd=document.getElementById('rd-ef-dd-'+loteId);
+  if(dd)dd.focus();
+  ['dd','mm','aaaa'].forEach(seg=>{
+    const el=document.getElementById('rd-ef-'+seg+'-'+loteId);
+    if(el)el.addEventListener('keydown',e=>{if(e.key==='Enter'){const b=areaEl.querySelector('.rd-fecha-guardar');if(b)b.click();}});
+  });
+}
+// Guarda la fecha SIN salir de Reportes del día (action=editar_fecha_venc, no toca stock — mismo
+// endpoint que ya usa fpEditarFechaLote) y deja la fila resuelta ahí mismo, lista para seguir
+// con la siguiente recepción sin recargar toda la lista.
+async function rdGuardarFechaLote(loteId,nuevaFecha,areaEl){
+  if(!/^\d{2}\/\d{2}\/\d{4}$/.test(nuevaFecha)){showToast('Escribe la fecha como DD/MM/AAAA');return;}
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_fecha_venc',payload:{filaIndex:Number(loteId),nuevaFecha:nuevaFecha}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      showToast('Fecha guardada: '+j.nuevaFecha+' ('+j.estado+')');
+      if(areaEl)areaEl.innerHTML=`<div style="font-size:11.5px;color:var(--wa-d);font-weight:700">✓ Vence ${j.nuevaFecha}</div>`;
+    }else showToast('Error: '+((j&&j.error)||'no se pudo guardar la fecha'));
+  }catch(e){showToast('Error de conexión al guardar la fecha');}
+}
 document.getElementById('rd-list').addEventListener('click',async(e)=>{
-  const btn=e.target.closest('.rd-fecha-btn');
-  if(!btn)return;
-  const sku=btn.dataset.sku;
+  const inlineBtn=e.target.closest('.rd-fecha-btn[data-lote-id]');
+  if(inlineBtn){
+    rdMostrarFormularioFecha(inlineBtn.dataset.loteId,inlineBtn.closest('.rd-fecha-area'));
+    return;
+  }
+  const guardarBtn=e.target.closest('.rd-fecha-guardar');
+  if(guardarBtn){
+    const loteId=guardarBtn.dataset.loteId;
+    const areaEl=guardarBtn.closest('.rd-fecha-area');
+    const dd=document.getElementById('rd-ef-dd-'+loteId).value;
+    const mm=document.getElementById('rd-ef-mm-'+loteId).value;
+    const aaaa=document.getElementById('rd-ef-aaaa-'+loteId).value;
+    if(dd.length!==2||mm.length!==2||aaaa.length!==2){showToast('Completa día, mes y año');return;}
+    rdGuardarFechaLote(loteId,dd+'/'+mm+'/20'+aaaa,areaEl);
+    return;
+  }
+  const legacyBtn=e.target.closest('.rd-fecha-btn[data-sku]');
+  if(!legacyBtn)return;
+  const sku=legacyBtn.dataset.sku;
   if(!sku)return;
   cerrarModal('rd-ov');
   await fpAbrir(sku);
