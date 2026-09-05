@@ -4487,7 +4487,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-09-05.3';
+const APP_VERSION='2026-09-05.4';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -7838,7 +7838,63 @@ function edRenderResultados(list){
     <span class="k">${it.nombre}</span>
     <span class="v" style="font-size:11px;color:var(--muted);text-align:right;font-weight:600">${it.prov||''}</span>
   </div>`).join('');
+  // Lleva los resultados recién pintados a la vista — necesario con el teclado abierto, ver el
+  // IIFE de abajo ("resultados siempre visibles sobre el teclado") que ajusta la altura real de
+  // la tarjeta para que esto realmente funcione en vez de no hacer nada.
+  requestAnimationFrame(()=>{try{box.scrollIntoView({block:'nearest',behavior:'smooth'});}catch(e){}});
 }
+// ===================== Editar productos: resultados siempre visibles sobre el teclado =====================
+// Mismo problema (y misma técnica) que ya se resolvió para el footer de Recepción (ver más abajo
+// "Recepción: Guardar siempre visible sobre el teclado"): en Android moderno el layout viewport
+// NO se achica cuando aparece el teclado (solo el visualViewport sí) — #ed-ov es una hoja
+// inferior (position:fixed;inset:0;align-items:flex-end) anclada al fondo de ese layout viewport
+// que no cambia, así que aunque la tarjeta se achicara, seguiría flotando pegada al mismo fondo
+// de siempre — que con el teclado abierto está detrás de él. Hay que subir el fondo mismo de la
+// hoja hasta el borde superior real del teclado (#ed-ov.style.bottom = solape del teclado) para
+// que el anclaje "pegado abajo" quede pegado arriba del teclado, y además topear la tarjeta a la
+// altura REAL visible (visualViewport.height, no el 92vh de siempre, que se sigue calculando
+// sobre el viewport completo sin achicar). Con eso #ed-ov .mm-body (ya scrollable,
+// overflow-y:auto) refleja lo que en verdad se puede ver, y el scrollIntoView de arriba lleva los
+// resultados a la vista de verdad.
+(function(){
+  var vv=window.visualViewport;
+  var ovEl=null,cardEl=null,rafId=null;
+  function edOvAbierto(){
+    var ov=document.getElementById('ed-ov');
+    return !!ov&&!ov.classList.contains('hidden');
+  }
+  function restaurar(){
+    if(ovEl)ovEl.style.bottom='';
+    if(cardEl)cardEl.style.maxHeight='';
+  }
+  function ajustar(){
+    rafId=null;
+    if(!edOvAbierto()){restaurar();return;}
+    ovEl=ovEl||document.getElementById('ed-ov');
+    cardEl=cardEl||document.querySelector('#ed-ov .mm-card');
+    if(!ovEl||!cardEl)return;
+    var solape=vv?Math.max(0,Math.round(window.innerHeight-(vv.height+vv.offsetTop))):0;
+    if(solape>150){ // mismo umbral que rc-footer: ignora la barra de URL/nav, solo reacciona al teclado
+      ovEl.style.bottom=solape+'px';
+      cardEl.style.maxHeight=Math.max(200,Math.round(vv.height)-20)+'px';
+    } else {
+      restaurar();
+    }
+  }
+  function programarAjuste(){
+    if(rafId)return;
+    rafId=requestAnimationFrame(ajustar);
+  }
+  if(vv){
+    vv.addEventListener('resize',programarAjuste);
+    vv.addEventListener('scroll',programarAjuste);
+  } else {
+    // Sin visualViewport (navegador viejo/Bliss OS antiguo): ahí el propio window SÍ se achica
+    // con el teclado, así que 92vh ya se recalcula solo — solo se limpia cualquier estilo fijo
+    // que hubiera quedado de una ejecución previa.
+    window.addEventListener('resize',function(){if(edOvAbierto())restaurar();});
+  }
+})();
 document.getElementById('ed-search').addEventListener('input',ev=>{
   const q=ev.target.value;
   const x=document.getElementById('ed-lx'); if(x)x.style.display=q?'block':'none';
