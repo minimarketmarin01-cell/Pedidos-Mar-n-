@@ -4487,7 +4487,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-09-04.2';
+const APP_VERSION='2026-09-05.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -6425,6 +6425,7 @@ function fpWireLotes(box){
   });
   box.querySelectorAll('[data-fp-savef]').forEach(b=>{
     const fi=b.dataset.fpSavef;
+    wireFechaSegmentadaSimple('fp-ef-dd-'+fi,'fp-ef-mm-'+fi,'fp-ef-aaaa-'+fi);
     document.getElementById('fp-ef-dd-'+fi).addEventListener('keydown',e=>{if(e.key==='Enter')b.click();});
     document.getElementById('fp-ef-mm-'+fi).addEventListener('keydown',e=>{if(e.key==='Enter')b.click();});
     document.getElementById('fp-ef-aaaa-'+fi).addEventListener('keydown',e=>{if(e.key==='Enter')b.click();});
@@ -10076,6 +10077,30 @@ function wireFechaSegmentada(ddId,mmId,yyId,hiddenId,calId){
     if(hidden.value){const p=hidden.value.split('-');yy.value=p[0].slice(-2);mm.value=p[1];dd.value=p[2];}
   });
 }
+// Versión liviana de wireFechaSegmentada para los mini-formularios de "editar fecha de un lote
+// ya existente" (Ficha de producto, Vencimientos, Reportes del día) — ninguno tiene (ni
+// necesita) un <input type="date"> oculto ni botón de calendario, así que solo se replica el
+// auto-avance de foco entre los 3 campos y el retroceso con Backspace en campo vacío. Antes
+// estos 3 mini-formularios se copiaban entre sí sin ese auto-avance, a diferencia de los
+// formularios "grandes" de fecha (Recepción, Crear producto, etc.) que sí lo tienen.
+function wireFechaSegmentadaSimple(ddId,mmId,yyId){
+  const dd=document.getElementById(ddId),mm=document.getElementById(mmId),yy=document.getElementById(yyId);
+  if(!dd||!mm||!yy)return;
+  [[dd,2,mm],[mm,2,yy],[yy,2,null]].forEach(([inp,max,next])=>{
+    inp.addEventListener('input',()=>{
+      inp.value=inp.value.replace(/[^\d]/g,'').slice(0,max);
+      if(inp.value.length>=max&&next)next.focus();
+    });
+    inp.addEventListener('keydown',e=>{
+      if(e.key==='Backspace'&&!inp.value){
+        if(inp===mm)dd.focus();else if(inp===yy)mm.focus();
+      }
+    });
+    inp.addEventListener('focus',()=>{
+      setTimeout(()=>{try{inp.scrollIntoView({block:'center',behavior:'smooth'});}catch(e){}},260);
+    });
+  });
+}
 wireFechaSegmentada('rc-fecha-dd','rc-fecha-mm','rc-fecha-aaaa','rc-fecha','rc-fecha-cal');
 wireFechaSegmentada('vc-fecha-dd','vc-fecha-mm','vc-fecha-aaaa','vc-fecha','vc-fecha-cal');
 wireFechaSegmentada('cp-fecha-dd','cp-fecha-mm','cp-fecha-aaaa','cp-fecha','cp-fecha-cal');
@@ -10549,6 +10574,7 @@ function vcWireFilas(box){
   });
   box.querySelectorAll('[data-savef]').forEach(b=>{
     const fi=b.dataset.savef;
+    wireFechaSegmentadaSimple('vc-ef-dd-'+fi,'vc-ef-mm-'+fi,'vc-ef-aaaa-'+fi);
     // Solo cambia la fecha con el botón "Guardar" — nunca solo, así se puede
     // corregir un campo sin que se dispare el guardado a medio escribir.
     document.getElementById('vc-ef-dd-'+fi).addEventListener('keydown',e=>{if(e.key==='Enter')b.click();});
@@ -13495,6 +13521,7 @@ function rdMostrarFormularioFecha(loteId,areaEl){
       <input id="rd-ef-aaaa-${loteId}" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="AA" autocomplete="off">
       <button type="button" class="btn-ok rd-fecha-guardar" data-lote-id="${loteId}" style="white-space:nowrap">Guardar</button>
     </div>`;
+  wireFechaSegmentadaSimple('rd-ef-dd-'+loteId,'rd-ef-mm-'+loteId,'rd-ef-aaaa-'+loteId);
   const dd=document.getElementById('rd-ef-dd-'+loteId);
   if(dd)dd.focus();
   ['dd','mm','aaaa'].forEach(seg=>{
