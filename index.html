@@ -4487,7 +4487,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-09-05.2';
+const APP_VERSION='2026-09-05.3';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -5133,6 +5133,17 @@ function cerrarModal(id){
   // usa el botón Atrás real.
   if(id==='fp-ov'&&typeof _fpVolverA!=='undefined'&&_fpVolverA==='gp'){
     history.back();
+    return;
+  }
+  // Caso especial: la Ficha de producto fue abierta desde el buscador de "Editar productos"
+  // (ed-ov). Se cierre por Cancelar, Guardar cambios o Eliminar producto, vuelve directo al
+  // buscador (en vez de a Pedidos) para poder seguir buscando y editando el siguiente producto
+  // sin tener que reabrir el módulo a mano cada vez — ver ed-results/ed-scan, que setean
+  // _fpVolverA='ed' justo antes de llamar a fpAbrir(). No usa history (a diferencia del caso
+  // 'gp' de arriba): "Editar productos" es un único nivel plano, sin retroceso por niveles.
+  if(id==='fp-ov'&&typeof _fpVolverA!=='undefined'&&_fpVolverA==='ed'){
+    _fpVolverA=null;
+    edAbrir();
     return;
   }
   // Caso especial: Gestionar proveedores en Nivel 1 (Lista de proveedores) se cierra hacia la
@@ -7804,7 +7815,10 @@ document.getElementById('gp-crear').onclick=async()=>{
 // al elegir o escanear un producto se abre su Ficha completa (fp-ov / fpAbrir), que YA trae
 // todos los campos editables, además de Guardar cambios (fp-guardar-btn), Eliminar
 // (fp-eliminar-btn) y Cancelar (fp-cerrar) — cero lógica de edición duplicada, se reutiliza
-// tal cual el Editor de artículo que ya usan Vencimientos y otros módulos.
+// tal cual el Editor de artículo que ya usan Vencimientos y otros módulos. Al abrir la Ficha
+// desde acá se marca _fpVolverA='ed' (mismo mecanismo que ya usa Gestionar proveedores con
+// 'gp'), así que cerrarModal('fp-ov') — sea por Cancelar, Guardar o Eliminar — vuelve directo
+// al buscador en vez de a Pedidos, para poder seguir con el siguiente producto sin fricción.
 document.getElementById('mas-q-editar').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');edAbrir();};
 document.getElementById('ed-cerrar').onclick=()=>cerrarModal('ed-ov');
 function edAbrir(){
@@ -7840,6 +7854,7 @@ document.getElementById('ed-results').addEventListener('click',ev=>{
   const row=ev.target.closest('[data-ed-ref]');
   if(!row)return;
   cerrarModal('ed-ov');
+  _fpVolverA='ed'; // al cerrar la Ficha (Cancelar/Guardar/Eliminar), vuelve acá — ver cerrarModal()
   fpAbrir(row.dataset.edRef);
 });
 document.getElementById('ed-mic').onclick=()=>voiceSearch(document.getElementById('ed-mic'),text=>{
@@ -7854,6 +7869,7 @@ document.getElementById('ed-scan').onclick=()=>{
     if(list.length===1){
       // Un solo resultado: coincidencia exacta de código de barras — abre la ficha de inmediato,
       // tal como se pide ("al escanear un producto, abrir inmediatamente su ficha completa").
+      _fpVolverA='ed'; // al cerrar la Ficha (Cancelar/Guardar/Eliminar), vuelve acá — ver cerrarModal()
       fpAbrir(list[0].ref);
     }else if(list.length===0){
       reopen();
@@ -11606,7 +11622,7 @@ function inRenderCart(){
       const sinCosto=!(c.coste>0);
       return `
       <div class="in-cart-row" data-ref="${c.ref}">
-        <div class="top"><span class="nom">${c.nombre}</span><button class="x" data-x="${c.ref}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+        <div class="top"><span class="nom">${c.nombre}</span><button class="x" data-x="${c.ref}" aria-label="Quitar de la lista"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button></div>
         <div class="cat">${c.prov}${c.peso?' · ⚖️ kg':''}</div>
         <div class="qtyrow">
           <button class="qbtn" data-menos="${c.ref}" type="button">−</button>
