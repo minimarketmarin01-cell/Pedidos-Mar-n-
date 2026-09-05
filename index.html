@@ -4487,7 +4487,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-09-05.1';
+const APP_VERSION='2026-09-05.2';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -11570,7 +11570,14 @@ function inGuardarBorrador(){
   clearTimeout(_inDraftT);
   _inDraftT=setTimeout(()=>{
     try{
-      if(inCart.length)localStorage.setItem(IN_DRAFT_LS_KEY,JSON.stringify({inCart,inResp}));
+      // Solo se guarda ref+cantidad+costoManual (lo que el usuario realmente escribió) — nombre/
+      // categoría/costo del producto NUNCA se persisten acá, se vuelven a resolver desde DB.items
+      // en vivo al restaurar (mismo patrón que rcGuardarBorrador/rcAplicarBorrador), para que un
+      // borrador viejo nunca quede mostrando datos de producto ya desactualizados.
+      if(inCart.length)localStorage.setItem(IN_DRAFT_LS_KEY,JSON.stringify({
+        inCart:inCart.map(c=>({ref:c.ref,cantidad:c.cantidad,costoManual:c.costoManual})),
+        inResp
+      }));
       else localStorage.removeItem(IN_DRAFT_LS_KEY); // carrito vacío: nada que restaurar
     }catch(e){}
   },150);
@@ -15080,7 +15087,19 @@ const REABRIR_MODULO={
   'cp-ov':()=>{try{cpReset();}catch(e){}abrirModal('cp-ov');try{cpCargarCatalogo();}catch(e){}},
   'in-ov':()=>{
     const d=inCargarBorrador();
-    if(d){inCart=d.inCart;inResp=d.inResp||null;}else{inCart=[];inResp=null;}
+    if(d){
+      // Reconstruye cada fila desde DB.items en vivo (igual que inAdd) — el borrador solo trae
+      // ref/cantidad/costoManual; nombre/categoría/costo siempre se resuelven ahora, nunca desde
+      // lo guardado, para no arrastrar un nombre de producto viejo/incorrecto. Si el ref ya no
+      // existe en DB.items (producto eliminado desde que se guardó el borrador), se descarta esa
+      // fila en vez de arriesgar mostrar datos inventados.
+      inCart=(d.inCart||[]).map(c=>{
+        const it=(DB.items||[]).find(i=>i.ref===c.ref);
+        if(!it)return null;
+        return{ref:it.ref,nombre:it.nombre,prov:it.prov,peso:!!it.peso,coste:it.coste,cantidad:c.cantidad,costoManual:c.costoManual||''};
+      }).filter(Boolean);
+      inResp=d.inResp||null;
+    }else{inCart=[];inResp=null;}
     abrirModal('in-ov');
     inRenderCart();
     if(inResp)document.querySelectorAll('#in-resp button').forEach(b=>b.classList.toggle('sel',b.dataset.r===inResp));
