@@ -4487,7 +4487,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-09-05.4';
+const APP_VERSION='2026-09-06.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -6275,7 +6275,7 @@ function fpPaneProveedores(f){
   psCargarListas().then(()=>{
     psLlenarSelects('fp-pv-prov','fp-pv-sector-dummy',p.proveedorId,null);
     psInitCombo('fp-pv-prov','fp-pv-prov-combo','fp-pv-prov-input','fp-pv-prov-menu','fp-pv-prov','proveedor',
-      texto=>{const box=document.getElementById('fp-pv-prov-nuevabox');box.classList.remove('hidden');const inp=document.getElementById('fp-pv-prov-nuevonom');inp.value=texto;inp.focus();});
+      async texto=>{const p=await psCrearProveedorInline(texto);return{id:p.id,nombre:p.nombre};});
     // Selector "También pedir a" — solo proveedores WebApp que no sean ya el principal ni
     // estén ya en la lista de adicionales, para no ofrecer duplicados.
     const sel=document.getElementById('fp-provid-select');
@@ -7092,10 +7092,37 @@ function crearComboBuscable(cfg){
   input.addEventListener('focus',open);
   input.addEventListener('click',()=>{if(menu.classList.contains('hidden'))open();});
   input.addEventListener('input',()=>{render(input.value);if(menu.classList.contains('hidden')){menu.classList.remove('hidden');mount();}else position();});
-  menu.addEventListener('click',ev=>{
+  menu.addEventListener('click',async ev=>{
     const opt=ev.target.closest('.cat-opt');
     if(!opt||opt.classList.contains('cat-opt-empty'))return;
-    if(opt.dataset.new){close();if(cfg.onCreateNueva)cfg.onCreateNueva(input.value.trim());return;}
+    if(opt.dataset.new){
+      if(!cfg.onCreateNueva)return;
+      if(opt.dataset.creando)return; // evita doble toque mientras se está creando
+      const texto=input.value.trim();
+      if(!texto)return;
+      const htmlOriginal=opt.innerHTML;
+      opt.dataset.creando='1';opt.style.opacity='.55';opt.style.pointerEvents='none';
+      opt.textContent='Creando…';
+      try{
+        const creado=await cfg.onCreateNueva(texto); // crea de verdad (POST) y devuelve {id,nombre}
+        if(creado&&creado.id!=null){
+          const sel=document.getElementById(cfg.selectId);
+          // El <select> oculto es la fuente de verdad de setValue() — si todavía no existe una
+          // <option> con este id (recién creado, nunca estuvo en la lista al abrir la pantalla),
+          // el navegador ignora sel.value en silencio y el campo queda vacío pese a la creación
+          // exitosa. Se inyecta la <option> antes de fijar el valor.
+          if(sel&&!sel.querySelector('option[value="'+String(creado.id).replace(/"/g,'&quot;')+'"]')){
+            const o=document.createElement('option');o.value=String(creado.id);o.textContent=creado.nombre;sel.appendChild(o);
+          }
+          setValue(creado.id,creado.nombre);
+        }
+        close();
+      }catch(e){
+        opt.innerHTML=htmlOriginal;opt.style.opacity='';opt.style.pointerEvents='';delete opt.dataset.creando;
+        showToast(''+(e&&e.message||'No se pudo crear'));
+      }
+      return;
+    }
     setValue(opt.dataset.id,opt.dataset.name);
     close();
   });
@@ -7996,14 +8023,10 @@ function mcAbrir(){
   mcCargarCategorias();
   psCargarListas().then(()=>{
     psLlenarSelects('mcg-prov','mcg-sect',null,null);
-    psInitCombo('mcg-prov','mcg-prov-combo','mcg-prov-input','mcg-prov-menu','mcg-prov','proveedor',texto=>{
-      document.getElementById('mcg-prov-nuevabox').classList.remove('hidden');
-      const inp=document.getElementById('mcg-prov-nuevonom');inp.value=texto;inp.focus();
-    });
-    psInitCombo('mcg-sect','mcg-sect-combo','mcg-sect-input','mcg-sect-menu','mcg-sect','sector',texto=>{
-      document.getElementById('mcg-sect-nuevabox').classList.remove('hidden');
-      const inp=document.getElementById('mcg-sect-nuevonom');inp.value=texto;inp.focus();
-    });
+    psInitCombo('mcg-prov','mcg-prov-combo','mcg-prov-input','mcg-prov-menu','mcg-prov','proveedor',
+      async texto=>{const p=await psCrearProveedorInline(texto);return{id:p.id,nombre:p.nombre};});
+    psInitCombo('mcg-sect','mcg-sect-combo','mcg-sect-input','mcg-sect-menu','mcg-sect','sector',
+      async texto=>{const s=await psCrearSectorInline(texto);return{id:s,nombre:s};});
   });
   psWireNuevoProveedor('mcg-prov-nueva','mcg-prov-nuevabox','mcg-prov-nuevonom','mcg-prov-crear','mcg-prov','mcg-sect');
   psWireNuevoSector('mcg-sect-nueva','mcg-sect-nuevabox','mcg-sect-nuevonom','mcg-sect-crear','mcg-prov','mcg-sect');
@@ -8294,7 +8317,7 @@ function cpAbrir(opts){
     psCargarListas().then(()=>{
       psLlenarSelects('cp-proveedor','cp-sector',null,null);
       psInitCombo('cp-proveedor','cp-prov-combo','cp-proveedor-input','cp-prov-menu','cp-proveedor','proveedor',
-        texto=>{const box=document.getElementById('cp-prov-nuevabox');box.classList.remove('hidden');const inp=document.getElementById('cp-prov-nuevonom');inp.value=texto;inp.focus();});
+        async texto=>{const p=await psCrearProveedorInline(texto);return{id:p.id,nombre:p.nombre};});
       psInitCombo('cp-sector','cp-sector-combo','cp-sector-input','cp-sector-menu','cp-sector','sector');
     }).catch(e=>{});
   }catch(e){}
