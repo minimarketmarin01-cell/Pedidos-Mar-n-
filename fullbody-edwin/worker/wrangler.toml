@@ -1,0 +1,8 @@
+name = "fullbody-edwin-api"
+main = "src/index.js"
+compatibility_date = "2024-09-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "fullbody-edwin"
+database_id = "b0c8e7a4-ee1a-41c1-81f9-14d4bdda1064"

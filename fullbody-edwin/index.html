@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#171A1C">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Full Body Edwin">
+<title>Full Body — Edwin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F5F5F2; --card:#FFFFFF; --ink:#1E2022; --muted:#6B7075; --line:#E6E6E1;
+  --accent:#D9622B; --accent-ink:#FFFFFF; --ok:#3F7D4F; --ok-bg:#E7F2E9;
+  --chip-bg:#EFEFEA;
+  font-size:16px;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#15171A; --card:#1E2124; --ink:#F2F2ED; --muted:#9A9FA5; --line:#2B2F33;
+    --accent:#E8783C; --accent-ink:#171A1C; --ok:#5FB073; --ok-bg:#1E2E22;
+    --chip-bg:#2A2E32;
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:Inter,system-ui,sans-serif; -webkit-font-smoothing:antialiased;
+  padding-bottom:76px;
+}
+h1,h2,h3{font-family:Manrope,sans-serif; margin:0;}
+header.top{
+  position:sticky; top:0; z-index:10; background:var(--bg);
+  padding:14px 16px 10px; border-bottom:1px solid var(--line);
+}
+header.top h1{font-size:19px; font-weight:800;}
+header.top .sub{font-size:12.5px; color:var(--muted); margin-top:2px;}
+.tabs{display:flex; gap:6px; margin-top:12px;}
+.tab{
+  flex:1; text-align:center; padding:9px 4px; border-radius:10px;
+  font-family:Manrope; font-weight:700; font-size:14px; color:var(--muted);
+  background:var(--chip-bg); border:1px solid transparent; cursor:pointer;
+}
+.tab.active{background:var(--accent); color:var(--accent-ink);}
+main{padding:14px 16px 24px;}
+.view{display:none;}
+.view.active{display:block;}
+.card{
+  background:var(--card); border:1px solid var(--line); border-radius:14px;
+  padding:14px; margin-bottom:12px;
+}
+.ex-head{display:flex; justify-content:space-between; align-items:flex-start; gap:8px;}
+.ex-name{font-family:Manrope; font-weight:700; font-size:15.5px;}
+.ex-badge{
+  font-size:11px; font-weight:600; color:var(--muted); background:var(--chip-bg);
+  padding:3px 8px; border-radius:999px; white-space:nowrap;
+}
+.ex-target{font-size:12.5px; color:var(--muted); margin-top:3px;}
+.ex-notes{font-size:12px; color:var(--muted); margin-top:6px; font-style:italic;}
+.sets{margin-top:10px; display:flex; flex-direction:column; gap:6px;}
+.set-row{display:grid; grid-template-columns:28px 1fr 1fr 52px; gap:8px; align-items:center;}
+.set-row .n{font-size:13px; color:var(--muted); font-weight:600;}
+.set-row input{
+  width:100%; border:1px solid var(--line); background:var(--bg); color:var(--ink);
+  border-radius:9px; padding:9px 8px; font-size:15px; text-align:center;
+  font-family:Inter;
+}
+.set-row input::placeholder{color:var(--muted); opacity:.7;}
+.set-btn{
+  border:none; border-radius:9px; background:var(--chip-bg); color:var(--muted);
+  font-weight:700; font-size:13px; padding:9px 0; cursor:pointer;
+}
+.set-btn.done{background:var(--ok-bg); color:var(--ok);}
+.section-title{font-family:Manrope; font-weight:800; font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin:18px 0 8px;}
+select, .field-input{
+  width:100%; border:1px solid var(--line); background:var(--card); color:var(--ink);
+  border-radius:10px; padding:11px; font-size:15px; font-family:Inter;
+}
+table{width:100%; border-collapse:collapse; font-size:13.5px;}
+th,td{padding:7px 6px; text-align:left; border-bottom:1px solid var(--line);}
+th{color:var(--muted); font-weight:600; font-size:12px;}
+.bar-wrap{display:flex; align-items:center; gap:8px; margin:6px 0;}
+.bar-label{width:56px; font-size:11.5px; color:var(--muted); flex-shrink:0;}
+.bar-track{flex:1; background:var(--chip-bg); border-radius:6px; height:16px; overflow:hidden;}
+.bar-fill{height:100%; background:var(--accent); border-radius:6px;}
+.bar-val{width:38px; text-align:right; font-size:12px; color:var(--muted); flex-shrink:0;}
+.empty{color:var(--muted); font-size:13.5px; text-align:center; padding:20px 0;}
+.toast{
+  position:fixed; left:50%; bottom:90px; transform:translateX(-50%);
+  background:var(--ink); color:var(--bg); padding:9px 16px; border-radius:999px;
+  font-size:13.5px; font-weight:600; opacity:0; pointer-events:none; transition:opacity .2s;
+  z-index:50;
+}
+.toast.show{opacity:1;}
+nav.bottom{
+  position:fixed; bottom:0; left:0; right:0; background:var(--card);
+  border-top:1px solid var(--line); display:flex; padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+  z-index:10;
+}
+nav.bottom button{
+  flex:1; background:none; border:none; color:var(--muted); font-family:Inter;
+  font-size:11px; padding:6px 0; display:flex; flex-direction:column; align-items:center; gap:3px;
+  cursor:pointer;
+}
+nav.bottom button.active{color:var(--accent); font-weight:700;}
+nav.bottom svg{width:20px; height:20px;}
+.btn-primary{
+  background:var(--accent); color:var(--accent-ink); border:none; border-radius:10px;
+  padding:12px; font-family:Manrope; font-weight:700; font-size:14.5px; width:100%; cursor:pointer;
+}
+.btn-secondary{
+  background:var(--chip-bg); color:var(--ink); border:none; border-radius:10px;
+  padding:11px; font-family:Inter; font-weight:600; font-size:13.5px; width:100%; cursor:pointer; margin-top:8px;
+}
+.settings-row{margin-bottom:14px;}
+.settings-row label{display:block; font-size:12.5px; color:var(--muted); margin-bottom:5px; font-weight:600;}
+.status-dot{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px;}
+.status-line{font-size:13px; color:var(--muted); margin-top:10px;}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1>Full Body — Edwin</h1>
+  <div class="sub">Hipertrofia · 3 días/semana · <span id="todayLabel"></span></div>
+  <div class="tabs" id="sessionTabs">
+    <div class="tab" data-s="A">Sesión A</div>
+    <div class="tab" data-s="B">Sesión B</div>
+    <div class="tab" data-s="C">Sesión C</div>
+  </div>
+</header>
+
+<main>
+  <section class="view active" id="view-hoy">
+    <div id="exList"></div>
+  </section>
+
+  <section class="view" id="view-historial">
+    <div class="settings-row">
+      <label>Ejercicio</label>
+      <select id="historyExercise"></select>
+    </div>
+    <div id="historyBody"></div>
+  </section>
+
+  <section class="view" id="view-volumen">
+    <p class="status-line" style="margin-top:0;">Series semanales objetivo por grupo muscular, según el programa. No depende de la API.</p>
+    <table>
+      <thead><tr><th>Grupo</th><th>A</th><th>B</th><th>C</th><th>Total</th><th>Rango evidencia</th></tr></thead>
+      <tbody id="volumenBody"></tbody>
+    </table>
+  </section>
+
+  <section class="view" id="view-ajustes">
+    <div class="settings-row">
+      <label>URL de la API (Cloudflare Worker)</label>
+      <input class="field-input" id="apiUrlInput" placeholder="https://fullbody-edwin-api.tuusuario.workers.dev">
+    </div>
+    <button class="btn-primary" id="saveApiUrl">Guardar</button>
+    <button class="btn-secondary" id="testApiUrl">Probar conexión</button>
+    <div class="status-line" id="apiStatus"></div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<nav class="bottom" id="bottomNav">
+  <button data-view="hoy" class="active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v18M18 3v18M6 8h12M6 16h12"/></svg>
+    Hoy
+  </button>
+  <button data-view="historial">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 15l4-4 3 3 5-6"/></svg>
+    Historial
+  </button>
+  <button data-view="volumen">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="4" height="10"/><rect x="10" y="5" width="4" height="15"/><rect x="16" y="13" width="4" height="7"/></svg>
+    Volumen
+  </button>
+  <button data-view="ajustes">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Ajustes
+  </button>
+</nav>
+
+<script>
+const PROGRAM = {
+  A: [
+    {ex:"Sentadilla (back squat)", grupo:"Cuádriceps", series:3, reps:"8-10", rir:"2", notas:"Técnica primero; profundidad completa cómoda"},
+    {ex:"Press banca (barra o mancuerna)", grupo:"Pecho", series:3, reps:"8-10", rir:"2"},
+    {ex:"Remo con barra", grupo:"Espalda", series:3, reps:"10-12", rir:"2"},
+    {ex:"Press militar mancuerna", grupo:"Hombro", series:3, reps:"10-12", rir:"2"},
+    {ex:"Curl femoral tumbado", grupo:"Isquiotibiales", series:3, reps:"12-15", rir:"1.5"},
+    {ex:"Curl bíceps con barra o mancuerna", grupo:"Bíceps", series:2, reps:"12-15", rir:"1"},
+  ],
+  B: [
+    {ex:"Peso muerto rumano", grupo:"Isquiotibiales", series:3, reps:"8-10", rir:"2", notas:"Rango sin perder la curva lumbar neutra"},
+    {ex:"Press inclinado mancuerna", grupo:"Pecho", series:3, reps:"10-12", rir:"2"},
+    {ex:"Jalón al pecho", grupo:"Espalda", series:3, reps:"10-12", rir:"2"},
+    {ex:"Elevaciones laterales", grupo:"Hombro", series:3, reps:"15-20", rir:"1"},
+    {ex:"Extensión de cuádriceps", grupo:"Cuádriceps", series:3, reps:"12-15", rir:"1.5"},
+    {ex:"Tríceps en polea", grupo:"Tríceps", series:3, reps:"12-15", rir:"1"},
+  ],
+  C: [
+    {ex:"Prensa de piernas", grupo:"Cuádriceps", series:3, reps:"10-12", rir:"2"},
+    {ex:"Remo unilateral mancuerna", grupo:"Espalda", series:3, reps:"10-12", rir:"2"},
+    {ex:"Press militar barra", grupo:"Hombro", series:3, reps:"8-10", rir:"2"},
+    {ex:"Hip thrust", grupo:"Glúteo", series:3, reps:"10-12", rir:"2"},
+    {ex:"Face pull", grupo:"Hombro", series:3, reps:"15", rir:"1", notas:"Deltoide posterior / salud de hombro"},
+    {ex:"Plancha / core", grupo:"Core", series:3, reps:"30-45s", rir:"—", notas:"Series por tiempo"},
+  ],
+};
+
+const VOLUMEN = [
+  {grupo:"Cuádriceps", a:3, b:3, c:3, total:9, rango:"10-16 series/sem"},
+  {grupo:"Isquiotibiales", a:3, b:3, c:0, total:6, rango:"8-14 series/sem"},
+  {grupo:"Glúteo", a:0, b:0, c:3, total:3, rango:"8-14 series/sem"},
+  {grupo:"Pecho", a:3, b:3, c:0, total:6, rango:"10-16 series/sem"},
+  {grupo:"Espalda", a:3, b:3, c:3, total:9, rango:"10-18 series/sem"},
+  {grupo:"Hombro", a:3, b:3, c:6, total:12, rango:"10-18 series/sem"},
+  {grupo:"Bíceps", a:2, b:0, c:0, total:2, rango:"6-12 series/sem"},
+  {grupo:"Tríceps", a:0, b:3, c:0, total:3, rango:"6-12 series/sem"},
+  {grupo:"Core", a:0, b:0, c:3, total:3, rango:"4-8 series directas"},
+];
+
+const $ = (sel, root=document) => root.querySelector(sel);
+const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
+
+let apiUrl = localStorage.getItem("fbe_api_url") || "";
+let currentSession = localStorage.getItem("fbe_session") || "A";
+const todayISO = () => new Date().toISOString().slice(0,10);
+
+function toast(msg){
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 1800);
+}
+
+async function api(path, opts){
+  if(!apiUrl){ toast("Configura la URL de la API en Ajustes"); throw new Error("no api url"); }
+  const res = await fetch(apiUrl.replace(/\/$/,"") + path, {
+    headers:{"Content-Type":"application/json"}, ...opts
+  });
+  if(!res.ok) throw new Error("API error " + res.status);
+  return res.json();
+}
+
+function renderTabs(){
+  $$(".tab", $("#sessionTabs")).forEach(tab=>{
+    tab.classList.toggle("active", tab.dataset.s === currentSession);
+  });
+}
+
+async function renderExercises(){
+  const list = $("#exList");
+  list.innerHTML = "";
+  const day = PROGRAM[currentSession];
+  let todaysLogs = {};
+  try{
+    const logs = await api(`/api/logs?date=${todayISO()}`);
+    logs.forEach(l => { todaysLogs[l.exercise + "_" + l.set_number] = l; });
+  }catch(e){ /* sin conexión configurada aún */ }
+
+  for(const item of day){
+    const card = document.createElement("div");
+    card.className = "card";
+    let lastHint = {};
+    try{
+      const last = await api(`/api/last?exercise=${encodeURIComponent(item.ex)}`);
+      last.forEach(r => { lastHint[r.set_number] = r; });
+    }catch(e){}
+
+    let setsHtml = "";
+    for(let n=1; n<=item.series; n++){
+      const saved = todaysLogs[item.ex + "_" + n];
+      const hint = lastHint[n];
+      const wPlaceholder = hint ? `${hint.weight ?? ""} kg` : "kg";
+      const rPlaceholder = hint ? `${hint.reps ?? ""} reps` : "reps";
+      setsHtml += `
+        <div class="set-row" data-ex="${encodeURIComponent(item.ex)}" data-n="${n}">
+          <div class="n">${n}</div>
+          <input type="number" inputmode="decimal" class="w-input" placeholder="${wPlaceholder}" value="${saved?.weight ?? ""}">
+          <input type="number" inputmode="numeric" class="r-input" placeholder="${rPlaceholder}" value="${saved?.reps ?? ""}">
+          <button class="set-btn ${saved ? "done" : ""}">${saved ? "✓" : "Ok"}</button>
+        </div>`;
+    }
+
+    card.innerHTML = `
+      <div class="ex-head">
+        <div>
+          <div class="ex-name">${item.ex}</div>
+          <div class="ex-target">${item.series} series · ${item.reps} reps · RIR ${item.rir}</div>
+        </div>
+        <div class="ex-badge">${item.grupo}</div>
+      </div>
+      ${item.notas ? `<div class="ex-notes">${item.notas}</div>` : ""}
+      <div class="sets">${setsHtml}</div>
+    `;
+    list.appendChild(card);
+  }
+
+  $$(".set-btn", list).forEach(btn=>{
+    btn.addEventListener("click", async ()=>{
+      const row = btn.closest(".set-row");
+      const ex = decodeURIComponent(row.dataset.ex);
+      const n = Number(row.dataset.n);
+      const weight = parseFloat($(".w-input", row).value) || null;
+      const reps = parseInt($(".r-input", row).value) || null;
+      if(weight === null && reps === null){ toast("Ingresa peso o reps"); return; }
+      try{
+        await api("/api/logs", {method:"POST", body: JSON.stringify({
+          date: todayISO(), session: currentSession, exercise: ex, set_number: n, weight, reps, rir: null
+        })});
+        btn.classList.add("done");
+        btn.textContent = "✓";
+        toast("Serie guardada");
+      }catch(e){
+        toast("No se pudo guardar. Revisa Ajustes.");
+      }
+    });
+  });
+}
+
+function renderVolumen(){
+  const tbody = $("#volumenBody");
+  tbody.innerHTML = VOLUMEN.map(v => `
+    <tr>
+      <td>${v.grupo}</td><td>${v.a}</td><td>${v.b}</td><td>${v.c}</td>
+      <td><strong>${v.total}</strong></td><td>${v.rango}</td>
+    </tr>
+  `).join("") + `
+    <tr>
+      <td><strong>Total semanal</strong></td>
+      <td colspan="3"></td>
+      <td><strong>${VOLUMEN.reduce((s,v)=>s+v.total,0)}</strong></td>
+      <td></td>
+    </tr>
+  `;
+}
+
+function fillHistorySelect(){
+  const sel = $("#historyExercise");
+  const all = [...PROGRAM.A, ...PROGRAM.B, ...PROGRAM.C];
+  sel.innerHTML = all.map(i => `<option value="${i.ex}">${i.ex}</option>`).join("");
+}
+
+async function renderHistory(){
+  const ex = $("#historyExercise").value;
+  const body = $("#historyBody");
+  body.innerHTML = `<p class="empty">Cargando…</p>`;
+  try{
+    const logs = await api(`/api/logs?exercise=${encodeURIComponent(ex)}`);
+    if(!logs.length){ body.innerHTML = `<p class="empty">Sin registros aún para este ejercicio.</p>`; return; }
+    const maxWeight = Math.max(...logs.map(l => l.weight || 0), 1);
+    const byDate = {};
+    logs.forEach(l => { (byDate[l.date] = byDate[l.date] || []).push(l); });
+    const dates = Object.keys(byDate).sort().reverse();
+    let html = `<div class="section-title">Progresión de carga</div>`;
+    dates.slice(0,10).reverse().forEach(d => {
+      const top = Math.max(...byDate[d].map(l => l.weight || 0));
+      html += `
+        <div class="bar-wrap">
+          <div class="bar-label">${d.slice(5)}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(top/maxWeight*100).toFixed(0)}%"></div></div>
+          <div class="bar-val">${top || "-"}kg</div>
+        </div>`;
+    });
+    html += `<div class="section-title">Registros</div><table><thead><tr><th>Fecha</th><th>Set</th><th>Peso</th><th>Reps</th></tr></thead><tbody>`;
+    logs.forEach(l => {
+      html += `<tr><td>${l.date}</td><td>${l.set_number}</td><td>${l.weight ?? "-"}</td><td>${l.reps ?? "-"}</td></tr>`;
+    });
+    html += `</tbody></table>`;
+    body.innerHTML = html;
+  }catch(e){
+    body.innerHTML = `<p class="empty">Configura la URL de la API en Ajustes.</p>`;
+  }
+}
+
+function switchView(name){
+  $$(".view").forEach(v => v.classList.remove("active"));
+  $(`#view-${name}`).classList.add("active");
+  $$("nav.bottom button").forEach(b => b.classList.toggle("active", b.dataset.view === name));
+  if(name === "historial") renderHistory();
+}
+
+$("#sessionTabs").addEventListener("click", e=>{
+  const tab = e.target.closest(".tab");
+  if(!tab) return;
+  currentSession = tab.dataset.s;
+  localStorage.setItem("fbe_session", currentSession);
+  renderTabs();
+  renderExercises();
+});
+
+$("#bottomNav").addEventListener("click", e=>{
+  const btn = e.target.closest("button");
+  if(!btn) return;
+  switchView(btn.dataset.view);
+});
+
+$("#historyExercise").addEventListener("change", renderHistory);
+
+$("#saveApiUrl").addEventListener("click", ()=>{
+  apiUrl = $("#apiUrlInput").value.trim();
+  localStorage.setItem("fbe_api_url", apiUrl);
+  toast("URL guardada");
+  renderExercises();
+});
+
+$("#testApiUrl").addEventListener("click", async ()=>{
+  const status = $("#apiStatus");
+  status.textContent = "Probando…";
+  try{
+    const url = ($("#apiUrlInput").value.trim()).replace(/\/$/,"");
+    const res = await fetch(url + "/api/health");
+    const data = await res.json();
+    status.innerHTML = data.ok ? `<span class="status-dot" style="background:var(--ok)"></span>Conectado` : "Sin respuesta válida";
+  }catch(e){
+    status.innerHTML = `<span class="status-dot" style="background:#c0392b"></span>No se pudo conectar`;
+  }
+});
+
+$("#todayLabel").textContent = new Date().toLocaleDateString("es-CL", {weekday:"long", day:"numeric", month:"long"});
+$("#apiUrlInput").value = apiUrl;
+renderTabs();
+fillHistorySelect();
+renderVolumen();
+renderExercises();
+
+if("serviceWorker" in navigator){
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("sw.js").catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
