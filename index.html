@@ -4391,24 +4391,36 @@ function renderOrder(){
 // para "Todos los proveedores") — guardar de nuevo el mismo proveedor actualiza su borrador en
 // vez de crear uno nuevo, así nunca se duplican. state.edits sigue siendo el carrito EN VIVO
 // (independiente de esto); un borrador es una foto fija que se puede restaurar más tarde.
-const CG_KEY='marin_carritos_guardados';
+const CG_KEY='marin_carritos_guardados'; // ya no es la fuente de verdad — solo se usa para migrar borradores viejos que hubieran quedado atrás (ver cgMigrarLocalesAntiguos)
 let _cgOpen=false;
+// Fuente de verdad real: CARRITOS_GUARDADOS, poblado por el sync normal (ver los 3 call sites de
+// buildDBfromCloud) igual que FAVORITOS/RIESGO_EXCLUIDOS — así un carrito guardado en un equipo
+// aparece en cualquier otro sin pedir nada aparte, en vez de quedar atrapado en localStorage.
+let CARRITOS_GUARDADOS=[];
 function cgCargarTodos(){try{const v=localStorage.getItem(CG_KEY);const a=v?JSON.parse(v):[];return Array.isArray(a)?a:[];}catch(e){return [];}}
 function cgGuardarTodos(arr){try{localStorage.setItem(CG_KEY,JSON.stringify(arr));}catch(e){}}
 function cgProvId(){return state.allProv?'__ALL__':state.prov;}
 function cgProvLabel(){return state.allProv?'Todos los proveedores':state.prov;}
-function cgGuardarCarritoActual(){
+async function cgGuardarCarritoActual(){
   const lines=currentOrderVisible();
   if(!lines.length){showToast('El carrito de este proveedor está vacío — no hay nada que guardar');return;}
   const items=lines.map(l=>({ref:l.it.ref,nombre:l.nombre,q:l.q,cost:l.cost}));
   const total=items.reduce((s,i)=>s+i.cost,0);
   const provId=cgProvId();
-  const draft={provId,provLabel:cgProvLabel(),items,total,fecha:new Date().toISOString()};
-  const arr=cgCargarTodos().filter(d=>d.provId!==provId); // dedupe: un solo borrador por proveedor
-  arr.unshift(draft);
-  cgGuardarTodos(arr);
-  cgRenderLista();
-  showToast('Carrito de "'+draft.provLabel+'" guardado como borrador ('+items.length+' producto'+(items.length===1?'':'s')+')');
+  const provLabel=cgProvLabel();
+  const btn=document.getElementById('btn-guardar-carrito');
+  if(btn)btn.disabled=true;
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'guardar_carrito',payload:{provId,provLabel,items,total}})});
+    const j=await res.json();
+    if(!j||!j.ok)throw new Error((j&&j.error)||'No se pudo guardar el carrito');
+    const draft={provId,provLabel,items,total,fecha:new Date().toISOString()};
+    CARRITOS_GUARDADOS=CARRITOS_GUARDADOS.filter(d=>d.provId!==provId); // dedupe: un solo borrador por proveedor
+    CARRITOS_GUARDADOS.unshift(draft);
+    cgRenderLista();
+    showToast('Carrito de "'+provLabel+'" guardado como borrador ('+items.length+' producto'+(items.length===1?'':'s')+')');
+  }catch(e){showToast(''+e.message);}
+  finally{if(btn)btn.disabled=false;}
 }
 function cgFechaTxt(iso){
   try{const d=new Date(iso);return d.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});}catch(e){return '';}
@@ -4417,7 +4429,7 @@ function cgFechaTxt(iso){
 // aparte — se repinta solo (sin necesidad de abrirla) cada vez que cambia algo, así el resumen
 // del encabezado ("N guardados") siempre está al día aunque esté colapsada.
 function cgRenderLista(){
-  const arr=cgCargarTodos();
+  const arr=CARRITOS_GUARDADOS;
   const sub=document.getElementById('cg-sub');
   if(sub)sub.textContent=arr.length?(arr.length+' guardado'+(arr.length===1?'':'s')):'ninguno todavía';
   const box=document.getElementById('cg-body');
@@ -4440,7 +4452,15 @@ function cgRenderLista(){
       mensaje:'Se eliminará el borrador de "'+(d?d.provLabel:id)+'". Esta acción no se puede deshacer.',
       textoConfirmar:'Eliminar',
       peligro:true,
-      onConfirm:()=>{cgGuardarTodos(cgCargarTodos().filter(x=>x.provId!==id));cgRenderLista();}
+      onConfirm:async()=>{
+        try{
+          const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'eliminar_carrito_guardado',payload:{provId:id}})});
+          const j=await res.json();
+          if(!j||!j.ok)throw new Error((j&&j.error)||'No se pudo eliminar');
+          CARRITOS_GUARDADOS=CARRITOS_GUARDADOS.filter(x=>x.provId!==id);
+          cgRenderLista();
+        }catch(e){showToast(''+e.message);}
+      }
     });
   }));
 }
@@ -4448,7 +4468,7 @@ function cgRenderLista(){
 // pone en 0 cualquier producto de ese mismo proveedor que esté en el carrito EN VIVO pero ya
 // no esté en el borrador. Nunca toca productos de otros proveedores (carritos independientes).
 function cgRestaurar(provId){
-  const d=cgCargarTodos().find(x=>x.provId===provId);
+  const d=CARRITOS_GUARDADOS.find(x=>x.provId===provId);
   if(!d)return;
   const refsDraft=new Set(d.items.map(i=>i.ref));
   currentOrder().forEach(l=>{
@@ -4463,6 +4483,32 @@ function cgRestaurar(provId){
   render();persistUI();
   toggleCarrito(true);
   showToast('Carrito de "'+d.provLabel+'" restaurado');
+}
+// Migra a la nube los borradores que hubieran quedado guardados solo en este dispositivo antes
+// de que este módulo empezara a sincronizar (ver CARRITOS_GUARDADOS) — así ningún carrito que el
+// usuario ya tenía guardado se pierde al pasar a la versión compartida entre equipos. Corre una
+// sola vez por sesión (_cgMigracionHecha); lo que no se llegue a subir por un error de red queda
+// en localStorage para reintentar en el próximo sync, en vez de descartarse.
+let _cgMigracionHecha=false;
+async function cgMigrarLocalesAntiguos(){
+  if(_cgMigracionHecha)return;
+  _cgMigracionHecha=true;
+  const locales=cgCargarTodos();
+  if(!locales.length)return;
+  const idsServidor=new Set(CARRITOS_GUARDADOS.map(d=>d.provId));
+  const pendientes=locales.filter(d=>!idsServidor.has(d.provId));
+  if(!pendientes.length){cgGuardarTodos([]);return;}
+  const fallidos=[];
+  for(const d of pendientes){
+    try{
+      const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'guardar_carrito',payload:{provId:d.provId,provLabel:d.provLabel,items:d.items,total:d.total}})});
+      const j=await res.json();
+      if(j&&j.ok){CARRITOS_GUARDADOS=CARRITOS_GUARDADOS.filter(x=>x.provId!==d.provId);CARRITOS_GUARDADOS.unshift(d);}
+      else fallidos.push(d);
+    }catch(e){fallidos.push(d);}
+  }
+  cgGuardarTodos(fallidos);
+  cgRenderLista();
 }
 document.getElementById('btn-guardar-carrito').onclick=cgGuardarCarritoActual;
 (function(){
@@ -4507,7 +4553,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-09-06.3';
+const APP_VERSION='2026-09-09.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -4854,7 +4900,7 @@ async function cloudSync(silent,live,full,origen){
       if(esPollDeFondo&&editando)return true;
       _ultimoPayloadFirma=firma;
 
-      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras,j.costeoProducto);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(j.costeoFijoDefault!=null)cfFijoDefaultSet(j.costeoFijoDefault);
+      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras,j.costeoProducto);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(j.costeoFijoDefault!=null)cfFijoDefaultSet(j.costeoFijoDefault);if(Array.isArray(j.carritosGuardados)){CARRITOS_GUARDADOS=j.carritosGuardados;if(typeof cgRenderLista==='function')cgRenderLista();if(typeof cgMigrarLocalesAntiguos==='function')cgMigrarLocalesAntiguos();}
       INVMAP=invMapFromItems(DB.items);
       SRC='nube · '+new Date().toLocaleString('es-CL');
       // FIX: antes esto era "state.edits={}" incondicional, así que CUALQUIER sync
@@ -4967,7 +5013,7 @@ async function pollFondo(){
     if(firma===_ultimoPayloadFirma)return; // nada cambió, no hay nada que repintar
     _ultimoPayloadFirma=firma;
 
-    DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras,j.costeoProducto);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(j.costeoFijoDefault!=null)cfFijoDefaultSet(j.costeoFijoDefault);
+    DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras,j.costeoProducto);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(j.costeoFijoDefault!=null)cfFijoDefaultSet(j.costeoFijoDefault);if(Array.isArray(j.carritosGuardados)){CARRITOS_GUARDADOS=j.carritosGuardados;if(typeof cgRenderLista==='function')cgRenderLista();if(typeof cgMigrarLocalesAntiguos==='function')cgMigrarLocalesAntiguos();}
     INVMAP=invMapFromItems(DB.items);
     SRC='nube · '+new Date().toLocaleString('es-CL');
     setLastSync(Date.now());
@@ -9449,7 +9495,7 @@ async function recargarHistorial(){
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=recargar_historial');
     const j=await res.json();
     if(j&&j.ok){
-      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras,j.costeoProducto);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(j.costeoFijoDefault!=null)cfFijoDefaultSet(j.costeoFijoDefault);
+      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras,j.costeoProducto);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(j.costeoFijoDefault!=null)cfFijoDefaultSet(j.costeoFijoDefault);if(Array.isArray(j.carritosGuardados)){CARRITOS_GUARDADOS=j.carritosGuardados;if(typeof cgRenderLista==='function')cgRenderLista();if(typeof cgMigrarLocalesAntiguos==='function')cgMigrarLocalesAntiguos();}
       INVMAP=invMapFromItems(DB.items);
       state.edits={};
       persist();render();
