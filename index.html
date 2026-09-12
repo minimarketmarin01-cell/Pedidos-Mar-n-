@@ -454,6 +454,9 @@ html.carrito-fijo #rc-ov .mm-sections{
 #vc-ov .vc-meta-it{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--muted);font-weight:500}
 #vc-ov .vc-meta-it svg{flex:none;opacity:.75}
 #vc-ov .vc-meta-it b{color:var(--ink);font-weight:700}
+/* Fecha de vencimiento + cantidad a cambiar/descontar — en rojo y negrita, a pedido, para que
+   resalte por sobre el resto de la meta-línea (stock actual sigue con su estilo normal). */
+#vc-ov .vc-meta-it.vc-meta-venc{color:var(--rojo);font-weight:700}
 /* Línea de estado: insignia rellena + texto de acción al lado */
 #vc-ov .vc-estado-linea{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:8px}
 #vc-ov .vc-estado{display:inline-flex;align-items:center;flex:none;padding:3px 10px;border-radius:20px;font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#fff;white-space:nowrap}
@@ -4553,7 +4556,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-09-09.1';
+const APP_VERSION='2026-09-12.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -10710,7 +10713,7 @@ function vcFilaHtml(l){
   const dias=_diasVenc(l.fechaVencimiento);
   const diasTx=dias==null?'':(dias<0?` (venció hace ${Math.abs(dias)} día${Math.abs(dias)===1?'':'s'})`:dias===0?' (vence hoy)':` (en ${dias} día${dias===1?'':'s'})`);
   const metaLinea=`<div class="vc-meta">
-        <span class="vc-meta-it"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>${l.fechaVencimiento?('Vence '+l.fechaVencimiento+diasTx):'Sin fecha de vencimiento'} · ${l.cantidad} ${l.unidad}${l.lote?' · lote '+l.lote:''}</span>
+        <span class="vc-meta-it vc-meta-venc"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>${l.fechaVencimiento?('Vence '+l.fechaVencimiento+diasTx):'Sin fecha de vencimiento'} · ${l.cantidad} ${l.unidad}${l.lote?' · lote '+l.lote:''}</span>
         ${stockActual!=null?`<span class="vc-meta-it"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/></svg>Stock actual: <b>${fmt.format(stockActual)} ${l.unidad||'un'}</b></span>`:''}
       </div>`;
   // Insignia de estado + texto de acción en la misma línea. El bloque de precio sugerido ya
