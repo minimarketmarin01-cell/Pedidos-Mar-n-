@@ -3668,8 +3668,45 @@ function onQty(inp){const ref=inp.dataset.ref,fmt=+inp.dataset.fmt;let b=Math.ma
     const pend=pendienteDe(it);
     if(pend){state.pendWarned[ref]=true;showToast('Ojo: ya se pidió a '+(pend.proveedor||'otro proveedor')+' el '+(pend.fecha||'')+' · '+(pend.cantidad||0)+' u — revisa antes de repetir');}
   }
+  // Si se agrega cantidad a un producto que no es del proveedor activo, se le asigna ese
+  // proveedor como proveedor extra real (mismo mecanismo que Ficha de producto/Recepción) en
+  // vez de dejarlo solo en el carrito sin clasificar bajo ese proveedor.
+  if(it&&b>0&&!state.allProv&&state.prov&&it.proveedorNombre&&!esDelProveedor(it,state.prov)){
+    agregarProveedorExtraSiFalta(it,state.prov);
+  }
   renderOrder();renderScale();persistUI();}
 function stepQty(btn){const cell=btn.closest('.qcell');const inp=cell.querySelector('.qty-in');const st=+inp.dataset.step||1;inp.value=Math.max(0,(parseInt(inp.value)||0)+(+btn.dataset.d)*st);onQty(inp);}
+// Agrega automáticamente el proveedor activo como proveedor extra real del producto (tabla
+// producto_proveedor_id vía agregar_proveedor_id_extra) cuando se agrega al carrito un producto
+// que no pertenece a ese proveedor — mismo mecanismo/acción que ya usan Ficha de producto
+// (index.html, pestaña Proveedores) y Recepción de stock, disparado aquí sin que el usuario
+// tenga que ir a otra pantalla a hacerlo a mano.
+async function agregarProveedorExtraSiFalta(it,provNombre){
+  state._provExtraEnCurso=state._provExtraEnCurso||new Set();
+  if(state._provExtraEnCurso.has(it.ref))return;
+  state._provExtraEnCurso.add(it.ref);
+  try{
+    // El catálogo _psProveedores solo se carga de forma perezosa al abrir Ficha de producto,
+    // Recepción o Gestionar proveedores — si el usuario arma un pedido sin haber pasado por
+    // ninguna de esas pantallas, aún no está cargado. psCargarListas() ya es idempotente
+    // (_psCargado) así que pedirlo acá no cuesta nada si ya estaba.
+    await psCargarListas();
+    const provObj=(_psProveedores||[]).find(p=>p.nombre===provNombre);
+    if(!provObj)return;
+    const r=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'agregar_proveedor_id_extra',payload:{sku:it.ref,proveedor_id:Number(provObj.id)}})});
+    const j=await r.json();
+    if(j&&j.ok){
+      it.proveedorIdsExtra=it.proveedorIdsExtra||[];
+      if(!it.proveedorIdsExtra.includes(Number(provObj.id)))it.proveedorIdsExtra.push(Number(provObj.id));
+      it.proveedorIdsTodos=(it.proveedorIdsTodos||[]).includes(Number(provObj.id))?it.proveedorIdsTodos:[...(it.proveedorIdsTodos||[]),Number(provObj.id)];
+      it.proveedorNombresExtra=it.proveedorNombresExtra||[];
+      if(!it.proveedorNombresExtra.includes(provNombre))it.proveedorNombresExtra.push(provNombre);
+      showToast('Agregado — ahora '+it.nombre+' también se pide a '+provNombre);
+      render();
+    }
+  }catch(e){/* silencioso: no se interrumpe el armado del pedido por un fallo de red en este agregado en segundo plano */}
+  finally{state._provExtraEnCurso.delete(it.ref);}
+}
 function ccuMixedPacks(){let p=0;itemsForCategoria('CCU').forEach(it=>{if(it.scale==='ccu_ret'){const a=analyze(it);p+=Math.ceil(qOf(it,a)/it.fmt);}});return p;}
 function ccuTierIdx(packs){const b=SCALES.ccu_ret.breaks;let idx=0;for(let i=0;i<b.length;i++)if(packs>=b[i])idx=i;return idx;}
 function tierCostUn(it){if(it.scale==='ccu_ret'){return SCALES.ccu_ret.cost[it.role||'otros'][ccuTierIdx(ccuMixedPacks())];}if(it.scale&&SCALES[it.scale]){const a=analyze(it);const packs=Math.ceil(qOf(it,a)/it.fmt);const t=SCALES[it.scale].tiers.find(t=>packs>=t.min&&packs<=t.max);return t?t.c:(it.coste||0);}return it.coste||0;}
@@ -4556,7 +4593,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-09-12.1';
+const APP_VERSION='2026-09-12.2';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
