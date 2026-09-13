@@ -60,6 +60,37 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
 .fd-total-row{display:flex;align-items:center;justify-content:space-between;padding:2px 2px 12px}
 .fd-eye{border:none;background:var(--paper);color:var(--muted);width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;padding:0}
 .fd-eye:active{background:var(--line)}
+
+/* ---- Vista B estilo checkout de Loyverse ---- */
+.fd-checkout-header{display:flex;align-items:center;gap:10px;padding:2px 2px 14px}
+.fd-back-btn{border:none;background:var(--paper);color:var(--ink);width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer}
+.fd-back-btn:active{background:var(--line)}
+.fd-checkout-nombre{flex:1;font-size:19px;font-weight:800;color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fd-dividir-btn{border:1.5px solid var(--line);background:var(--card);color:var(--muted);border-radius:var(--radius-btn);padding:8px 12px;font-size:12.5px;font-weight:700;letter-spacing:.03em;flex:none;cursor:pointer;min-height:36px}
+
+.fd-total-adeudado{text-align:center;margin:6px 0 18px}
+.fd-total-adeudado .lbl{font-size:13px;color:var(--muted);font-weight:600}
+.fd-total-adeudado .val{font-size:32px;font-weight:800;color:var(--rojo);margin-top:2px}
+
+.fd-ticket-card{border:1.5px solid var(--line);border-radius:var(--radius-card);margin-bottom:12px;background:var(--card);overflow:hidden}
+.fd-ticket-card-head{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;font-size:13px;font-weight:700;color:var(--ink);border-bottom:1px solid var(--line)}
+.fd-lineas-list{display:flex;flex-direction:column}
+
+/* Gesto swipe-to-delete de cada línea (estilo Loyverse): .fd-linea-swipe es el wrapper que
+   recorta el fondo rojo con el tacho detrás; .fd-linea-swipe-fg es la fila visible que se
+   traslada con touchmove (ver fdWireSwipeRows). El botón "×" siempre visible es el fallback
+   sin gesto (accesibilidad + testing). */
+.fd-linea-swipe{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+.fd-linea-swipe:last-child{border-bottom:none}
+.fd-linea-swipe-bg{position:absolute;inset:0;background:var(--rojo);display:flex;align-items:center;justify-content:flex-end;padding-right:16px}
+.fd-linea-del-btn{background:none;border:none;color:#fff;width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.fd-linea-swipe-fg{position:relative;background:var(--card);display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;transition:transform .18s ease;touch-action:pan-y}
+.fd-linea-swipe-fg.fd-dragging{transition:none}
+.fd-linea-texto{font-size:14px;color:var(--ink);min-width:0}
+.fd-linea-precio{font-size:13px;color:var(--muted);white-space:nowrap;flex:none}
+.fd-linea-x{background:none;border:none;color:var(--muted);opacity:.5;font-size:20px;line-height:1;padding:4px 8px;cursor:pointer;flex:none;min-width:32px;min-height:32px}
+
+#fd-metodo button{min-height:52px;font-size:15.5px}
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:14px 22px;border-radius:12px;font-weight:600;font-size:15px;box-shadow:0 8px 30px rgba(0,0,0,.25);transition:.3s;z-index:260;opacity:0;max-width:90vw;text-align:center;pointer-events:none}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 </style>
@@ -102,8 +133,16 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
   </section>
 
   <!-- ============ VISTA B: detalle de cliente + formulario de cobro ============ -->
+  <!-- Estilo pantalla de checkout de Loyverse (pedido explícito del dueño, con capturas de
+       referencia): header con flecha atrás + nombre del cliente + botón "DIVIDIR". El botón
+       "DIVIDIR" es solo paridad visual con Loyverse — no hay función de dividir cuenta en
+       fiados, por eso queda inerte (ver wiring más abajo). -->
   <section id="fd-view-detalle" class="body hidden">
-    <button class="loadbtn" id="fd-det-volver" style="width:100%;margin-bottom:14px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="15 18 9 12 15 6"/></svg> Volver</button>
+    <div class="fd-checkout-header">
+      <button class="fd-back-btn" id="fd-det-volver" aria-label="Volver"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <div class="fd-checkout-nombre" id="fd-det-nombre-header">Cliente</div>
+      <button type="button" class="fd-dividir-btn" id="fd-dividir-btn">DIVIDIR</button>
+    </div>
     <div id="fd-det-body"><div class="vc-empty">Cargando…</div></div>
   </section>
 
@@ -290,27 +329,29 @@ async function fdAbrirDetalle(clienteId,nombreConocido){
 }
 function fdRenderDetalle(j,nombre){
   const body=document.getElementById('fd-det-body');
+  document.getElementById('fd-det-nombre-header').textContent=nombre||'Cliente';
+  document.getElementById('fd-dividir-btn').onclick=()=>showToast('Dividir cuenta: no disponible en fiados por ahora');
   const fiados=j.fiadosAbiertos||[];
-  // Edge case: solo llega acá con 0 fiados si el cliente se buscó a mano — la Vista A
+  // Edge case: solo llega acá con 0 fiados si el cliente se buscó a mano, o si se acaba de
+  // eliminar la última línea/el último fiado abierto (ver fdConfirmarEliminarLinea) — la Vista A
   // (fiados_resumen) nunca lista un cliente sin fiado abierto.
   if(!fiados.length){
-    body.innerHTML=`<div style="font-size:19px;font-weight:800;margin-bottom:6px">${nombre||'Cliente'}</div><div class="vc-empty">Este cliente no tiene fiados abiertos</div>`;
+    body.innerHTML=`<div class="vc-empty">Este cliente no tiene fiados abiertos</div>`;
     return;
   }
-  const fiadosHtml=fiados.map(f=>{
+  const ticketsHtml=fiados.map(f=>{
     const descuento=fdDescuentoDeFiado(f);
-    return `<div style="border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;background:var(--card)">
-    <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700"><span>${fechaChileLegible(f.fechaHora)}</span><span>${peso(f.saldo)}</span></div>
-    ${(f.lineas||[]).map(l=>`<div style="font-size:13px;color:var(--muted);margin-top:4px">${l.cantidad} × ${l.producto_nombre} · ${peso(l.precio_unitario)}</div>`).join('')}
-    ${descuento>1?`<div style="font-size:12.5px;color:var(--verde);font-weight:700;margin-top:4px">Descuento aplicado: -${peso(descuento)}</div>`:''}
-  </div>`;
+    const lineasHtml=(f.lineas||[]).map(l=>fdLineaSwipeHtml(f.fiadoId,l)).join('')||'<div class="vc-empty" style="padding:14px">Sin líneas</div>';
+    return `<div class="fd-ticket-card">
+      <div class="fd-ticket-card-head"><span>${fechaChileLegible(f.fechaHora)}</span><span>${peso(f.saldo)}</span></div>
+      <div class="fd-lineas-list">${lineasHtml}</div>
+      ${descuento>1?`<div style="font-size:12.5px;color:var(--verde);font-weight:700;padding:8px 14px">Descuento aplicado: -${peso(descuento)}</div>`:''}
+    </div>`;
   }).join('');
   body.innerHTML=`
-    <div style="font-size:19px;font-weight:800;margin-bottom:3px">${nombre||'Cliente'}</div>
-    <div style="font-size:26px;font-weight:800;color:var(--rojo);margin-bottom:12px">${peso(j.saldoTotal)}</div>
-    <button type="button" class="loadbtn" id="fd-imprimir-abierto" style="width:100%;margin-bottom:16px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M6 9V3h12v6"/><path d="M6 18H4a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-2"/><rect x="6" y="14" width="12" height="7"/></svg> Imprimir ticket abierto</button>
-    <label style="font-size:13px;font-weight:700;color:var(--ink)">Fiados abiertos</label>
-    <div style="margin:8px 0 18px">${fiadosHtml}</div>
+    <button type="button" class="loadbtn" id="fd-imprimir-abierto" style="width:100%;margin-bottom:14px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M6 9V3h12v6"/><path d="M6 18H4a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-2"/><rect x="6" y="14" width="12" height="7"/></svg> Imprimir ticket abierto</button>
+    ${ticketsHtml}
+    <div class="fd-total-adeudado"><div class="lbl">Importe total adeudado</div><div class="val">${peso(j.saldoTotal)}</div></div>
     <div class="mm-field">
       <label>Monto a abonar</label>
       <input id="fd-monto" inputmode="decimal" placeholder="$0">
@@ -334,6 +375,119 @@ function fdRenderDetalle(j,nombre){
   document.getElementById('fd-recibido').addEventListener('input',()=>{fdCalcularVuelto();fdValidarCobro();});
   document.getElementById('fd-cobrar-btn').onclick=fdConfirmarCobro;
   document.getElementById('fd-imprimir-abierto').onclick=()=>fdImprimirTicketAbierto(j,nombre);
+  fdWireSwipeRows();
+}
+
+// ---- Línea de producto con gesto swipe-to-delete (estilo Loyverse) ----
+function fdLineaSwipeHtml(fiadoId,l){
+  const nombreAttr=(l.producto_nombre||'').replace(/"/g,'&quot;');
+  return `<div class="fd-linea-swipe" data-linea-id="${l.id}" data-fiado-id="${fiadoId}" data-cantidad="${l.cantidad}" data-nombre="${nombreAttr}" data-open="0">
+    <div class="fd-linea-swipe-bg"><button type="button" class="fd-linea-del-btn" data-linea-id="${l.id}" aria-label="Eliminar línea"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>
+    <div class="fd-linea-swipe-fg">
+      <div class="fd-linea-texto">${l.cantidad} × ${l.producto_nombre}</div>
+      <div style="display:flex;align-items:center;gap:6px;flex:none">
+        <span class="fd-linea-precio">${peso(l.precio_unitario)}</span>
+        <button type="button" class="fd-linea-x" data-linea-id="${l.id}" aria-label="Eliminar línea">×</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+const FD_SWIPE_REVEAL_PX=72;
+const FD_SWIPE_TRIGGER_RATIO=0.4;
+const FD_SWIPE_MIN_PX=8;
+let fdSwipeAbierta=null;
+
+// Gesto nativo (sin librerías): touchstart guarda la posición inicial; touchmove decide en el
+// primer movimiento significativo si es horizontal (swipe, se bloquea el scroll recién ahí con
+// preventDefault) o vertical (se deja pasar, es scroll normal de la lista); touchend siempre
+// snapea a abierto o cerrado, nunca queda a medias. Solo una fila puede estar abierta a la vez.
+function fdWireSwipeRows(){
+  document.querySelectorAll('.fd-linea-swipe').forEach(row=>{
+    const fg=row.querySelector('.fd-linea-swipe-fg');
+    let startX=0,startY=0,dragging=false,decided=false,base=0;
+
+    fg.addEventListener('touchstart',ev=>{
+      const t=ev.touches[0];
+      startX=t.clientX;startY=t.clientY;
+      dragging=false;decided=false;
+      base=row.dataset.open==='1'?-FD_SWIPE_REVEAL_PX:0;
+    },{passive:true});
+
+    fg.addEventListener('touchmove',ev=>{
+      const t=ev.touches[0];
+      const dx=t.clientX-startX,dy=t.clientY-startY;
+      if(!decided){
+        if(Math.abs(dx)<FD_SWIPE_MIN_PX&&Math.abs(dy)<FD_SWIPE_MIN_PX)return;
+        decided=true;
+        dragging=Math.abs(dx)>Math.abs(dy);
+        if(dragging)fg.classList.add('fd-dragging');
+      }
+      if(!dragging)return;
+      ev.preventDefault();
+      let next=base+dx;
+      next=Math.max(-FD_SWIPE_REVEAL_PX,Math.min(0,next));
+      fg.style.transform='translateX('+next+'px)';
+      fg._fdLastNext=next;
+    },{passive:false});
+
+    fg.addEventListener('touchend',()=>{
+      fg.classList.remove('fd-dragging');
+      if(!dragging)return;
+      const next=fg._fdLastNext||0;
+      const abrir=next<=-FD_SWIPE_REVEAL_PX*FD_SWIPE_TRIGGER_RATIO;
+      fdSetSwipeOpen(row,fg,abrir);
+    },{passive:true});
+
+    row.querySelector('.fd-linea-del-btn').onclick=()=>fdConfirmarEliminarLinea(row);
+    row.querySelector('.fd-linea-x').onclick=()=>fdConfirmarEliminarLinea(row);
+  });
+
+  // Tocar en cualquier otro lado de la Vista B cierra la fila que haya quedado abierta.
+  const detBody=document.getElementById('fd-det-body');
+  detBody.onclick=ev=>{
+    if(fdSwipeAbierta&&!fdSwipeAbierta.contains(ev.target))fdCerrarSwipeAbierta();
+  };
+}
+function fdSetSwipeOpen(row,fg,abrir){
+  if(fdSwipeAbierta&&fdSwipeAbierta!==row)fdCerrarSwipeAbierta();
+  fg.style.transform='translateX('+(abrir?-FD_SWIPE_REVEAL_PX:0)+'px)';
+  row.dataset.open=abrir?'1':'0';
+  fdSwipeAbierta=abrir?row:null;
+}
+function fdCerrarSwipeAbierta(){
+  if(!fdSwipeAbierta)return;
+  const fg=fdSwipeAbierta.querySelector('.fd-linea-swipe-fg');
+  fg.style.transform='translateX(0px)';
+  fdSwipeAbierta.dataset.open='0';
+  fdSwipeAbierta=null;
+}
+// Borra la línea (el cajero cargó de más por error) — el backend devuelve el stock a Loyverse.
+// Se pide confirmación nativa (mismo criterio que fdConfirmarCobro: mover stock/plata real) y,
+// si el backend confirma, se vuelve a pedir fiados_cliente completo en vez de parchear el
+// estado local — evita duplicar acá el recálculo de saldo/estado que ya hace el backend.
+async function fdConfirmarEliminarLinea(row){
+  const lineaId=Number(row.dataset.lineaId);
+  const cantidad=row.dataset.cantidad;
+  const nombreProducto=row.dataset.nombre;
+  if(!confirm('¿Eliminar '+cantidad+' × '+nombreProducto+' del ticket? El stock se devolverá.')){
+    fdCerrarSwipeAbierta();
+    return;
+  }
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'fiados_eliminar_linea',payload:{linea_id:lineaId}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      showToast(j.avisoStock?('Línea eliminada. '+j.avisoStock):'Línea eliminada, stock devuelto');
+      fdAbrirDetalle(fdState.clienteId,fdState.clienteNombre);
+    }else{
+      showToast('Error: '+((j&&j.error)||'no se pudo eliminar la línea'));
+      fdCerrarSwipeAbierta();
+    }
+  }catch(e){
+    showToast('Error de conexión al eliminar la línea');
+    fdCerrarSwipeAbierta();
+  }
 }
 // Ticket del/los fiado(s) abierto(s) de un cliente — para entregarle un comprobante en papel
 // de lo que debe, sin que eso implique ningún cobro (a diferencia de fdRenderComprobante, que
