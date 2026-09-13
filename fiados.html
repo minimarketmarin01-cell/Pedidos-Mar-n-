@@ -55,6 +55,11 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
 .mm-resp{display:flex;gap:8px;flex-wrap:wrap}
 .mm-resp button{flex:1;min-width:100px;border:1.5px solid var(--line);background:var(--card);border-radius:10px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;min-height:48px}
 .mm-resp button.sel{background:var(--azul);color:#fff;border-color:var(--azul)}
+.fd-cliente-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
+.fd-cliente-abrir{min-width:0;cursor:pointer}
+.fd-total-row{display:flex;align-items:center;justify-content:space-between;padding:2px 2px 12px}
+.fd-eye{border:none;background:var(--paper);color:var(--muted);width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;padding:0}
+.fd-eye:active{background:var(--line)}
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:14px 22px;border-radius:12px;font-weight:600;font-size:15px;box-shadow:0 8px 30px rgba(0,0,0,.25);transition:.3s;z-index:260;opacity:0;max-width:90vw;text-align:center;pointer-events:none}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 </style>
@@ -88,9 +93,12 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
     </div>
 
     <!-- Sin lista automática de quién debe: por privacidad, nada se muestra hasta que se
-         busque un nombre específico (o se toque "Mostrar todos", acción explícita) — un
-         cliente parado frente a la pantalla no debe poder ver a quién más se le fía. -->
-    <button type="button" class="loadbtn" id="fd-mostrar-todos" style="width:100%">Mostrar todos los clientes</button>
+         busque un nombre específico (o se toque el botón de abajo, acción explícita) — un
+         cliente parado frente a la pantalla no debe poder ver a quién más se le fía. La lista
+         que trae ese botón, además, arranca con los montos ocultos (ícono de ojo por fila y
+         uno general arriba) — otra capa de la misma idea: ni siquiera alguien mirando por
+         encima del hombro cuando el encargado SÍ abrió la lista debería ver montos sin querer. -->
+    <button type="button" class="loadbtn" id="fd-mostrar-todos" style="width:100%">Ver clientes con fiado abierto</button>
   </section>
 
   <!-- ============ VISTA B: detalle de cliente + formulario de cobro ============ -->
@@ -195,17 +203,63 @@ function fdRenderClientesResultado(clientes){
   box.innerHTML=clientes.map(c=>`<div class="mm-motivo" data-id="${c.id}" data-nombre="${(c.nombre||'').replace(/"/g,'&quot;')}">${c.nombre}${c.telefono?' <span style="color:var(--muted);font-weight:400">· '+c.telefono+'</span>':''}</div>`).join('');
   document.querySelectorAll('#fd-buscar-results [data-id]').forEach(el=>el.onclick=()=>fdAbrirDetalle(el.dataset.id,el.dataset.nombre));
 }
+// Ícono de ojo (abierto = valor visible, tachado = valor oculto) — mismo estilo SVG de trazo
+// que el resto de la app.
+function fdOjoSvg(visible){
+  return visible
+    ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>'
+    : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a21.6 21.6 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a21.6 21.6 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+}
+// Clientes con fiado abierto (fiados_resumen) — NUNCA la lista completa de clientes de
+// Loyverse (ver Contexto: eso ya no es lo que pide este botón). Los montos arrancan ocultos,
+// fila por fila, más un total general arriba — el dueño pidió esta capa extra de privacidad
+// encima de que la lista solo aparezca con una acción explícita.
+let fdListaFiados=[];
+const fdMontosRevelados=new Set();
+let fdTotalRevelado=false;
 document.getElementById('fd-mostrar-todos').onclick=async()=>{
   const btn=document.getElementById('fd-mostrar-todos');
   btn.disabled=true;btn.textContent='Cargando…';
   try{
-    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=clientes_buscar&todos=1');
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=fiados_resumen');
     const j=await res.json();
     document.getElementById('fd-buscar').value='';
-    fdRenderClientesResultado((j&&j.ok)?(j.clientes||[]):[]);
-  }catch(e){showToast('Error de conexión al listar clientes');}
-  btn.disabled=false;btn.textContent='Mostrar todos los clientes';
+    fdListaFiados=(j&&j.ok)?(j.clientes||[]):[];
+    fdMontosRevelados.clear();fdTotalRevelado=false;
+    fdRenderListaFiados();
+  }catch(e){showToast('Error de conexión al listar clientes con fiado');}
+  btn.disabled=false;btn.textContent='Ver clientes con fiado abierto';
 };
+function fdRenderListaFiados(){
+  const box=document.getElementById('fd-buscar-results');
+  if(!fdListaFiados.length){box.innerHTML='<div class="vc-empty">No hay fiados abiertos</div>';return;}
+  const total=fdListaFiados.reduce((s,c)=>s+(c.saldo||0),0);
+  const header=`<div class="fd-total-row">
+    <span style="font-size:14px;font-weight:700;color:var(--ink)">${fdTotalRevelado?'Monto total: '+peso(total):'Monto total'}</span>
+    <button type="button" class="fd-eye" id="fd-total-eye" aria-label="Mostrar u ocultar el monto total">${fdOjoSvg(fdTotalRevelado)}</button>
+  </div>`;
+  const filas=fdListaFiados.map(c=>{
+    const revelado=fdMontosRevelados.has(c.clienteId);
+    return `<div class="fd-cliente-row">
+      <div class="fd-cliente-abrir" data-id="${c.clienteId}" data-nombre="${(c.nombre||'').replace(/"/g,'&quot;')}">
+        <div style="font-size:16px;font-weight:700;color:var(--ink)">${c.nombre||'(sin nombre)'}</div>
+        <div style="font-size:12.5px;color:var(--muted);margin-top:3px">${c.fiadosAbiertos} fiado${c.fiadosAbiertos===1?'':'s'} · más antiguo: ${c.fiadoMasAntiguo?fechaChileLegible(c.fiadoMasAntiguo):'—'}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex:none">
+        <span style="font-size:17px;font-weight:800;color:var(--rojo);min-width:60px;text-align:right">${revelado?peso(c.saldo):'••••'}</span>
+        <button type="button" class="fd-eye" data-ojo="${c.clienteId}" aria-label="Mostrar u ocultar el monto">${fdOjoSvg(revelado)}</button>
+      </div>
+    </div>`;
+  }).join('');
+  box.innerHTML=header+filas;
+  document.getElementById('fd-total-eye').onclick=()=>{fdTotalRevelado=!fdTotalRevelado;fdRenderListaFiados();};
+  document.querySelectorAll('#fd-buscar-results [data-ojo]').forEach(el=>el.onclick=()=>{
+    const id=el.dataset.ojo;
+    if(fdMontosRevelados.has(id))fdMontosRevelados.delete(id);else fdMontosRevelados.add(id);
+    fdRenderListaFiados();
+  });
+  document.querySelectorAll('#fd-buscar-results .fd-cliente-abrir').forEach(el=>el.onclick=()=>fdAbrirDetalle(el.dataset.id,el.dataset.nombre));
+}
 
 // ---- Vista B: detalle de cliente + formulario de cobro ----
 async function fdAbrirDetalle(clienteId,nombreConocido){
