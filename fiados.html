@@ -57,8 +57,6 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
 .mm-resp button.sel{background:var(--azul);color:#fff;border-color:var(--azul)}
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:14px 22px;border-radius:12px;font-weight:600;font-size:15px;box-shadow:0 8px 30px rgba(0,0,0,.25);transition:.3s;z-index:260;opacity:0;max-width:90vw;text-align:center;pointer-events:none}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
-.fd-cliente-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:16px 16px;margin-bottom:10px;cursor:pointer}
-.fd-cliente-row:active{background:var(--paper)}
 </style>
 </head>
 <body>
@@ -89,11 +87,10 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
       <div style="font-size:12.5px;color:var(--muted);margin-top:4px">El cajero olvidó asignar el Cliente en Loyverse — toca para reconciliar.</div>
     </div>
 
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap">
-      <label style="margin:0;font-size:13.5px;font-weight:700;color:var(--ink)">Clientes con fiado abierto</label>
-      <button type="button" class="loadbtn" id="fd-mostrar-todos">Mostrar todos los clientes</button>
-    </div>
-    <div id="fd-lista"><div class="vc-empty">Cargando…</div></div>
+    <!-- Sin lista automática de quién debe: por privacidad, nada se muestra hasta que se
+         busque un nombre específico (o se toque "Mostrar todos", acción explícita) — un
+         cliente parado frente a la pantalla no debe poder ver a quién más se le fía. -->
+    <button type="button" class="loadbtn" id="fd-mostrar-todos" style="width:100%">Mostrar todos los clientes</button>
   </section>
 
   <!-- ============ VISTA B: detalle de cliente + formulario de cobro ============ -->
@@ -141,9 +138,10 @@ function fechaChileLegible(isoUtc){
   if(!isoUtc) return '';
   const d=new Date(isoUtc);
   if(isNaN(d.getTime())) return isoUtc; // no es un ISO parseable — se muestra tal cual en vez de ocultar el dato
-  const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'America/Santiago',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(d);
+  const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'America/Santiago',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}).formatToParts(d);
   const get=t=>(parts.find(p=>p.type===t)||{}).value||'';
-  return get('day')+'/'+get('month')+'/'+get('year')+' '+get('hour')+':'+get('minute');
+  const ampm=get('dayPeriod').toLowerCase().startsWith('a')?'a.m.':'p.m.';
+  return get('day')+'/'+get('month')+'/'+get('year')+' '+get('hour')+':'+get('minute')+' '+ampm;
 }
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');const dur=m.length>60?4600:2600;clearTimeout(window._toastT);window._toastT=setTimeout(()=>t.classList.remove('show'),dur);}
 
@@ -158,28 +156,7 @@ function fdShowLista(){document.getElementById('fd-view-lista').classList.remove
 function fdShowDetalle(){document.getElementById('fd-view-lista').classList.add('hidden');document.getElementById('fd-view-detalle').classList.remove('hidden');document.getElementById('fd-view-comprobante').classList.add('hidden');}
 function fdShowComprobante(){document.getElementById('fd-view-lista').classList.add('hidden');document.getElementById('fd-view-detalle').classList.add('hidden');document.getElementById('fd-view-comprobante').classList.remove('hidden');}
 document.getElementById('fd-det-volver').onclick=fdVolverALista;
-function fdVolverALista(){fdState.clienteId=null;fdState.detalle=null;fdState.metodoPago=null;fdShowLista();fdCargarResumen();}
-
-// ---- Vista A: resumen de clientes con fiado abierto ----
-async function fdCargarResumen(){
-  const box=document.getElementById('fd-lista');
-  box.innerHTML='<div class="vc-empty">Cargando…</div>';
-  try{
-    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=fiados_resumen');
-    const j=await res.json();
-    if(!j||!j.ok){box.innerHTML='<div class="vc-empty">No se pudo cargar</div><button class="loadbtn" id="fd-reintentar" type="button" style="width:100%;margin-top:8px">Reintentar</button>';document.getElementById('fd-reintentar').onclick=fdCargarResumen;return;}
-    const clientes=j.clientes||[];
-    if(!clientes.length){box.innerHTML='<div class="vc-empty">No hay fiados abiertos</div>';return;}
-    box.innerHTML=clientes.map(c=>`<div class="fd-cliente-row" data-id="${c.clienteId}" data-nombre="${(c.nombre||'').replace(/"/g,'&quot;')}">
-      <div style="min-width:0">
-        <div style="font-size:16px;font-weight:700;color:var(--ink)">${c.nombre||'(sin nombre)'}</div>
-        <div style="font-size:12.5px;color:var(--muted);margin-top:3px">${c.fiadosAbiertos} fiado${c.fiadosAbiertos===1?'':'s'} · más antiguo: ${c.fiadoMasAntiguo?fechaChileLegible(c.fiadoMasAntiguo):'—'}</div>
-      </div>
-      <div style="font-size:17px;font-weight:800;color:var(--rojo);flex:none">${peso(c.saldo)}</div>
-    </div>`).join('');
-    document.querySelectorAll('.fd-cliente-row').forEach(el=>el.onclick=()=>fdAbrirDetalle(el.dataset.id,el.dataset.nombre));
-  }catch(e){box.innerHTML='<div class="vc-empty">Error de conexión</div><button class="loadbtn" id="fd-reintentar" type="button" style="width:100%;margin-top:8px">Reintentar</button>';document.getElementById('fd-reintentar').onclick=fdCargarResumen;}
-}
+function fdVolverALista(){fdState.clienteId=null;fdState.detalle=null;fdState.metodoPago=null;fdShowLista();}
 
 // ---- Callout "sin cliente asignado" (mejor esfuerzo: si falla, simplemente no aparece) ----
 async function fdCargarSinCliente(){
@@ -414,15 +391,13 @@ async function fdAsignarCliente(fiadoId,clienteId){
       showToast('Cliente asignado correctamente');
       document.getElementById('fd-recon-ov').classList.add('hidden');
       fdCargarSinCliente();
-      fdCargarResumen();
     }else{showToast('Error: '+((j&&j.error)||'no se pudo asignar'));}
   }catch(e){showToast('Error de conexión al asignar cliente');}
 }
 
-// ---- Arranque: siempre en la Vista A con datos frescos (página independiente, sin
-// mecanismo de "reabrir" — un F5 simplemente recarga limpio, que ya es lo correcto acá) ----
+// ---- Arranque: siempre en la Vista A, vacía por privacidad (sin lista automática de quién
+// debe — página independiente, sin mecanismo de "reabrir", un F5 simplemente recarga limpio) ----
 fdShowLista();
-fdCargarResumen();
 fdCargarSinCliente();
 
 // ---- Instalación como app (pantalla de inicio) ----
