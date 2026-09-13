@@ -90,7 +90,35 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
 .fd-linea-precio{font-size:13px;color:var(--muted);white-space:nowrap;flex:none}
 .fd-linea-x{background:none;border:none;color:var(--muted);opacity:.5;font-size:20px;line-height:1;padding:4px 8px;cursor:pointer;flex:none;min-width:32px;min-height:32px}
 
-#fd-metodo button{min-height:52px;font-size:15.5px}
+/* ---- Flujo de cobro de un toque (estilo Loyverse): "Monto a abonar" más discreto que el
+   total, campo de efectivo con ícono + botón COBRAR al lado, sugerencias, y los botones de
+   tarjeta/transferencia a todo el ancho que cobran directo al tocarlos. ---- */
+.fd-monto-abonar{margin-bottom:20px}
+.fd-monto-abonar label{font-size:11.5px}
+.fd-monto-abonar input{font-size:15px;height:40px;color:var(--muted);font-weight:600}
+.fd-pago-efectivo{margin-bottom:18px}
+.fd-efectivo-label{display:block;font-size:13px;font-weight:700;color:var(--verde);text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px}
+.fd-efectivo-row{display:flex;gap:10px;align-items:stretch}
+.fd-efectivo-input-wrap{position:relative;flex:1;display:flex;align-items:center;color:var(--muted)}
+.fd-efectivo-input-wrap svg{position:absolute;left:14px;pointer-events:none}
+.fd-efectivo-input-wrap input{width:100%;height:56px;padding:0 14px 0 42px;border:1.5px solid var(--line);border-radius:10px;font-size:20px;font-weight:700;font-family:'Inter';background:#fff;color:var(--ink)}
+.fd-cobrar-efectivo-btn{flex:none;min-width:120px;background:var(--brand-grad);color:#fff;border:none;border-radius:var(--radius-btn);padding:0 18px;font-size:15px;font-weight:800;font-family:'Manrope';cursor:pointer;box-shadow:var(--shadow-brand)}
+.fd-cobrar-efectivo-btn:disabled{opacity:.5;cursor:default;box-shadow:none}
+.fd-sugerencias{display:flex;gap:8px;margin-top:12px}
+.fd-sugerencia-btn{flex:1;border:1.5px solid var(--line);background:var(--paper);border-radius:10px;padding:14px 4px;font-size:14.5px;font-weight:700;color:var(--ink);cursor:pointer;min-height:48px}
+.fd-sugerencia-btn:active{background:var(--line)}
+.fd-pago-directo-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:var(--radius-btn);padding:16px;font-size:15px;font-weight:700;letter-spacing:.02em;font-family:'Manrope';cursor:pointer;min-height:56px;margin-bottom:12px}
+.fd-pago-directo-btn:active{background:var(--paper)}
+.fd-pago-directo-btn:disabled{opacity:.45;cursor:default}
+
+/* ---- Responsive: desde 760px, 2 columnas como Loyverse (ticket a la izquierda, cobro a la
+   derecha) aprovechando todo el ancho — por debajo, apilado igual que en celular. ---- */
+@media (min-width:760px){
+  #fd-view-detalle{max-width:none;width:100vw;margin-left:calc(50% - 50vw);padding-left:max(24px,env(safe-area-inset-left));padding-right:max(24px,env(safe-area-inset-right))}
+  .fd-checkout-grid{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:36px;align-items:start;max-width:1100px;margin:0 auto}
+  .fd-panel-ticket{max-height:calc(100dvh - 140px);overflow-y:auto;padding-right:4px}
+  .fd-panel-pago{max-width:480px}
+}
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:14px 22px;border-radius:12px;font-weight:600;font-size:15px;box-shadow:0 8px 30px rgba(0,0,0,.25);transition:.3s;z-index:260;opacity:0;max-width:90vw;text-align:center;pointer-events:none}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 </style>
@@ -202,6 +230,27 @@ function fdDescuentoDeFiado(f){
   const sumaLineas=(f.lineas||[]).reduce((s,l)=>s+(l.cantidad||0)*(l.precio_unitario||0),0);
   const base=(f.montoTotal!=null?f.montoTotal:f.saldo)||0;
   return Math.round(sumaLineas-base);
+}
+// Sugerencias de efectivo "cómodas" (estilo Loyverse), sin valores fijos: los pasos de
+// redondeo escalan según el orden de magnitud del monto (más finos para montos chicos, más
+// gruesos para montos grandes), y cada sugerencia sucesiva se calcula sobre la anterior para
+// garantizar que sean siempre crecientes y nunca menores al monto. Verificado a mano contra
+// $7.460→$7.500/$8.000/$10.000, $12.890→$13.000/$15.000/$20.000, $157.389→$158.000/$159.000/
+// $160.000.
+function fdSugerenciasEfectivo(total){
+  if(!(total>0))return[];
+  let steps;
+  if(total<10000)steps=[500,1000,5000];
+  else if(total<100000)steps=[1000,5000,10000];
+  else steps=[1000,1000,1000];
+  const out=[];let prev=total;
+  for(const step of steps){
+    let candidato=Math.ceil(prev/step)*step;
+    if(candidato<=prev)candidato+=step;
+    out.push(candidato);
+    prev=candidato;
+  }
+  return out;
 }
 
 // ===================== FIADOS (cuentas por cobrar) =====================
@@ -349,33 +398,42 @@ function fdRenderDetalle(j,nombre){
     </div>`;
   }).join('');
   body.innerHTML=`
-    <button type="button" class="loadbtn" id="fd-imprimir-abierto" style="width:100%;margin-bottom:14px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M6 9V3h12v6"/><path d="M6 18H4a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-2"/><rect x="6" y="14" width="12" height="7"/></svg> Imprimir ticket abierto</button>
-    ${ticketsHtml}
-    <div class="fd-total-adeudado"><div class="lbl">Importe total adeudado</div><div class="val">${peso(j.saldoTotal)}</div></div>
-    <div class="mm-field">
-      <label>Monto a abonar</label>
-      <input id="fd-monto" inputmode="decimal" placeholder="$0">
-    </div>
-    <div class="mm-field">
-      <label>Método de pago</label>
-      <div class="mm-resp" id="fd-metodo">
-        <button type="button" data-m="efectivo">Efectivo</button>
-        <button type="button" data-m="tarjeta">Tarjeta</button>
-        <button type="button" data-m="transferencia">Transferencia</button>
+    <div class="fd-checkout-grid">
+      <div class="fd-panel-ticket">
+        <button type="button" class="loadbtn" id="fd-imprimir-abierto" style="width:100%;margin-bottom:14px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M6 9V3h12v6"/><path d="M6 18H4a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-2"/><rect x="6" y="14" width="12" height="7"/></svg> Imprimir ticket abierto</button>
+        ${ticketsHtml}
       </div>
-    </div>
-    <div class="mm-field hidden" id="fd-efectivo-field">
-      <label>Recibido en efectivo</label>
-      <input id="fd-recibido" inputmode="decimal" placeholder="$0">
-      <div id="fd-vuelto" style="font-size:15px;font-weight:700;margin-top:8px"></div>
-    </div>
-    <button class="mm-save" id="fd-cobrar-btn" disabled>Cobrar</button>`;
-  document.querySelectorAll('#fd-metodo button').forEach(b=>b.onclick=()=>fdSeleccionarMetodo(b.dataset.m));
-  document.getElementById('fd-monto').addEventListener('input',()=>{fdCalcularVuelto();fdValidarCobro();});
+      <div class="fd-panel-pago">
+        <div class="fd-total-adeudado"><div class="lbl">Importe total adeudado</div><div class="val">${peso(j.saldoTotal)}</div></div>
+        <div class="mm-field fd-monto-abonar">
+          <label>Monto a abonar</label>
+          <input id="fd-monto" inputmode="decimal" value="${Math.round(j.saldoTotal)||''}">
+        </div>
+        <div class="fd-pago-efectivo">
+          <label class="fd-efectivo-label">Efectivo recibido</label>
+          <div class="fd-efectivo-row">
+            <div class="fd-efectivo-input-wrap">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>
+              <input id="fd-recibido" inputmode="decimal" placeholder="$0">
+            </div>
+            <button type="button" class="fd-cobrar-efectivo-btn" id="fd-cobrar-btn" disabled>COBRAR</button>
+          </div>
+          <div id="fd-vuelto" style="font-size:15px;font-weight:700;margin-top:8px"></div>
+          <div class="fd-sugerencias" id="fd-sugerencias-efectivo"></div>
+        </div>
+        <button type="button" class="fd-pago-directo-btn fd-pago-directo" id="fd-pago-tarjeta-btn" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg> POR TARJETA</button>
+        <button type="button" class="fd-pago-directo-btn fd-pago-directo" id="fd-pago-transferencia-btn" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg> TRANSFERENCIA</button>
+      </div>
+    </div>`;
+  document.getElementById('fd-monto').addEventListener('input',()=>{fdCalcularVuelto();fdValidarCobro();fdRenderSugerenciasEfectivo();});
   document.getElementById('fd-recibido').addEventListener('input',()=>{fdCalcularVuelto();fdValidarCobro();});
-  document.getElementById('fd-cobrar-btn').onclick=fdConfirmarCobro;
+  document.getElementById('fd-cobrar-btn').onclick=fdCobrarEfectivo;
+  document.getElementById('fd-pago-tarjeta-btn').onclick=()=>fdCobrarDirecto('tarjeta');
+  document.getElementById('fd-pago-transferencia-btn').onclick=()=>fdCobrarDirecto('transferencia');
   document.getElementById('fd-imprimir-abierto').onclick=()=>fdImprimirTicketAbierto(j,nombre);
   fdWireSwipeRows();
+  fdRenderSugerenciasEfectivo();
+  fdValidarCobro();
 }
 
 // ---- Línea de producto con gesto swipe-to-delete (estilo Loyverse) ----
@@ -512,33 +570,40 @@ function fdImprimirTicketAbierto(j,nombre){
     <div style="border-top:1.5px solid #000;margin-top:12px;padding-top:10px;display:flex;justify-content:space-between;font-weight:800;font-size:15px"><span>Saldo total pendiente</span><span>${peso(j.saldoTotal)}</span></div>`;
   fdImprimir(html);
 }
-function fdSeleccionarMetodo(m){
-  fdState.metodoPago=m;
-  document.querySelectorAll('#fd-metodo button').forEach(b=>b.classList.toggle('sel',b.dataset.m===m));
-  document.getElementById('fd-efectivo-field').classList.toggle('hidden',m!=='efectivo');
-  if(m!=='efectivo'){document.getElementById('fd-recibido').value='';document.getElementById('fd-vuelto').textContent='';}
-  fdCalcularVuelto();fdValidarCobro();
+// ---- Flujo de cobro "un toque" (estilo Loyverse): sin selector de método previo — cada botón
+// de pago fija fdState.metodoPago y dispara fdConfirmarCobro() directo (misma función de
+// siempre, sin duplicar lógica). Efectivo tiene su propio botón "COBRAR" junto al monto
+// recibido (deshabilitado hasta que alcance); Tarjeta/Transferencia cobran directo con el mismo
+// confirm() de seguridad ya usado, sin depender del campo de efectivo. ----
+function fdCobrarEfectivo(){fdState.metodoPago='efectivo';fdConfirmarCobro();}
+function fdCobrarDirecto(metodo){fdState.metodoPago=metodo;fdConfirmarCobro();}
+function fdRenderSugerenciasEfectivo(){
+  const box=document.getElementById('fd-sugerencias-efectivo');
+  if(!box)return;
+  const monto=Number((document.getElementById('fd-monto')||{}).value)||0;
+  const sugerencias=fdSugerenciasEfectivo(monto);
+  box.innerHTML=sugerencias.map(s=>`<button type="button" class="fd-sugerencia-btn" data-monto="${s}">${peso(s)}</button>`).join('');
+  box.querySelectorAll('[data-monto]').forEach(b=>b.onclick=()=>{
+    document.getElementById('fd-recibido').value=b.dataset.monto;
+    fdCalcularVuelto();fdValidarCobro();
+  });
 }
 function fdCalcularVuelto(){
   const el=document.getElementById('fd-vuelto');
   if(!el)return;
-  if(fdState.metodoPago!=='efectivo'){el.textContent='';return;}
   const monto=Number(document.getElementById('fd-monto').value)||0;
   const recibido=Number(document.getElementById('fd-recibido').value)||0;
   if(!recibido){el.textContent='';return;}
   if(recibido<monto){el.style.color='var(--rojo)';el.textContent='Falta '+peso(monto-recibido);}
+  else if(recibido===monto){el.style.color='var(--verde)';el.textContent='Pago exacto';}
   else{el.style.color='var(--verde)';el.textContent='Vuelto: '+peso(recibido-monto);}
 }
 function fdValidarCobro(){
-  const btn=document.getElementById('fd-cobrar-btn');
-  if(!btn)return;
-  const monto=Number(document.getElementById('fd-monto').value)||0;
-  let ok=monto>0&&!!fdState.metodoPago;
-  if(fdState.metodoPago==='efectivo'){
-    const recibido=Number(document.getElementById('fd-recibido').value)||0;
-    ok=ok&&recibido>=monto;
-  }
-  btn.disabled=!ok;
+  const monto=Number((document.getElementById('fd-monto')||{}).value)||0;
+  const recibido=Number((document.getElementById('fd-recibido')||{}).value)||0;
+  const btnEfectivo=document.getElementById('fd-cobrar-btn');
+  if(btnEfectivo)btnEfectivo.disabled=!(monto>0&&recibido>=monto);
+  document.querySelectorAll('.fd-pago-directo').forEach(b=>b.disabled=!(monto>0));
 }
 
 // ---- Confirmar cobro (POST fiados_cobrar) + comprobante ----
@@ -548,8 +613,11 @@ function fdValidarCobro(){
 async function fdConfirmarCobro(){
   const monto=Number(document.getElementById('fd-monto').value)||0;
   if(!confirm('¿Cobrar '+peso(monto)+' a '+(fdState.clienteNombre||'este cliente')+'?'))return;
-  const btn=document.getElementById('fd-cobrar-btn');
-  btn.disabled=true;btn.textContent='Cobrando…';
+  // Flujo de un toque (3 botones distintos pueden disparar esto: COBRAR/efectivo, POR TARJETA,
+  // TRANSFERENCIA) — se deshabilitan los 3 mientras la request está en vuelo, y se restauran
+  // con fdValidarCobro() (recalcula el estado correcto de cada uno) en vez de un solo botón fijo.
+  const botones=[document.getElementById('fd-cobrar-btn'),...document.querySelectorAll('.fd-pago-directo')].filter(Boolean);
+  botones.forEach(b=>b.disabled=true);
   try{
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'fiados_cobrar',payload:{cliente_id:fdState.clienteId,monto,metodo_pago:fdState.metodoPago}})});
     const j=await res.json();
@@ -562,9 +630,9 @@ async function fdConfirmarCobro(){
       // El mensaje ya viene armado y claro desde el backend (ej. monto supera la deuda total,
       // o falta configurar algo en el Worker) — se muestra tal cual, sin reinterpretarlo.
       showToast('Error: '+((j&&j.error)||'no se pudo registrar el cobro'));
-      btn.disabled=false;btn.textContent='Cobrar';
+      fdValidarCobro();
     }
-  }catch(e){showToast('Error de conexión al registrar el cobro');btn.disabled=false;btn.textContent='Cobrar';}
+  }catch(e){showToast('Error de conexión al registrar el cobro');fdValidarCobro();}
 }
 function fdRenderComprobante(c){
   const fiadosHtml=(c.fiadosCubiertos||[]).map(f=>`<div style="border-top:1px dashed var(--line);padding-top:10px;margin-top:10px">
