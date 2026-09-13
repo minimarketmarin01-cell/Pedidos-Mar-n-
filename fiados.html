@@ -133,6 +133,18 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
 const SYNC_URL='https://marin376-api.minimarketmarin01.workers.dev';
 const fmt=new Intl.NumberFormat('es-CL');
 const peso=n=>'$'+fmt.format(Math.round(n||0));
+// Los timestamps que manda el backend (fechaHora, fiadoMasAntiguo) son la fecha ISO cruda tal
+// cual la entrega Loyverse (ej. "2026-09-13T17:37:02.000Z") — se convierten a DD/MM/AAAA HH:MM
+// en hora de Chile (no la del navegador) antes de mostrarlos, mismo criterio que usa el resto
+// del sistema para fechas/horas.
+function fechaChileLegible(isoUtc){
+  if(!isoUtc) return '';
+  const d=new Date(isoUtc);
+  if(isNaN(d.getTime())) return isoUtc; // no es un ISO parseable — se muestra tal cual en vez de ocultar el dato
+  const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'America/Santiago',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(d);
+  const get=t=>(parts.find(p=>p.type===t)||{}).value||'';
+  return get('day')+'/'+get('month')+'/'+get('year')+' '+get('hour')+':'+get('minute');
+}
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');const dur=m.length>60?4600:2600;clearTimeout(window._toastT);window._toastT=setTimeout(()=>t.classList.remove('show'),dur);}
 
 // ===================== FIADOS (cuentas por cobrar) =====================
@@ -161,7 +173,7 @@ async function fdCargarResumen(){
     box.innerHTML=clientes.map(c=>`<div class="fd-cliente-row" data-id="${c.clienteId}" data-nombre="${(c.nombre||'').replace(/"/g,'&quot;')}">
       <div style="min-width:0">
         <div style="font-size:16px;font-weight:700;color:var(--ink)">${c.nombre||'(sin nombre)'}</div>
-        <div style="font-size:12.5px;color:var(--muted);margin-top:3px">${c.fiadosAbiertos} fiado${c.fiadosAbiertos===1?'':'s'} · más antiguo: ${c.fiadoMasAntiguo||'—'}</div>
+        <div style="font-size:12.5px;color:var(--muted);margin-top:3px">${c.fiadosAbiertos} fiado${c.fiadosAbiertos===1?'':'s'} · más antiguo: ${c.fiadoMasAntiguo?fechaChileLegible(c.fiadoMasAntiguo):'—'}</div>
       </div>
       <div style="font-size:17px;font-weight:800;color:var(--rojo);flex:none">${peso(c.saldo)}</div>
     </div>`).join('');
@@ -243,7 +255,7 @@ function fdRenderDetalle(j,nombre){
     return;
   }
   const fiadosHtml=fiados.map(f=>`<div style="border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;background:var(--card)">
-    <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700"><span>${f.fechaHora}</span><span>${peso(f.saldo)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700"><span>${fechaChileLegible(f.fechaHora)}</span><span>${peso(f.saldo)}</span></div>
     ${(f.lineas||[]).map(l=>`<div style="font-size:13px;color:var(--muted);margin-top:4px">${l.cantidad} × ${l.producto_nombre} · ${peso(l.precio_unitario)}</div>`).join('')}
   </div>`).join('');
   body.innerHTML=`
@@ -330,7 +342,7 @@ async function fdConfirmarCobro(){
 }
 function fdRenderComprobante(c){
   const fiadosHtml=(c.fiadosCubiertos||[]).map(f=>`<div style="border-top:1px dashed var(--line);padding-top:10px;margin-top:10px">
-    <div style="font-size:14px;font-weight:700">Fiado del ${f.fechaHora}</div>
+    <div style="font-size:14px;font-weight:700">Fiado del ${fechaChileLegible(f.fechaHora)}</div>
     ${(f.lineas||[]).map(l=>`<div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)"><span>${l.cantidad} × ${l.producto_nombre}</span><span>${peso(l.precio_unitario)}</span></div>`).join('')}
     <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;margin-top:5px"><span>Aplicado</span><span>${peso(f.montoAplicado)}</span></div>
     <div style="font-size:12.5px;color:var(--muted)">${f.quedaAbierto?'Queda saldo pendiente: '+peso(f.saldoRestanteFiado):'Cubierto por completo'}</div>
@@ -340,7 +352,7 @@ function fdRenderComprobante(c){
       <div style="text-align:center;font-weight:800;font-size:17px;margin-bottom:3px">Marín 376</div>
       <div style="text-align:center;font-size:12.5px;color:var(--muted);margin-bottom:14px">Comprobante de abono a fiado</div>
       <div style="font-size:15px;font-weight:700">${c.clienteNombre||'Cliente'}</div>
-      <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px">${new Date().toLocaleString('es-CL')}</div>
+      <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px">${fechaChileLegible(new Date().toISOString())}</div>
       ${fiadosHtml}
       <div style="border-top:1.5px solid var(--ink);margin-top:12px;padding-top:10px">
         <div style="display:flex;justify-content:space-between;font-weight:800;font-size:15px"><span>Monto abonado</span><span>${peso(c.monto)}</span></div>
