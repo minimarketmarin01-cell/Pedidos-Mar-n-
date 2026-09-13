@@ -65,12 +65,15 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
 .fd-checkout-header{display:flex;align-items:center;gap:10px;padding:2px 2px 14px}
 .fd-back-btn{border:none;background:var(--paper);color:var(--ink);width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer}
 .fd-back-btn:active{background:var(--line)}
-.fd-checkout-nombre{flex:1;font-size:19px;font-weight:800;color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fd-checkout-nombre{flex:1;font-size:21px;font-weight:800;color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fd-dividir-btn{border:1.5px solid var(--line);background:var(--card);color:var(--muted);border-radius:var(--radius-btn);padding:8px 12px;font-size:12.5px;font-weight:700;letter-spacing:.03em;flex:none;cursor:pointer;min-height:36px}
 
-.fd-total-adeudado{text-align:center;margin:6px 0 18px}
-.fd-total-adeudado .lbl{font-size:13px;color:var(--muted);font-weight:600}
-.fd-total-adeudado .val{font-size:32px;font-weight:800;color:var(--rojo);margin-top:2px}
+/* NIVEL 1 — el elemento más grande de toda la pantalla, legible a ~60cm (POS/tablet). El
+   número va PRIMERO (arriba) y la etiqueta "Importe total adeudado" INMEDIATAMENTE debajo,
+   centrada — igual que Loyverse, nunca al costado ni separada. */
+.fd-total-adeudado{text-align:center;margin:12px 0 26px}
+.fd-total-adeudado .val{font-size:46px;font-weight:800;color:var(--rojo);line-height:1.05;letter-spacing:-.01em}
+.fd-total-adeudado .lbl{font-size:13.5px;color:var(--muted);font-weight:700;margin-top:6px;text-transform:uppercase;letter-spacing:.03em}
 
 .fd-ticket-card{border:1.5px solid var(--line);border-radius:var(--radius-card);margin-bottom:12px;background:var(--card);overflow:hidden}
 .fd-ticket-card-head{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;font-size:13px;font-weight:700;color:var(--ink);border-bottom:1px solid var(--line)}
@@ -93,31 +96,48 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
 /* ---- Flujo de cobro de un toque (estilo Loyverse): "Monto a abonar" más discreto que el
    total, campo de efectivo con ícono + botón COBRAR al lado, sugerencias, y los botones de
    tarjeta/transferencia a todo el ancho que cobran directo al tocarlos. ---- */
-.fd-monto-abonar{margin-bottom:20px}
-.fd-monto-abonar label{font-size:11.5px}
-.fd-monto-abonar input{font-size:15px;height:40px;color:var(--muted);font-weight:600}
+/* NIVEL 2 — grande: monto a abonar, vuelto, nuevo saldo. "Monto a abonar" es obligatorio
+   (fdValidarCobro bloquea los medios de pago mientras no sea válido) — ver fd-monto-error. */
+.fd-monto-abonar{margin-bottom:10px}
+.fd-monto-abonar label{font-size:12.5px}
+.fd-monto-abonar input{font-size:23px;height:54px;color:var(--ink);font-weight:800}
+#fd-monto-error{font-size:13px;color:var(--rojo);font-weight:700;margin:-4px 0 16px;min-height:16px}
+#fd-vuelto{font-size:19px;font-weight:800;margin-top:10px}
+#fd-nuevo-saldo{font-size:19px;font-weight:800;margin-top:8px;color:var(--ink)}
 .fd-pago-efectivo{margin-bottom:18px}
-.fd-efectivo-label{display:block;font-size:13px;font-weight:700;color:var(--verde);text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px}
+.fd-efectivo-label{display:block;font-size:13.5px;font-weight:700;color:var(--verde);text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px}
 .fd-efectivo-row{display:flex;gap:10px;align-items:stretch}
 .fd-efectivo-input-wrap{position:relative;flex:1;display:flex;align-items:center;color:var(--muted)}
 .fd-efectivo-input-wrap svg{position:absolute;left:14px;pointer-events:none}
-.fd-efectivo-input-wrap input{width:100%;height:56px;padding:0 14px 0 42px;border:1.5px solid var(--line);border-radius:10px;font-size:20px;font-weight:700;font-family:'Inter';background:#fff;color:var(--ink)}
-.fd-cobrar-efectivo-btn{flex:none;min-width:120px;background:var(--brand-grad);color:#fff;border:none;border-radius:var(--radius-btn);padding:0 18px;font-size:15px;font-weight:800;font-family:'Manrope';cursor:pointer;box-shadow:var(--shadow-brand)}
+.fd-efectivo-input-wrap input{width:100%;height:56px;padding:0 14px 0 42px;border:1.5px solid var(--line);border-radius:10px;font-size:21px;font-weight:700;font-family:'Inter';background:#fff;color:var(--ink)}
+.fd-cobrar-efectivo-btn{flex:none;min-width:130px;background:var(--brand-grad);color:#fff;border:none;border-radius:var(--radius-btn);padding:0 18px;font-size:16px;font-weight:800;font-family:'Manrope';cursor:pointer;box-shadow:var(--shadow-brand)}
 .fd-cobrar-efectivo-btn:disabled{opacity:.5;cursor:default;box-shadow:none}
 .fd-sugerencias{display:flex;gap:8px;margin-top:12px}
-.fd-sugerencia-btn{flex:1;border:1.5px solid var(--line);background:var(--paper);border-radius:10px;padding:14px 4px;font-size:14.5px;font-weight:700;color:var(--ink);cursor:pointer;min-height:48px}
+.fd-sugerencia-btn{flex:1;border:1.5px solid var(--line);background:var(--paper);border-radius:10px;padding:14px 4px;font-size:15px;font-weight:700;color:var(--ink);cursor:pointer;min-height:50px}
 .fd-sugerencia-btn:active{background:var(--line)}
-.fd-pago-directo-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:var(--radius-btn);padding:16px;font-size:15px;font-weight:700;letter-spacing:.02em;font-family:'Manrope';cursor:pointer;min-height:56px;margin-bottom:12px}
+.fd-pago-directo-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:var(--radius-btn);padding:16px;font-size:16px;font-weight:700;letter-spacing:.02em;font-family:'Manrope';cursor:pointer;min-height:58px;margin-bottom:12px}
 .fd-pago-directo-btn:active{background:var(--paper)}
-.fd-pago-directo-btn:disabled{opacity:.45;cursor:default}
+.fd-pago-directo-btn:disabled{opacity:.4;cursor:default}
 
 /* ---- Responsive: desde 760px, 2 columnas como Loyverse (ticket a la izquierda, cobro a la
-   derecha) aprovechando todo el ancho — por debajo, apilado igual que en celular. ---- */
+   derecha) aprovechando todo el ancho — por debajo, apilado igual que en celular. También acá:
+   tamaños de NIVEL 1/2/3 más grandes en tablet/POS horizontal, para lectura cómoda a ~60cm
+   (más lejos que un celular en la mano). ---- */
 @media (min-width:760px){
   #fd-view-detalle{max-width:none;width:100vw;margin-left:calc(50% - 50vw);padding-left:max(24px,env(safe-area-inset-left));padding-right:max(24px,env(safe-area-inset-right))}
   .fd-checkout-grid{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:36px;align-items:start;max-width:1100px;margin:0 auto}
   .fd-panel-ticket{max-height:calc(100dvh - 140px);overflow-y:auto;padding-right:4px}
-  .fd-panel-pago{max-width:480px}
+  .fd-panel-pago{max-width:520px}
+  .fd-checkout-nombre{font-size:26px}
+  .fd-total-adeudado .val{font-size:78px}
+  .fd-total-adeudado .lbl{font-size:16px}
+  .fd-monto-abonar input{font-size:30px;height:62px}
+  #fd-vuelto,#fd-nuevo-saldo{font-size:27px}
+  .fd-efectivo-label{font-size:15px}
+  .fd-efectivo-input-wrap input{font-size:27px;height:64px}
+  .fd-cobrar-efectivo-btn{font-size:19px;min-width:150px}
+  .fd-sugerencia-btn{font-size:17px;min-height:56px}
+  .fd-pago-directo-btn{font-size:19px;min-height:66px}
 }
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:14px 22px;border-radius:12px;font-weight:600;font-size:15px;box-shadow:0 8px 30px rgba(0,0,0,.25);transition:.3s;z-index:260;opacity:0;max-width:90vw;text-align:center;pointer-events:none}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
@@ -199,6 +219,17 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
     </div>
   </div>
 
+  <!-- Modal de historial de fiados/abonos por cliente — se llena solo bajo demanda (botón
+       "Historial" en la Vista B), nunca al cargar la lista de tickets abiertos. -->
+  <div id="fd-historial-ov" class="hidden" style="position:fixed;inset:0;background:rgba(21,25,31,.55);z-index:250;display:flex;align-items:center;justify-content:center;padding:20px">
+    <div style="background:var(--card);width:100%;max-width:420px;border-radius:var(--radius-card);padding:20px;max-height:85vh;display:flex;flex-direction:column">
+      <h3 style="font-size:18px;margin-bottom:2px" id="fd-historial-nombre">Historial</h3>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:14px">Saldo actual: <strong id="fd-historial-saldo" style="color:var(--ink)"></strong></div>
+      <div id="fd-historial-lista" style="overflow-y:auto;flex:1"></div>
+      <button class="loadbtn" id="fd-historial-cerrar" style="width:100%;margin-top:14px">Cerrar</button>
+    </div>
+  </div>
+
   <div id="toast"></div>
 
 <script>
@@ -264,6 +295,8 @@ function fdShowLista(){document.getElementById('fd-view-lista').classList.remove
 function fdShowDetalle(){document.getElementById('fd-view-lista').classList.add('hidden');document.getElementById('fd-view-detalle').classList.remove('hidden');document.getElementById('fd-view-comprobante').classList.add('hidden');}
 function fdShowComprobante(){document.getElementById('fd-view-lista').classList.add('hidden');document.getElementById('fd-view-detalle').classList.add('hidden');document.getElementById('fd-view-comprobante').classList.remove('hidden');}
 document.getElementById('fd-det-volver').onclick=fdVolverALista;
+// Vuelve a la Vista A tal cual estaba (lista de "mostrar todos" o resultados de búsqueda que
+// ya estuvieran pintados en #fd-buscar-results — no se tocan acá, ver fdAbrirDetalle).
 function fdVolverALista(){fdState.clienteId=null;fdState.detalle=null;fdState.metodoPago=null;fdShowLista();}
 
 // ---- Callout "sin cliente asignado" (mejor esfuerzo: si falla, simplemente no aparece) ----
@@ -364,7 +397,9 @@ function fdRenderListaFiados(){
 // ---- Vista B: detalle de cliente + formulario de cobro ----
 async function fdAbrirDetalle(clienteId,nombreConocido){
   fdState.clienteId=clienteId;fdState.clienteNombre=nombreConocido||'';fdState.metodoPago=null;fdState.detalle=null;
-  document.getElementById('fd-buscar-results').innerHTML='';
+  // No se limpia #fd-buscar-results acá — así "Volver" (fdVolverALista) muestra otra vez
+  // exactamente la lista/búsqueda que había antes de abrir el detalle, en vez de una Vista A
+  // en blanco (ver fdVolverALista, más abajo).
   fdShowDetalle();
   const body=document.getElementById('fd-det-body');
   body.innerHTML='<div class="vc-empty">Cargando…</div>';
@@ -400,15 +435,19 @@ function fdRenderDetalle(j,nombre){
   body.innerHTML=`
     <div class="fd-checkout-grid">
       <div class="fd-panel-ticket">
-        <button type="button" class="loadbtn" id="fd-imprimir-abierto" style="width:100%;margin-bottom:14px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M6 9V3h12v6"/><path d="M6 18H4a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-2"/><rect x="6" y="14" width="12" height="7"/></svg> Imprimir ticket abierto</button>
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <button type="button" class="loadbtn" id="fd-imprimir-abierto" style="flex:1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M6 9V3h12v6"/><path d="M6 18H4a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-2"/><rect x="6" y="14" width="12" height="7"/></svg> Imprimir</button>
+          <button type="button" class="loadbtn" id="fd-ver-historial" style="flex:1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg> Historial</button>
+        </div>
         ${ticketsHtml}
       </div>
       <div class="fd-panel-pago">
-        <div class="fd-total-adeudado"><div class="lbl">Importe total adeudado</div><div class="val">${peso(j.saldoTotal)}</div></div>
+        <div class="fd-total-adeudado"><div class="val">${peso(j.saldoTotal)}</div><div class="lbl">Importe total adeudado</div></div>
         <div class="mm-field fd-monto-abonar">
           <label>Monto a abonar</label>
           <input id="fd-monto" inputmode="decimal" value="${Math.round(j.saldoTotal)||''}">
         </div>
+        <div id="fd-monto-error"></div>
         <div class="fd-pago-efectivo">
           <label class="fd-efectivo-label">Efectivo recibido</label>
           <div class="fd-efectivo-row">
@@ -418,7 +457,8 @@ function fdRenderDetalle(j,nombre){
             </div>
             <button type="button" class="fd-cobrar-efectivo-btn" id="fd-cobrar-btn" disabled>COBRAR</button>
           </div>
-          <div id="fd-vuelto" style="font-size:15px;font-weight:700;margin-top:8px"></div>
+          <div id="fd-vuelto"></div>
+          <div id="fd-nuevo-saldo"></div>
           <div class="fd-sugerencias" id="fd-sugerencias-efectivo"></div>
         </div>
         <button type="button" class="fd-pago-directo-btn fd-pago-directo" id="fd-pago-tarjeta-btn" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg> POR TARJETA</button>
@@ -431,8 +471,10 @@ function fdRenderDetalle(j,nombre){
   document.getElementById('fd-pago-tarjeta-btn').onclick=()=>fdCobrarDirecto('tarjeta');
   document.getElementById('fd-pago-transferencia-btn').onclick=()=>fdCobrarDirecto('transferencia');
   document.getElementById('fd-imprimir-abierto').onclick=()=>fdImprimirTicketAbierto(j,nombre);
+  document.getElementById('fd-ver-historial').onclick=fdAbrirHistorial;
   fdWireSwipeRows();
   fdRenderSugerenciasEfectivo();
+  fdCalcularVuelto();
   fdValidarCobro();
 }
 
@@ -598,21 +640,65 @@ function fdCalcularVuelto(){
   else if(recibido===monto){el.style.color='var(--verde)';el.textContent='Pago exacto';}
   else{el.style.color='var(--verde)';el.textContent='Vuelto: '+peso(recibido-monto);}
 }
+// "Monto a abonar" es obligatorio y debe estar entre $0 (exclusivo) y la deuda actual
+// (inclusive) — mientras no sea válido, los 3 medios de pago quedan deshabilitados (flujo
+// obligatorio: TOTAL → MONTO A ABONAR → MEDIO DE PAGO → CONFIRMAR). EPS=0.5 es tolerancia de
+// redondeo, mismo criterio ya usado en el backend (accionFiadosEliminarLinea).
+const FD_EPS_REDONDEO=0.5;
+function fdMontoAAbonarValido(){
+  const monto=Number((document.getElementById('fd-monto')||{}).value);
+  const deuda=(fdState.detalle&&fdState.detalle.saldoTotal)||0;
+  return isFinite(monto)&&monto>0&&monto<=deuda+FD_EPS_REDONDEO;
+}
 function fdValidarCobro(){
   const monto=Number((document.getElementById('fd-monto')||{}).value)||0;
+  const deuda=(fdState.detalle&&fdState.detalle.saldoTotal)||0;
   const recibido=Number((document.getElementById('fd-recibido')||{}).value)||0;
+  const montoValido=fdMontoAAbonarValido();
+  const errEl=document.getElementById('fd-monto-error');
+  if(errEl)errEl.textContent=(monto>deuda+FD_EPS_REDONDEO)?'El monto a abonar no puede superar la deuda.':'';
   const btnEfectivo=document.getElementById('fd-cobrar-btn');
-  if(btnEfectivo)btnEfectivo.disabled=!(monto>0&&recibido>=monto);
-  document.querySelectorAll('.fd-pago-directo').forEach(b=>b.disabled=!(monto>0));
+  if(btnEfectivo)btnEfectivo.disabled=!(montoValido&&recibido>=monto);
+  document.querySelectorAll('.fd-pago-directo').forEach(b=>b.disabled=!montoValido);
+  fdActualizarNuevoSaldo(montoValido?monto:0,deuda);
+}
+function fdActualizarNuevoSaldo(monto,deuda){
+  const el=document.getElementById('fd-nuevo-saldo');
+  if(!el)return;
+  if(!(monto>0)){el.textContent='';return;}
+  const nuevo=Math.max(0,Math.round((deuda-monto)*100)/100);
+  el.textContent=nuevo<=FD_EPS_REDONDEO?'PAGO TOTAL — Nuevo saldo $0':'Nuevo saldo: '+peso(nuevo);
 }
 
 // ---- Confirmar cobro (POST fiados_cobrar) + comprobante ----
 // confirm() nativo antes de mover plata real: con botones más grandes (pensados para un
 // usuario de 65+ años) crece el riesgo de un toque accidental — mismo patrón ya usado en
 // Marín Pedidos para acciones irreversibles con stock/plata (ej. prDevolver).
+// Resumen completo antes de registrar el cobro (cliente, deuda anterior, monto a abonar, medio
+// de pago, efectivo recibido/vuelto si aplica, nuevo saldo) — mismo confirm() nativo de
+// siempre, con más detalle para que el empleado pueda verificar los datos fácilmente antes de
+// mover plata real.
+function fdMensajeConfirmacion(monto,metodoPago,recibido){
+  const deuda=(fdState.detalle&&fdState.detalle.saldoTotal)||0;
+  const nuevoSaldo=Math.max(0,Math.round((deuda-monto)*100)/100);
+  const nombreMetodo={efectivo:'Efectivo',tarjeta:'Tarjeta',transferencia:'Transferencia'}[metodoPago]||metodoPago;
+  const lineas=[
+    'Cliente: '+(fdState.clienteNombre||'—'),
+    'Deuda anterior: '+peso(deuda),
+    'Monto a abonar: '+peso(monto),
+    'Medio de pago: '+nombreMetodo
+  ];
+  if(metodoPago==='efectivo'){
+    lineas.push('Efectivo recibido: '+peso(recibido));
+    lineas.push('Vuelto: '+peso(Math.max(0,recibido-monto)));
+  }
+  lineas.push(nuevoSaldo<=FD_EPS_REDONDEO?'PAGO TOTAL — Nuevo saldo: $0':'Nuevo saldo: '+peso(nuevoSaldo));
+  return lineas.join('\n');
+}
 async function fdConfirmarCobro(){
   const monto=Number(document.getElementById('fd-monto').value)||0;
-  if(!confirm('¿Cobrar '+peso(monto)+' a '+(fdState.clienteNombre||'este cliente')+'?'))return;
+  const recibido=Number((document.getElementById('fd-recibido')||{}).value)||0;
+  if(!confirm(fdMensajeConfirmacion(monto,fdState.metodoPago,recibido)))return;
   // Flujo de un toque (3 botones distintos pueden disparar esto: COBRAR/efectivo, POR TARJETA,
   // TRANSFERENCIA) — se deshabilitan los 3 mientras la request está en vuelo, y se restauran
   // con fdValidarCobro() (recalcula el estado correcto de cada uno) en vez de un solo botón fijo.
@@ -622,7 +708,6 @@ async function fdConfirmarCobro(){
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'fiados_cobrar',payload:{cliente_id:fdState.clienteId,monto,metodo_pago:fdState.metodoPago}})});
     const j=await res.json();
     if(j&&j.ok){
-      const recibido=Number((document.getElementById('fd-recibido')||{}).value)||0;
       fdState.ultimoCobro=Object.assign({},j,{monto,metodoPago:fdState.metodoPago,vuelto:fdState.metodoPago==='efectivo'?Math.max(0,recibido-monto):0,clienteNombre:fdState.clienteNombre});
       fdRenderComprobante(fdState.ultimoCobro);
       fdShowComprobante();
@@ -712,6 +797,48 @@ async function fdAsignarCliente(fiadoId,clienteId){
     }else{showToast('Error: '+((j&&j.error)||'no se pudo asignar'));}
   }catch(e){showToast('Error de conexión al asignar cliente');}
 }
+
+// ---- Historial de fiados/abonos del cliente abierto en Vista B (modal fd-historial-ov) ----
+// Se pide solo cuando el empleado toca "Historial" — nunca se precarga al abrir la lista de
+// tickets abiertos ni al abrir el detalle de un cliente (fiados_historial_cliente es una
+// llamada aparte, bajo demanda).
+async function fdAbrirHistorial(){
+  document.getElementById('fd-historial-nombre').textContent='Historial de '+(fdState.clienteNombre||'cliente');
+  document.getElementById('fd-historial-saldo').textContent='';
+  const box=document.getElementById('fd-historial-lista');
+  box.innerHTML='<div class="vc-empty">Cargando…</div>';
+  document.getElementById('fd-historial-ov').classList.remove('hidden');
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=fiados_historial_cliente&cliente_id='+encodeURIComponent(fdState.clienteId));
+    const j=await res.json();
+    if(!j||!j.ok){box.innerHTML='<div class="vc-empty">No se pudo cargar</div>';return;}
+    document.getElementById('fd-historial-saldo').textContent=peso(j.saldoActual);
+    fdRenderHistorial(j.movimientos||[]);
+  }catch(e){box.innerHTML='<div class="vc-empty">Error de conexión</div>';}
+}
+function fdEtiquetaMovimiento(tipo){
+  if(tipo==='fiado')return'Fiado';
+  if(tipo==='abono_efectivo')return'Abono efectivo';
+  if(tipo==='abono_tarjeta')return'Abono tarjeta';
+  if(tipo==='abono_transferencia')return'Abono transferencia';
+  return tipo;
+}
+function fdRenderHistorial(movs){
+  const box=document.getElementById('fd-historial-lista');
+  if(!movs.length){box.innerHTML='<div class="vc-empty">Sin movimientos</div>';return;}
+  // Más reciente primero — igual que cualquier historial/extracto.
+  box.innerHTML=movs.slice().reverse().map(m=>{
+    const positivo=m.monto>=0;
+    return `<div style="border-bottom:1px solid var(--line);padding:10px 0">
+      <div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted)"><span>${fechaChileLegible(m.fechaHora)}</span><span>${fdEtiquetaMovimiento(m.tipo)}</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px">
+        <span style="font-size:16px;font-weight:800;color:${positivo?'var(--rojo)':'var(--verde)'}">${positivo?'+':'-'}${peso(Math.abs(m.monto))}</span>
+        <span style="font-size:12.5px;color:var(--muted)">Saldo: ${peso(m.saldo)}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+document.getElementById('fd-historial-cerrar').onclick=()=>document.getElementById('fd-historial-ov').classList.add('hidden');
 
 // ---- Arranque: siempre en la Vista A, vacía por privacidad (sin lista automática de quién
 // debe — página independiente, sin mecanismo de "reabrir", un F5 simplemente recarga limpio) ----
