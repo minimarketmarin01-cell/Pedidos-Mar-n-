@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Fiados">
+<link rel="manifest" href="manifest-fiados.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" href="icon-192.png">
 <title>Fiados — Marín 376</title>
@@ -63,6 +64,14 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
 <body>
 
   <div class="top"><h1>💰 Fiados</h1></div>
+
+  <!-- Banner de instalación — se muestra/oculta por JS según la plataforma (ver fdInstall*) -->
+  <div id="fd-install-box" class="hidden body" style="padding-bottom:0">
+    <div style="border:1.5px solid var(--salvia-2);background:#F0F5EC;border-radius:14px;padding:14px 16px;margin-bottom:6px">
+      <div id="fd-install-texto" style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:10px">Instala esta página como app para abrirla directo desde tu celular, sin el navegador.</div>
+      <button class="loadbtn acc" id="fd-install-btn" style="width:100%">📲 Instalar app</button>
+    </div>
+  </div>
 
   <!-- ============ VISTA A: lista de clientes con fiado abierto ============ -->
   <section id="fd-view-lista" class="body">
@@ -403,6 +412,47 @@ async function fdAsignarCliente(fiadoId,clienteId){
 fdShowLista();
 fdCargarResumen();
 fdCargarSinCliente();
+
+// ---- Instalación como app (pantalla de inicio) ----
+// Ya abierta como app instalada (standalone) -> no mostrar nada, ya se cumplió el objetivo.
+const yaInstalada=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
+if(!yaInstalada){
+  const esIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+  if(esIOS){
+    // iOS no permite disparar la instalación por código — solo Compartir → Agregar a inicio.
+    document.getElementById('fd-install-texto').textContent='Para instalarla: toca el botón "Compartir" de Safari (el cuadrado con flecha) y elige "Agregar a pantalla de inicio".';
+    document.getElementById('fd-install-btn').classList.add('hidden');
+    document.getElementById('fd-install-box').classList.remove('hidden');
+  }else{
+    // Android/Chrome/Edge: el navegador avisa con beforeinstallprompt cuando la página ya
+    // cumple los requisitos de instalación (manifest + ícono + HTTPS) — se guarda el evento
+    // y se dispara recién cuando el usuario toca el botón grande, en vez de depender de que
+    // encuentre la opción escondida en el menú del navegador.
+    let deferredPrompt=null;
+    window.addEventListener('beforeinstallprompt',ev=>{
+      ev.preventDefault();
+      deferredPrompt=ev;
+      document.getElementById('fd-install-box').classList.remove('hidden');
+    });
+    document.getElementById('fd-install-btn').onclick=async()=>{
+      if(!deferredPrompt)return;
+      deferredPrompt.prompt();
+      try{ await deferredPrompt.userChoice; }catch(e){}
+      deferredPrompt=null;
+      document.getElementById('fd-install-box').classList.add('hidden');
+    };
+    window.addEventListener('appinstalled',()=>{
+      document.getElementById('fd-install-box').classList.add('hidden');
+      showToast('App instalada — ya puedes abrirla desde la pantalla de inicio');
+    });
+  }
+}
+// Service Worker propio (reusa sw.js, ya existente y dedicado a Web Push — no cachea nada ni
+// interfiere acá) — registrarlo ayuda a que el navegador reconozca la página como instalable
+// aunque nunca se haya abierto index.html antes en ese celular.
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').catch(()=>{/* si falla, la página sigue funcionando igual sin instalación */});
+}
 </script>
 </body>
 </html>
