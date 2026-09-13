@@ -291,7 +291,8 @@ function fdRenderDetalle(j,nombre){
   </div>`).join('');
   body.innerHTML=`
     <div style="font-size:19px;font-weight:800;margin-bottom:3px">${nombre||'Cliente'}</div>
-    <div style="font-size:26px;font-weight:800;color:var(--rojo);margin-bottom:16px">${peso(j.saldoTotal)}</div>
+    <div style="font-size:26px;font-weight:800;color:var(--rojo);margin-bottom:12px">${peso(j.saldoTotal)}</div>
+    <button type="button" class="loadbtn" id="fd-imprimir-abierto" style="width:100%;margin-bottom:16px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M6 9V3h12v6"/><path d="M6 18H4a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-2"/><rect x="6" y="14" width="12" height="7"/></svg> Imprimir ticket abierto</button>
     <label style="font-size:13px;font-weight:700;color:var(--ink)">Fiados abiertos</label>
     <div style="margin:8px 0 18px">${fiadosHtml}</div>
     <div class="mm-field">
@@ -316,6 +317,26 @@ function fdRenderDetalle(j,nombre){
   document.getElementById('fd-monto').addEventListener('input',()=>{fdCalcularVuelto();fdValidarCobro();});
   document.getElementById('fd-recibido').addEventListener('input',()=>{fdCalcularVuelto();fdValidarCobro();});
   document.getElementById('fd-cobrar-btn').onclick=fdConfirmarCobro;
+  document.getElementById('fd-imprimir-abierto').onclick=()=>fdImprimirTicketAbierto(j,nombre);
+}
+// Ticket del/los fiado(s) abierto(s) de un cliente — para entregarle un comprobante en papel
+// de lo que debe, sin que eso implique ningún cobro (a diferencia de fdRenderComprobante, que
+// solo existe DESPUÉS de un pago). Mismo layout/técnica de impresión que el comprobante de abono.
+function fdImprimirTicketAbierto(j,nombre){
+  const fiados=j.fiadosAbiertos||[];
+  const fiadosHtml=fiados.map(f=>`<div style="border-top:1px dashed #000;padding-top:8px;margin-top:8px">
+    <div style="font-size:14px;font-weight:700">Fiado del ${fechaChileLegible(f.fechaHora)}</div>
+    ${(f.lineas||[]).map(l=>`<div style="display:flex;justify-content:space-between;font-size:13px"><span>${l.cantidad} × ${l.producto_nombre}</span><span>${peso(l.precio_unitario)}</span></div>`).join('')}
+    <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-top:4px"><span>Subtotal</span><span>${peso(f.saldo)}</span></div>
+  </div>`).join('');
+  const html=`
+    <div style="text-align:center;font-weight:800;font-size:17px;margin-bottom:3px">Marín 376</div>
+    <div style="text-align:center;font-size:12.5px;margin-bottom:14px">Ticket abierto — fiado pendiente</div>
+    <div style="font-size:15px;font-weight:700">${nombre||'Cliente'}</div>
+    <div style="font-size:12.5px;margin-bottom:10px">${fechaChileLegible(new Date().toISOString())}</div>
+    ${fiadosHtml}
+    <div style="border-top:1.5px solid #000;margin-top:12px;padding-top:10px;display:flex;justify-content:space-between;font-weight:800;font-size:15px"><span>Saldo total pendiente</span><span>${peso(j.saldoTotal)}</span></div>`;
+  fdImprimir(html);
 }
 function fdSeleccionarMetodo(m){
   fdState.metodoPago=m;
@@ -394,15 +415,16 @@ function fdRenderComprobante(c){
     </div>`;
 }
 document.getElementById('fd-comp-listo').onclick=fdVolverALista;
-document.getElementById('fd-comp-imprimir').onclick=fdImprimir;
+document.getElementById('fd-comp-imprimir').onclick=()=>fdImprimir(document.getElementById('fd-comprobante-print').innerHTML);
 // Impresora térmica de 58mm (confirmado con el dueño) — mismo truco de iframe oculto +
-// window.print() ya usado en Marín Pedidos para imprimir etiquetas de precio.
-function fdImprimir(){
+// window.print() ya usado en Marín Pedidos para imprimir etiquetas de precio. Recibe el HTML
+// ya armado a imprimir (reusado tanto para el comprobante de abono como para el ticket abierto).
+function fdImprimir(contenidoHtml){
   const html='<!doctype html><html><head><meta charset="utf-8"><style>'
     +'@page{size:58mm auto;margin:2mm}'
     +'*{margin:0;padding:0;box-sizing:border-box}'
     +'body{font-family:Arial,Helvetica,sans-serif;font-size:9.5px}'
-    +'</style></head><body>'+document.getElementById('fd-comprobante-print').innerHTML+'</body></html>';
+    +'</style></head><body>'+contenidoHtml+'</body></html>';
   const iframe=document.createElement('iframe');
   iframe.style.position='fixed';iframe.style.right='0';iframe.style.bottom='0';
   iframe.style.width='0';iframe.style.height='0';iframe.style.border='0';
