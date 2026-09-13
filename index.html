@@ -247,8 +247,8 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 /* Recepción, Vencimientos y Más se muestran como página completa (fullscreen),
    no como hoja inferior. Se pisan solo estos 3 IDs — el resto de los modales
    (Merma, Insumos, Crear producto, Calculadora, etc.) sigue igual. */
-#rc-ov,#vc-ov,#mas-ov{align-items:stretch;background:var(--paper)}
-#rc-ov .mm-card,#vc-ov .mm-card,#mas-ov .mm-card,#fp-ov .mm-card{width:100%;max-width:100%;height:100%;max-height:100%;border-radius:0}
+#rc-ov,#vc-ov,#mas-ov,#fiados-ov{align-items:stretch;background:var(--paper)}
+#rc-ov .mm-card,#vc-ov .mm-card,#mas-ov .mm-card,#fp-ov .mm-card,#fiados-ov .mm-card{width:100%;max-width:100%;height:100%;max-height:100%;border-radius:0}
 /* En Bliss OS (pantalla ancha táctil, ~1024px) el resto de los modales quedaba angosto y
    centrado — .mm-card tiene un tope de max-width:480px pensado para celular, que en una
    pantalla de ese ancho deja la mayor parte vacía a los costados. Se saca ese tope (pasan a
@@ -274,6 +274,7 @@ html.carrito-fijo #ed-ov .mm-card,html.carrito-fijo #mc-ov .mm-card{
 .mm-topbar{padding:0 16px;flex:none;margin-bottom:10px}
 .mm-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 16px 22px;flex:1;min-height:0}
 #vc-list-view,#vc-form-view{display:flex;flex-direction:column;flex:1;min-height:0}
+#fd-view-lista,#fd-view-detalle,#fd-view-comprobante{display:flex;flex-direction:column;flex:1;min-height:0}
 .mm-head h3{font-family:'Manrope';font-weight:800;font-size:16px;display:flex;align-items:center;gap:9px}
 .mm-head-ic{flex:none;color:var(--brand-2,#8FA67B)}
 /* ============ Rediseño visual de "Revisión de vencimientos" ============
@@ -2365,6 +2366,81 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         </div>
       </div>
     </div>
+
+    <!-- ===================== FIADOS (cuentas por cobrar) ===================== -->
+    <div class="mm-ov hidden" id="fiados-ov">
+      <div class="mm-card">
+        <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mm-head-ic"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="17" cy="14.5" r="1.1" fill="currentColor" stroke="none"/></svg>Fiados</h3></div>
+
+        <!-- ============ VISTA A: lista de clientes con fiado abierto ============ -->
+        <div id="fd-view-lista">
+          <div class="mm-topbar"><button class="loadbtn" id="fd-cerrar" style="width:100%">Cerrar</button></div>
+          <div class="mm-body">
+            <div class="mm-field" style="margin-bottom:10px">
+              <label>Buscar cliente</label>
+              <div class="mm-search">
+                <input id="fd-buscar" placeholder="Buscar por nombre…" autocomplete="off">
+                <button class="mm-x" id="fd-buscar-x" type="button" aria-label="Limpiar" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+              </div>
+              <div id="fd-buscar-results"></div>
+            </div>
+
+            <div id="fd-sincliente-box" class="hidden" style="border:1.5px solid var(--ambar);background:var(--ambar-bg);border-radius:10px;padding:10px 12px;margin-bottom:12px;cursor:pointer">
+              <div style="font-size:12px;font-weight:700;color:var(--ambar)">⚠️ Fiados sin cliente asignado<span id="fd-sincliente-count"></span></div>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:4px">El cajero olvidó asignar el Cliente en Loyverse — toca para reconciliar.</div>
+            </div>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <label style="margin:0;font-size:12.5px;font-weight:700;color:var(--ink)">Clientes con fiado abierto</label>
+              <button type="button" class="loadbtn" id="fd-mostrar-todos" style="padding:6px 10px;font-size:11px">Mostrar todos los clientes</button>
+            </div>
+            <div id="fd-lista"><div class="vc-empty">Cargando…</div></div>
+          </div>
+        </div>
+
+        <!-- ============ VISTA B: detalle de cliente + formulario de cobro ============ -->
+        <div id="fd-view-detalle" class="hidden">
+          <div class="mm-topbar" style="display:flex;gap:6px">
+            <button class="loadbtn" id="fd-det-volver" style="flex:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="15 18 9 12 15 6"/></svg> Volver</button>
+            <button class="loadbtn" id="fd-cerrar-2" style="flex:1">Cerrar</button>
+          </div>
+          <div class="mm-body">
+            <div id="fd-det-body"><div class="vc-empty">Cargando…</div></div>
+          </div>
+        </div>
+
+        <!-- ============ VISTA C: comprobante ============ -->
+        <div id="fd-view-comprobante" class="hidden">
+          <div class="mm-topbar" style="display:flex;gap:6px">
+            <button class="loadbtn acc" id="fd-comp-imprimir" style="flex:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M6 9V3h12v6"/><path d="M6 18H4a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-2"/><rect x="6" y="14" width="12" height="7"/></svg> Imprimir</button>
+            <button class="loadbtn" id="fd-comp-listo" style="flex:1">Listo</button>
+          </div>
+          <div class="mm-body">
+            <div id="fd-comp-body"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal anidado (NO usar abrirModal/cerrarModal — escondería fiados-ov por detrás),
+         mismo patrón que pv-ov (z-index:260) -->
+    <div class="mm-ov hidden" id="fd-recon-ov" style="z-index:260">
+      <div class="mm-card" style="max-width:360px">
+        <div class="mm-head"><h3>Asignar cliente</h3></div>
+        <div class="mm-body">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:10px" id="fd-recon-info"></div>
+          <div class="mm-field">
+            <label>Buscar cliente</label>
+            <div class="mm-search">
+              <input id="fd-recon-buscar" placeholder="Buscar por nombre…" autocomplete="off">
+            </div>
+            <div id="fd-recon-results"></div>
+          </div>
+          <button class="loadbtn" id="fd-recon-cancelar" style="width:100%;margin-top:10px">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
     <div class="mm-ov hidden" id="rc-ov">
       <div class="mm-card">
         <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mm-head-ic"><rect x="1" y="6" width="14" height="10" rx="1"/><path d="M15 9h4l3 3.5V16h-7z"/><circle cx="6" cy="18.5" r="1.6"/><circle cx="17.5" cy="18.5" r="1.6"/></svg><span id="rc-titulo">Recibir mercadería</span></h3></div>
@@ -2595,6 +2671,14 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
     <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mm-head-ic"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>Más</h3></div>
     <div class="mm-topbar"><button class="loadbtn" id="mas-cerrar" style="width:100%">Cerrar</button></div>
     <div class="mm-body">
+      <div class="mas-grp mas-grp-fiados">
+        <div class="mas-grp-head" id="mas-grp-fiados-head"><span class="mas-grp-t"><span class="ic">💰</span> Fiados (cuentas por cobrar)</span><svg class="accordion-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+        <div class="mas-grp-body accordion-body collapsed" id="mas-grp-fiados-body">
+          <div class="mas-quick">
+            <button id="mas-q-fiados"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><br>Fiados<span class="mas-badge" id="fiados-badge"></span></button>
+          </div>
+        </div>
+      </div>
       <div class="mas-grp mas-grp-inv">
         <div class="mas-grp-head" id="mas-grp-inv-head"><span class="mas-grp-t"><span class="ic">📦</span> Inventario y stock</span><svg class="accordion-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
         <div class="mas-grp-body accordion-body collapsed" id="mas-grp-inv-body">
@@ -4593,7 +4677,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-09-12.2';
+const APP_VERSION='2026-09-13.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -12285,6 +12369,291 @@ async function prCorregirDireccion(id,btn,direccionActual,sku,cantidad,costoUnit
   }catch(e){showToast('Error de conexión al corregir');btn.disabled=false;}
 }
 
+// ===================== FIADOS (cuentas por cobrar) =====================
+// Dashboard separado de Armar pedido (decisión del dueño). Backend ya en producción
+// (marin376-cloudflare, acciones fiados_resumen/clientes_buscar/fiados_cliente/fiados_cobrar/
+// fiados_sin_cliente/fiados_asignar_cliente). Requisito de privacidad: nunca traer la lista
+// completa de clientes de Loyverse salvo pedido explícito del usuario (botón "Mostrar todos").
+const fdState={clienteId:null,clienteNombre:'',detalle:null,metodoPago:null,ultimoCobro:null,sinCliente:[]};
+
+function fdAbrir(){
+  document.getElementById('mas-ov').classList.add('hidden');
+  fdState.clienteId=null;fdState.clienteNombre='';fdState.detalle=null;fdState.metodoPago=null;fdState.ultimoCobro=null;
+  document.getElementById('fd-buscar').value='';
+  document.getElementById('fd-buscar-x').style.display='none';
+  document.getElementById('fd-buscar-results').innerHTML='';
+  fdShowLista();
+  abrirModal('fiados-ov');
+  fdCargarResumen();
+  fdCargarSinCliente();
+}
+function fdCerrar(){cerrarModal('fiados-ov');}
+function fdShowLista(){document.getElementById('fd-view-lista').classList.remove('hidden');document.getElementById('fd-view-detalle').classList.add('hidden');document.getElementById('fd-view-comprobante').classList.add('hidden');}
+function fdShowDetalle(){document.getElementById('fd-view-lista').classList.add('hidden');document.getElementById('fd-view-detalle').classList.remove('hidden');document.getElementById('fd-view-comprobante').classList.add('hidden');}
+function fdShowComprobante(){document.getElementById('fd-view-lista').classList.add('hidden');document.getElementById('fd-view-detalle').classList.add('hidden');document.getElementById('fd-view-comprobante').classList.remove('hidden');}
+document.getElementById('mas-q-fiados').onclick=fdAbrir;
+document.getElementById('fd-cerrar').onclick=fdCerrar;
+document.getElementById('fd-cerrar-2').onclick=fdCerrar;
+document.getElementById('fd-det-volver').onclick=fdVolverALista;
+function fdVolverALista(){fdState.clienteId=null;fdState.detalle=null;fdState.metodoPago=null;fdShowLista();fdCargarResumen();}
+
+// ---- Vista A: resumen de clientes con fiado abierto ----
+async function fdCargarResumen(){
+  const box=document.getElementById('fd-lista');
+  box.innerHTML='<div class="vc-empty">Cargando…</div>';
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=fiados_resumen');
+    const j=await res.json();
+    if(!j||!j.ok){box.innerHTML='<div class="vc-empty">No se pudo cargar</div><button class="loadbtn" id="fd-reintentar" type="button" style="width:100%;margin-top:8px">Reintentar</button>';document.getElementById('fd-reintentar').onclick=fdCargarResumen;return;}
+    const clientes=j.clientes||[];
+    const badge=document.getElementById('fiados-badge');
+    if(badge){badge.textContent=clientes.length>99?'99+':String(clientes.length);badge.classList.toggle('on',clientes.length>0);}
+    if(!clientes.length){box.innerHTML='<div class="vc-empty">No hay fiados abiertos</div>';return;}
+    box.innerHTML=clientes.map(c=>`<div class="fd-cliente-row" data-id="${c.clienteId}" data-nombre="${(c.nombre||'').replace(/"/g,'&quot;')}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:10px 12px;margin-bottom:6px;cursor:pointer">
+      <div style="min-width:0">
+        <div style="font-size:13px;font-weight:700;color:var(--ink)">${c.nombre||'(sin nombre)'}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${c.fiadosAbiertos} fiado${c.fiadosAbiertos===1?'':'s'} · más antiguo: ${c.fiadoMasAntiguo||'—'}</div>
+      </div>
+      <div style="font-size:14px;font-weight:800;color:var(--rojo);flex:none">${peso(c.saldo)}</div>
+    </div>`).join('');
+    document.querySelectorAll('.fd-cliente-row').forEach(el=>el.onclick=()=>fdAbrirDetalle(el.dataset.id,el.dataset.nombre));
+  }catch(e){box.innerHTML='<div class="vc-empty">Error de conexión</div><button class="loadbtn" id="fd-reintentar" type="button" style="width:100%;margin-top:8px">Reintentar</button>';document.getElementById('fd-reintentar').onclick=fdCargarResumen;}
+}
+
+// ---- Callout "sin cliente asignado" (mejor esfuerzo: si falla, simplemente no aparece) ----
+async function fdCargarSinCliente(){
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=fiados_sin_cliente');
+    const j=await res.json();
+    const fiados=(j&&j.ok)?(j.fiados||[]):[];
+    fdState.sinCliente=fiados;
+    document.getElementById('fd-sincliente-box').classList.toggle('hidden',!fiados.length);
+    document.getElementById('fd-sincliente-count').textContent=fiados.length?(' ('+fiados.length+')'):'';
+  }catch(e){/* silencioso: no bloquea el resto del dashboard */}
+}
+document.getElementById('fd-sincliente-box').onclick=function(){
+  const f=(fdState.sinCliente||[])[0];
+  if(f)fdAbrirReconciliar(f.id,f.receipt_id_loyverse,f.monto_total);
+};
+
+// ---- Buscador de clientes (Vista A) — debounce propio, NUNCA reusar window._searchT (proveedores) ----
+document.getElementById('fd-buscar').addEventListener('input',ev=>{
+  const q=ev.target.value.trim();
+  document.getElementById('fd-buscar-x').style.display=q?'':'none';
+  clearTimeout(window._fdSearchT);
+  if(!q){document.getElementById('fd-buscar-results').innerHTML='';return;}
+  window._fdSearchT=setTimeout(async()=>{
+    try{
+      const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=clientes_buscar&q='+encodeURIComponent(q));
+      const j=await res.json();
+      fdRenderClientesResultado((j&&j.ok)?(j.clientes||[]):[]);
+    }catch(e){document.getElementById('fd-buscar-results').innerHTML='<div class="vc-empty">Error de conexión</div>';}
+  },200);
+});
+document.getElementById('fd-buscar-x').onclick=()=>{document.getElementById('fd-buscar').value='';document.getElementById('fd-buscar').dispatchEvent(new Event('input',{bubbles:true}));};
+function fdRenderClientesResultado(clientes){
+  const box=document.getElementById('fd-buscar-results');
+  if(!clientes.length){box.innerHTML='<div class="vc-empty" style="padding:10px">Sin resultados</div>';return;}
+  box.innerHTML=clientes.map(c=>`<div class="mm-motivo" style="display:block;margin-bottom:6px;cursor:pointer" data-id="${c.id}" data-nombre="${(c.nombre||'').replace(/"/g,'&quot;')}">${c.nombre}${c.telefono?' <span style="color:var(--muted);font-weight:400">· '+c.telefono+'</span>':''}</div>`).join('');
+  document.querySelectorAll('#fd-buscar-results [data-id]').forEach(el=>el.onclick=()=>fdAbrirDetalle(el.dataset.id,el.dataset.nombre));
+}
+document.getElementById('fd-mostrar-todos').onclick=async()=>{
+  const btn=document.getElementById('fd-mostrar-todos');
+  btn.disabled=true;btn.textContent='Cargando…';
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=clientes_buscar&todos=1');
+    const j=await res.json();
+    document.getElementById('fd-buscar').value='';
+    fdRenderClientesResultado((j&&j.ok)?(j.clientes||[]):[]);
+  }catch(e){showToast('Error de conexión al listar clientes');}
+  btn.disabled=false;btn.textContent='Mostrar todos los clientes';
+};
+
+// ---- Vista B: detalle de cliente + formulario de cobro ----
+async function fdAbrirDetalle(clienteId,nombreConocido){
+  fdState.clienteId=clienteId;fdState.clienteNombre=nombreConocido||'';fdState.metodoPago=null;fdState.detalle=null;
+  document.getElementById('fd-buscar-results').innerHTML='';
+  fdShowDetalle();
+  const body=document.getElementById('fd-det-body');
+  body.innerHTML='<div class="vc-empty">Cargando…</div>';
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=fiados_cliente&cliente_id='+encodeURIComponent(clienteId));
+    const j=await res.json();
+    if(!j||!j.ok){body.innerHTML='<div class="vc-empty">No se pudo cargar</div><button class="loadbtn" id="fd-det-reintentar" type="button" style="width:100%;margin-top:8px">Reintentar</button>';document.getElementById('fd-det-reintentar').onclick=()=>fdAbrirDetalle(clienteId,nombreConocido);return;}
+    fdState.detalle=j;
+    fdRenderDetalle(j,nombreConocido);
+  }catch(e){body.innerHTML='<div class="vc-empty">Error de conexión</div><button class="loadbtn" id="fd-det-reintentar" type="button" style="width:100%;margin-top:8px">Reintentar</button>';document.getElementById('fd-det-reintentar').onclick=()=>fdAbrirDetalle(clienteId,nombreConocido);}
+}
+function fdRenderDetalle(j,nombre){
+  const body=document.getElementById('fd-det-body');
+  const fiados=j.fiadosAbiertos||[];
+  // Edge case: solo llega acá con 0 fiados si el cliente se buscó a mano — la Vista A
+  // (fiados_resumen) nunca lista un cliente sin fiado abierto.
+  if(!fiados.length){
+    body.innerHTML=`<div style="font-size:16px;font-weight:800;margin-bottom:4px">${nombre||'Cliente'}</div><div class="vc-empty">Este cliente no tiene fiados abiertos</div>`;
+    return;
+  }
+  const fiadosHtml=fiados.map(f=>`<div style="border:1px solid var(--line);border-radius:9px;padding:9px 11px;margin-bottom:6px;background:var(--paper)">
+    <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700"><span>${f.fechaHora}</span><span>${peso(f.saldo)}</span></div>
+    ${(f.lineas||[]).map(l=>`<div style="font-size:11.5px;color:var(--muted);margin-top:3px">${l.cantidad} × ${l.producto_nombre} · ${peso(l.precio_unitario)}</div>`).join('')}
+  </div>`).join('');
+  body.innerHTML=`
+    <div style="font-size:16px;font-weight:800;margin-bottom:2px">${nombre||'Cliente'}</div>
+    <div style="font-size:22px;font-weight:800;color:var(--rojo);margin-bottom:12px">${peso(j.saldoTotal)}</div>
+    <label style="font-size:12px;font-weight:700;color:var(--ink)">Fiados abiertos</label>
+    <div style="margin:6px 0 14px">${fiadosHtml}</div>
+    <div class="mm-field">
+      <label>Monto a abonar</label>
+      <input id="fd-monto" inputmode="decimal" placeholder="$0" style="width:100%;height:40px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;box-sizing:border-box">
+    </div>
+    <div class="mm-field">
+      <label>Método de pago</label>
+      <div class="mm-resp" id="fd-metodo">
+        <button type="button" data-m="efectivo">Efectivo</button>
+        <button type="button" data-m="tarjeta">Tarjeta</button>
+        <button type="button" data-m="transferencia">Transferencia</button>
+      </div>
+    </div>
+    <div class="mm-field hidden" id="fd-efectivo-field">
+      <label>Recibido en efectivo</label>
+      <input id="fd-recibido" inputmode="decimal" placeholder="$0" style="width:100%;height:40px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;box-sizing:border-box">
+      <div id="fd-vuelto" style="font-size:13px;font-weight:700;margin-top:6px"></div>
+    </div>
+    <button class="mm-save" id="fd-cobrar-btn" disabled>Cobrar</button>`;
+  document.querySelectorAll('#fd-metodo button').forEach(b=>b.onclick=()=>fdSeleccionarMetodo(b.dataset.m));
+  document.getElementById('fd-monto').addEventListener('input',()=>{fdCalcularVuelto();fdValidarCobro();});
+  document.getElementById('fd-recibido').addEventListener('input',()=>{fdCalcularVuelto();fdValidarCobro();});
+  document.getElementById('fd-cobrar-btn').onclick=fdConfirmarCobro;
+}
+function fdSeleccionarMetodo(m){
+  fdState.metodoPago=m;
+  document.querySelectorAll('#fd-metodo button').forEach(b=>b.classList.toggle('sel',b.dataset.m===m));
+  document.getElementById('fd-efectivo-field').classList.toggle('hidden',m!=='efectivo');
+  if(m!=='efectivo'){document.getElementById('fd-recibido').value='';document.getElementById('fd-vuelto').textContent='';}
+  fdCalcularVuelto();fdValidarCobro();
+}
+function fdCalcularVuelto(){
+  const el=document.getElementById('fd-vuelto');
+  if(!el)return;
+  if(fdState.metodoPago!=='efectivo'){el.textContent='';return;}
+  const monto=Number(document.getElementById('fd-monto').value)||0;
+  const recibido=Number(document.getElementById('fd-recibido').value)||0;
+  if(!recibido){el.textContent='';return;}
+  if(recibido<monto){el.style.color='var(--rojo)';el.textContent='Falta '+peso(monto-recibido);}
+  else{el.style.color='var(--verde,#3a9d5c)';el.textContent='Vuelto: '+peso(recibido-monto);}
+}
+function fdValidarCobro(){
+  const btn=document.getElementById('fd-cobrar-btn');
+  if(!btn)return;
+  const monto=Number(document.getElementById('fd-monto').value)||0;
+  let ok=monto>0&&!!fdState.metodoPago;
+  if(fdState.metodoPago==='efectivo'){
+    const recibido=Number(document.getElementById('fd-recibido').value)||0;
+    ok=ok&&recibido>=monto;
+  }
+  btn.disabled=!ok;
+}
+
+// ---- Confirmar cobro (POST fiados_cobrar) + comprobante ----
+async function fdConfirmarCobro(){
+  const btn=document.getElementById('fd-cobrar-btn');
+  const monto=Number(document.getElementById('fd-monto').value)||0;
+  btn.disabled=true;btn.textContent='Cobrando…';
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'fiados_cobrar',payload:{cliente_id:fdState.clienteId,monto,metodo_pago:fdState.metodoPago}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      const recibido=Number((document.getElementById('fd-recibido')||{}).value)||0;
+      fdState.ultimoCobro=Object.assign({},j,{monto,metodoPago:fdState.metodoPago,vuelto:fdState.metodoPago==='efectivo'?Math.max(0,recibido-monto):0,clienteNombre:fdState.clienteNombre});
+      fdRenderComprobante(fdState.ultimoCobro);
+      fdShowComprobante();
+    }else{
+      // El mensaje ya viene armado y claro desde el backend (ej. monto supera la deuda total,
+      // o falta configurar algo en el Worker) — se muestra tal cual, sin reinterpretarlo.
+      showToast('Error: '+((j&&j.error)||'no se pudo registrar el cobro'));
+      btn.disabled=false;btn.textContent='Cobrar';
+    }
+  }catch(e){showToast('Error de conexión al registrar el cobro');btn.disabled=false;btn.textContent='Cobrar';}
+}
+function fdRenderComprobante(c){
+  const fiadosHtml=(c.fiadosCubiertos||[]).map(f=>`<div style="border-top:1px dashed var(--line);padding-top:8px;margin-top:8px">
+    <div style="font-size:12px;font-weight:700">Fiado del ${f.fechaHora}</div>
+    ${(f.lineas||[]).map(l=>`<div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted)"><span>${l.cantidad} × ${l.producto_nombre}</span><span>${peso(l.precio_unitario)}</span></div>`).join('')}
+    <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-top:4px"><span>Aplicado</span><span>${peso(f.montoAplicado)}</span></div>
+    <div style="font-size:11px;color:var(--muted)">${f.quedaAbierto?'Queda saldo pendiente: '+peso(f.saldoRestanteFiado):'Cubierto por completo'}</div>
+  </div>`).join('');
+  document.getElementById('fd-comp-body').innerHTML=`
+    <div id="fd-comprobante-print">
+      <div style="text-align:center;font-weight:800;font-size:15px;margin-bottom:2px">Marín 376</div>
+      <div style="text-align:center;font-size:11.5px;color:var(--muted);margin-bottom:12px">Comprobante de abono a fiado</div>
+      <div style="font-size:13px;font-weight:700">${c.clienteNombre||'Cliente'}</div>
+      <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">${new Date().toLocaleString('es-CL')}</div>
+      ${fiadosHtml}
+      <div style="border-top:1.5px solid var(--ink);margin-top:10px;padding-top:8px">
+        <div style="display:flex;justify-content:space-between;font-weight:800"><span>Monto abonado</span><span>${peso(c.monto)}</span></div>
+        <div style="font-size:11.5px;color:var(--muted)">Método: ${c.metodoPago}</div>
+        ${c.metodoPago==='efectivo'&&c.vuelto>0?`<div style="display:flex;justify-content:space-between;font-weight:700;color:var(--verde,#3a9d5c)"><span>Vuelto</span><span>${peso(c.vuelto)}</span></div>`:''}
+        <div style="display:flex;justify-content:space-between;font-weight:800;margin-top:4px"><span>Saldo restante</span><span>${peso(c.saldoRestante)}</span></div>
+      </div>
+    </div>`;
+}
+document.getElementById('fd-comp-listo').onclick=fdVolverALista;
+document.getElementById('fd-comp-imprimir').onclick=fdImprimir;
+// Impresora térmica de 58mm (confirmado con el usuario) — misma técnica de iframe oculto +
+// window.print() que ya usa etImprimir() para etiquetas, adaptada a este layout de recibo.
+function fdImprimir(){
+  const html='<!doctype html><html><head><meta charset="utf-8"><style>'
+    +'@page{size:58mm auto;margin:2mm}'
+    +'*{margin:0;padding:0;box-sizing:border-box}'
+    +'body{font-family:Arial,Helvetica,sans-serif;font-size:9.5px}'
+    +'</style></head><body>'+document.getElementById('fd-comprobante-print').innerHTML+'</body></html>';
+  const iframe=document.createElement('iframe');
+  iframe.style.position='fixed';iframe.style.right='0';iframe.style.bottom='0';
+  iframe.style.width='0';iframe.style.height='0';iframe.style.border='0';
+  document.body.appendChild(iframe);
+  const doc=iframe.contentDocument||iframe.contentWindow.document;
+  doc.open();doc.write(html);doc.close();
+  const limpiar=()=>{if(iframe.parentNode)iframe.parentNode.removeChild(iframe);};
+  iframe.contentWindow.onafterprint=limpiar;
+  setTimeout(()=>{try{iframe.contentWindow.focus();iframe.contentWindow.print();}catch(e){}setTimeout(limpiar,60000);},200);
+}
+
+// ---- Reconciliar fiado sin cliente asignado (modal anidado fd-recon-ov) ----
+function fdAbrirReconciliar(fiadoId,receiptId,montoTotal){
+  document.getElementById('fd-recon-info').textContent='Fiado #'+fiadoId+' · '+peso(montoTotal)+(receiptId?' · boleta '+receiptId:'');
+  document.getElementById('fd-recon-buscar').value='';
+  document.getElementById('fd-recon-results').innerHTML='';
+  document.getElementById('fd-recon-ov').dataset.fiadoId=fiadoId;
+  document.getElementById('fd-recon-ov').classList.remove('hidden'); // NO abrirModal: escondería fiados-ov detrás
+}
+document.getElementById('fd-recon-cancelar').onclick=()=>document.getElementById('fd-recon-ov').classList.add('hidden');
+document.getElementById('fd-recon-buscar').addEventListener('input',ev=>{
+  const q=ev.target.value.trim();
+  clearTimeout(window._fdReconSearchT);
+  if(!q){document.getElementById('fd-recon-results').innerHTML='';return;}
+  window._fdReconSearchT=setTimeout(async()=>{
+    try{
+      const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=clientes_buscar&q='+encodeURIComponent(q));
+      const j=await res.json();
+      const clientes=(j&&j.ok)?(j.clientes||[]):[];
+      document.getElementById('fd-recon-results').innerHTML=clientes.map(c=>`<div class="mm-motivo" style="display:block;margin-bottom:6px;cursor:pointer" data-id="${c.id}">${c.nombre}</div>`).join('')||'<div class="vc-empty" style="padding:10px">Sin resultados</div>';
+      document.querySelectorAll('#fd-recon-results [data-id]').forEach(el=>el.onclick=()=>fdAsignarCliente(document.getElementById('fd-recon-ov').dataset.fiadoId,el.dataset.id));
+    }catch(e){document.getElementById('fd-recon-results').innerHTML='<div class="vc-empty">Error de conexión</div>';}
+  },200);
+});
+async function fdAsignarCliente(fiadoId,clienteId){
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'fiados_asignar_cliente',payload:{fiado_id:Number(fiadoId),cliente_id:clienteId}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      showToast('Cliente asignado correctamente');
+      document.getElementById('fd-recon-ov').classList.add('hidden');
+      fdCargarSinCliente();
+      fdCargarResumen();
+    }else{showToast('Error: '+((j&&j.error)||'no se pudo asignar'));}
+  }catch(e){showToast('Error de conexión al asignar cliente');}
+}
+
 // ===================== CALCULADORA DE COSTEO DE PRODUCCIÓN =====================
 // Producción propia en el local (ensaladas, etc.): calcula el costo por unidad de un lote
 // (materia prima + mano de obra + envase + fijo), sugiere un precio de venta según el margen
@@ -15491,7 +15860,8 @@ const REABRIR_MODULO={
     if(d&&d.sku)fpAbrir(d.sku,d); else cerrarModal('fp-ov'); // sin sku guardado, no hay nada que reabrir
   },
   'rz-ov':()=>{try{rzAbrir();}catch(e){}}, // rzAbrir ya carga la lista Y pinta el estado real de las notificaciones — antes faltaba esta entrada, así que un F5 caía al fallback genérico que solo mostraba el modal vacío
-  'gp-ov':()=>{try{gpAbrir();}catch(e){}} // mismo bug que rz-ov: sin esta entrada, un F5 dejaba "Gestionar proveedores" pegado en el "Cargando…" estático del HTML para siempre, porque el fallback genérico solo hace abrirModal() sin disparar gpCargar()
+  'gp-ov':()=>{try{gpAbrir();}catch(e){}}, // mismo bug que rz-ov: sin esta entrada, un F5 dejaba "Gestionar proveedores" pegado en el "Cargando…" estático del HTML para siempre, porque el fallback genérico solo hace abrirModal() sin disparar gpCargar()
+  'fiados-ov':()=>{try{fdAbrir();}catch(e){}} // mismo motivo: sin esto, un F5 a mitad de un cobro dejaría la Vista B (detalle+formulario) congelada con datos potencialmente viejos en vez de volver a la Vista A con datos frescos
 };
 (function restaurarUltimaPantallaAlCargar(){
   const id=cargarUltimaPantalla();
