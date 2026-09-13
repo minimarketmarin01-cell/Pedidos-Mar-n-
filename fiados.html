@@ -152,6 +152,18 @@ function fechaChileLegible(isoUtc){
   return get('day')+'/'+get('month')+'/'+get('year')+' '+get('hour')+':'+get('minute')+' '+ampm;
 }
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');const dur=m.length>60?4600:2600;clearTimeout(window._toastT);window._toastT=setTimeout(()=>t.classList.remove('show'),dur);}
+// El backend guarda monto_total del fiado tal cual lo entrega Loyverse (r.total_money), que ya
+// viene neto de cualquier descuento del ticket (de línea o del total) — el saldo/lo que se
+// cobra SIEMPRE es correcto, sin importar el descuento. Lo único que no reconciliaba a simple
+// vista era el detalle de productos de abajo: line_items trae el precio de lista de cada uno,
+// sin descontar un descuento aplicado al TOTAL del ticket (no a una línea puntual) — sumados
+// daban más que el monto real. Se calcula acá la diferencia para mostrarla explícita ("Descuento
+// aplicado: -$X") en vez de dejar que los números no cuadren sin explicación.
+function fdDescuentoDeFiado(f){
+  const sumaLineas=(f.lineas||[]).reduce((s,l)=>s+(l.cantidad||0)*(l.precio_unitario||0),0);
+  const base=(f.montoTotal!=null?f.montoTotal:f.saldo)||0;
+  return Math.round(sumaLineas-base);
+}
 
 // ===================== FIADOS (cuentas por cobrar) =====================
 // Página independiente (decisión del dueño, más simple para un usuario de 65+ años que
@@ -285,10 +297,14 @@ function fdRenderDetalle(j,nombre){
     body.innerHTML=`<div style="font-size:19px;font-weight:800;margin-bottom:6px">${nombre||'Cliente'}</div><div class="vc-empty">Este cliente no tiene fiados abiertos</div>`;
     return;
   }
-  const fiadosHtml=fiados.map(f=>`<div style="border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;background:var(--card)">
+  const fiadosHtml=fiados.map(f=>{
+    const descuento=fdDescuentoDeFiado(f);
+    return `<div style="border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;background:var(--card)">
     <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700"><span>${fechaChileLegible(f.fechaHora)}</span><span>${peso(f.saldo)}</span></div>
     ${(f.lineas||[]).map(l=>`<div style="font-size:13px;color:var(--muted);margin-top:4px">${l.cantidad} × ${l.producto_nombre} · ${peso(l.precio_unitario)}</div>`).join('')}
-  </div>`).join('');
+    ${descuento>1?`<div style="font-size:12.5px;color:var(--verde);font-weight:700;margin-top:4px">Descuento aplicado: -${peso(descuento)}</div>`:''}
+  </div>`;
+  }).join('');
   body.innerHTML=`
     <div style="font-size:19px;font-weight:800;margin-bottom:3px">${nombre||'Cliente'}</div>
     <div style="font-size:26px;font-weight:800;color:var(--rojo);margin-bottom:12px">${peso(j.saldoTotal)}</div>
@@ -324,11 +340,15 @@ function fdRenderDetalle(j,nombre){
 // solo existe DESPUÉS de un pago). Mismo layout/técnica de impresión que el comprobante de abono.
 function fdImprimirTicketAbierto(j,nombre){
   const fiados=j.fiadosAbiertos||[];
-  const fiadosHtml=fiados.map(f=>`<div style="border-top:1px dashed #000;padding-top:8px;margin-top:8px">
+  const fiadosHtml=fiados.map(f=>{
+    const descuento=fdDescuentoDeFiado(f);
+    return `<div style="border-top:1px dashed #000;padding-top:8px;margin-top:8px">
     <div style="font-size:14px;font-weight:700">Fiado del ${fechaChileLegible(f.fechaHora)}</div>
     ${(f.lineas||[]).map(l=>`<div style="display:flex;justify-content:space-between;font-size:13px"><span>${l.cantidad} × ${l.producto_nombre}</span><span>${peso(l.precio_unitario)}</span></div>`).join('')}
+    ${descuento>1?`<div style="display:flex;justify-content:space-between;font-size:12.5px"><span>Descuento aplicado</span><span>-${peso(descuento)}</span></div>`:''}
     <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-top:4px"><span>Subtotal</span><span>${peso(f.saldo)}</span></div>
-  </div>`).join('');
+  </div>`;
+  }).join('');
   const html=`
     <div style="text-align:center;font-weight:800;font-size:17px;margin-bottom:3px">Marín 376</div>
     <div style="text-align:center;font-size:12.5px;margin-bottom:14px">Ticket abierto — fiado pendiente</div>
