@@ -1,0 +1,16 @@
+{
+  "id": "/Pedidos-Mar-n-/fiados.html",
+  "name": "Fiados — Marín 376",
+  "short_name": "Fiados",
+  "description": "Cobro de cuentas por cobrar (fiados) — Marín 376",
+  "start_url": "./fiados.html",
+  "scope": "./fiados.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FAFAF6",
+  "theme_color": "#FAFAF6",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
