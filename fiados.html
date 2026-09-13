@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#FAFAF6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Fiados">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<title>Fiados — Marín 376</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#2F3133;--muted:#6F7578;--paper:#FAFAF6;--card:#FFFFFF;--line:#E7E7E2;
+  --rojo:#A84A4A;--rojo-bg:#FBEDED;
+  --ambar:#5F7A4C;--ambar-bg:#E9F1E5;
+  --azul:#7A6490;
+  --verde:#5F7A4C;
+  --salvia:#AFC5A1;--salvia-2:#8FA67B;
+  --brand-1:#AFC5A1;--brand-2:#8FA67B;
+  --brand-grad:linear-gradient(120deg,var(--brand-1),var(--brand-2));
+  --shadow-brand:0 2px 10px rgba(143,166,123,.28);
+  --sh-soft:0 1px 3px rgba(47,49,51,.06);
+  --radius-card:18px;--radius-btn:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;width:100%;overflow-x:hidden}
+/* Base más grande que Marín Pedidos (16px vs 14px) — pensado para un usuario de 65+ años:
+   menos esfuerzo de lectura, objetivos táctiles más grandes en cada paso. */
+body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);font-size:16px;line-height:1.5;-webkit-tap-highlight-color:transparent;width:100%;max-width:560px;margin:0 auto;padding-bottom:40px}
+h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
+.hidden{display:none!important}
+.top{background:linear-gradient(135deg,#FBFBF7 0%,#F7F6F0 55%,#F4F2EA 100%);padding:18px 16px;padding-top:max(18px,env(safe-area-inset-top));border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.top h1{font-size:20px;font-weight:800;display:flex;align-items:center;gap:8px}
+.body{padding:16px max(16px,env(safe-area-inset-left)) 16px max(16px,env(safe-area-inset-right))}
+.vc-empty{padding:24px;text-align:center;color:var(--muted);font-size:14px}
+.loadbtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:#EEE6F6;border:1px solid #DFD2EC;color:#5A4A6E;border-radius:var(--radius-btn);padding:12px 14px;font-size:15px;font-weight:600;font-family:'Manrope';cursor:pointer;min-height:48px}
+.loadbtn:active{background:#E2D6F0}
+.loadbtn.acc{background:var(--salvia);border-color:var(--salvia-2);color:#33422A}
+.loadbtn.acc:active{background:var(--salvia-2);color:#fff}
+.mm-save{width:100%;background:var(--brand-grad);color:#fff;border:none;border-radius:var(--radius-btn);padding:16px;font-size:17px;font-weight:700;font-family:'Manrope';cursor:pointer;margin-top:8px;box-shadow:var(--shadow-brand);min-height:52px}
+.mm-save:disabled{opacity:.5;cursor:default}
+.mm-field{margin-bottom:16px}
+.mm-field label{display:block;font-size:12.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:6px}
+.mm-field input{width:100%;height:48px;padding:0 14px;border:1.5px solid var(--line);border-radius:10px;font-size:16px;box-sizing:border-box;font-family:'Inter';background:#fff;color:var(--ink)}
+.mm-search{position:relative}
+.mm-search input{width:100%;padding-right:50px}
+.mm-x{position:absolute;top:50%;right:8px;transform:translateY(-50%);width:34px;height:34px;border:none;background:var(--paper);border-radius:50%;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.mm-motivo{border:1.5px solid var(--line);background:var(--card);border-radius:14px;padding:11px 14px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:8px}
+.mm-resp{display:flex;gap:8px;flex-wrap:wrap}
+.mm-resp button{flex:1;min-width:100px;border:1.5px solid var(--line);background:var(--card);border-radius:10px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;min-height:48px}
+.mm-resp button.sel{background:var(--azul);color:#fff;border-color:var(--azul)}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:14px 22px;border-radius:12px;font-weight:600;font-size:15px;box-shadow:0 8px 30px rgba(0,0,0,.25);transition:.3s;z-index:260;opacity:0;max-width:90vw;text-align:center;pointer-events:none}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.fd-cliente-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:16px 16px;margin-bottom:10px;cursor:pointer}
+.fd-cliente-row:active{background:var(--paper)}
+</style>
+</head>
+<body>
+
+  <div class="top"><h1>💰 Fiados</h1></div>
+
+  <!-- ============ VISTA A: lista de clientes con fiado abierto ============ -->
+  <section id="fd-view-lista" class="body">
+    <div class="mm-field">
+      <label>Buscar cliente</label>
+      <div class="mm-search">
+        <input id="fd-buscar" placeholder="Buscar por nombre…" autocomplete="off">
+        <button class="mm-x" id="fd-buscar-x" type="button" aria-label="Limpiar" style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div id="fd-buscar-results" style="margin-top:8px"></div>
+    </div>
+
+    <div id="fd-sincliente-box" class="hidden" style="border:1.5px solid var(--ambar);background:var(--ambar-bg);border-radius:12px;padding:14px 16px;margin-bottom:16px;cursor:pointer">
+      <div style="font-size:14px;font-weight:700;color:var(--ambar)">⚠️ Fiados sin cliente asignado<span id="fd-sincliente-count"></span></div>
+      <div style="font-size:12.5px;color:var(--muted);margin-top:4px">El cajero olvidó asignar el Cliente en Loyverse — toca para reconciliar.</div>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap">
+      <label style="margin:0;font-size:13.5px;font-weight:700;color:var(--ink)">Clientes con fiado abierto</label>
+      <button type="button" class="loadbtn" id="fd-mostrar-todos">Mostrar todos los clientes</button>
+    </div>
+    <div id="fd-lista"><div class="vc-empty">Cargando…</div></div>
+  </section>
+
+  <!-- ============ VISTA B: detalle de cliente + formulario de cobro ============ -->
+  <section id="fd-view-detalle" class="body hidden">
+    <button class="loadbtn" id="fd-det-volver" style="width:100%;margin-bottom:14px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="15 18 9 12 15 6"/></svg> Volver</button>
+    <div id="fd-det-body"><div class="vc-empty">Cargando…</div></div>
+  </section>
+
+  <!-- ============ VISTA C: comprobante ============ -->
+  <section id="fd-view-comprobante" class="body hidden">
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button class="loadbtn acc" id="fd-comp-imprimir" style="flex:1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M6 9V3h12v6"/><path d="M6 18H4a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-2"/><rect x="6" y="14" width="12" height="7"/></svg> Imprimir</button>
+      <button class="loadbtn" id="fd-comp-listo" style="flex:1">Listo</button>
+    </div>
+    <div id="fd-comp-body"></div>
+  </section>
+
+  <!-- Modal de reconciliación — único overlay de la página, sin necesidad de z-index especial -->
+  <div id="fd-recon-ov" class="hidden" style="position:fixed;inset:0;background:rgba(21,25,31,.55);z-index:250;display:flex;align-items:center;justify-content:center;padding:20px">
+    <div style="background:var(--card);width:100%;max-width:380px;border-radius:var(--radius-card);padding:20px;max-height:90vh;overflow-y:auto">
+      <h3 style="font-size:17px;margin-bottom:12px">Asignar cliente</h3>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px" id="fd-recon-info"></div>
+      <div class="mm-field">
+        <label>Buscar cliente</label>
+        <div class="mm-search">
+          <input id="fd-recon-buscar" placeholder="Buscar por nombre…" autocomplete="off">
+        </div>
+        <div id="fd-recon-results" style="margin-top:8px"></div>
+      </div>
+      <button class="loadbtn" id="fd-recon-cancelar" style="width:100%;margin-top:6px">Cancelar</button>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+<script>
+const SYNC_URL='https://marin376-api.minimarketmarin01.workers.dev';
+const fmt=new Intl.NumberFormat('es-CL');
+const peso=n=>'$'+fmt.format(Math.round(n||0));
+function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');const dur=m.length>60?4600:2600;clearTimeout(window._toastT);window._toastT=setTimeout(()=>t.classList.remove('show'),dur);}
+
+// ===================== FIADOS (cuentas por cobrar) =====================
+// Página independiente (decisión del dueño, más simple para un usuario de 65+ años que
+// navegar el menú "Más" de Marín Pedidos: 1 toque desde su propio ícono en el celular).
+// Backend ya en producción (marin376-cloudflare). Requisito de privacidad: nunca traer la
+// lista completa de clientes de Loyverse salvo pedido explícito del usuario ("Mostrar todos").
+const fdState={clienteId:null,clienteNombre:'',detalle:null,metodoPago:null,ultimoCobro:null,sinCliente:[]};
+
+function fdShowLista(){document.getElementById('fd-view-lista').classList.remove('hidden');document.getElementById('fd-view-detalle').classList.add('hidden');document.getElementById('fd-view-comprobante').classList.add('hidden');}
+function fdShowDetalle(){document.getElementById('fd-view-lista').classList.add('hidden');document.getElementById('fd-view-detalle').classList.remove('hidden');document.getElementById('fd-view-comprobante').classList.add('hidden');}
+function fdShowComprobante(){document.getElementById('fd-view-lista').classList.add('hidden');document.getElementById('fd-view-detalle').classList.add('hidden');document.getElementById('fd-view-comprobante').classList.remove('hidden');}
+document.getElementById('fd-det-volver').onclick=fdVolverALista;
+function fdVolverALista(){fdState.clienteId=null;fdState.detalle=null;fdState.metodoPago=null;fdShowLista();fdCargarResumen();}
+
+// ---- Vista A: resumen de clientes con fiado abierto ----
+async function fdCargarResumen(){
+  const box=document.getElementById('fd-lista');
+  box.innerHTML='<div class="vc-empty">Cargando…</div>';
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=fiados_resumen');
+    const j=await res.json();
+    if(!j||!j.ok){box.innerHTML='<div class="vc-empty">No se pudo cargar</div><button class="loadbtn" id="fd-reintentar" type="button" style="width:100%;margin-top:8px">Reintentar</button>';document.getElementById('fd-reintentar').onclick=fdCargarResumen;return;}
+    const clientes=j.clientes||[];
+    if(!clientes.length){box.innerHTML='<div class="vc-empty">No hay fiados abiertos</div>';return;}
+    box.innerHTML=clientes.map(c=>`<div class="fd-cliente-row" data-id="${c.clienteId}" data-nombre="${(c.nombre||'').replace(/"/g,'&quot;')}">
+      <div style="min-width:0">
+        <div style="font-size:16px;font-weight:700;color:var(--ink)">${c.nombre||'(sin nombre)'}</div>
+        <div style="font-size:12.5px;color:var(--muted);margin-top:3px">${c.fiadosAbiertos} fiado${c.fiadosAbiertos===1?'':'s'} · más antiguo: ${c.fiadoMasAntiguo||'—'}</div>
+      </div>
+      <div style="font-size:17px;font-weight:800;color:var(--rojo);flex:none">${peso(c.saldo)}</div>
+    </div>`).join('');
+    document.querySelectorAll('.fd-cliente-row').forEach(el=>el.onclick=()=>fdAbrirDetalle(el.dataset.id,el.dataset.nombre));
+  }catch(e){box.innerHTML='<div class="vc-empty">Error de conexión</div><button class="loadbtn" id="fd-reintentar" type="button" style="width:100%;margin-top:8px">Reintentar</button>';document.getElementById('fd-reintentar').onclick=fdCargarResumen;}
+}
+
+// ---- Callout "sin cliente asignado" (mejor esfuerzo: si falla, simplemente no aparece) ----
+async function fdCargarSinCliente(){
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=fiados_sin_cliente');
+    const j=await res.json();
+    const fiados=(j&&j.ok)?(j.fiados||[]):[];
+    fdState.sinCliente=fiados;
+    document.getElementById('fd-sincliente-box').classList.toggle('hidden',!fiados.length);
+    document.getElementById('fd-sincliente-count').textContent=fiados.length?(' ('+fiados.length+')'):'';
+  }catch(e){/* silencioso: no bloquea el resto de la página */}
+}
+document.getElementById('fd-sincliente-box').onclick=function(){
+  const f=(fdState.sinCliente||[])[0];
+  if(f)fdAbrirReconciliar(f.id,f.receipt_id_loyverse,f.monto_total);
+};
+
+// ---- Buscador de clientes (Vista A) — debounce propio ----
+document.getElementById('fd-buscar').addEventListener('input',ev=>{
+  const q=ev.target.value.trim();
+  document.getElementById('fd-buscar-x').style.display=q?'':'none';
+  clearTimeout(window._fdSearchT);
+  if(!q){document.getElementById('fd-buscar-results').innerHTML='';return;}
+  window._fdSearchT=setTimeout(async()=>{
+    try{
+      const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=clientes_buscar&q='+encodeURIComponent(q));
+      const j=await res.json();
+      fdRenderClientesResultado((j&&j.ok)?(j.clientes||[]):[]);
+    }catch(e){document.getElementById('fd-buscar-results').innerHTML='<div class="vc-empty">Error de conexión</div>';}
+  },200);
+});
+document.getElementById('fd-buscar-x').onclick=()=>{document.getElementById('fd-buscar').value='';document.getElementById('fd-buscar').dispatchEvent(new Event('input',{bubbles:true}));};
+function fdRenderClientesResultado(clientes){
+  const box=document.getElementById('fd-buscar-results');
+  if(!clientes.length){box.innerHTML='<div class="vc-empty" style="padding:10px">Sin resultados</div>';return;}
+  box.innerHTML=clientes.map(c=>`<div class="mm-motivo" data-id="${c.id}" data-nombre="${(c.nombre||'').replace(/"/g,'&quot;')}">${c.nombre}${c.telefono?' <span style="color:var(--muted);font-weight:400">· '+c.telefono+'</span>':''}</div>`).join('');
+  document.querySelectorAll('#fd-buscar-results [data-id]').forEach(el=>el.onclick=()=>fdAbrirDetalle(el.dataset.id,el.dataset.nombre));
+}
+document.getElementById('fd-mostrar-todos').onclick=async()=>{
+  const btn=document.getElementById('fd-mostrar-todos');
+  btn.disabled=true;btn.textContent='Cargando…';
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=clientes_buscar&todos=1');
+    const j=await res.json();
+    document.getElementById('fd-buscar').value='';
+    fdRenderClientesResultado((j&&j.ok)?(j.clientes||[]):[]);
+  }catch(e){showToast('Error de conexión al listar clientes');}
+  btn.disabled=false;btn.textContent='Mostrar todos los clientes';
+};
+
+// ---- Vista B: detalle de cliente + formulario de cobro ----
+async function fdAbrirDetalle(clienteId,nombreConocido){
+  fdState.clienteId=clienteId;fdState.clienteNombre=nombreConocido||'';fdState.metodoPago=null;fdState.detalle=null;
+  document.getElementById('fd-buscar-results').innerHTML='';
+  fdShowDetalle();
+  const body=document.getElementById('fd-det-body');
+  body.innerHTML='<div class="vc-empty">Cargando…</div>';
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=fiados_cliente&cliente_id='+encodeURIComponent(clienteId));
+    const j=await res.json();
+    if(!j||!j.ok){body.innerHTML='<div class="vc-empty">No se pudo cargar</div><button class="loadbtn" id="fd-det-reintentar" type="button" style="width:100%;margin-top:8px">Reintentar</button>';document.getElementById('fd-det-reintentar').onclick=()=>fdAbrirDetalle(clienteId,nombreConocido);return;}
+    fdState.detalle=j;
+    fdRenderDetalle(j,nombreConocido);
+  }catch(e){body.innerHTML='<div class="vc-empty">Error de conexión</div><button class="loadbtn" id="fd-det-reintentar" type="button" style="width:100%;margin-top:8px">Reintentar</button>';document.getElementById('fd-det-reintentar').onclick=()=>fdAbrirDetalle(clienteId,nombreConocido);}
+}
+function fdRenderDetalle(j,nombre){
+  const body=document.getElementById('fd-det-body');
+  const fiados=j.fiadosAbiertos||[];
+  // Edge case: solo llega acá con 0 fiados si el cliente se buscó a mano — la Vista A
+  // (fiados_resumen) nunca lista un cliente sin fiado abierto.
+  if(!fiados.length){
+    body.innerHTML=`<div style="font-size:19px;font-weight:800;margin-bottom:6px">${nombre||'Cliente'}</div><div class="vc-empty">Este cliente no tiene fiados abiertos</div>`;
+    return;
+  }
+  const fiadosHtml=fiados.map(f=>`<div style="border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;background:var(--card)">
+    <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700"><span>${f.fechaHora}</span><span>${peso(f.saldo)}</span></div>
+    ${(f.lineas||[]).map(l=>`<div style="font-size:13px;color:var(--muted);margin-top:4px">${l.cantidad} × ${l.producto_nombre} · ${peso(l.precio_unitario)}</div>`).join('')}
+  </div>`).join('');
+  body.innerHTML=`
+    <div style="font-size:19px;font-weight:800;margin-bottom:3px">${nombre||'Cliente'}</div>
+    <div style="font-size:26px;font-weight:800;color:var(--rojo);margin-bottom:16px">${peso(j.saldoTotal)}</div>
+    <label style="font-size:13px;font-weight:700;color:var(--ink)">Fiados abiertos</label>
+    <div style="margin:8px 0 18px">${fiadosHtml}</div>
+    <div class="mm-field">
+      <label>Monto a abonar</label>
+      <input id="fd-monto" inputmode="decimal" placeholder="$0">
+    </div>
+    <div class="mm-field">
+      <label>Método de pago</label>
+      <div class="mm-resp" id="fd-metodo">
+        <button type="button" data-m="efectivo">Efectivo</button>
+        <button type="button" data-m="tarjeta">Tarjeta</button>
+        <button type="button" data-m="transferencia">Transferencia</button>
+      </div>
+    </div>
+    <div class="mm-field hidden" id="fd-efectivo-field">
+      <label>Recibido en efectivo</label>
+      <input id="fd-recibido" inputmode="decimal" placeholder="$0">
+      <div id="fd-vuelto" style="font-size:15px;font-weight:700;margin-top:8px"></div>
+    </div>
+    <button class="mm-save" id="fd-cobrar-btn" disabled>Cobrar</button>`;
+  document.querySelectorAll('#fd-metodo button').forEach(b=>b.onclick=()=>fdSeleccionarMetodo(b.dataset.m));
+  document.getElementById('fd-monto').addEventListener('input',()=>{fdCalcularVuelto();fdValidarCobro();});
+  document.getElementById('fd-recibido').addEventListener('input',()=>{fdCalcularVuelto();fdValidarCobro();});
+  document.getElementById('fd-cobrar-btn').onclick=fdConfirmarCobro;
+}
+function fdSeleccionarMetodo(m){
+  fdState.metodoPago=m;
+  document.querySelectorAll('#fd-metodo button').forEach(b=>b.classList.toggle('sel',b.dataset.m===m));
+  document.getElementById('fd-efectivo-field').classList.toggle('hidden',m!=='efectivo');
+  if(m!=='efectivo'){document.getElementById('fd-recibido').value='';document.getElementById('fd-vuelto').textContent='';}
+  fdCalcularVuelto();fdValidarCobro();
+}
+function fdCalcularVuelto(){
+  const el=document.getElementById('fd-vuelto');
+  if(!el)return;
+  if(fdState.metodoPago!=='efectivo'){el.textContent='';return;}
+  const monto=Number(document.getElementById('fd-monto').value)||0;
+  const recibido=Number(document.getElementById('fd-recibido').value)||0;
+  if(!recibido){el.textContent='';return;}
+  if(recibido<monto){el.style.color='var(--rojo)';el.textContent='Falta '+peso(monto-recibido);}
+  else{el.style.color='var(--verde)';el.textContent='Vuelto: '+peso(recibido-monto);}
+}
+function fdValidarCobro(){
+  const btn=document.getElementById('fd-cobrar-btn');
+  if(!btn)return;
+  const monto=Number(document.getElementById('fd-monto').value)||0;
+  let ok=monto>0&&!!fdState.metodoPago;
+  if(fdState.metodoPago==='efectivo'){
+    const recibido=Number(document.getElementById('fd-recibido').value)||0;
+    ok=ok&&recibido>=monto;
+  }
+  btn.disabled=!ok;
+}
+
+// ---- Confirmar cobro (POST fiados_cobrar) + comprobante ----
+// confirm() nativo antes de mover plata real: con botones más grandes (pensados para un
+// usuario de 65+ años) crece el riesgo de un toque accidental — mismo patrón ya usado en
+// Marín Pedidos para acciones irreversibles con stock/plata (ej. prDevolver).
+async function fdConfirmarCobro(){
+  const monto=Number(document.getElementById('fd-monto').value)||0;
+  if(!confirm('¿Cobrar '+peso(monto)+' a '+(fdState.clienteNombre||'este cliente')+'?'))return;
+  const btn=document.getElementById('fd-cobrar-btn');
+  btn.disabled=true;btn.textContent='Cobrando…';
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'fiados_cobrar',payload:{cliente_id:fdState.clienteId,monto,metodo_pago:fdState.metodoPago}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      const recibido=Number((document.getElementById('fd-recibido')||{}).value)||0;
+      fdState.ultimoCobro=Object.assign({},j,{monto,metodoPago:fdState.metodoPago,vuelto:fdState.metodoPago==='efectivo'?Math.max(0,recibido-monto):0,clienteNombre:fdState.clienteNombre});
+      fdRenderComprobante(fdState.ultimoCobro);
+      fdShowComprobante();
+    }else{
+      // El mensaje ya viene armado y claro desde el backend (ej. monto supera la deuda total,
+      // o falta configurar algo en el Worker) — se muestra tal cual, sin reinterpretarlo.
+      showToast('Error: '+((j&&j.error)||'no se pudo registrar el cobro'));
+      btn.disabled=false;btn.textContent='Cobrar';
+    }
+  }catch(e){showToast('Error de conexión al registrar el cobro');btn.disabled=false;btn.textContent='Cobrar';}
+}
+function fdRenderComprobante(c){
+  const fiadosHtml=(c.fiadosCubiertos||[]).map(f=>`<div style="border-top:1px dashed var(--line);padding-top:10px;margin-top:10px">
+    <div style="font-size:14px;font-weight:700">Fiado del ${f.fechaHora}</div>
+    ${(f.lineas||[]).map(l=>`<div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)"><span>${l.cantidad} × ${l.producto_nombre}</span><span>${peso(l.precio_unitario)}</span></div>`).join('')}
+    <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;margin-top:5px"><span>Aplicado</span><span>${peso(f.montoAplicado)}</span></div>
+    <div style="font-size:12.5px;color:var(--muted)">${f.quedaAbierto?'Queda saldo pendiente: '+peso(f.saldoRestanteFiado):'Cubierto por completo'}</div>
+  </div>`).join('');
+  document.getElementById('fd-comp-body').innerHTML=`
+    <div id="fd-comprobante-print" style="background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:18px">
+      <div style="text-align:center;font-weight:800;font-size:17px;margin-bottom:3px">Marín 376</div>
+      <div style="text-align:center;font-size:12.5px;color:var(--muted);margin-bottom:14px">Comprobante de abono a fiado</div>
+      <div style="font-size:15px;font-weight:700">${c.clienteNombre||'Cliente'}</div>
+      <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px">${new Date().toLocaleString('es-CL')}</div>
+      ${fiadosHtml}
+      <div style="border-top:1.5px solid var(--ink);margin-top:12px;padding-top:10px">
+        <div style="display:flex;justify-content:space-between;font-weight:800;font-size:15px"><span>Monto abonado</span><span>${peso(c.monto)}</span></div>
+        <div style="font-size:12.5px;color:var(--muted)">Método: ${c.metodoPago}</div>
+        ${c.metodoPago==='efectivo'&&c.vuelto>0?`<div style="display:flex;justify-content:space-between;font-weight:700;color:var(--verde);font-size:15px"><span>Vuelto</span><span>${peso(c.vuelto)}</span></div>`:''}
+        <div style="display:flex;justify-content:space-between;font-weight:800;margin-top:6px;font-size:15px"><span>Saldo restante</span><span>${peso(c.saldoRestante)}</span></div>
+      </div>
+    </div>`;
+}
+document.getElementById('fd-comp-listo').onclick=fdVolverALista;
+document.getElementById('fd-comp-imprimir').onclick=fdImprimir;
+// Impresora térmica de 58mm (confirmado con el dueño) — mismo truco de iframe oculto +
+// window.print() ya usado en Marín Pedidos para imprimir etiquetas de precio.
+function fdImprimir(){
+  const html='<!doctype html><html><head><meta charset="utf-8"><style>'
+    +'@page{size:58mm auto;margin:2mm}'
+    +'*{margin:0;padding:0;box-sizing:border-box}'
+    +'body{font-family:Arial,Helvetica,sans-serif;font-size:9.5px}'
+    +'</style></head><body>'+document.getElementById('fd-comprobante-print').innerHTML+'</body></html>';
+  const iframe=document.createElement('iframe');
+  iframe.style.position='fixed';iframe.style.right='0';iframe.style.bottom='0';
+  iframe.style.width='0';iframe.style.height='0';iframe.style.border='0';
+  document.body.appendChild(iframe);
+  const doc=iframe.contentDocument||iframe.contentWindow.document;
+  doc.open();doc.write(html);doc.close();
+  const limpiar=()=>{if(iframe.parentNode)iframe.parentNode.removeChild(iframe);};
+  iframe.contentWindow.onafterprint=limpiar;
+  setTimeout(()=>{try{iframe.contentWindow.focus();iframe.contentWindow.print();}catch(e){}setTimeout(limpiar,60000);},200);
+}
+
+// ---- Reconciliar fiado sin cliente asignado (modal fd-recon-ov) ----
+function fdAbrirReconciliar(fiadoId,receiptId,montoTotal){
+  document.getElementById('fd-recon-info').textContent='Fiado #'+fiadoId+' · '+peso(montoTotal)+(receiptId?' · boleta '+receiptId:'');
+  document.getElementById('fd-recon-buscar').value='';
+  document.getElementById('fd-recon-results').innerHTML='';
+  document.getElementById('fd-recon-ov').dataset.fiadoId=fiadoId;
+  document.getElementById('fd-recon-ov').classList.remove('hidden');
+}
+document.getElementById('fd-recon-cancelar').onclick=()=>document.getElementById('fd-recon-ov').classList.add('hidden');
+document.getElementById('fd-recon-buscar').addEventListener('input',ev=>{
+  const q=ev.target.value.trim();
+  clearTimeout(window._fdReconSearchT);
+  if(!q){document.getElementById('fd-recon-results').innerHTML='';return;}
+  window._fdReconSearchT=setTimeout(async()=>{
+    try{
+      const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=clientes_buscar&q='+encodeURIComponent(q));
+      const j=await res.json();
+      const clientes=(j&&j.ok)?(j.clientes||[]):[];
+      document.getElementById('fd-recon-results').innerHTML=clientes.map(c=>`<div class="mm-motivo" data-id="${c.id}">${c.nombre}</div>`).join('')||'<div class="vc-empty" style="padding:10px">Sin resultados</div>';
+      document.querySelectorAll('#fd-recon-results [data-id]').forEach(el=>el.onclick=()=>fdAsignarCliente(document.getElementById('fd-recon-ov').dataset.fiadoId,el.dataset.id));
+    }catch(e){document.getElementById('fd-recon-results').innerHTML='<div class="vc-empty">Error de conexión</div>';}
+  },200);
+});
+async function fdAsignarCliente(fiadoId,clienteId){
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'fiados_asignar_cliente',payload:{fiado_id:Number(fiadoId),cliente_id:clienteId}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      showToast('Cliente asignado correctamente');
+      document.getElementById('fd-recon-ov').classList.add('hidden');
+      fdCargarSinCliente();
+      fdCargarResumen();
+    }else{showToast('Error: '+((j&&j.error)||'no se pudo asignar'));}
+  }catch(e){showToast('Error de conexión al asignar cliente');}
+}
+
+// ---- Arranque: siempre en la Vista A con datos frescos (página independiente, sin
+// mecanismo de "reabrir" — un F5 simplemente recarga limpio, que ya es lo correcto acá) ----
+fdShowLista();
+fdCargarResumen();
+fdCargarSinCliente();
+</script>
+</body>
+</html>
