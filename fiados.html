@@ -293,13 +293,61 @@ function fdSugerenciasEfectivo(total){
 // lista completa de clientes de Loyverse salvo pedido explícito del usuario ("Mostrar todos").
 const fdState={clienteId:null,clienteNombre:'',detalle:null,metodoPago:null,ultimoCobro:null,sinCliente:[]};
 
-function fdShowLista(){document.getElementById('fd-view-lista').classList.remove('hidden');document.getElementById('fd-view-detalle').classList.add('hidden');document.getElementById('fd-view-comprobante').classList.add('hidden');}
+function fdShowLista(){
+  // Al volver a la Vista A (desde cualquier camino: botón, modal, o el atrás del celular) se
+  // limpia el cliente/cobro en curso — la lista/búsqueda de #fd-buscar-results NO se toca acá
+  // (ver fdAbrirDetalle), así que se ve igual que antes de abrir el detalle.
+  fdState.clienteId=null;fdState.detalle=null;fdState.metodoPago=null;
+  document.getElementById('fd-view-lista').classList.remove('hidden');document.getElementById('fd-view-detalle').classList.add('hidden');document.getElementById('fd-view-comprobante').classList.add('hidden');
+}
 function fdShowDetalle(){document.getElementById('fd-view-lista').classList.add('hidden');document.getElementById('fd-view-detalle').classList.remove('hidden');document.getElementById('fd-view-comprobante').classList.add('hidden');}
 function fdShowComprobante(){document.getElementById('fd-view-lista').classList.add('hidden');document.getElementById('fd-view-detalle').classList.add('hidden');document.getElementById('fd-view-comprobante').classList.remove('hidden');}
-document.getElementById('fd-det-volver').onclick=fdVolverALista;
-// Vuelve a la Vista A tal cual estaba (lista de "mostrar todos" o resultados de búsqueda que
-// ya estuvieran pintados en #fd-buscar-results — no se tocan acá, ver fdAbrirDetalle).
-function fdVolverALista(){fdState.clienteId=null;fdState.detalle=null;fdState.metodoPago=null;fdShowLista();}
+
+// ---- Navegación con el botón/gesto "atrás" del celular ----
+// La página no usaba history.pushState — el atrás de Android simplemente salía de la app (no
+// había ninguna entrada de historial propia que "consumir"). Se arma una pila mínima con
+// pushState/popstate: abrir el detalle de un cliente, o los modales de historial/reconciliar,
+// agrega una entrada; "atrás" (hardware/gesto del celular, o los botones Volver/Listo/Cerrar/
+// Cancelar en pantalla — unificados acá para no desincronizar la pila) la saca y muestra la
+// pantalla anterior. Recién al llegar de nuevo a la Vista A sin nada abierto, atrás vuelve a
+// hacer lo de siempre (salir de la app / ir a la página anterior fuera de fiados.html), porque
+// ya no queda ninguna entrada propia que consumir.
+function fdEstadoActual(){
+  return {
+    vista: !document.getElementById('fd-view-comprobante').classList.contains('hidden') ? 'comprobante'
+      : !document.getElementById('fd-view-detalle').classList.contains('hidden') ? 'detalle' : 'lista',
+    historial: !document.getElementById('fd-historial-ov').classList.contains('hidden'),
+    recon: !document.getElementById('fd-recon-ov').classList.contains('hidden')
+  };
+}
+function fdAplicarEstado(st){
+  st=st||{vista:'lista'};
+  if(st.vista==='comprobante')fdShowComprobante();
+  else if(st.vista==='detalle')fdShowDetalle();
+  else fdShowLista();
+  document.getElementById('fd-historial-ov').classList.toggle('hidden',!st.historial);
+  document.getElementById('fd-recon-ov').classList.toggle('hidden',!st.recon);
+}
+// Abre una pantalla/modal nueva: agrega una entrada al historial del navegador (no cambia la
+// URL) y recién ahí actualiza la UI.
+function fdPush(cambios){
+  const st=Object.assign(fdEstadoActual(),cambios);
+  history.pushState(st,'');
+  fdAplicarEstado(st);
+}
+// Reemplaza la pantalla actual sin agregar una entrada nueva — usado al pasar de "cobrando" a
+// "comprobante" tras un pago exitoso: el atrás desde el comprobante debe ir directo a la Vista
+// A (no tiene sentido volver a una pantalla de cobro ya cerrada), igual que el botón "Listo".
+function fdReplace(cambios){
+  const st=Object.assign(fdEstadoActual(),cambios);
+  history.replaceState(st,'');
+  fdAplicarEstado(st);
+}
+window.addEventListener('popstate',ev=>fdAplicarEstado(ev.state));
+history.replaceState({vista:'lista'},'');
+
+document.getElementById('fd-det-volver').onclick=()=>history.back();
+function fdVolverALista(){history.back();}
 
 // ---- Callout "sin cliente asignado" (mejor esfuerzo: si falla, simplemente no aparece) ----
 async function fdCargarSinCliente(){
@@ -402,7 +450,10 @@ async function fdAbrirDetalle(clienteId,nombreConocido){
   // No se limpia #fd-buscar-results acá — así "Volver" (fdVolverALista) muestra otra vez
   // exactamente la lista/búsqueda que había antes de abrir el detalle, en vez de una Vista A
   // en blanco (ver fdVolverALista, más abajo).
-  fdShowDetalle();
+  // Esta función también se reusa para refrescar el detalle ya abierto (botón Reintentar,
+  // fdConfirmarEliminarLinea) — en esos casos NO hay que apilar una entrada nueva de historial,
+  // solo cuando se entra a la Vista B por primera vez desde la Vista A.
+  if(fdEstadoActual().vista==='detalle')fdShowDetalle();else fdPush({vista:'detalle'});
   const body=document.getElementById('fd-det-body');
   body.innerHTML='<div class="vc-empty">Cargando…</div>';
   try{
@@ -712,7 +763,10 @@ async function fdConfirmarCobro(){
     if(j&&j.ok){
       fdState.ultimoCobro=Object.assign({},j,{monto,metodoPago:fdState.metodoPago,vuelto:fdState.metodoPago==='efectivo'?Math.max(0,recibido-monto):0,clienteNombre:fdState.clienteNombre});
       fdRenderComprobante(fdState.ultimoCobro);
-      fdShowComprobante();
+      // Reemplaza la entrada de "cobrando" por la de "comprobante" (no apila) — así el atrás
+      // desde acá va directo a la Vista A, igual que el botón "Listo" (no tiene sentido volver
+      // a una pantalla de cobro ya cerrada).
+      fdReplace({vista:'comprobante'});
     }else{
       // El mensaje ya viene armado y claro desde el backend (ej. monto supera la deuda total,
       // o falta configurar algo en el Worker) — se muestra tal cual, sin reinterpretarlo.
@@ -743,7 +797,7 @@ function fdRenderComprobante(c){
       </div>
     </div>`;
 }
-document.getElementById('fd-comp-listo').onclick=fdVolverALista;
+document.getElementById('fd-comp-listo').onclick=()=>history.back();
 document.getElementById('fd-comp-imprimir').onclick=()=>fdImprimir(document.getElementById('fd-comprobante-print').innerHTML);
 // Impresora térmica de 58mm (confirmado con el dueño) — mismo truco de iframe oculto +
 // window.print() ya usado en Marín Pedidos para imprimir etiquetas de precio. Recibe el HTML
@@ -771,9 +825,9 @@ function fdAbrirReconciliar(fiadoId,receiptId,montoTotal){
   document.getElementById('fd-recon-buscar').value='';
   document.getElementById('fd-recon-results').innerHTML='';
   document.getElementById('fd-recon-ov').dataset.fiadoId=fiadoId;
-  document.getElementById('fd-recon-ov').classList.remove('hidden');
+  fdPush({recon:true});
 }
-document.getElementById('fd-recon-cancelar').onclick=()=>document.getElementById('fd-recon-ov').classList.add('hidden');
+document.getElementById('fd-recon-cancelar').onclick=()=>history.back();
 document.getElementById('fd-recon-buscar').addEventListener('input',ev=>{
   const q=ev.target.value.trim();
   clearTimeout(window._fdReconSearchT);
@@ -794,7 +848,7 @@ async function fdAsignarCliente(fiadoId,clienteId){
     const j=await res.json();
     if(j&&j.ok){
       showToast('Cliente asignado correctamente');
-      document.getElementById('fd-recon-ov').classList.add('hidden');
+      history.back();
       fdCargarSinCliente();
     }else{showToast('Error: '+((j&&j.error)||'no se pudo asignar'));}
   }catch(e){showToast('Error de conexión al asignar cliente');}
@@ -809,7 +863,7 @@ async function fdAbrirHistorial(){
   document.getElementById('fd-historial-saldo').textContent='';
   const box=document.getElementById('fd-historial-lista');
   box.innerHTML='<div class="vc-empty">Cargando…</div>';
-  document.getElementById('fd-historial-ov').classList.remove('hidden');
+  fdPush({historial:true});
   try{
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=fiados_historial_cliente&cliente_id='+encodeURIComponent(fdState.clienteId));
     const j=await res.json();
@@ -840,7 +894,7 @@ function fdRenderHistorial(movs){
     </div>`;
   }).join('');
 }
-document.getElementById('fd-historial-cerrar').onclick=()=>document.getElementById('fd-historial-ov').classList.add('hidden');
+document.getElementById('fd-historial-cerrar').onclick=()=>history.back();
 
 // ---- Arranque: siempre en la Vista A, vacía por privacidad (sin lista automática de quién
 // debe — página independiente, sin mecanismo de "reabrir", un F5 simplemente recarga limpio) ----
