@@ -293,11 +293,31 @@ function fdSugerenciasEfectivo(total){
 // lista completa de clientes de Loyverse salvo pedido explícito del usuario ("Mostrar todos").
 const fdState={clienteId:null,clienteNombre:'',detalle:null,metodoPago:null,ultimoCobro:null,sinCliente:[]};
 
+// ---- Recordar qué cliente quedó "abierto para cobrar" (Vista B), para sobrevivir un refresco
+// accidental de la página ---- Un F5/recarga durante un cobro en curso (ej. un dedo que roza el
+// botón de recargar del navegador) antes NO dejaba rastro: la app volvía siempre a la Vista A y
+// se perdía la pantalla de cobro. Se guarda el cliente en localStorage (no sessionStorage —
+// tiene que sobrevivir incluso si Android reconstruye el WebView) apenas se abre su detalle, y
+// se limpia apenas se sale de esa pantalla (volver a la lista, o completar el cobro) — así un
+// refresco a mitad de cobro vuelve exactamente a ese mismo cliente, pero uno después de terminar
+// o de volver a la lista no "revive" nada viejo.
+const FD_LS_CLIENTE_ABIERTO='fd_cliente_abierto';
+function fdGuardarClienteAbierto(clienteId,clienteNombre){
+  try{localStorage.setItem(FD_LS_CLIENTE_ABIERTO,JSON.stringify({clienteId,clienteNombre}));}catch(e){/* localStorage no disponible — degradación segura, simplemente no persiste */}
+}
+function fdLimpiarClienteAbierto(){
+  try{localStorage.removeItem(FD_LS_CLIENTE_ABIERTO);}catch(e){}
+}
+function fdClienteAbiertoGuardado(){
+  try{const raw=localStorage.getItem(FD_LS_CLIENTE_ABIERTO);return raw?JSON.parse(raw):null;}catch(e){return null;}
+}
+
 function fdShowLista(){
   // Al volver a la Vista A (desde cualquier camino: botón, modal, o el atrás del celular) se
   // limpia el cliente/cobro en curso — la lista/búsqueda de #fd-buscar-results NO se toca acá
   // (ver fdAbrirDetalle), así que se ve igual que antes de abrir el detalle.
   fdState.clienteId=null;fdState.detalle=null;fdState.metodoPago=null;
+  fdLimpiarClienteAbierto();
   document.getElementById('fd-view-lista').classList.remove('hidden');document.getElementById('fd-view-detalle').classList.add('hidden');document.getElementById('fd-view-comprobante').classList.add('hidden');
 }
 function fdShowDetalle(){document.getElementById('fd-view-lista').classList.add('hidden');document.getElementById('fd-view-detalle').classList.remove('hidden');document.getElementById('fd-view-comprobante').classList.add('hidden');}
@@ -454,6 +474,7 @@ async function fdAbrirDetalle(clienteId,nombreConocido){
   // fdConfirmarEliminarLinea) — en esos casos NO hay que apilar una entrada nueva de historial,
   // solo cuando se entra a la Vista B por primera vez desde la Vista A.
   if(fdEstadoActual().vista==='detalle')fdShowDetalle();else fdPush({vista:'detalle'});
+  fdGuardarClienteAbierto(clienteId,nombreConocido);
   const body=document.getElementById('fd-det-body');
   body.innerHTML='<div class="vc-empty">Cargando…</div>';
   try{
@@ -474,6 +495,7 @@ function fdRenderDetalle(j,nombre){
   // (fiados_resumen) nunca lista un cliente sin fiado abierto.
   if(!fiados.length){
     body.innerHTML=`<div class="vc-empty">Este cliente no tiene fiados abiertos</div>`;
+    fdLimpiarClienteAbierto(); // ya no queda nada "abierto para cobrar" acá — no tiene sentido restaurarlo en un refresco futuro
     return;
   }
   const ticketsHtml=fiados.map(f=>{
@@ -763,6 +785,9 @@ async function fdConfirmarCobro(){
     if(j&&j.ok){
       fdState.ultimoCobro=Object.assign({},j,{monto,metodoPago:fdState.metodoPago,vuelto:fdState.metodoPago==='efectivo'?Math.max(0,recibido-monto):0,clienteNombre:fdState.clienteNombre});
       fdRenderComprobante(fdState.ultimoCobro);
+      // El cobro ya se registró — deja de estar "abierto para cobrar", así que un refresco
+      // accidental desde acá en adelante no debe reabrir esta pantalla (ver fdGuardarClienteAbierto).
+      fdLimpiarClienteAbierto();
       // Reemplaza la entrada de "cobrando" por la de "comprobante" (no apila) — así el atrás
       // desde acá va directo a la Vista A, igual que el botón "Listo" (no tiene sentido volver
       // a una pantalla de cobro ya cerrada).
@@ -896,9 +921,17 @@ function fdRenderHistorial(movs){
 }
 document.getElementById('fd-historial-cerrar').onclick=()=>history.back();
 
-// ---- Arranque: siempre en la Vista A, vacía por privacidad (sin lista automática de quién
-// debe — página independiente, sin mecanismo de "reabrir", un F5 simplemente recarga limpio) ----
-fdShowLista();
+// ---- Arranque ----
+// Por defecto: Vista A, vacía por privacidad (sin lista automática de quién debe). EXCEPCIÓN:
+// si quedó un cliente "abierto para cobrar" quardado (ver fdGuardarClienteAbierto) — ej. un
+// refresco accidental de la página a mitad de un cobro — se reabre directo su Vista B en vez de
+// perder la pantalla y volver a la lista.
+const fdClienteGuardadoAlArrancar=fdClienteAbiertoGuardado();
+if(fdClienteGuardadoAlArrancar&&fdClienteGuardadoAlArrancar.clienteId){
+  fdAbrirDetalle(fdClienteGuardadoAlArrancar.clienteId,fdClienteGuardadoAlArrancar.clienteNombre);
+}else{
+  fdShowLista();
+}
 fdCargarSinCliente();
 
 // ---- Instalación como app (pantalla de inicio) ----
