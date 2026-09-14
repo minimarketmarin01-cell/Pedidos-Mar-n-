@@ -978,6 +978,8 @@ function fdEtiquetaMovimiento(tipo){
   if(tipo==='abono_efectivo')return'Abono efectivo';
   if(tipo==='abono_tarjeta')return'Abono tarjeta';
   if(tipo==='abono_transferencia')return'Abono transferencia';
+  if(tipo==='abono_reembolso')return'Reembolso (Loyverse)';
+  if(tipo==='abono_anulado')return'Venta anulada (Loyverse)';
   return tipo;
 }
 function fdRenderHistorial(movs){
