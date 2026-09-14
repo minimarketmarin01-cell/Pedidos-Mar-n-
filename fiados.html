@@ -57,6 +57,10 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
 .mm-resp button{flex:1;min-width:100px;border:1.5px solid var(--line);background:var(--card);border-radius:10px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;min-height:48px}
 .mm-resp button.sel{background:var(--azul);color:#fff;border-color:var(--azul)}
 .fd-cliente-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
+/* Selector más específico que ".mm-field input" (que le pondría width:100%;height:48px a
+   cualquier input dentro del buscador, incluido este checkbox, y le comería el ancho a toda
+   la fila) — .fd-buscar-results vive dentro de .mm-field. */
+.fd-cliente-row .fd-cliente-check{width:22px;height:22px;flex:none;cursor:pointer;accent-color:var(--azul)}
 .fd-cliente-abrir{min-width:0;cursor:pointer}
 .fd-total-row{display:flex;align-items:center;justify-content:space-between;padding:2px 2px 12px}
 .fd-eye{border:none;background:var(--paper);color:var(--muted);width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;padding:0}
@@ -166,6 +170,14 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
         <button class="mm-x" id="fd-buscar-x" type="button" aria-label="Limpiar" style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
       <div id="fd-buscar-results" style="margin-top:8px"></div>
+      <!-- Fusionar 2 clientes (equivalente a "combinar tickets" de Loyverse) — aparece solo
+           cuando hay exactamente 2 tildados en la lista de "clientes con fiado abierto" (ver
+           fdActualizarBannerFusion). Útil cuando el mismo cliente real quedó duplicado con 2
+           registros distintos en Loyverse. -->
+      <div id="fd-fusionar-banner" class="hidden" style="border:1.5px solid var(--azul);background:#F1EDF7;border-radius:12px;padding:12px 14px;margin-top:10px">
+        <div style="font-size:13px;font-weight:700;color:var(--azul);margin-bottom:8px">Fusionar en:</div>
+        <div style="display:flex;gap:8px" id="fd-fusionar-opciones"></div>
+      </div>
     </div>
 
     <div id="fd-sincliente-box" class="hidden" style="border:1.5px solid var(--ambar);background:var(--ambar-bg);border-radius:12px;padding:14px 16px;margin-bottom:16px;cursor:pointer">
@@ -238,6 +250,23 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
 const SYNC_URL='https://marin376-api.minimarketmarin01.workers.dev';
 const fmt=new Intl.NumberFormat('es-CL');
 const peso=n=>'$'+fmt.format(Math.round(n||0));
+// Lee el valor NUMÉRICO real de un input de monto, sin importar si ya está formateado como
+// moneda chilena ("$7.460") o es un número plano ("7460") — el peso chileno no usa decimales,
+// así que quitar todo lo que no sea dígito (el "$" y los puntos de miles) es seguro y suficiente.
+function fdNum(input){
+  return Number(String((input&&input.value)||'').replace(/\D/g,''))||0;
+}
+// Formatea un input de monto en vivo como moneda chilena (separador de miles, sin decimales)
+// mientras se escribe — mismo criterio que ya usa peso() en el resto de la página. Antes
+// "Monto a abonar"/"Efectivo recibido" quedaban como números planos ("7460") mientras todos
+// los demás montos de la pantalla ya se veían formateados.
+function fdFormatearInputMoneda(input){
+  if(!input)return;
+  input.addEventListener('input',()=>{
+    const n=fdNum(input);
+    input.value=n?peso(n):'';
+  });
+}
 // Los timestamps que manda el backend (fechaHora, fiadoMasAntiguo) son la fecha ISO cruda tal
 // cual la entrega Loyverse (ej. "2026-09-13T17:37:02.000Z") — se convierten a DD/MM/AAAA HH:MM
 // en hora de Chile (no la del navegador) antes de mostrarlos, mismo criterio que usa el resto
@@ -420,7 +449,12 @@ function fdOjoSvg(visible){
 let fdListaFiados=[];
 const fdMontosRevelados=new Set();
 let fdTotalRevelado=false;
-document.getElementById('fd-mostrar-todos').onclick=async()=>{
+// Selección para "Fusionar" (equivalente a "combinar tickets" de Loyverse, ver capturas de
+// referencia): tildar 2 clientes de la lista habilita elegir a cuál de los dos se fusionan los
+// fiados del otro — útil cuando el mismo cliente real quedó duplicado con 2 registros
+// distintos en Loyverse. Se limpia cada vez que se recarga la lista.
+const fdSeleccionadosFusion=new Set();
+async function fdCargarListaFiados(){
   const btn=document.getElementById('fd-mostrar-todos');
   btn.disabled=true;btn.textContent='Cargando…';
   try{
@@ -428,13 +462,15 @@ document.getElementById('fd-mostrar-todos').onclick=async()=>{
     const j=await res.json();
     document.getElementById('fd-buscar').value='';
     fdListaFiados=(j&&j.ok)?(j.clientes||[]):[];
-    fdMontosRevelados.clear();fdTotalRevelado=false;
+    fdMontosRevelados.clear();fdTotalRevelado=false;fdSeleccionadosFusion.clear();
     fdRenderListaFiados();
   }catch(e){showToast('Error de conexión al listar clientes con fiado');}
   btn.disabled=false;btn.textContent='Ver clientes con fiado abierto';
-};
+}
+document.getElementById('fd-mostrar-todos').onclick=fdCargarListaFiados;
 function fdRenderListaFiados(){
   const box=document.getElementById('fd-buscar-results');
+  fdActualizarBannerFusion();
   if(!fdListaFiados.length){box.innerHTML='<div class="vc-empty">No hay fiados abiertos</div>';return;}
   const total=fdListaFiados.reduce((s,c)=>s+(c.saldo||0),0);
   const header=`<div class="fd-total-row">
@@ -444,6 +480,7 @@ function fdRenderListaFiados(){
   const filas=fdListaFiados.map(c=>{
     const revelado=fdMontosRevelados.has(c.clienteId);
     return `<div class="fd-cliente-row">
+      <input type="checkbox" class="fd-cliente-check" data-fusion="${c.clienteId}" aria-label="Seleccionar para fusionar" ${fdSeleccionadosFusion.has(c.clienteId)?'checked':''}>
       <div class="fd-cliente-abrir" data-id="${c.clienteId}" data-nombre="${(c.nombre||'').replace(/"/g,'&quot;')}">
         <div style="font-size:16px;font-weight:700;color:var(--ink)">${c.nombre||'(sin nombre)'}</div>
         <div style="font-size:12.5px;color:var(--muted);margin-top:3px">${c.fiadosAbiertos} fiado${c.fiadosAbiertos===1?'':'s'} · más antiguo: ${c.fiadoMasAntiguo?fechaChileLegible(c.fiadoMasAntiguo):'—'}</div>
@@ -462,6 +499,43 @@ function fdRenderListaFiados(){
     fdRenderListaFiados();
   });
   document.querySelectorAll('#fd-buscar-results .fd-cliente-abrir').forEach(el=>el.onclick=()=>fdAbrirDetalle(el.dataset.id,el.dataset.nombre));
+  document.querySelectorAll('#fd-buscar-results [data-fusion]').forEach(el=>el.onchange=()=>{
+    const id=el.dataset.fusion;
+    if(el.checked)fdSeleccionadosFusion.add(id);else fdSeleccionadosFusion.delete(id);
+    fdActualizarBannerFusion();
+  });
+}
+// Solo con EXACTAMENTE 2 clientes tildados se muestra el banner con las 2 opciones de destino
+// (mismo criterio que el picker "Combinar con..." de Loyverse, simplificado a un solo paso:
+// tocar directamente el nombre del cliente que va a quedar como destino).
+function fdActualizarBannerFusion(){
+  const banner=document.getElementById('fd-fusionar-banner');
+  const opciones=document.getElementById('fd-fusionar-opciones');
+  if(!banner||!opciones)return;
+  const ids=[...fdSeleccionadosFusion];
+  if(ids.length!==2){banner.classList.add('hidden');opciones.innerHTML='';return;}
+  const c1=fdListaFiados.find(c=>c.clienteId===ids[0]);
+  const c2=fdListaFiados.find(c=>c.clienteId===ids[1]);
+  if(!c1||!c2){banner.classList.add('hidden');opciones.innerHTML='';return;}
+  banner.classList.remove('hidden');
+  opciones.innerHTML=`
+    <button type="button" class="loadbtn" style="flex:1" data-destino="${c1.clienteId}" data-origen="${c2.clienteId}">${c1.nombre||'(sin nombre)'}</button>
+    <button type="button" class="loadbtn" style="flex:1" data-destino="${c2.clienteId}" data-origen="${c1.clienteId}">${c2.nombre||'(sin nombre)'}</button>`;
+  opciones.querySelectorAll('button').forEach(b=>b.onclick=()=>fdEjecutarFusion(b.dataset.origen,b.dataset.destino));
+}
+async function fdEjecutarFusion(origenId,destinoId){
+  const origen=fdListaFiados.find(c=>c.clienteId===origenId);
+  const destino=fdListaFiados.find(c=>c.clienteId===destinoId);
+  const nombreOrigen=(origen&&origen.nombre)||'(sin nombre)', nombreDestino=(destino&&destino.nombre)||'(sin nombre)';
+  if(!confirm('¿Fusionar todos los fiados de "'+nombreOrigen+'" dentro de "'+nombreDestino+'"?\n\nEsta acción no se puede deshacer.'))return;
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'fiados_fusionar_clientes',payload:{cliente_origen_id:origenId,cliente_destino_id:destinoId}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      showToast('Clientes fusionados: ahora todo está bajo "'+nombreDestino+'"');
+      fdCargarListaFiados();
+    }else{showToast('Error: '+((j&&j.error)||'no se pudo fusionar'));}
+  }catch(e){showToast('Error de conexión al fusionar');}
 }
 
 // ---- Vista B: detalle de cliente + formulario de cobro ----
@@ -520,7 +594,7 @@ function fdRenderDetalle(j,nombre){
         <div class="fd-total-adeudado"><div class="val">${peso(j.saldoTotal)}</div><div class="lbl">Importe total adeudado</div></div>
         <div class="mm-field fd-monto-abonar">
           <label>Monto a abonar</label>
-          <input id="fd-monto" inputmode="decimal" value="${Math.round(j.saldoTotal)||''}">
+          <input id="fd-monto" inputmode="decimal" value="${j.saldoTotal?peso(Math.round(j.saldoTotal)):''}">
         </div>
         <div id="fd-monto-error"></div>
         <div class="fd-pago-efectivo">
@@ -540,6 +614,8 @@ function fdRenderDetalle(j,nombre){
         <button type="button" class="fd-pago-directo-btn fd-pago-directo" id="fd-pago-transferencia-btn" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg> TRANSFERENCIA</button>
       </div>
     </div>`;
+  fdFormatearInputMoneda(document.getElementById('fd-monto'));
+  fdFormatearInputMoneda(document.getElementById('fd-recibido'));
   document.getElementById('fd-monto').addEventListener('input',()=>{fdCalcularVuelto();fdValidarCobro();fdRenderSugerenciasEfectivo();});
   document.getElementById('fd-recibido').addEventListener('input',()=>{fdCalcularVuelto();fdValidarCobro();});
   document.getElementById('fd-cobrar-btn').onclick=fdCobrarEfectivo;
@@ -697,19 +773,19 @@ function fdCobrarDirecto(metodo){fdState.metodoPago=metodo;fdConfirmarCobro();}
 function fdRenderSugerenciasEfectivo(){
   const box=document.getElementById('fd-sugerencias-efectivo');
   if(!box)return;
-  const monto=Number((document.getElementById('fd-monto')||{}).value)||0;
+  const monto=fdNum(document.getElementById('fd-monto'));
   const sugerencias=fdSugerenciasEfectivo(monto);
   box.innerHTML=sugerencias.map(s=>`<button type="button" class="fd-sugerencia-btn" data-monto="${s}">${peso(s)}</button>`).join('');
   box.querySelectorAll('[data-monto]').forEach(b=>b.onclick=()=>{
-    document.getElementById('fd-recibido').value=b.dataset.monto;
+    document.getElementById('fd-recibido').value=peso(Number(b.dataset.monto));
     fdCalcularVuelto();fdValidarCobro();
   });
 }
 function fdCalcularVuelto(){
   const el=document.getElementById('fd-vuelto');
   if(!el)return;
-  const monto=Number(document.getElementById('fd-monto').value)||0;
-  const recibido=Number(document.getElementById('fd-recibido').value)||0;
+  const monto=fdNum(document.getElementById('fd-monto'));
+  const recibido=fdNum(document.getElementById('fd-recibido'));
   if(!recibido){el.textContent='';return;}
   if(recibido<monto){el.style.color='var(--rojo)';el.textContent='Falta '+peso(monto-recibido);}
   else if(recibido===monto){el.style.color='var(--verde)';el.textContent='Pago exacto';}
@@ -721,14 +797,14 @@ function fdCalcularVuelto(){
 // redondeo, mismo criterio ya usado en el backend (accionFiadosEliminarLinea).
 const FD_EPS_REDONDEO=0.5;
 function fdMontoAAbonarValido(){
-  const monto=Number((document.getElementById('fd-monto')||{}).value);
+  const monto=fdNum(document.getElementById('fd-monto'));
   const deuda=(fdState.detalle&&fdState.detalle.saldoTotal)||0;
-  return isFinite(monto)&&monto>0&&monto<=deuda+FD_EPS_REDONDEO;
+  return monto>0&&monto<=deuda+FD_EPS_REDONDEO;
 }
 function fdValidarCobro(){
-  const monto=Number((document.getElementById('fd-monto')||{}).value)||0;
+  const monto=fdNum(document.getElementById('fd-monto'));
   const deuda=(fdState.detalle&&fdState.detalle.saldoTotal)||0;
-  const recibido=Number((document.getElementById('fd-recibido')||{}).value)||0;
+  const recibido=fdNum(document.getElementById('fd-recibido'));
   const montoValido=fdMontoAAbonarValido();
   const errEl=document.getElementById('fd-monto-error');
   if(errEl)errEl.textContent=(monto>deuda+FD_EPS_REDONDEO)?'El monto a abonar no puede superar la deuda.':'';
@@ -771,8 +847,8 @@ function fdMensajeConfirmacion(monto,metodoPago,recibido){
   return lineas.join('\n');
 }
 async function fdConfirmarCobro(){
-  const monto=Number(document.getElementById('fd-monto').value)||0;
-  const recibido=Number((document.getElementById('fd-recibido')||{}).value)||0;
+  const monto=fdNum(document.getElementById('fd-monto'));
+  const recibido=fdNum(document.getElementById('fd-recibido'));
   if(!confirm(fdMensajeConfirmacion(monto,fdState.metodoPago,recibido)))return;
   // Flujo de un toque (3 botones distintos pueden disparar esto: COBRAR/efectivo, POR TARJETA,
   // TRANSFERENCIA) — se deshabilitan los 3 mientras la request está en vuelo, y se restauran
