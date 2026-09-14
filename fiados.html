@@ -32,11 +32,12 @@
 html{-webkit-text-size-adjust:100%;width:100%;overflow-x:hidden}
 /* Base más grande que Marín Pedidos (16px vs 14px) — pensado para un usuario de 65+ años:
    menos esfuerzo de lectura, objetivos táctiles más grandes en cada paso. */
-body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);font-size:16px;line-height:1.5;-webkit-tap-highlight-color:transparent;width:100%;max-width:560px;margin:0 auto;padding-bottom:40px}
+/* Sin encabezado propio "Fiados" (se sacó de las 3 vistas, pantalla completa tipo POS/Loyverse
+   — ver body) — el padding-top de acá reemplaza el rol de espaciado bajo notch/status bar que
+   tenía esa barra. */
+body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);font-size:16px;line-height:1.5;-webkit-tap-highlight-color:transparent;width:100%;max-width:560px;margin:0 auto;padding-top:max(10px,env(safe-area-inset-top));padding-bottom:max(16px,env(safe-area-inset-bottom))}
 h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
 .hidden{display:none!important}
-.top{background:linear-gradient(135deg,#FBFBF7 0%,#F7F6F0 55%,#F4F2EA 100%);padding:18px 16px;padding-top:max(18px,env(safe-area-inset-top));border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
-.top h1{font-size:20px;font-weight:800;display:flex;align-items:center;gap:8px}
 .body{padding:16px max(16px,env(safe-area-inset-left)) 16px max(16px,env(safe-area-inset-right))}
 .vc-empty{padding:24px;text-align:center;color:var(--muted);font-size:14px}
 .loadbtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:#EEE6F6;border:1px solid #DFD2EC;color:#5A4A6E;border-radius:var(--radius-btn);padding:12px 14px;font-size:15px;font-weight:600;font-family:'Manrope';cursor:pointer;min-height:48px}
@@ -62,21 +63,22 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
 .fd-eye:active{background:var(--line)}
 
 /* ---- Vista B estilo checkout de Loyverse ---- */
-.fd-checkout-header{display:flex;align-items:center;gap:10px;padding:2px 2px 14px}
+.fd-checkout-header{display:flex;align-items:center;gap:10px;padding:2px 2px 10px}
 .fd-back-btn{border:none;background:var(--paper);color:var(--ink);width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer}
 .fd-back-btn:active{background:var(--line)}
 .fd-checkout-nombre{flex:1;font-size:21px;font-weight:800;color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fd-dividir-btn{border:1.5px solid var(--line);background:var(--card);color:var(--muted);border-radius:var(--radius-btn);padding:8px 12px;font-size:12.5px;font-weight:700;letter-spacing:.03em;flex:none;cursor:pointer;min-height:36px}
 
-/* NIVEL 1 — el elemento más grande de toda la pantalla, legible a ~60cm (POS/tablet). El
-   número va PRIMERO (arriba) y la etiqueta "Importe total adeudado" INMEDIATAMENTE debajo,
-   centrada — igual que Loyverse, nunca al costado ni separada. */
-.fd-total-adeudado{text-align:center;margin:12px 0 26px}
-.fd-total-adeudado .val{font-size:46px;font-weight:800;color:var(--rojo);line-height:1.05;letter-spacing:-.01em}
-.fd-total-adeudado .lbl{font-size:13.5px;color:var(--muted);font-weight:700;margin-top:6px;text-transform:uppercase;letter-spacing:.03em}
+/* NIVEL 1 — el elemento más grande de toda la pantalla, legible a ~60cm (POS/tablet), en la
+   misma proporción que el total de Loyverse (no más grande que eso). El número va PRIMERO
+   (arriba) y la etiqueta "Importe total adeudado" INMEDIATAMENTE debajo, centrada — igual que
+   Loyverse, nunca al costado ni separada. */
+.fd-total-adeudado{text-align:center;margin:8px 0 16px}
+.fd-total-adeudado .val{font-size:42px;font-weight:800;color:var(--rojo);line-height:1.05;letter-spacing:-.01em}
+.fd-total-adeudado .lbl{font-size:13px;color:var(--muted);font-weight:700;margin-top:5px;text-transform:uppercase;letter-spacing:.03em}
 
 .fd-ticket-card{border:1.5px solid var(--line);border-radius:var(--radius-card);margin-bottom:12px;background:var(--card);overflow:hidden}
-.fd-ticket-card-head{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;font-size:13px;font-weight:700;color:var(--ink);border-bottom:1px solid var(--line)}
+.fd-ticket-card-head{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;font-size:16px;font-weight:700;color:var(--ink);border-bottom:1px solid var(--line)}
 .fd-lineas-list{display:flex;flex-direction:column}
 
 /* Gesto swipe-to-delete de cada línea (estilo Loyverse): .fd-linea-swipe es el wrapper que
@@ -89,8 +91,8 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
 .fd-linea-del-btn{background:none;border:none;color:#fff;width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .fd-linea-swipe-fg{position:relative;background:var(--card);display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;transition:transform .18s ease;touch-action:pan-y}
 .fd-linea-swipe-fg.fd-dragging{transition:none}
-.fd-linea-texto{font-size:14px;color:var(--ink);min-width:0}
-.fd-linea-precio{font-size:13px;color:var(--muted);white-space:nowrap;flex:none}
+.fd-linea-texto{font-size:17px;color:var(--ink);min-width:0}
+.fd-linea-precio{font-size:16px;color:var(--muted);white-space:nowrap;flex:none}
 .fd-linea-x{background:none;border:none;color:var(--muted);opacity:.5;font-size:20px;line-height:1;padding:4px 8px;cursor:pointer;flex:none;min-width:32px;min-height:32px}
 
 /* ---- Flujo de cobro de un toque (estilo Loyverse): "Monto a abonar" más discreto que el
@@ -98,24 +100,24 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
    tarjeta/transferencia a todo el ancho que cobran directo al tocarlos. ---- */
 /* NIVEL 2 — grande: monto a abonar, vuelto, nuevo saldo. "Monto a abonar" es obligatorio
    (fdValidarCobro bloquea los medios de pago mientras no sea válido) — ver fd-monto-error. */
-.fd-monto-abonar{margin-bottom:10px}
+.fd-monto-abonar{margin-bottom:6px}
 .fd-monto-abonar label{font-size:12.5px}
-.fd-monto-abonar input{font-size:23px;height:54px;color:var(--ink);font-weight:800}
-#fd-monto-error{font-size:13px;color:var(--rojo);font-weight:700;margin:-4px 0 16px;min-height:16px}
-#fd-vuelto{font-size:19px;font-weight:800;margin-top:10px}
-#fd-nuevo-saldo{font-size:19px;font-weight:800;margin-top:8px;color:var(--ink)}
-.fd-pago-efectivo{margin-bottom:18px}
-.fd-efectivo-label{display:block;font-size:13.5px;font-weight:700;color:var(--verde);text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px}
+.fd-monto-abonar input{font-size:22px;height:48px;color:var(--ink);font-weight:800}
+#fd-monto-error{font-size:12.5px;color:var(--rojo);font-weight:700;margin:-2px 0 10px;min-height:14px}
+#fd-vuelto{font-size:18px;font-weight:800;margin-top:8px}
+#fd-nuevo-saldo{font-size:18px;font-weight:800;margin-top:6px;color:var(--ink)}
+.fd-pago-efectivo{margin-bottom:12px}
+.fd-efectivo-label{display:block;font-size:13px;font-weight:700;color:var(--verde);text-transform:uppercase;letter-spacing:.02em;margin-bottom:6px}
 .fd-efectivo-row{display:flex;gap:10px;align-items:stretch}
 .fd-efectivo-input-wrap{position:relative;flex:1;display:flex;align-items:center;color:var(--muted)}
 .fd-efectivo-input-wrap svg{position:absolute;left:14px;pointer-events:none}
-.fd-efectivo-input-wrap input{width:100%;height:56px;padding:0 14px 0 42px;border:1.5px solid var(--line);border-radius:10px;font-size:21px;font-weight:700;font-family:'Inter';background:#fff;color:var(--ink)}
-.fd-cobrar-efectivo-btn{flex:none;min-width:130px;background:var(--brand-grad);color:#fff;border:none;border-radius:var(--radius-btn);padding:0 18px;font-size:16px;font-weight:800;font-family:'Manrope';cursor:pointer;box-shadow:var(--shadow-brand)}
+.fd-efectivo-input-wrap input{width:100%;height:50px;padding:0 14px 0 42px;border:1.5px solid var(--line);border-radius:10px;font-size:20px;font-weight:700;font-family:'Inter';background:#fff;color:var(--ink)}
+.fd-cobrar-efectivo-btn{flex:none;min-width:120px;background:var(--brand-grad);color:#fff;border:none;border-radius:var(--radius-btn);padding:0 18px;font-size:15px;font-weight:800;font-family:'Manrope';cursor:pointer;box-shadow:var(--shadow-brand)}
 .fd-cobrar-efectivo-btn:disabled{opacity:.5;cursor:default;box-shadow:none}
-.fd-sugerencias{display:flex;gap:8px;margin-top:12px}
-.fd-sugerencia-btn{flex:1;border:1.5px solid var(--line);background:var(--paper);border-radius:10px;padding:14px 4px;font-size:15px;font-weight:700;color:var(--ink);cursor:pointer;min-height:50px}
+.fd-sugerencias{display:flex;gap:8px;margin-top:10px}
+.fd-sugerencia-btn{flex:1;border:1.5px solid var(--line);background:var(--paper);border-radius:10px;padding:11px 4px;font-size:14.5px;font-weight:700;color:var(--ink);cursor:pointer;min-height:44px}
 .fd-sugerencia-btn:active{background:var(--line)}
-.fd-pago-directo-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:var(--radius-btn);padding:16px;font-size:16px;font-weight:700;letter-spacing:.02em;font-family:'Manrope';cursor:pointer;min-height:58px;margin-bottom:12px}
+.fd-pago-directo-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:var(--radius-btn);padding:12px;font-size:15px;font-weight:700;letter-spacing:.02em;font-family:'Manrope';cursor:pointer;min-height:50px;margin-bottom:9px}
 .fd-pago-directo-btn:active{background:var(--paper)}
 .fd-pago-directo-btn:disabled{opacity:.4;cursor:default}
 
@@ -126,26 +128,26 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
 @media (min-width:760px){
   #fd-view-detalle{max-width:none;width:100vw;margin-left:calc(50% - 50vw);padding-left:max(24px,env(safe-area-inset-left));padding-right:max(24px,env(safe-area-inset-right))}
   .fd-checkout-grid{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:36px;align-items:start;max-width:1100px;margin:0 auto}
-  .fd-panel-ticket{max-height:calc(100dvh - 140px);overflow-y:auto;padding-right:4px}
+  .fd-panel-ticket{max-height:calc(100dvh - 110px);overflow-y:auto;padding-right:4px}
   .fd-panel-pago{max-width:520px}
-  .fd-checkout-nombre{font-size:26px}
-  .fd-total-adeudado .val{font-size:78px}
-  .fd-total-adeudado .lbl{font-size:16px}
-  .fd-monto-abonar input{font-size:30px;height:62px}
-  #fd-vuelto,#fd-nuevo-saldo{font-size:27px}
-  .fd-efectivo-label{font-size:15px}
-  .fd-efectivo-input-wrap input{font-size:27px;height:64px}
-  .fd-cobrar-efectivo-btn{font-size:19px;min-width:150px}
-  .fd-sugerencia-btn{font-size:17px;min-height:56px}
-  .fd-pago-directo-btn{font-size:19px;min-height:66px}
+  .fd-checkout-nombre{font-size:24px}
+  /* Misma proporción que el total de Loyverse en el mismo dispositivo — antes quedaba más
+     grande que la referencia (78px). */
+  .fd-total-adeudado .val{font-size:60px}
+  .fd-total-adeudado .lbl{font-size:14.5px}
+  .fd-monto-abonar input{font-size:26px;height:54px}
+  #fd-vuelto,#fd-nuevo-saldo{font-size:22px}
+  .fd-efectivo-label{font-size:14px}
+  .fd-efectivo-input-wrap input{font-size:24px;height:56px}
+  .fd-cobrar-efectivo-btn{font-size:17px;min-width:140px}
+  .fd-sugerencia-btn{font-size:16px;min-height:48px}
+  .fd-pago-directo-btn{font-size:17px;min-height:54px}
 }
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:14px 22px;border-radius:12px;font-weight:600;font-size:15px;box-shadow:0 8px 30px rgba(0,0,0,.25);transition:.3s;z-index:260;opacity:0;max-width:90vw;text-align:center;pointer-events:none}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 </style>
 </head>
 <body>
-
-  <div class="top"><h1>💰 Fiados</h1></div>
 
   <!-- Banner de instalación — se muestra/oculta por JS según la plataforma (ver fdInstall*) -->
   <div id="fd-install-box" class="hidden body" style="padding-bottom:0">
