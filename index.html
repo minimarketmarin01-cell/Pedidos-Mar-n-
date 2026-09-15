@@ -3645,7 +3645,16 @@ function avisoYaPedidoEnOtroProveedor(it,nombreProveedorActual){
   return p.proveedor?('Ya pedido a '+p.proveedor):'Ya pedido';
 }
 // Normaliza texto para comparar sin tildes/mayúsculas ("Pingüino"≈"pinguino")
-function normTxt(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+// Algunos WebView de equipos POS de bajo costo (ej. tablets con Android BlissOS) traen ICU
+// incompleto y String.prototype.normalize() puede lanzar una excepción en vez de funcionar
+// — eso rompía currentItems() entero (la búsqueda quedaba en "Sin resultados" para cualquier
+// texto, sin ningún error visible). Se degrada a comparar sin sacar tildes en vez de romper
+// toda la búsqueda cuando eso pasa.
+function normTxt(s){
+  s=String(s||'').toLowerCase();
+  try{return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+  catch(e){return s;}
+}
 function currentItems(){
   let base;
   if(state.search){const words=normTxt(state.search).trim().split(/\s+/).filter(Boolean);base=DB.items.filter(i=>{
@@ -4602,7 +4611,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-09-15.1';
+const APP_VERSION='2026-09-15.2';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -12678,7 +12687,7 @@ function rcShowPicked(it){
   // El .replace(/[-_]/g,' ') es necesario porque el nombre real del proveedor se guarda como
   // "Coca-Cola" (con guion, ver DB abajo): sin normalizar el guion a espacio, ni 'coca cola'
   // ni 'cocacola' calzaban contra "coca-cola" y la deteccion nunca activaba el modo "Con IVA".
-  const _provNorm=String(it.prov||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[-_]/g,' ');
+  const _provNorm=normTxt(it.prov).replace(/[-_]/g,' ');
   const _esProveedorConIva=/\bccu\b/.test(_provNorm)||_provNorm.includes('coca cola')||_provNorm.includes('cocacola')||/\bboom\b/.test(_provNorm);
   rcState.ivaModo=_esProveedorConIva?'con':'sin';
   rcState.ilaAplica=false; // elegir un producto nuevo no debe heredar el ILA del anterior
