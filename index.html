@@ -1316,6 +1316,17 @@ html.modo-bliss #prov-all{font-size:17px}
 .qword{font-size:9.5px;color:var(--muted);font-weight:600;font-family:'Manrope';white-space:normal;text-align:right;max-width:78px}
 .qword.gold{color:var(--gold)}
 .qpacks{font-size:9.5px;color:var(--gold);font-weight:700;font-family:'Manrope';white-space:normal;text-align:right;max-width:78px}
+/* Atajo "mínimo de pedido" por fila (ver mpToggleHTML/toggleMinimoPedido) — botón chico junto
+   al qword, discreto (mismo tono que .qword) para no competir visualmente con el stepper. */
+.mp-toggle-btn{border:none;background:none;padding:2px;margin-top:2px;line-height:0;color:var(--muted);cursor:pointer;flex:0 0 auto;-webkit-tap-highlight-color:transparent;align-self:flex-end}
+.mp-toggle-btn:active{color:var(--gold)}
+/* .mp-panel: acordeón colapsado por defecto, ocupa el ancho completo de la fila cuando se abre
+   (vive como último hijo de .card-cell, fuera de .card-row/.fila-row) — mismo contenido que
+   _gpFilaConfig() en Gestionar proveedores/Ficha de producto, solo con un fondo propio para
+   distinguirlo del resto de la fila. */
+.mp-panel{margin-top:8px;padding:10px;border-radius:10px;background:var(--paper);border:1.5px solid var(--line)}
+.mp-panel.hidden{display:none}
+.mp-panel .fp-row{padding:0}
 .row-urgent{box-shadow:inset 3px 0 0 var(--rojo-soft)}
 /* Estado de fila en versión pastel: el color vive en el borde izquierdo y en un chip suave,
    no en un fondo saturado que compita con el nombre del producto. */
@@ -3706,10 +3717,25 @@ const STK_EN_PACKS=new Set();
 // HTML del valor de STK de un producto — extraído de rowHTML para poder reusarlo también desde
 // toggleStockPacks (actualiza in-place sin repintar toda la fila, mismo criterio que
 // toggleFavorito: evita perder el scroll de la lista).
+// Convierte N unidades a "cajas/displays llenos + resto en unidades" (ej. 33 u con 1 caja=10 u
+// -> "3 cajas + 3 u"), en vez de packsOf() (que REDONDEA a la caja más cercana y esconde el
+// resto — reportado: con 3 cajas llenas y 3 unidades sueltas mostraba "3.3 cajas", un número que
+// no representa nada físico contable). Math.floor, no round: acá interesa cuántas cajas están
+// REALMENTE completas, no la más cercana.
+function packsConResto(it,n){
+  const packs=Math.floor(n/it.fmt);
+  const resto=Math.round((n-packs*it.fmt)*100)/100;
+  return {packs,resto};
+}
 function stockDisplayHTML(it,a){
   if(it.stock==null)return '<span style="color:var(--azul)">s/c</span>';
   const enPacks=STK_EN_PACKS.has(it.ref)&&it.fmt>1;
-  const fmtN=n=>enPacks?`${fmt.format(packsOf(it,n))} ${plural(it.word,packsOf(it,n))}`:fmt.format(n);
+  const fmtN=n=>{
+    if(!enPacks)return fmt.format(n);
+    const {packs,resto}=packsConResto(it,n);
+    const base=`${fmt.format(packs)} ${plural(it.word,packs)}`;
+    return resto>0?`${base} + ${fmt.format(resto)} u`:base;
+  };
   const restaAun=a.vencidoNoDescontadoAun||0;
   if(restaAun>0){
     const disp=it.stock-restaAun;
@@ -4155,6 +4181,31 @@ async function toggleFavorito(ref){
     showToast('No se pudo actualizar favorito: '+(e&&e.message?e.message:String(e)));
   }
 }
+// Botón "⚙" por fila — atajo rápido para cambiar el mínimo de pedido de ESE producto sin salir
+// de Armar pedido (antes había que entrar a la Ficha completa, 4 pasos). Abre/cierra un acordeón
+// colapsado (ver toggleMinimoPedido) que reusa TAL CUAL _gpFilaConfig(it) — el mismo editor
+// Und/Caja/Display + stepper ya usado en Gestionar proveedores → Configuración y en la Ficha del
+// producto, con el mismo autoguardado (_gpCfgOnClick/_gpCfgOnChange/_gpGuardarMultiplo,
+// delegados en #ptbody más abajo) — nada de lógica nueva, solo un lugar más rápido para llegar
+// a ella.
+function mpToggleHTML(ref){
+  return `<button type="button" class="mp-toggle-btn" onclick="event.stopPropagation();toggleMinimoPedido('${ref}')" title="Cambiar mínimo de pedido" aria-label="Cambiar mínimo de pedido"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></button>`;
+}
+// Alterna, para ESE producto puntual, el acordeón de mínimo de pedido. Se pinta PEREZOSO (recién
+// al abrirlo la primera vez, no de entrada en cada fila) — con listas de cientos de productos,
+// prellenar el editor completo en todas las filas ocultas infla el DOM sin necesidad. Un solo
+// acordeón abierto a la vez (mismo criterio que el swipe de líneas en Fiados) para que la lista
+// no crezca sin control si se van abriendo varios sin cerrar.
+function toggleMinimoPedido(ref){
+  const fila=document.querySelector('.card-cell[data-ref="'+CSS.escape(ref)+'"]');
+  const panel=fila&&fila.querySelector('[data-mp-panel-ref]');
+  if(!panel)return;
+  if(!panel.classList.contains('hidden')){panel.classList.add('hidden');return;}
+  document.querySelectorAll('[data-mp-panel-ref]').forEach(p=>{if(p!==panel)p.classList.add('hidden');});
+  const it=(DB.items||[]).find(i=>i.ref===ref);
+  if(it)panel.innerHTML=_gpFilaConfig(it);
+  panel.classList.remove('hidden');
+}
 function rowHTML(it,a,f){const cant=qOf(it,a);
   const bundles=it.fmt>1?Math.round(cant/it.fmt):cant;
   const covTxt=a.cov==null?'—':a.cov===Infinity?'∞':(a.cov>=100?'99+':fmt1(a.cov)+'d');
@@ -4218,10 +4269,14 @@ function rowHTML(it,a,f){const cant=qOf(it,a);
       .find(nombre=>nombre&&nombre!==state.prov);
     if(otro)extraProvBadge=`<span class="pend-badge" title="También se puede pedir a ${otro}">↳ también: ${otro}</span>`;
   }
+  // Acordeón de "mínimo de pedido" (ver mpToggleHTML/toggleMinimoPedido) — mismo panel colapsado
+  // en las 2 vistas, vive como último hijo de .card-cell para poder tomar el ancho completo de
+  // la fila cuando se abre, sin desarmar el maquetado de arriba.
+  const mpPanel=`<div class="mp-panel hidden" data-mp-panel-ref="${it.ref}"></div>`;
   if(document.documentElement.classList.contains('vista-filas')){
     // Pantallas grandes (BlissOS/monitor táctil): formato de fila tipo planilla — mismos
     // datos que la tarjeta (arriba), reutilizados tal cual, solo en otro maquetado.
-    const stepper=`<div class="qcell">${cambioLine}${sugHint}<div class="qstep ${cant>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}" data-step="${inStep(it)}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${(it.fmt>1||multOf(it)>1)?'gold':''}">${labelFor(it,bundles)}</span></div>`;
+    const stepper=`<div class="qcell">${cambioLine}${sugHint}<div class="qstep ${cant>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}" data-step="${inStep(it)}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${(it.fmt>1||multOf(it)>1)?'gold':''}">${labelFor(it,bundles)}</span>${mpToggleHTML(it.ref)}</div>`;
     return `<div data-ref="${it.ref}" class="card-cell ${rowEstadoCls(a)}${qOf(it,a)>0?' row-en-carrito':''}" title="${tooltip}">`+
       `<div class="fila-row">`+
         `<div class="fila-thumb">${thumb}</div>`+
@@ -4236,6 +4291,7 @@ function rowHTML(it,a,f){const cant=qOf(it,a);
         `<div class="fila-col" style="color:${covColor(a)}"><span class="fila-lbl">COB</span><span>${covTxt}</span></div>`+
         `<div class="fila-pedir">${stepper}</div>`+
       `</div>`+
+      mpPanel+
     `</div>`;
   }
   return `<div data-ref="${it.ref}" class="card-cell ${rowEstadoCls(a)}${qOf(it,a)>0?' row-en-carrito':''}" title="${tooltip}">`+
@@ -4251,8 +4307,9 @@ function rowHTML(it,a,f){const cant=qOf(it,a);
           `<span class="cstat cstat-cov" style="color:${covColor(a)}"><span class="cstat-label" style="color:inherit">COB</span> ${covTxt}</span>`+
         `</div>`+
       `</div>`+
-      `<div class="card-stepper"><div class="qcell">${cambioLine}${sugHint}<div class="qstep ${cant>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}" data-step="${inStep(it)}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${(it.fmt>1||multOf(it)>1)?'gold':''}">${labelFor(it,bundles)}</span></div></div>`+
+      `<div class="card-stepper"><div class="qcell">${cambioLine}${sugHint}<div class="qstep ${cant>0?'has':''}"><button class="qbtn" data-d="-1">−</button><input class="qty-in" inputmode="numeric" pattern="[0-9]*" value="${bundles}" data-ref="${it.ref}" data-fmt="${it.fmt}" data-step="${inStep(it)}"><button class="qbtn" data-d="1">+</button></div><span class="qword ${(it.fmt>1||multOf(it)>1)?'gold':''}">${labelFor(it,bundles)}</span>${mpToggleHTML(it.ref)}</div></div>`+
     `</div>`+
+    mpPanel+
   `</div>`;
 }
 function tableScrollEl(){const tb=document.getElementById('ptbody');return tb?tb.closest('.tbl-scroll'):null;}
@@ -4657,7 +4714,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-09-17.1';
+const APP_VERSION='2026-09-17.2';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -6918,6 +6975,12 @@ document.getElementById('ptbody').addEventListener('click',ev=>{
   const tr=nom.closest('[data-ref]');
   if(tr)fpAbrir(tr.dataset.ref);
 });
+// Delegados para el acordeón de mínimo de pedido dentro de Armar pedido (ver mpToggleHTML/
+// toggleMinimoPedido) — reusa TAL CUAL los manejadores ya factorizados para Gestionar
+// proveedores → Configuración y la Ficha del producto (_gpCfgOnClick/_gpCfgOnChange, más abajo
+// en este archivo — function declaration, con hoisting, así que da igual el orden textual).
+document.getElementById('ptbody').addEventListener('click',_gpCfgOnClick);
+document.getElementById('ptbody').addEventListener('change',_gpCfgOnChange);
 // En Reconteo el nombre es solo informativo — a diferencia de Pedidos, acá NO abre la Ficha,
 // para no interrumpir el flujo de contar/escribir stock por accidente al tocar el nombre.
 const rkState={cat:'',search:'',sort:'nombre',dir:1};
@@ -8078,6 +8141,14 @@ async function _gpGuardarMultiplo(ref,fila,valorEnUnidades,empaqueEnUnidades,pal
     // El próximo guardado (cuando saquen el foco, vía el evento 'change') sí repinta normal.
     const activo=document.activeElement;
     const sigueEditando=fila&&(activo===fila.querySelector('[data-gp-cfg-num]')||activo===fila.querySelector('[data-gp-cfg-empaque]'));
+    // Acordeón de mínimo de pedido dentro de Armar pedido (ver mpToggleHTML/toggleMinimoPedido)
+    // — a diferencia de #fp-pane-minimo/#gp-prod-lista (siempre fuera de #ptbody, por eso el
+    // render() de más abajo nunca los tocaba), este panel vive DENTRO de #ptbody: un
+    // render()/renderTable() completo ahí destruiría el propio panel/input a mitad de edición y
+    // reiniciaría el scroll de toda la lista (mismo motivo por el que toggleFavorito tampoco usa
+    // render() completo). Se calcula ya acá, fuera del if de abajo, porque también hace falta
+    // para decidir si el render() final de esta función corre o no.
+    const enPanelPedidos=fila&&fila.closest&&fila.closest('[data-mp-panel-ref]');
     if(!sigueEditando){
       // Esta misma fila se reusa dentro de la Ficha del producto (fpPaneMinimo) — ahí no hay
       // lista de Configuración que re-renderizar, solo hay que repintar el propio pane con el
@@ -8088,6 +8159,22 @@ async function _gpGuardarMultiplo(ref,fila,valorEnUnidades,empaqueEnUnidades,pal
       if(enFicha){
         const itActualizado=DB.items.find(x=>x.ref===ref);
         if(itActualizado)document.getElementById('fp-pane-minimo').innerHTML=_gpFilaConfig(itActualizado);
+      }else if(enPanelPedidos){
+        // Se repinta SOLO la fila puntual que se acaba de editar (rowHTML ya refleja el
+        // fmt/min recién guardado, vía DB.items actualizado + retagAll() de arriba) y se deja
+        // el panel abierto con el resultado, por si el usuario sigue ajustando.
+        const itActualizado=DB.items.find(x=>x.ref===ref);
+        const celda=enPanelPedidos.closest('.card-cell');
+        if(itActualizado&&celda&&_tbState){
+          celda.outerHTML=rowHTML(itActualizado,analyze(itActualizado),_tbState.f);
+          const nuevaCelda=document.querySelector('.card-cell[data-ref="'+CSS.escape(ref)+'"]');
+          const nuevoPanel=nuevaCelda&&nuevaCelda.querySelector('[data-mp-panel-ref]');
+          if(nuevoPanel){nuevoPanel.innerHTML=_gpFilaConfig(itActualizado);nuevoPanel.classList.remove('hidden');}
+        }
+        // El fmt/min recién guardado puede cambiar cómo se interpreta una cantidad YA puesta en
+        // el carrito para este producto (unidades vs. packs) — se refresca el carrito/escala,
+        // pero SIN renderTable() (ver el comentario de enPanelPedidos, arriba).
+        try{renderOrder();renderScale();}catch(_){}
       }else{
         if(_gpProvActual)_gpProdListaCompleta=itemsFor(_gpProvActual.nombre).slice().sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),'es'));
         if(_gpModo==='config'){
@@ -8096,7 +8183,10 @@ async function _gpGuardarMultiplo(ref,fila,valorEnUnidades,empaqueEnUnidades,pal
         }
       }
     }
-    try{render();}catch(_){}
+    // Igual que antes: corre pase lo que pase con sigueEditando (Ficha/Configuración viven
+    // fuera de #ptbody, nunca se ven afectados) — salvo el panel de Armar pedido, que ya se
+    // encargó de refrescar lo que corresponde sin tocar renderTable().
+    if(!enPanelPedidos)try{render();}catch(_){}
     showToast('Mínimo actualizado');
   }catch(e){
     showToast('No se pudo guardar el mínimo: '+(e&&e.message?e.message:String(e)));
@@ -14870,8 +14960,14 @@ document.getElementById('btn-copy').onclick=()=>confirmarPedidoConCanal('whatsap
 
 // listeners delegados (no reconstruyen la tabla -> el teclado no se cierra)
 (function(){const tb=document.getElementById('ptbody');
-  tb.addEventListener('click',e=>{const b=e.target.closest('.qbtn');if(b)stepQty(b);});
-  tb.addEventListener('input',e=>{if(e.target.classList&&e.target.classList.contains('qty-in'))onQty(e.target);});
+  // data-gp-cfg-d/data-gp-cfg-num: el editor de mínimo de pedido (ver mpToggleHTML,
+  // _gpFilaConfig) reusa las clases .qbtn/.qty-in tal cual para heredar el mismo estilo visual
+  // del stepper del carrito — pero NO es un stepper de carrito (no tiene data-ref/data-fmt, ni
+  // vive dentro de .qcell), así que hay que excluirlo acá para no llamar stepQty()/onQty() sobre
+  // él por error (reventaba: inp.closest('.qcell') daba null). Esos controles ya los maneja
+  // _gpCfgOnClick/_gpCfgOnChange (delegados aparte, ver más abajo en el archivo).
+  tb.addEventListener('click',e=>{const b=e.target.closest('.qbtn');if(b&&!b.hasAttribute('data-gp-cfg-d'))stepQty(b);});
+  tb.addEventListener('input',e=>{if(e.target.classList&&e.target.classList.contains('qty-in')&&!e.target.hasAttribute('data-gp-cfg-num'))onQty(e.target);});
 })();
 // ===================== PANEL PROVEEDORES DEL DÍA =====================
 // Días: Dom=0 Lun=1 Mar=2 Mié=3 Jue=4 Vie=5 Sáb=6
