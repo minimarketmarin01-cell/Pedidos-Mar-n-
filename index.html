@@ -3724,14 +3724,25 @@ function packsConResto(it,n){
   const resto=Math.round((n-packs*it.fmt)*100)/100;
   return {packs,resto};
 }
+// Abreviatura de la palabra de empaque SOLO para el toggle de STK en packs — esa columna
+// (.fila-col en vista-filas) es angosta y de ancho fijo (white-space:nowrap;overflow:hidden,
+// sin elipsis), así que "3 cajas + 3 u" queda cortado por ambos lados (reportado con captura:
+// se veía "cajas + 5"/"displays + :" en vez del número completo). No toca it.word en ningún
+// otro lugar (carrito, WhatsApp, etc.) donde sí sobra espacio y conviene la palabra completa.
+const ABREV_PACK={caja:'cj',display:'disp'};
+function abrevPalabraPack(w){
+  const key=String(w||'').toLowerCase();
+  return ABREV_PACK[key]||key.slice(0,4);
+}
 function stockDisplayHTML(it,a){
   if(it.stock==null)return '<span style="color:var(--azul)">s/c</span>';
   const enPacks=STK_EN_PACKS.has(it.ref)&&it.fmt>1;
   const fmtN=n=>{
     if(!enPacks)return fmt.format(n);
     const {packs,resto}=packsConResto(it,n);
-    const base=`${fmt.format(packs)} ${plural(it.word,packs)}`;
-    return resto>0?`${base} + ${fmt.format(resto)} u`:base;
+    const abreviado=`${fmt.format(packs)}${abrevPalabraPack(it.word)}`+(resto>0?`+${fmt.format(resto)}u`:'');
+    const completo=`${fmt.format(packs)} ${plural(it.word,packs)}`+(resto>0?` + ${fmt.format(resto)} u`:'');
+    return `<span title="${completo}">${abreviado}</span>`;
   };
   const restaAun=a.vencidoNoDescontadoAun||0;
   if(restaAun>0){
@@ -4711,7 +4722,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-09-17.3';
+const APP_VERSION='2026-09-17.4';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
