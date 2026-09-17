@@ -2428,10 +2428,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
                 </div>
                 <div class="mm-field hidden" id="rc-nombre-box" style="margin-top:6px">
                   <label>Corregir nombre del producto</label>
-                  <div style="display:flex;gap:6px">
-                    <input id="rc-nombre-input" style="flex:1;min-width:0;padding:7px 9px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px" autocomplete="off">
-                    <button class="loadbtn" id="rc-nombre-guardar" type="button" style="white-space:nowrap;padding:7px 10px;font-size:12px">Guardar</button>
-                  </div>
+                  <input id="rc-nombre-input" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px" autocomplete="off">
                 </div>
                 <div class="cat" id="rc-costo-actual" style="margin-top:2px">Costo actual: —</div>
                 <div class="cat" id="rc-precio-actual" style="margin-top:2px">Precio actual: —</div>
@@ -4714,7 +4711,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-09-17.2';
+const APP_VERSION='2026-09-17.3';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -13031,34 +13028,25 @@ document.getElementById('rc-activar-inv').onclick=async()=>{
   }
 };
 // Renombrar desde Recepción — reutiliza la misma acción "editar_producto" que ya usa la
-// pestaña de Factura escaneada, sin ningún endpoint nuevo. Solo visible/habilitado con
-// stock 0 (ver rcShowPicked).
-document.getElementById('rc-nombre-guardar').onclick=async()=>{
-  const it=rcState.item;if(!it)return;
+// pestaña de Factura escaneada, sin ningún endpoint nuevo. Sin botón propio: se llama sola
+// desde los botones "Guardar" principales (Guardar stock / Guardar y sumar stock / Guardar
+// costo y precio) para que corregir el nombre no requiera un guardado aparte — si el campo
+// no cambió, no hace ninguna llamada de red.
+async function rcGuardarNombreSiCambio(it){
   const nombreNuevo=(document.getElementById('rc-nombre-input').value||'').trim();
-  if(!nombreNuevo){showToast('El nombre no puede quedar vacío');return;}
-  if(nombreNuevo===it.nombre){showToast('El nombre no cambió');return;}
-  const btn=document.getElementById('rc-nombre-guardar');
-  btn.disabled=true;btn.textContent='Guardando…';
-  const ctrl=new AbortController();
-  const to=setTimeout(()=>ctrl.abort(),25000);
+  if(!nombreNuevo||nombreNuevo===it.nombre)return;
   try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_producto',payload:{sku:it.ref,nombre:nombreNuevo}}),signal:ctrl.signal});
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_producto',payload:{sku:it.ref,nombre:nombreNuevo}})});
     const j=await res.json();
     if(j&&j.ok){
       it.nombre=nombreNuevo;persist();
       document.getElementById('rc-nom').textContent=nombreNuevo;
       document.getElementById('rc-search').value=nombreNuevo;
-      showToast('Nombre actualizado: '+nombreNuevo);
-      render();
-    }else{showToast('Error: '+((j&&j.error)||'no se pudo renombrar'));}
+    }else{showToast('Error al actualizar el nombre: '+((j&&j.error)||'no se pudo renombrar'));}
   }catch(e){
-    showToast(e.name==='AbortError'?'Tardó demasiado en responder — revisa si se guardó antes de reintentar':'Error de conexión al renombrar');
-  }finally{
-    clearTimeout(to);
-    btn.disabled=false;btn.textContent='Guardar';
+    showToast('Error de conexión al actualizar el nombre');
   }
-};
+}
 function rcValidar(){
   const btn=document.getElementById('rc-guardar');
   if(rcGuardando)return; // no tocar disabled/texto mientras hay un guardado en curso
@@ -13155,6 +13143,7 @@ async function rcAjustarGuardar(){
   const btn=document.getElementById('rc-ajustar-guardar');
   btn.disabled=true;btn.textContent='Guardando…';
   try{
+    await rcGuardarNombreSiCambio(it);
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'ajustar_stock',payload:{sku:it.ref,stockNuevo:nuevo,responsable:''}})});
     const j=await res.json();
     if(j&&j.ok){
@@ -13631,6 +13620,7 @@ document.getElementById('rc-guardar').onclick=async()=>{
   const uCaja=Number(document.getElementById('rc-unidades-caja').value)||0;
   const cantidad=(rcState.modo==='caja'&&uCaja>0)?(cantIngresada*uCaja):cantIngresada;
   if(cantidad<0){showToast('Cantidad inválida');return;}
+  await rcGuardarNombreSiCambio(it);
   // Cantidad=0: no hay nada que recibir — si costo/precio cambiaron, se guardan solos, sin
   // crear ningún lote de vencimiento ni tocar stock (ver rcGuardarSoloPrecio).
   if(cantidad===0){await rcGuardarSoloPrecio(it);return;}
