@@ -4722,7 +4722,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-09-17.4';
+const APP_VERSION='2026-09-21.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -6507,10 +6507,12 @@ function fpPaneProveedores(f){
   });
   // Combo real de Proveedor principal — mismo componente (buscar + crear nuevo) que ya usa
   // Crear producto, solo con IDs propios de esta pestaña (fp-pv-prov-*) para no chocar.
+  // Wireado YA, sin esperar la red (ver comentario en psInitCombo).
+  psInitCombo('fp-pv-prov','fp-pv-prov-combo','fp-pv-prov-input','fp-pv-prov-menu','fp-pv-prov','proveedor',
+    async texto=>{const p=await psCrearProveedorInline(texto);return{id:p.id,nombre:p.nombre};});
   psCargarListas().then(()=>{
     psLlenarSelects('fp-pv-prov','fp-pv-sector-dummy',p.proveedorId,null);
-    psInitCombo('fp-pv-prov','fp-pv-prov-combo','fp-pv-prov-input','fp-pv-prov-menu','fp-pv-prov','proveedor',
-      async texto=>{const p=await psCrearProveedorInline(texto);return{id:p.id,nombre:p.nombre};});
+    psRefrescarCombo('fp-pv-prov');
     // Selector "También pedir a" — solo proveedores WebApp que no sean ya el principal ni
     // estén ya en la lista de adicionales, para no ofrecer duplicados.
     const sel=document.getElementById('fp-provid-select');
@@ -6598,9 +6600,11 @@ function fpPaneSector(f){
   // uno oculto y desconectado (no se envía) solo para satisfacer la firma de la función. El
   // Proveedor real ahora tiene su propio campo visible y funcional en la pestaña Proveedores
   // (fp-pv-prov-*) — este dummy es puramente técnico, no representa un campo editable acá.
+  // Wireado YA, sin esperar la red (ver comentario en psInitCombo).
+  psInitCombo('fp-s-proveedor-dummy','fp-s-sector-combo','fp-s-sector-input','fp-s-sector-menu','fp-s-sector','sector');
   psCargarListas().then(()=>{
     psLlenarSelects('fp-s-proveedor-dummy','fp-s-sector',p.proveedorId,p.sector);
-    psInitCombo('fp-s-proveedor-dummy','fp-s-sector-combo','fp-s-sector-input','fp-s-sector-menu','fp-s-sector','sector');
+    psRefrescarCombo('fp-s-proveedor-dummy');
   });
   psWireNuevoSector('fp-s-sector-nueva','fp-s-sector-nuevabox','fp-s-sector-nuevonom','fp-s-sector-crear','fp-s-proveedor-dummy','fp-s-sector');
   document.getElementById('fp-s-sugerir').onclick=()=>{
@@ -7517,7 +7521,20 @@ function psInitCombo(key,wrapId,inputId,menuId,selectId,tipo,onCreateNueva){
     onCreateNueva,
     placeholderNueva:tipo==='proveedor'?'Crear proveedor':null
   });
-  if(inst)_psCombosVivos[key]=inst;
+  if(inst){inst.inputId=inputId;_psCombosVivos[key]=inst;}
+}
+// psInitCombo se llama YA al abrir la pantalla, sin esperar a que psCargarListas() resuelva
+// (ver cpAbrir/fpPaneProveedores/fpPaneSector/mcAbrir) — así el campo queda tocable de
+// inmediato, aunque la lista todavía esté vacía (reportado: en redes lentas, tocar "Buscar
+// proveedor"/"Buscar sector" justo al abrir no hacía nada, porque el combo recién se conectaba
+// dentro del .then() de psCargarListas()). getItems() ya lee _psProveedores/_psSectores en
+// vivo, así que solo falta refrescar el contenido ya pintado una vez que los datos lleguen de
+// verdad — se llama después de psCargarListas().then(), sea que el menú esté abierto o no.
+function psRefrescarCombo(key){
+  const inst=_psCombosVivos[key];
+  if(!inst)return;
+  const input=document.getElementById(inst.inputId);
+  inst.render(input?input.value:'');
 }
 // ===================== Renombrar proveedor / sector =====================
 // Modal único y genérico, reutilizado desde cualquier combo de proveedor/sector que tenga el
@@ -8470,12 +8487,15 @@ document.getElementById('mc-scan').onclick=()=>{
 function mcAbrir(){
   abrirModal('mc-ov');
   mcCargarCategorias();
+  // Wireado YA, sin esperar la red (ver comentario en psInitCombo).
+  psInitCombo('mcg-prov','mcg-prov-combo','mcg-prov-input','mcg-prov-menu','mcg-prov','proveedor',
+    async texto=>{const p=await psCrearProveedorInline(texto);return{id:p.id,nombre:p.nombre};});
+  psInitCombo('mcg-sect','mcg-sect-combo','mcg-sect-input','mcg-sect-menu','mcg-sect','sector',
+    async texto=>{const s=await psCrearSectorInline(texto);return{id:s,nombre:s};});
   psCargarListas().then(()=>{
     psLlenarSelects('mcg-prov','mcg-sect',null,null);
-    psInitCombo('mcg-prov','mcg-prov-combo','mcg-prov-input','mcg-prov-menu','mcg-prov','proveedor',
-      async texto=>{const p=await psCrearProveedorInline(texto);return{id:p.id,nombre:p.nombre};});
-    psInitCombo('mcg-sect','mcg-sect-combo','mcg-sect-input','mcg-sect-menu','mcg-sect','sector',
-      async texto=>{const s=await psCrearSectorInline(texto);return{id:s,nombre:s};});
+    psRefrescarCombo('mcg-prov');
+    psRefrescarCombo('mcg-sect');
   });
   psWireNuevoProveedor('mcg-prov-nueva','mcg-prov-nuevabox','mcg-prov-nuevonom','mcg-prov-crear','mcg-prov','mcg-sect');
   psWireNuevoSector('mcg-sect-nueva','mcg-sect-nuevabox','mcg-sect-nuevonom','mcg-sect-crear','mcg-prov','mcg-sect');
@@ -8763,11 +8783,15 @@ function cpAbrir(opts){
     if(opts.categoriaDefaultNombre&&catP&&catP.then)catP.then(()=>{try{cpPreseleccionarCategoriaPorNombre(opts.categoriaDefaultNombre);}catch(e){}}).catch(()=>{});
   }catch(e){}
   try{
+    // Wireado YA, sin esperar la red (ver comentario en psInitCombo) — el campo queda tocable
+    // de inmediato aunque la lista todavía no haya llegado.
+    psInitCombo('cp-proveedor','cp-prov-combo','cp-proveedor-input','cp-prov-menu','cp-proveedor','proveedor',
+      async texto=>{const p=await psCrearProveedorInline(texto);return{id:p.id,nombre:p.nombre};});
+    psInitCombo('cp-sector','cp-sector-combo','cp-sector-input','cp-sector-menu','cp-sector','sector');
     psCargarListas().then(()=>{
       psLlenarSelects('cp-proveedor','cp-sector',null,null);
-      psInitCombo('cp-proveedor','cp-prov-combo','cp-proveedor-input','cp-prov-menu','cp-proveedor','proveedor',
-        async texto=>{const p=await psCrearProveedorInline(texto);return{id:p.id,nombre:p.nombre};});
-      psInitCombo('cp-sector','cp-sector-combo','cp-sector-input','cp-sector-menu','cp-sector','sector');
+      psRefrescarCombo('cp-proveedor');
+      psRefrescarCombo('cp-sector');
     }).catch(e=>{});
   }catch(e){}
   try{psWireNuevoProveedor('cp-prov-nueva','cp-prov-nuevabox','cp-prov-nuevonom','cp-prov-crear','cp-proveedor','cp-sector');}catch(e){}
