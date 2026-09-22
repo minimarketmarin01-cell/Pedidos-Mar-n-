@@ -4722,7 +4722,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-09-21.1';
+const APP_VERSION='2026-09-22.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -12908,22 +12908,38 @@ function rcRenderProveedores(it){
       _psProveedores.filter(p=>!asignados.has(Number(p.id))).map(p=>'<option value="'+p.id+'">'+p.nombre+'</option>').join('');
   });
 }
-// Últimos 5 movimientos de stock del producto elegido en Recepción — reutiliza action=ficha_producto
-// (mismo endpoint que ya usa la Ficha) en vez de crear un reporte nuevo. Solo "recepcion_stock" con
+// Últimos 5 movimientos de stock del producto elegido en Recepción. Solo "recepcion_stock" con
 // cantidad guardada es eliminable (revierte el stock); "reconteo_stock" se muestra para contexto,
 // nunca con botón de borrar (fija el stock a un valor absoluto, sin cantidad que revertir).
+// Usa action=movimientos_producto (una sola consulta ya filtrada) en vez de action=ficha_producto:
+// esa traía la ficha completa (~10 consultas seriales y un payload grande) para quedarse solo con
+// estas 5 filas — reportado: "Cargando movimientos…" se quedaba pegado mucho rato.
+// El timeout es obligatorio acá: sin él, una respuesta que nunca llega dejaba el bloque en
+// "Cargando movimientos…" para siempre, sin error y sin forma de reintentar.
 async function rcRenderMovimientos(it){
   const box=document.getElementById('rc-movs');
   if(!box)return;
   box.classList.remove('hidden');
   box.innerHTML='<div class="vc-empty">Cargando movimientos…</div>';
+  const fallo=msg=>{
+    box.innerHTML='<div class="vc-empty">'+msg+' <button type="button" class="loadbtn" id="rc-movs-reintentar" style="margin-left:6px">Reintentar</button></div>';
+    const b=document.getElementById('rc-movs-reintentar');
+    if(b)b.onclick=()=>{if(rcState.item)rcRenderMovimientos(rcState.item);};
+  };
+  const ctrl=new AbortController();
+  const to=setTimeout(()=>ctrl.abort(),12000);
   try{
-    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=ficha_producto&sku='+encodeURIComponent(it.ref));
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=movimientos_producto&sku='+encodeURIComponent(it.ref),{signal:ctrl.signal});
     const j=await res.json();
-    if(!j||!j.ok){box.innerHTML='<div class="vc-empty">No se pudieron cargar los movimientos.</div>';return;}
-    const movs=(j.ficha.movimientos||[]).filter(m=>m.accion==='recepcion_stock'||m.accion==='reconteo_stock').slice(0,5);
-    rcPintarMovimientos(movs);
-  }catch(e){box.innerHTML='<div class="vc-empty">Error de conexión al cargar movimientos.</div>';}
+    // Si mientras respondía se eligió otro producto, esta respuesta ya no corresponde: se descarta
+    // en vez de pintar los movimientos del producto anterior encima del actual.
+    if(!rcState.item||rcState.item.ref!==it.ref)return;
+    if(!j||!j.ok){fallo('No se pudieron cargar los movimientos.');return;}
+    rcPintarMovimientos(j.movimientos||[]);
+  }catch(e){
+    if(!rcState.item||rcState.item.ref!==it.ref)return;
+    fallo(e.name==='AbortError'?'Tardó demasiado en responder.':'Error de conexión al cargar movimientos.');
+  }finally{clearTimeout(to);}
 }
 function rcPintarMovimientos(movs){
   const box=document.getElementById('rc-movs');
