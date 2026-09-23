@@ -4722,7 +4722,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-09-22.1';
+const APP_VERSION='2026-09-23.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -5928,7 +5928,16 @@ function fpPaneGeneral(f){
         '<button type="button" id="fp-i-recuento-guardar" style="width:100%;margin-top:8px;padding:10px;border-radius:10px;border:1.5px solid var(--gold);background:var(--gold-bg);color:var(--gold);font-weight:700;font-size:13px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg> Guardar stock</button>'
       ):'<div class="cat">Activa "Seguir inventario" para poder recontar.</div>')+
       fpCampo('Stock mínimo (opcional)','<input id="fp-i-stockmin" type="number" inputmode="numeric" value="'+(p.stockMinimo!=null?p.stockMinimo:'')+'" placeholder="Ej: 5" style="width:100%;padding:9px 12px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;font-family:\'JetBrains Mono\';margin-top:10px">')+
+    '</div>'+
+    // "¿Está de verdad en Loyverse?" — consulta directa a Loyverse, sin pasar por la copia
+    // local. Nació de un caso real: un producto creado desde acá no aparecía en el buscador de
+    // la caja y no había forma de saber, desde la app, si el problema era que no había llegado
+    // a Loyverse o que había llegado pero sin quedar disponible para la venta.
+    '<div style="margin:-4px 0 14px">'+
+      '<button type="button" id="fp-verif-btn" class="loadbtn" style="width:100%">🔍 Verificar en Loyverse</button>'+
+      '<div id="fp-verif-res" class="hidden" style="margin-top:8px;font-size:13px;line-height:1.45"></div>'+
     '</div>';
+  { const vb=document.getElementById('fp-verif-btn'); if(vb)vb.onclick=()=>fpVerificarLoyverse(p.sku); }
   document.querySelectorAll('#fp-g-nombre,#fp-g-barcode').forEach(el=>el&&el.addEventListener('input',fpGuardarBorrador));
   const stockMinInp=document.getElementById('fp-i-stockmin');
   if(stockMinInp)stockMinInp.addEventListener('input',fpGuardarBorrador);
@@ -6098,6 +6107,64 @@ async function fpGuardarRecuento(sku){
   }
 }
 // ==== SECCIÓN 2 — UNIDAD: unidad vs. peso (kg) ====
+// Pregunta a Loyverse, en vivo, qué tiene de ESTE producto — sin mirar la copia local. Un
+// artículo puede estar creado en Loyverse pero marcado como NO disponible para la venta en la
+// tienda: en ese caso existe en el Back Office pero NO aparece en el buscador de la caja, que
+// es un síntoma imposible de distinguir desde la app hasta ahora ("lo creé y no sale").
+async function fpVerificarLoyverse(sku){
+  const box=document.getElementById('fp-verif-res'),btn=document.getElementById('fp-verif-btn');
+  if(!box)return;
+  box.classList.remove('hidden');
+  box.innerHTML='<span class="cat">Consultando a Loyverse…</span>';
+  if(btn)btn.disabled=true;
+  const ctrl=new AbortController();
+  const to=setTimeout(()=>ctrl.abort(),20000);
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=verificar_producto_loyverse&sku='+encodeURIComponent(sku),{signal:ctrl.signal});
+    const j=await res.json();
+    if(!j||!j.ok){box.innerHTML='<span style="color:var(--rojo)">No se pudo verificar: '+((j&&j.error)||'error desconocido')+'</span>';return;}
+    const v=j.verificacion||{};
+    if(!v.existeEnLoyverse){
+      box.innerHTML='<span style="color:var(--rojo);font-weight:700">❌ No está en Loyverse.</span><br>'+
+        '<span class="cat">'+(v.motivo||'')+' Hay que crearlo de nuevo.</span>';
+      return;
+    }
+    if(!v.enEstaTienda||!v.disponibleParaVenta){
+      const causa=!v.enEstaTienda
+        ? 'Está en Loyverse pero NO asignado a tu tienda.'
+        : 'Está en Loyverse pero marcado como NO disponible para la venta.';
+      box.innerHTML='<span style="color:var(--ambar);font-weight:700">⚠️ '+causa+'</span><br>'+
+        '<span class="cat">Por eso no aparece en el buscador de la caja.</span>'+
+        '<button type="button" id="fp-verif-reparar" class="btn-ok loadbtn" style="width:100%;margin-top:8px">Arreglar ahora</button>';
+      const rb=document.getElementById('fp-verif-reparar');
+      if(rb)rb.onclick=()=>fpRepararLoyverse(sku);
+      return;
+    }
+    box.innerHTML='<span style="color:var(--verde);font-weight:700">✅ Está en Loyverse y disponible para la venta'+
+      (v.precioEnTienda!=null?(' ('+peso(v.precioEnTienda)+')'):'')+'.</span><br>'+
+      '<span class="cat">Si aún no lo ves en la caja, cerrá por completo la app de Loyverse y volvé a abrirla para que baje el catálogo nuevo.</span>';
+  }catch(e){
+    box.innerHTML='<span style="color:var(--rojo)">'+(e.name==='AbortError'?'Loyverse tardó demasiado en responder.':'Error de conexión al verificar.')+'</span>';
+  }finally{clearTimeout(to);if(btn)btn.disabled=false;}
+}
+async function fpRepararLoyverse(sku){
+  const rb=document.getElementById('fp-verif-reparar');
+  if(rb){rb.disabled=true;rb.textContent='Arreglando…';}
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'reparar_disponibilidad_loyverse',payload:{sku:sku}})});
+    const j=await res.json();
+    if(j&&j.ok){
+      showToast(j.mensaje||'Listo');
+      fpVerificarLoyverse(sku); // vuelve a preguntar para mostrar el estado real, no el esperado
+    }else{
+      showToast('No se pudo arreglar: '+((j&&j.error)||'error desconocido'));
+      if(rb){rb.disabled=false;rb.textContent='Arreglar ahora';}
+    }
+  }catch(e){
+    showToast('Error de conexión al arreglar');
+    if(rb){rb.disabled=false;rb.textContent='Arreglar ahora';}
+  }
+}
 function fpPaneUnidad(f){
   const p=f.producto;
   const pane=document.getElementById('fp-pane-unidad');
