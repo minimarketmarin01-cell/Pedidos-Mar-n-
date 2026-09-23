@@ -2524,12 +2524,17 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         </div>
 
         </div>
-        <!-- Guardar/Cancelar fuera de .mm-body (que scrollea) — quedan siempre visibles
-             abajo, sin depender de hasta dónde haya bajado el usuario. El botón Guardar
-             solo aparece cuando ya hay un producto elegido (ver rc-detalle arriba). -->
+        <!-- Guardar fuera de .mm-body (que scrollea) — queda siempre visible abajo, sin
+             depender de hasta dónde haya bajado el usuario. Solo aparece cuando ya hay un
+             producto elegido (ver rc-detalle arriba).
+             Acá había además un botón "Cancelar" a todo el ancho, pegado debajo de Guardar:
+             se tocaba de casualidad y descartaba la recepción a medio cargar (reportado). Se
+             quitó y no se reemplazó por otro botón a propósito — para salir ya están la barra
+             inferior y el botón atrás del teléfono, y esas dos salidas CONSERVAN el borrador
+             (cerrarOverlays solo esconde; openRecibir lo restaura con rcCargarBorrador),
+             mientras que Cancelar era la única salida que lo borraba. -->
         <div id="rc-footer" style="padding:8px 16px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--line);flex:none;background:var(--card)">
           <button class="mm-save hidden" id="rc-guardar" disabled style="padding:11px">Guardar y sumar stock</button>
-          <button class="loadbtn" id="rc-cancelar" style="width:100%;margin-top:6px;padding:9px">Cancelar</button>
         </div>
       </div>
     </div>
@@ -4722,7 +4727,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-09-23.1';
+const APP_VERSION='2026-09-23.2';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -13292,19 +13297,19 @@ function openRecibir(){
   abrirModal('rc-ov');
   try{const d=rcCargarBorrador();if(d)rcAplicarBorrador(d);}catch(e){}
 }
-// Al cancelar, se reinicia el formulario ANTES de cerrar — mismo criterio que ya usa el
-// guardado exitoso (rcReset() ahí abajo, tras "Guardar y sumar stock"). Antes esto solo
-// cerraba el modal sin limpiar rcState, así que la próxima vez que se abriera Recepción
-// (desde el botón de nav, Inicio, o el menú) seguía mostrando el producto ya cancelado con
-// su costo/margen/modo unidad-caja/IVA pegados, en vez de arrancar listo para escanear otro.
+// Cierra Recepción DESCARTANDO lo que había cargado: reinicia el formulario y borra el
+// borrador antes de cerrar, para que la próxima vez arranque limpia en vez de revivir el
+// producto anterior con su costo/margen/modo unidad-caja/IVA pegados.
+// Ya no hay ningún botón "Cancelar" que llame a esto (se quitó del pie: se tocaba de
+// casualidad junto a Guardar y descartaba la recepción a medio cargar). Queda solo para el
+// escáner, que cierra y reabre la pantalla alrededor de la cámara.
 function closeRecibir(){
   rcReset();
-  rcLimpiarBorrador(); // se canceló a propósito — un F5 después no debe revivir este borrador
+  rcLimpiarBorrador();
   cerrarModal('rc-ov');
 }
 
 document.getElementById('btn-recibir').onclick=openRecibir;
-document.getElementById('rc-cancelar').onclick=closeRecibir;
 // ===================== Recepción: "Guardar" siempre visible sobre el teclado =====================
 // #rc-ov es position:fixed;inset:0 con altura 100% del layout viewport; el footer #rc-footer
 // (Guardar/Cancelar) queda pegado a su fondo por flexbox — eso YA lo mantiene visible y respeta
