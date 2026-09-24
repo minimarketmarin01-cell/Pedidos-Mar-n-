@@ -4727,7 +4727,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-09-23.3';
+const APP_VERSION='2026-09-24.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -8528,7 +8528,7 @@ document.getElementById('mc-scan').onclick=()=>{
   openScanner(async code=>{
     reopen();
     const codeNorm=String(code||'').trim();
-    const exacto=(DB.items||[]).filter(i=>String(i.barcode||'').trim()===codeNorm);
+    const exacto=(DB.items||[]).filter(i=>barcodesCoinciden(i.barcode,codeNorm));
     if(exacto.length===0){showToast('Código no encontrado: '+codeNorm);return;}
     if(exacto.length>1){showToast('Hay '+exacto.length+' productos con ese código — buscalo a mano');return;}
     const it=exacto[0];
@@ -9806,6 +9806,20 @@ const si=document.getElementById('prov-all');
 //  junto con el filtro del menú de proveedores, para evitar duplicar lógica)
 
 // ===================== ESCÁNER DE CÓDIGO DE BARRAS (cámara) =====================
+// Compara dos códigos de barras de forma tolerante: además de la igualdad exacta, reconoce el
+// mismo código físico guardado en 2 formatos distintos — UPC-A (12 dígitos) vs. EAN-13 (13
+// dígitos, con un 0 al inicio) — caso real y frecuente: muchos productos importados traen un
+// código UPC-A que Loyverse puede tener cargado como EAN-13 con el 0 agregado, o viceversa según
+// de dónde se haya copiado. Sin esto, un producto que SÍ existe (y escanea bien en Loyverse)
+// puede no calzar nunca contra el barcode guardado acá.
+function barcodesCoinciden(a,b){
+  const x=String(a||'').trim(),y=String(b||'').trim();
+  if(!x||!y)return false;
+  if(x===y)return true;
+  if(x.length===12&&y.length===13&&y==='0'+x)return true;
+  if(y.length===12&&x.length===13&&x==='0'+y)return true;
+  return false;
+}
 let _scanStream=null,_scanTimer=null,_scanToken=0,_scanOnCancel=null,_scanDone=false;
 async function openScanner(onCode,onCancel){
   const myToken=++_scanToken;   // invalida este intento si se cierra antes de terminar
@@ -9825,6 +9839,7 @@ async function openScanner(onCode,onCancel){
   try{await video.play();}catch(e){}
   if(myToken!==_scanToken){stream.getTracks().forEach(t=>t.stop());video.srcObject=null;ov.classList.add('hidden');return;}
   let busy=false;
+  let ultimoCode=null,ultimoCount=0;
   _scanTimer=setInterval(async()=>{
     if(myToken!==_scanToken){clearInterval(_scanTimer);return;}
     if(busy||video.readyState<2)return;busy=true;
@@ -9833,6 +9848,8 @@ async function openScanner(onCode,onCancel){
       if(myToken!==_scanToken)return;
       if(codes&&codes.length&&codes[0].rawValue){
         const code=String(codes[0].rawValue).trim();
+        if(code===ultimoCode)ultimoCount++;else{ultimoCode=code;ultimoCount=1;}
+        if(ultimoCount<2){busy=false;return;}   // exige 2 lecturas seguidas iguales antes de aceptar
         _scanDone=true;                    // se detectó → no dispares onCancel al cerrar
         closeScanner();
         if(navigator.vibrate)navigator.vibrate(80);
@@ -9844,7 +9861,7 @@ async function openScanner(onCode,onCancel){
           const n=currentItems().length;
           showToast(n?(''+code+' · '+n+(n===1?' producto':' productos')):('Código '+code+' no encontrado en el inventario'));
         }
-      }
+      }else{ultimoCode=null;ultimoCount=0;}
     }catch(e){}
     busy=false;
   },220);
@@ -12403,7 +12420,7 @@ document.getElementById('pr-scan').onclick=()=>{
   cerrarModal('pr-ov');
   openScanner(code=>{
     const codeNorm=String(code||'').trim();
-    const exacto=(DB.items||[]).filter(i=>String(i.barcode||'').trim()===codeNorm);
+    const exacto=(DB.items||[]).filter(i=>barcodesCoinciden(i.barcode,codeNorm));
     reopen();
     if(exacto.length===1){prPick(exacto[0].ref);return;}
     document.getElementById('pr-search').value=codeNorm;
@@ -12741,7 +12758,7 @@ document.getElementById('cf-scan').onclick=()=>{
   cerrarModal('cf-ov');
   openScanner(code=>{
     const codeNorm=String(code||'').trim();
-    const exacto=(DB.items||[]).filter(i=>String(i.barcode||'').trim()===codeNorm);
+    const exacto=(DB.items||[]).filter(i=>barcodesCoinciden(i.barcode,codeNorm));
     reopen();
     if(exacto.length===1){cfPick(exacto[0].ref);return;}
     document.getElementById('cf-search').value=codeNorm;
@@ -13436,7 +13453,7 @@ document.getElementById('rc-scan').onclick=()=>{
     // válido podía devolver 0 o varios resultados por matches parciales no deseados,
     // mandando al usuario a "Crear producto" o a una lista aunque el producto SÍ existiera.
     const codeNorm=String(code||'').trim();
-    const exacto=(DB.items||[]).filter(i=>String(i.barcode||'').trim()===codeNorm);
+    const exacto=(DB.items||[]).filter(i=>barcodesCoinciden(i.barcode,codeNorm));
     if(exacto.length===1){rcPick(exacto[0].ref);return;}
     if(exacto.length>1){ // muy raro (códigos duplicados en el catálogo) — deja elegir, no asume
       document.getElementById('rc-search').value=codeNorm;
