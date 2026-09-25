@@ -1840,41 +1840,21 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         <div class="mm-body">
 
         <div class="mm-field">
-          <label>Producto</label>
+          <label>Agregar producto</label>
           <div class="mm-search">
             <input id="mm-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off">
             <button class="mm-mic" id="mm-mic" type="button" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
             <button class="mm-scan cam-btn" id="mm-scan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
           </div>
-          <div class="mm-picked" id="mm-picked">
-            <div class="nom" id="mm-nom">—</div>
-            <div class="cat" id="mm-cat">—</div>
-          </div>
           <div id="mm-results"></div>
         </div>
 
         <div class="mm-field">
-          <label>Cantidad</label>
-          <div class="mm-qty">
-            <button class="qbtn" id="mm-qty-menos" type="button">−</button>
-            <input id="mm-cantidad" inputmode="decimal" placeholder="0" disabled>
-            <span class="unidad" id="mm-unidad">u</span>
-            <button class="qbtn" id="mm-qty-mas" type="button">+</button>
-          </div>
+          <label>Carrito</label>
+          <div id="mm-cart"><div class="vc-empty">Agrega productos de arriba</div></div>
         </div>
 
-        <div class="mm-field" id="mm-costo-wrap">
-          <label>Costo</label>
-          <div id="mm-costo-ok" class="mm-costo-ok" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg><span id="mm-costo-txt">—</span> · desde Loyverse</div>
-          <div id="mm-costo-warn-box" style="display:none">
-            <div class="mm-costo-warn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Este producto no tiene costo cargado en Loyverse. Escríbelo para poder registrar la merma, y de paso cárgalo en Loyverse para que no vuelva a pasar.</div>
-            <input class="mm-costo-manual" id="mm-costo-manual" inputmode="numeric" placeholder="Costo por unidad ($)">
-          </div>
-        </div>
-
-        <div class="mm-field">
-          <div class="mm-total">Costo total <b id="mm-total-val">$0</b></div>
-        </div>
+        <div class="in-cart-total">Costo total <b id="mm-total-val">$0</b></div>
 
         <div class="mm-field">
           <label>Motivo</label>
@@ -4738,7 +4718,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-09-25.2';
+const APP_VERSION='2026-09-25.3';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -9927,7 +9907,11 @@ document.getElementById('prov-mic').onclick=ev=>{
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&_scanStream)closeScanner();});
 
 // ===================== REGISTRAR MERMA =====================
-const mmState={item:null,motivo:null,resp:null,origen:'manual',lote:'',vencFilaIndex:null};
+// Carrito de varios productos por registro (antes era uno solo a la vez) — mismo patrón ya
+// usado en Insumos/consumo interno (inCart/inRenderCart), motivo y responsable son compartidos
+// para todo el lote, cada producto tiene su propia cantidad y costo.
+const mmState={motivo:null,resp:null};
+let mmCart=[]; // {ref,nombre,prov,peso,coste,cantidad,costoManual,origen,lote,vencFilaIndex}
 function mmFindItems(q){
   q=(q||'').toLowerCase().trim();
   if(!q)return [];
@@ -9941,75 +9925,75 @@ function mmRenderResults(list){
   const box=document.getElementById('mm-results');
   if(!list.length){box.innerHTML='';return;}
   box.innerHTML=list.map(it=>`<div class="mm-motivo" style="display:block;margin-bottom:6px;cursor:pointer" data-ref="${it.ref}">${it.nombre} <span style="color:var(--muted);font-weight:400">· ${it.prov}</span></div>`).join('');
-  box.querySelectorAll('[data-ref]').forEach(el=>el.onclick=()=>mmPick(el.dataset.ref));
+  box.querySelectorAll('[data-ref]').forEach(el=>el.onclick=()=>mmAdd(el.dataset.ref));
 }
-function mmPick(ref){
+function mmAdd(ref){
   const it=(DB.items||[]).find(i=>i.ref===ref);
   if(!it)return;
-  mmState.item=it;
-  document.getElementById('mm-search').value=it.nombre;
+  if(mmCart.some(c=>c.ref===ref)){showToast('Ya está en el carrito');return;}
+  mmCart.push({ref:it.ref,nombre:it.nombre,prov:it.prov,peso:!!it.peso,coste:it.coste,cantidad:it.peso?0.5:1,costoManual:'',origen:'manual',lote:'',vencFilaIndex:null});
+  document.getElementById('mm-search').value='';
   document.getElementById('mm-results').innerHTML='';
-  document.getElementById('mm-picked').classList.add('on');
-  document.getElementById('mm-nom').textContent=it.nombre;
-  document.getElementById('mm-cat').textContent=it.prov+(it.barcode?' · '+it.barcode:'');
-  const esPeso=!!it.peso;
-  document.getElementById('mm-unidad').textContent=esPeso?'kg':'u';
-  const cIn=document.getElementById('mm-cantidad');
-  cIn.disabled=false;cIn.value='';cIn.placeholder=esPeso?'0.000':'0';
-  cIn.step=esPeso?'0.001':'1';
-  const okBox=document.getElementById('mm-costo-ok'),warnBox=document.getElementById('mm-costo-warn-box');
-  if(it.coste>0){
-    okBox.style.display='block';warnBox.style.display='none';
-    document.getElementById('mm-costo-txt').textContent=peso(it.coste)+(esPeso?' / kg':' / u');
-    document.getElementById('mm-costo-manual').value='';
-  }else{
-    okBox.style.display='none';warnBox.style.display='block';
-    document.getElementById('mm-costo-manual').value='';
+  mmRenderCart();
+}
+function mmRemove(ref){mmCart=mmCart.filter(c=>c.ref!==ref);mmRenderCart();}
+function mmCostoUnit(c){return c.coste>0?c.coste:(Number(c.costoManual)||0);}
+function mmRenderCart(){
+  const box=document.getElementById('mm-cart');
+  if(!mmCart.length){box.innerHTML='<div class="vc-empty">Agrega productos de arriba</div>';}
+  else{
+    box.innerHTML=mmCart.map(c=>{
+      const sinCosto=!(c.coste>0);
+      return `
+      <div class="in-cart-row" data-ref="${c.ref}">
+        <div class="top"><span class="nom">${c.nombre}</span><button class="x" data-x="${c.ref}" aria-label="Quitar de la lista"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button></div>
+        <div class="cat">${c.prov}${c.peso?' · ⚖️ kg':''}${c.origen==='vencimiento'?' · desde Vencimientos':''}</div>
+        <div class="qtyrow">
+          <button class="qbtn" data-menos="${c.ref}" type="button">−</button>
+          <input inputmode="decimal" data-qty="${c.ref}" value="${c.cantidad}">
+          <span class="unidad">${c.peso?'kg':'u'}</span>
+          <button class="qbtn" data-mas="${c.ref}" type="button">+</button>
+          <span style="margin-left:auto;font-weight:700;font-family:'JetBrains Mono';font-size:13px">${peso(c.cantidad*mmCostoUnit(c))}</span>
+        </div>
+        ${sinCosto?`<input class="costo-warn" placeholder="⚠️ Sin costo en Loyverse — escribe costo${c.peso?'/kg':''} ($)" data-costo="${c.ref}" value="${c.costoManual}">`:''}
+      </div>`;
+    }).join('');
+    box.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>mmRemove(b.dataset.x));
+    box.querySelectorAll('[data-menos]').forEach(b=>b.onclick=()=>{const c=mmCart.find(x=>x.ref===b.dataset.menos);const st=c.peso?0.05:1;c.cantidad=Math.max(st,+(c.cantidad-st).toFixed(c.peso?3:0));mmRenderCart();});
+    box.querySelectorAll('[data-mas]').forEach(b=>b.onclick=()=>{const c=mmCart.find(x=>x.ref===b.dataset.mas);const st=c.peso?0.05:1;c.cantidad=+(c.cantidad+st).toFixed(c.peso?3:0);mmRenderCart();});
+    box.querySelectorAll('[data-qty]').forEach(inp=>inp.oninput=()=>{const c=mmCart.find(x=>x.ref===inp.dataset.qty);c.cantidad=Number(inp.value)||0;mmUpdateTotal();mmValidar();});
+    box.querySelectorAll('[data-costo]').forEach(inp=>inp.oninput=()=>{const c=mmCart.find(x=>x.ref===inp.dataset.costo);c.costoManual=inp.value;mmUpdateTotal();mmValidar();});
   }
-  mmCalcTotal();mmValidar();
+  mmUpdateTotal();mmValidar();
 }
-function mmCostoUnit(){
-  const it=mmState.item;if(!it)return 0;
-  if(it.coste>0)return it.coste;
-  return Number(document.getElementById('mm-costo-manual').value)||0;
-}
-function mmCalcTotal(){
-  const cant=Number(document.getElementById('mm-cantidad').value)||0;
-  const total=Math.round(cant*mmCostoUnit());
+function mmUpdateTotal(){
+  const total=mmCart.reduce((s,c)=>s+(c.cantidad*mmCostoUnit(c)),0);
   document.getElementById('mm-total-val').textContent=peso(total);
 }
 function mmValidar(){
-  const cant=Number(document.getElementById('mm-cantidad').value)||0;
-  const ok=mmState.item&&cant>0&&mmCostoUnit()>0&&mmState.motivo&&mmState.resp;
+  const ok=mmCart.length>0&&mmState.motivo&&mmState.resp&&mmCart.every(c=>c.cantidad>0&&mmCostoUnit(c)>0);
   document.getElementById('mm-save').disabled=!ok;
 }
 function mmReset(){
-  mmState.item=null;mmState.motivo=null;mmState.resp=null;mmState.origen='manual';mmState.lote='';mmState.vencFilaIndex=null;
+  mmCart=[];mmState.motivo=null;mmState.resp=null;
   document.getElementById('mm-search').value='';
   document.getElementById('mm-results').innerHTML='';
-  document.getElementById('mm-picked').classList.remove('on');
-  const cIn=document.getElementById('mm-cantidad');cIn.value='';cIn.disabled=true;cIn.placeholder='0';
-  document.getElementById('mm-unidad').textContent='u';
-  document.getElementById('mm-costo-ok').style.display='none';
-  document.getElementById('mm-costo-warn-box').style.display='none';
-  document.getElementById('mm-costo-manual').value='';
-  document.getElementById('mm-total-val').textContent='$0';
   document.querySelectorAll('.mm-motivo[data-m]').forEach(b=>b.classList.remove('sel'));
   document.querySelectorAll('#mm-resp button').forEach(b=>b.classList.remove('sel'));
-  document.getElementById('mm-save').disabled=true;
+  mmRenderCart();
 }
 function openMerma(skipReset){if(!skipReset){try{mmReset();}catch(e){}}abrirModal('mm-ov');}
 function closeMerma(){cerrarModal('mm-ov');}
-// Prellenar el modal de merma desde el panel de vencimientos ("Es merma"). vencFilaIndex
-// permite que el backend enlace la merma real con el lote de vencimiento (merma_id) para
-// poder trazar el hilo completo Vencimiento → Retirado → Merma.
+// Prellenar el carrito de merma desde el panel de vencimientos ("Es merma"/"Consumo interno") —
+// agrega ESE producto puntual al carrito (con su origen/lote/vencFilaIndex propios, para que el
+// backend pueda enlazar esa fila con el lote de vencimiento) sin tocar el resto del carrito ni
+// obligar a que sea el único producto del registro.
 function mmPrefill(ref,cantidad,lote,vencFilaIndex){
   mmReset();
-  mmPick(ref);
-  const cIn=document.getElementById('mm-cantidad');
-  cIn.value=cantidad;mmCalcTotal();
-  mmState.origen='vencimiento';mmState.lote=lote||'';mmState.vencFilaIndex=vencFilaIndex||null;
-  mmValidar();
+  const it=(DB.items||[]).find(i=>i.ref===ref);
+  if(!it)return;
+  mmCart.push({ref:it.ref,nombre:it.nombre,prov:it.prov,peso:!!it.peso,coste:it.coste,cantidad:Number(cantidad)||(it.peso?0.5:1),costoManual:'',origen:'vencimiento',lote:lote||'',vencFilaIndex:vencFilaIndex||null});
+  mmRenderCart();
 }
 
 document.getElementById('btn-merma').onclick=()=>openMerma();
@@ -10018,30 +10002,24 @@ document.getElementById('btn-merma').onclick=()=>openMerma();
 // de casualidad, perdiendo el producto/cantidad/motivo a medio cargar (mismo bug ya corregido
 // en Recepción). Solo pregunta cuando hay algo que perder.
 function mmDescartar(){
-  const cant=Number(document.getElementById('mm-cantidad').value)||0;
-  const hayAlgo=!!mmState.item||cant>0||!!mmState.motivo||!!mmState.resp;
-  if(hayAlgo&&!confirm('¿Cancelar el registro de esta merma?\n\nSe pierde el producto elegido y lo que hayas ingresado.'))return;
+  const hayAlgo=mmCart.length>0||!!mmState.motivo||!!mmState.resp;
+  if(hayAlgo&&!confirm('¿Cancelar el registro de esta merma?\n\nSe pierde el carrito ('+mmCart.length+' producto'+(mmCart.length===1?'':'s')+') y lo que hayas ingresado.'))return;
   closeMerma();
 }
 document.getElementById('mm-cancelar').onclick=mmDescartar;
-document.getElementById('mm-search').oninput=e=>mmRenderResults(mmFindItems(e.target.value));
+document.getElementById('mm-search').oninput=e=>mmRenderResults(mmFindItems(e.target.value).filter(it=>!mmCart.some(c=>c.ref===it.ref)));
 document.getElementById('mm-scan').onclick=()=>{
   closeMerma();                          // solo cámara, como Loyverse
   openScanner(code=>{
     openMerma(true);                     // al detectar, vuelve el panel con lo ya cargado
-    document.getElementById('mm-search').value=code;
-    const list=mmFindItems(code);
-    if(list.length===1)mmPick(list[0].ref); else mmRenderResults(list);
+    const list=mmFindItems(code).filter(it=>!mmCart.some(c=>c.ref===it.ref));
+    if(list.length===1)mmAdd(list[0].ref); else {document.getElementById('mm-search').value=code;mmRenderResults(list);}
   }, openMerma.bind(null,true));          // si cancela el escaneo, reabre el panel igual
 };
 document.getElementById('mm-mic').onclick=()=>voiceSearch(document.getElementById('mm-mic'),text=>{
   document.getElementById('mm-search').value=text;
-  mmRenderResults(mmFindItems(text));
+  mmRenderResults(mmFindItems(text).filter(it=>!mmCart.some(c=>c.ref===it.ref)));
 });
-document.getElementById('mm-qty-menos').onclick=()=>{const i=document.getElementById('mm-cantidad');const st=mmState.item&&mmState.item.peso?0.05:1;i.value=Math.max(0,(Number(i.value)||0)-st).toFixed(mmState.item&&mmState.item.peso?3:0);mmCalcTotal();mmValidar();};
-document.getElementById('mm-qty-mas').onclick=()=>{const i=document.getElementById('mm-cantidad');const st=mmState.item&&mmState.item.peso?0.05:1;i.value=((Number(i.value)||0)+st).toFixed(mmState.item&&mmState.item.peso?3:0);mmCalcTotal();mmValidar();};
-document.getElementById('mm-cantidad').oninput=()=>{mmCalcTotal();mmValidar();};
-document.getElementById('mm-costo-manual').oninput=()=>{mmCalcTotal();mmValidar();};
 document.querySelectorAll('.mm-motivo[data-m]').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.mm-motivo[data-m]').forEach(x=>x.classList.remove('sel'));
   b.classList.add('sel');mmState.motivo=b.dataset.m;mmValidar();
@@ -10052,31 +10030,34 @@ document.querySelectorAll('#mm-resp button').forEach(b=>b.onclick=()=>{
 });
 document.getElementById('mm-save').onclick=async()=>{
   const btn=document.getElementById('mm-save');
-  const it=mmState.item;if(!it)return;
-  const cantidad=Number(document.getElementById('mm-cantidad').value)||0;
-  const costoManual=it.coste>0?undefined:(Number(document.getElementById('mm-costo-manual').value)||0);
   btn.disabled=true;btn.classList.add('saving');btn.textContent='Guardando…';
   try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'merma',payload:{
-      sku:it.ref,cantidad:cantidad,costoManual:costoManual,motivo:mmState.motivo,responsable:mmState.resp,
-      origen:mmState.origen||'manual',lote:mmState.lote||'',vencFilaIndex:mmState.vencFilaIndex||undefined,
-      snap:{id:it.id,vid:it.vid,nombre:it.nombre,prov:it.prov,peso:it.peso,precio:it.precio,costo:it.coste,stock:it.stock,track:it.track,barcode:it.barcode}
-    }})});
+    const items=mmCart.map(c=>({
+      sku:c.ref,cantidad:c.cantidad,costoManual:c.coste>0?undefined:(Number(c.costoManual)||0),
+      origen:c.origen,lote:c.lote,vencFilaIndex:c.vencFilaIndex||undefined
+    }));
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'merma_lote',payload:{items:items,motivo:mmState.motivo,responsable:mmState.resp}})});
     const j=await res.json();
     if(j&&j.ok){
-      // Actualiza la copia local del stock al instante (sin esperar a sincronizar)
-      if(j.fila&&j.fila.nuevoStock!=null){
-        const itLocal=(DB.items||[]).find(x=>x.ref===it.ref);
-        if(itLocal){itLocal.stock=j.fila.nuevoStock;persist();}
-      }
-      let msg='Merma registrada: '+it.nombre+' · '+peso(j.fila.costoTotal)+(j.fila.estadoCosto&&j.fila.estadoCosto.indexOf('')===0?' · ⚠️ revisar costo':'');
-      if(j.fila.avisoStock)msg+=' · '+j.fila.avisoStock;
+      // Actualiza la copia local del stock al instante (sin esperar a sincronizar), producto
+      // por producto — cada fila del lote trae su propio nuevoStock.
+      (j.filas||[]).forEach(f=>{
+        if(f.nuevoStock!=null){
+          const itLocal=(DB.items||[]).find(x=>x.ref===f.sku);
+          if(itLocal)itLocal.stock=f.nuevoStock;
+        }
+      });
+      persist();
+      let msg='Merma registrada: '+j.resumen.n+' producto'+(j.resumen.n===1?'':'s')+' · '+peso(j.resumen.total);
+      if((j.filas||[]).some(f=>f.estadoCosto&&f.estadoCosto.indexOf('⚠')===0))msg+=' · ⚠️ revisar costo';
+      if(j.resumen.avisoStock)msg+=' · '+j.resumen.avisoStock;
       showToast(msg);
+      // Los productos que vienen de "Merma"/"Consumo interno" en Vencimientos (mmPrefill) recién
+      // cierran su lote acá, ahora que la merma se guardó de verdad (con stock ya descontado) —
+      // si se cancela el formulario, nunca se llega hasta acá y el lote sigue pendiente.
+      const vencFilas=mmCart.filter(c=>c.vencFilaIndex).map(c=>c.vencFilaIndex);
       closeMerma();
-      // Esta merma viene de "Merma" en Vencimientos (ver mmPrefill/vcWireFilas) — recién ahora
-      // que se guardó de verdad (con stock ya descontado) se cierra el lote. Si se cancela el
-      // formulario, nunca se llega hasta acá y el lote sigue pendiente, como corresponde.
-      if(mmState.vencFilaIndex)vcRevisar(mmState.vencFilaIndex,'merma');
+      vencFilas.forEach(i=>vcRevisar(i,'merma'));
     }else{
       showToast('Error: '+((j&&j.error)||'no se pudo guardar'));
     }
@@ -11168,7 +11149,8 @@ function vcWireFilas(box){
     // continuación, el lote quedaba cerrado sin que la merma real se hubiera registrado (sin
     // descontar stock, sin costo, nada) y desaparecía de la lista como si ya estuviera
     // resuelto. Ahora el cierre se hace recién cuando la merma se guarda de verdad (ver
-    // mm-save, que usa mmState.vencFilaIndex) — si se cancela, el lote sigue pendiente.
+    // mm-save, que recorre mmCart buscando vencFilaIndex) — si se cancela, el lote sigue
+    // pendiente.
     closeVenc();
     mmPrefill(b.dataset.sku,b.dataset.cant,b.dataset.lote,b.dataset.i);
     openMerma(true);
