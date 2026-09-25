@@ -401,8 +401,23 @@ html.carrito-fijo #rc-ov .mm-sections{
 .vc-editbox{margin-top:8px;padding:10px;background:var(--paper);border:1px solid var(--line);border-radius:10px}
 .vc-editlbl{font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px}
 .fecha-date-hidden{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none;left:0;top:0}
-.mm-qty input{flex:1;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:16px;font-family:'JetBrains Mono';text-align:center}
+/* min-width:0 rompe el mínimo implícito ("auto") que todo <input> tiene como ítem flex — sin
+   esto, el input nunca cede espacio a sus hermanos por debajo de su ancho nativo del navegador
+   (~170-190px), y los botones +/- quedaban aplastados a su tamaño más chico posible sin que
+   ninguna regla de CSS sobre ELLOS pudiera evitarlo (ancho:48px en los botones no alcanzaba —
+   el problema nunca estuvo ahí, sino en que el input se negaba a encogerse). Confirmado con el
+   caso reportado: con min-width:auto (por defecto) los botones medían 30px pese a pedirles
+   48px; con min-width:0 en el input, miden los 48px pedidos. */
+.mm-qty input{flex:1;min-width:0;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:16px;font-family:'JetBrains Mono';text-align:center}
 #rc-cantidad-field .mm-qty input{padding:9px 12px;font-size:15px}
+/* Botones +/- de "Cantidad recibida" en Recepción: el tamaño base de .qbtn (30x40, pensado
+   para filas densas de lista) quedaba chico para un botón que se toca a repetición mientras se
+   cuenta mercadería a mano — reportado, pedían algo más ergonómico. 48px es el mínimo de
+   objetivo táctil recomendado (Android/iOS); se agranda solo acá, no en .qbtn en general, para
+   no afectar los steppers de listas densas (carrito, Gestionar proveedores) que sí necesitan
+   quedar chicos. */
+#rc-cantidad-field .mm-qty{height:48px}
+#rc-cantidad-field .mm-qty .qbtn{width:48px;font-size:22px}
 .mm-qty .unidad{font-weight:700;color:var(--muted);min-width:28px}
 .mm-costo-ok{background:var(--verde-bg);border:1px solid var(--verde);border-radius:10px;padding:9px 12px;font-size:13px;color:var(--verde);font-weight:600}
 .mm-costo-warn{background:var(--rojo-bg);border:1px solid var(--rojo);border-radius:10px;padding:9px 12px;font-size:12.5px;color:var(--rojo);font-weight:600;margin-bottom:8px;line-height:1.4}
@@ -2466,7 +2481,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
                 <button type="button" class="rc-modo-btn active" id="rc-modo-unidad" data-modo="unidad" style="border-color:var(--wa-d);background:var(--wa-bg,var(--verde-bg));color:var(--wa-d)">Por unidad</button>
                 <button type="button" class="rc-modo-btn" id="rc-modo-caja" data-modo="caja">Por caja/Display</button>
               </div>
-              <div class="mm-qty" style="height:38px">
+              <div class="mm-qty">
                 <button class="qbtn rc-qty-hold" id="rc-qty-menos" type="button" style="height:100%">−</button>
                 <input id="rc-cantidad" inputmode="decimal" placeholder="0" disabled>
                 <span class="unidad" id="rc-unidad">u</span>
@@ -4727,7 +4742,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-09-24.1';
+const APP_VERSION='2026-09-25.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
