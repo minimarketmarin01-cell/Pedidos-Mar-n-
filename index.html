@@ -1261,6 +1261,9 @@ html.modo-bliss #prov-all{font-size:17px}
 .pend-badge{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:700;color:var(--muted);border:1px dashed var(--line);border-radius:6px;padding:1px 6px;margin-top:2px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cambio-badge .sep{color:var(--muted);font-weight:400}
 .cambio-badge .pedir{color:var(--verde)}
+/* Motivo de alerta especial (San Jorge / panes Ideal-Castaño, ver vcEntroVentanaAlerta) — texto
+   más largo que "Cambio: -N", así que a diferencia del resto de .cambio-badge sí puede envolver. */
+.cambio-badge .motivo-venc{display:block;white-space:normal;max-width:140px;margin-top:2px}
 .cat-combo{position:relative;flex:1;min-width:0}
 .cat-combo-input{width:100%;padding:11px 34px 11px 10px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;background:#fff;color:var(--text);cursor:pointer}
 .cat-combo-input:focus{outline:none;border-color:var(--wa)}
@@ -3587,8 +3590,22 @@ async function cargarVencidosPendientes(){
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=vencimientos');
     const j=await res.json();
     if(j&&j.ok){
-      const mapVenc={}, mapRet={};
+      const mapVenc={}, mapRet={}, mapMotivo={};
       (j.lotes||[]).forEach(l=>{
+        // Motivo de "sugerencia por vencimiento" (San Jorge/panes dentro de su ventana especial,
+        // ver vcEntroVentanaAlerta) — independiente de CATEGORIAS_CAMBIO, se calcula antes del
+        // filtro de abajo. Si un sku tiene más de un lote dentro de ventana, se queda con el más
+        // urgente (menos días restantes).
+        if(l.estado!=='Revisado'&&vcEntroVentanaAlerta(l)){
+          const dias=_diasVenc(l.fechaVencimiento);
+          const anterior=mapMotivo[l.sku];
+          if(!anterior||anterior.dias==null||(dias!=null&&dias<anterior.dias)){
+            const cat=(l.categoria||'').trim().toUpperCase();
+            const label=cat==='SAN JORGE'?'San Jorge':(cat==='IDEAL'?'Pan Ideal':'Pan Castaño');
+            const cuando=dias==null?'':(dias<0?('venció hace '+Math.abs(dias)+' día'+(Math.abs(dias)===1?'':'s')):dias===0?'vence hoy':dias===1?'vence mañana':('vence en '+dias+' días'));
+            mapMotivo[l.sku]={dias,texto:'⚠️ '+label+' — '+cuando+' — gestionar'};
+          }
+        }
         if(CATEGORIAS_CAMBIO.indexOf(l.categoria)<0)return;
         // 'Vencido' = todavía no se ha descontado del stock real (se resta acá, en el cálculo)
         if(l.estado==='Vencido')mapVenc[l.sku]=(mapVenc[l.sku]||0)+(Number(l.cantidad)||0);
@@ -3597,6 +3614,7 @@ async function cargarVencidosPendientes(){
       });
       VENCIDOS_POR_SKU=mapVenc;
       RETIRADOS_POR_SKU=mapRet;
+      MOTIVOS_POR_SKU=mapMotivo;
       render();   // refresca la tabla/tarjeta con los datos ya cargados
     }
   }catch(e){}
@@ -3608,6 +3626,28 @@ async function cargarVencidoParaCambio(){
 function esCategoriaCambio(prov){return CATEGORIAS_CAMBIO.indexOf(prov)>=0;}
 function vencidoDe(it){return VENCIDOS_POR_SKU[it.ref]||0;}
 function retiradoDe(it){return RETIRADOS_POR_SKU[it.ref]||0;}
+// Ventanas de alerta especiales (mismo criterio que el backend, aplicarReglaUltimoLoteIdealCastano
+// / config_vida_util): San Jorge entra a gestión 7 días antes de vencer; los panes de Ideal y Pan
+// Castaño (it.sector==='PANADERIA', la misma clasificación que ya usa el catálogo — snacks/confites
+// de esos mismos proveedores, ej. Takis/Chips/Gansito, NO entran en esta regla) recién 1 día antes.
+// Devuelve null si el lote no tiene ventana especial (sigue el flujo genérico de siempre).
+function vcVentanaAlertaEspecial(l){
+  const cat=(l.categoria||'').trim().toUpperCase();
+  if(cat==='SAN JORGE')return 7;
+  if(cat==='IDEAL'||cat==='PAN CASTAÑO'){
+    const it=(DB.items||[]).find(x=>x.ref===l.sku);
+    if(it&&it.sector==='PANADERIA')return 1;
+  }
+  return null;
+}
+function vcEntroVentanaAlerta(l){
+  const ventana=vcVentanaAlertaEspecial(l);
+  if(ventana==null)return false;
+  const dias=_diasVenc(l.fechaVencimiento);
+  return dias!=null&&dias<=ventana;
+}
+let MOTIVOS_POR_SKU={};
+function motivoVencDe(it){const m=MOTIVOS_POR_SKU[it.ref];return m?m.texto:null;}
 
 function analyze(it){const rate=rateOf(it),tracked=it.track&&it.stock!=null,esCambio=esCategoriaCambio(it.prov),vencidoResta=esCambio?vencidoDe(it):0,paraCambioTotal=esCambio?(vencidoDe(it)+retiradoDe(it)):0,stock=tracked?Math.max(0,it.stock-vencidoResta):it.stock,lead=state.lead,cover=state.cover;const target=rate*(lead+cover);let cov=null,status,sug=0;const M=multOf(it);
   if(!tracked){status='sinstock';sug=rate>0?roundPack(target,M):0;}
@@ -3622,7 +3662,7 @@ function analyze(it){const rate=rateOf(it),tracked=it.track&&it.stock!=null,esCa
   // 'Retirado' YA se descontó de verdad en Loyverse al presionar "Retirar" (ver accionRevisarLote
   // en el Worker), así que it.stock ya viene neto de esa parte — restarla de nuevo acá para el
   // número de "stock disponible" mostrado sería descontarla dos veces.
-  return{rate,cov,status,sug,tracked,trend:trendOf(it),vencido:paraCambioTotal,vencidoNoDescontadoAun:vencidoResta};}
+  return{rate,cov,status,sug,tracked,trend:trendOf(it),vencido:paraCambioTotal,vencidoNoDescontadoAun:vencidoResta,motivoVenc:motivoVencDe(it)};}
 const SO={urgente:0,pedir:1,sinstock:2,ok:3,sobre:4};const SL={urgente:'Urgente',pedir:'Pedir',ok:'OK',sobre:'Sobrestock',sinstock:'Ref.'};
 // Un producto pertenece al proveedor "p" si: 1) su proveedor real principal coincide
 // (it.proveedorNombre) — fuente correcta y la que se prioriza siempre que exista — o 2) "p"
@@ -4251,8 +4291,11 @@ function rowHTML(it,a,f){const cant=qOf(it,a);
   const stkCls='stk-val'+(stkTocable?' stk-tocable':'');
   // Indicador "Cambio: -N | Pedir: +N" junto al selector de cantidad — aparece siempre que
   // haya unidades pendientes de cambio con proveedor, aunque lo que haya que pedir sea 0.
-  const cambioLine=a.vencido>0
-    ?`<div class="cambio-badge">Cambio: -${fmt.format(a.vencido)}${a.sug>0?` <span class="sep">|</span> <span class="pedir">Pedir: +${fmt.format(a.sug)}</span>`:''}</div>`
+  // a.motivoVenc (San Jorge ≤7 días / panes Ideal-Castaño ≤1 día, ver vcEntroVentanaAlerta) se
+  // agrega como línea aparte dentro del mismo badge — puede aparecer solo (producto todavía no
+  // llega a "Vencido"/"Retirado", solo entró a su ventana de alerta) o junto al texto de Cambio.
+  const cambioLine=(a.vencido>0||a.motivoVenc)
+    ?`<div class="cambio-badge">${a.vencido>0?`Cambio: -${fmt.format(a.vencido)}${a.sug>0?` <span class="sep">|</span> <span class="pedir">Pedir: +${fmt.format(a.sug)}</span>`:''}`:''}${a.motivoVenc?`<span class="motivo-venc">${a.motivoVenc}</span>`:''}</div>`
     :'';
   // Aviso de "ya pedido a otro proveedor" — evita pedidos duplicados (ver marcarPedidoRealizado).
   const pend=pendienteDe(it);
@@ -4718,7 +4761,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-09-27.2';
+const APP_VERSION='2026-09-28.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -10726,7 +10769,12 @@ document.querySelectorAll('#vc-viewseg button').forEach(b=>b.onclick=()=>vcSetVi
 // proveedor los cambie o que se confirme que son merma. Reutiliza vcRender (misma lógica de
 // botones por categoría cambio/normal) apuntando al contenedor propio de esta pestaña.
 function vcRenderPendientes(){
-  const pendientes=_vcTodos.filter(l=>l.estado==='Retirado');
+  // Además de lo ya retirado a mano (de siempre), suma San Jorge/panes que ya entraron a su
+  // ventana de gestión (7/1 días, ver vcEntroVentanaAlerta) aunque nadie los haya retirado
+  // todavía — así el cajero los ve en Pendientes desde que hay que empezar a gestionarlos, no
+  // solo después de sacarlos de la góndola. El resto de proveedores/categorías sigue exactamente
+  // igual que siempre (solo Retirado).
+  const pendientes=_vcTodos.filter(l=>l.estado==='Retirado'||(l.estado!=='Revisado'&&vcEntroVentanaAlerta(l)));
   vcRender(vcAplicarFiltroInteligente(pendientes,_vcPendFiltro),'vc-pend-list');
   vcUpdatePendBadge(pendientes.length);   // el badge cuenta el TOTAL, no el filtrado
 }
