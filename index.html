@@ -4761,7 +4761,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-09-29.1';
+const APP_VERSION='2026-09-29.2';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -6662,9 +6662,19 @@ function fpPaneProveedores(f){
   cpCargarCatalogo().then(()=>{
     const sel=document.getElementById('fp-pv-cat'),input=document.getElementById('fp-pv-cat-input');
     if(!sel)return;
-    sel.innerHTML='<option value="">'+(p.categoria||'')+'</option>'+_cpCats.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
+    // FIX: la opción "actual" tenía value="" a propósito (solo el TEXTO mostraba p.categoria,
+    // ej. "SIN CATEGORÍA") — al asignar sel.value=p.categoria más abajo, si esa categoría no
+    // es una real de Loyverse (como "SIN CATEGORÍA", que es un texto local, no una categoría
+    // de Loyverse), ningún <option> coincidía y el <select> quedaba SIN selección real
+    // (.value=""), aunque el combo visible siguiera mostrando el texto correcto. Al guardar,
+    // fpGuardarTodo mandaba categoria:'' y el backend lo interpretaba como "cambiar a una
+    // categoría vacía", tirando "La categoría '' no existe en Loyverse". Ahora la opción
+    // "actual" lleva ese mismo valor como value= — así sel.value SIEMPRE coincide con lo que
+    // se ve, y guardar sin tocar la categoría (incluido "sin categoría") nunca falla.
+    const valorActual=p.categoria||'';
+    sel.innerHTML='<option value="'+valorActual.replace(/"/g,'&quot;')+'">'+valorActual+'</option>'+_cpCats.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
     const actual=_cpCats.find(c=>String(c.name)===String(p.categoria));
-    sel.value=actual?actual.name:(p.categoria||'');
+    sel.value=actual?actual.name:valorActual;
     if(input)input.value=p.categoria||'';
     catComboWire('fp-pv');
     if(sel)sel.addEventListener('change',fpGuardarBorrador);
