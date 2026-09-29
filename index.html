@@ -4761,7 +4761,7 @@ function showToast(m){const t=document.getElementById('toast');t.textContent=m;t
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-09-28.1';
+const APP_VERSION='2026-09-29.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -13603,8 +13603,14 @@ document.getElementById('rc-scan').onclick=()=>{
 // ingresado en Recepción (costo y cantidad quedan guardados y se restauran al volver).
 function rcProductoNoEncontrado(code){
   if(!confirm('Producto no encontrado\n\nEste artículo no existe en el inventario.\n¿Deseas crearlo ahora?'))return;
+  const texto=String(code||'').trim();
+  // Lo tipeado en el buscador de Recepción puede ser un código de barras (siempre solo
+  // dígitos: EAN-8/UPC-A/EAN-13 o un código interno numérico) o un nombre escrito a mano
+  // (ej. "Crush grape lata") — antes SIEMPRE se mandaba a Código de barras, aunque fuera
+  // texto. Se detecta cuál es y se manda al campo correcto.
+  const esCodigoBarras=/^\d{4,}$/.test(texto);
   _rcPendiente={
-    barcode:code,
+    barcode:esCodigoBarras?texto:'',
     costo:document.getElementById('rc-costo').value||'',
     cantidad:document.getElementById('rc-cantidad').value||'',
     fecha:document.getElementById('rc-fecha').value||''
@@ -13612,8 +13618,12 @@ function rcProductoNoEncontrado(code){
   _cpDesdeRecepcion=true;
   cerrarModal('rc-ov');
   cpAbrir();
-  document.getElementById('cp-barcode').value=code;
-  cpAutocompletarPorCodigo(code);
+  if(esCodigoBarras){
+    document.getElementById('cp-barcode').value=texto;
+    cpAutocompletarPorCodigo(texto);
+  }else{
+    document.getElementById('cp-nombre').value=texto;
+  }
   // La cantidad y el costo se vuelcan a los campos NUEVOS (cp-cantidad / cp-pr-costo); cp-stock
   // ya no se escribe a mano — lo completa cpRenderResumen() a partir de la cantidad.
   // También se hereda el modo Con/Sin IVA que venía elegido en Recepción, para no perderlo.
