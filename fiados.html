@@ -344,10 +344,12 @@ function fdClienteAbiertoGuardado(){
 function fdShowLista(){
   // Al volver a la Vista A (desde cualquier camino: botón, modal, o el atrás del celular) se
   // limpia el cliente/cobro en curso — la lista/búsqueda de #fd-buscar-results NO se toca acá
-  // (ver fdAbrirDetalle), así que se ve igual que antes de abrir el detalle.
+  // (ver fdAbrirDetalle), así que se ve igual que antes de abrir el detalle, salvo el refresco
+  // silencioso de abajo (fdCargarListaFiadosSilencioso) que la pone al día sin resetear nada.
   fdState.clienteId=null;fdState.detalle=null;fdState.metodoPago=null;
   fdLimpiarClienteAbierto();
   document.getElementById('fd-view-lista').classList.remove('hidden');document.getElementById('fd-view-detalle').classList.add('hidden');document.getElementById('fd-view-comprobante').classList.add('hidden');
+  fdCargarListaFiadosSilencioso();
 }
 function fdShowDetalle(){document.getElementById('fd-view-lista').classList.add('hidden');document.getElementById('fd-view-detalle').classList.remove('hidden');document.getElementById('fd-view-comprobante').classList.add('hidden');}
 function fdShowComprobante(){document.getElementById('fd-view-lista').classList.add('hidden');document.getElementById('fd-view-detalle').classList.add('hidden');document.getElementById('fd-view-comprobante').classList.remove('hidden');}
@@ -454,6 +456,9 @@ let fdTotalRevelado=false;
 // fiados del otro — útil cuando el mismo cliente real quedó duplicado con 2 registros
 // distintos en Loyverse. Se limpia cada vez que se recarga la lista.
 const fdSeleccionadosFusion=new Set();
+// true apenas el cajero tocó "Ver clientes con fiado abierto" al menos una vez — antes de eso
+// nunca se refresca sola (se respeta la privacidad de no cargar nada sin una acción explícita).
+let fdListaFiadosCargada=false;
 async function fdCargarListaFiados(){
   const btn=document.getElementById('fd-mostrar-todos');
   btn.disabled=true;btn.textContent='Cargando…';
@@ -462,12 +467,32 @@ async function fdCargarListaFiados(){
     const j=await res.json();
     document.getElementById('fd-buscar').value='';
     fdListaFiados=(j&&j.ok)?(j.clientes||[]):[];
+    fdListaFiadosCargada=true;
     fdMontosRevelados.clear();fdTotalRevelado=false;fdSeleccionadosFusion.clear();
     fdRenderListaFiados();
   }catch(e){showToast('Error de conexión al listar clientes con fiado');}
   btn.disabled=false;btn.textContent='Ver clientes con fiado abierto';
 }
 document.getElementById('fd-mostrar-todos').onclick=fdCargarListaFiados;
+// Refresco silencioso de la lista ya revelada — a diferencia de fdCargarListaFiados() (el botón),
+// NO resetea montos revelados/selección de fusión (si el cajero ya reveló un saldo o tildó
+// clientes, lo sigue viendo igual después de refrescar) y no muestra "Cargando…"/toast de error
+// (es de fondo, no debe interrumpir). Reportado: un ticket cobrado por OTROS en Loyverse podía
+// tardar en verse acá porque, una vez cargada, la lista nunca se volvía a pedir sola.
+async function fdCargarListaFiadosSilencioso(){
+  if(!fdListaFiadosCargada)return;
+  if(document.getElementById('fd-view-lista').classList.contains('hidden'))return;
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=fiados_resumen');
+    const j=await res.json();
+    if(j&&j.ok){fdListaFiados=j.clientes||[];fdRenderListaFiados();}
+  }catch(e){/* de fondo — un fallo acá no debe interrumpir con un toast */}
+}
+// Cada 30s mientras la Vista A esté visible (la pantalla se dejó abierta todo el día en el
+// mesón), y también apenas la pestaña/app vuelve a primer plano (el cajero cambió a Loyverse
+// para cerrar la venta y volvió acá) — cubre los dos escenarios reales de uso.
+setInterval(fdCargarListaFiadosSilencioso,30000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')fdCargarListaFiadosSilencioso();});
 function fdRenderListaFiados(){
   const box=document.getElementById('fd-buscar-results');
   fdActualizarBannerFusion();
