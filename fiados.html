@@ -221,7 +221,9 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
   <div id="fd-recon-ov" class="hidden" style="position:fixed;inset:0;background:rgba(21,25,31,.55);z-index:250;display:flex;align-items:center;justify-content:center;padding:20px">
     <div style="background:var(--card);width:100%;max-width:380px;border-radius:var(--radius-card);padding:20px;max-height:90vh;overflow-y:auto">
       <h3 style="font-size:17px;margin-bottom:12px">Asignar cliente</h3>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:14px" id="fd-recon-info"></div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:8px" id="fd-recon-info"></div>
+      <button type="button" id="fd-recon-detalle-toggle" class="hidden" style="background:none;border:none;color:var(--azul);font-weight:700;font-size:12.5px;padding:0;margin-bottom:12px;cursor:pointer;display:flex;align-items:center;gap:4px">Ver detalle del ticket <span id="fd-recon-detalle-caret">▾</span></button>
+      <div id="fd-recon-detalle" class="hidden" style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:-4px 0 14px"></div>
       <div class="mm-field">
         <label>Buscar cliente</label>
         <div class="mm-search">
@@ -440,7 +442,7 @@ async function fdCargarSinCliente(){
 }
 document.getElementById('fd-sincliente-box').onclick=function(){
   const f=(fdState.sinCliente||[])[0];
-  if(f)fdAbrirReconciliar(f.id,f.receipt_id_loyverse,f.monto_total);
+  if(f)fdAbrirReconciliar(f.id,f.receipt_id_loyverse,f.monto_total,f.lineas);
 };
 
 // ---- Buscador de clientes (Vista A) — debounce propio ----
@@ -998,13 +1000,36 @@ function fdImprimir(contenidoHtml){
 }
 
 // ---- Reconciliar fiado sin cliente asignado (modal fd-recon-ov) ----
-function fdAbrirReconciliar(fiadoId,receiptId,montoTotal){
+// El monto y la boleta solos no alcanzan para identificar a quién pertenece un fiado huérfano
+// — "lineas" (sku/producto_nombre/cantidad/precio_unitario, ya la trae fiados_sin_cliente) deja
+// ver qué se compró, plegado por defecto para no saturar el modal cuando el monto ya es claro.
+function fdAbrirReconciliar(fiadoId,receiptId,montoTotal,lineas){
   document.getElementById('fd-recon-info').textContent='Fiado #'+fiadoId+' · '+peso(montoTotal)+(receiptId?' · boleta '+receiptId:'');
   document.getElementById('fd-recon-buscar').value='';
   document.getElementById('fd-recon-results').innerHTML='';
   document.getElementById('fd-recon-ov').dataset.fiadoId=fiadoId;
+  const toggle=document.getElementById('fd-recon-detalle-toggle');
+  const detalle=document.getElementById('fd-recon-detalle');
+  const lista=lineas||[];
+  detalle.classList.add('hidden');
+  document.getElementById('fd-recon-detalle-caret').textContent='▾';
+  if(lista.length){
+    toggle.classList.remove('hidden');
+    toggle.firstChild.textContent='Ver detalle del ticket ('+lista.length+' producto'+(lista.length===1?'':'s')+') ';
+    detalle.innerHTML=lista.map(l=>`<div style="display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:4px 0"><span>${l.cantidad} × ${l.producto_nombre||l.sku}</span><span style="color:var(--muted);white-space:nowrap">${peso(l.cantidad*l.precio_unitario)}</span></div>`).join('');
+  }else{
+    toggle.classList.add('hidden');
+    detalle.innerHTML='';
+  }
   fdPush({recon:true});
 }
+document.getElementById('fd-recon-detalle-toggle').onclick=()=>{
+  const detalle=document.getElementById('fd-recon-detalle');
+  const caret=document.getElementById('fd-recon-detalle-caret');
+  const abrir=detalle.classList.contains('hidden');
+  detalle.classList.toggle('hidden',!abrir);
+  caret.textContent=abrir?'▴':'▾';
+};
 document.getElementById('fd-recon-cancelar').onclick=()=>history.back();
 document.getElementById('fd-recon-buscar').addEventListener('input',ev=>{
   const q=ev.target.value.trim();
