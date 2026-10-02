@@ -1635,11 +1635,18 @@ html.carrito-fijo.ocultar-contenido-pedido #tab-pedido{grid-template-columns:min
 .pd-mod-title{font-size:12px;font-weight:800;color:var(--ink)}
 .pd-cfg-btn{background:none;border:1px solid var(--line);border-radius:7px;width:23px;height:23px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);font-size:12.5px;cursor:pointer;flex-shrink:0;padding:0}
 .pd-cfg-btn:active{background:var(--paper)}
-.pd-datechip-row{margin:0 0 6px}
+.pd-datechip-row{margin:0 0 6px;display:flex;align-items:center;gap:6px}
 .pd-datechip{display:inline-flex;align-items:center;gap:4px;background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:4px 10px 4px 9px;cursor:pointer}
 .pd-datechip .ic{font-size:11px}
 .pd-datechip .car{font-size:9px;color:var(--muted)}
 .pd-datechip input[type="date"]{border:none;background:none;font-size:11px;font-weight:700;color:var(--ink);font-family:inherit;padding:0;width:auto;max-width:112px}
+/* Flechas ◀ ▶ junto a los selectores de "qué día estoy viendo" (Proveedores que llegan, A
+   quién pedir, Reportes del día) — suman/restan 1 día, ver wireFlechasFecha(). No se usan en
+   campos para ingresar una fecha específica y lejana (vencimiento de lote, recepción, etc.),
+   donde avanzar de a 1 día no tiene sentido. */
+.pd-datechip-nav{background:none;border:1px solid var(--line);border-radius:8px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;color:var(--ink);cursor:pointer;flex-shrink:0;padding:0}
+.pd-datechip-nav:active{background:var(--paper)}
+.pd-datechip-nav svg{pointer-events:none}
 .pd-verTodos{display:block;width:100%;text-align:center;background:none;border:none;color:var(--wa-d);font-size:11.5px;font-weight:700;cursor:pointer;padding:7px 0 2px}
 .calprov-info{font-size:11.5px;color:var(--muted);line-height:1.4;margin:0 0 12px}
 .calprov-prov{border:1px solid var(--line);border-radius:10px;padding:9px 10px;margin-bottom:8px;background:var(--card)}
@@ -1797,7 +1804,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
     </div>
 
     <div class="pd-mod-hdr"><span class="pd-mod-title">📦 Proveedores que llegan</span></div>
-    <div class="pd-datechip-row"><label class="pd-datechip" for="provday-fecha"><span class="ic">📅</span><input type="date" id="provday-fecha"><span class="car">▾</span></label></div>
+    <div class="pd-datechip-row"><button type="button" class="pd-datechip-nav" id="provday-fecha-prev" aria-label="Día anterior"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 6 9 12 15 18"/></svg></button><label class="pd-datechip" for="provday-fecha"><span class="ic">📅</span><input type="date" id="provday-fecha"><span class="car">▾</span></label><button type="button" class="pd-datechip-nav" id="provday-fecha-next" aria-label="Día siguiente"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></button></div>
     <div class="provday" id="provday-real-wrap" style="margin-top:0">
       <div id="provday-real"></div>
     </div>
@@ -1805,7 +1812,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
     <div class="in2-section-title">HOY</div>
 
     <div class="pd-mod-hdr" style="margin:0 0 6px"><span class="pd-mod-title">📅 A quién pedir</span><button type="button" class="pd-cfg-btn" id="calprov-cfg-btn" aria-label="Configurar calendario de proveedores" title="Configurar calendario de proveedores">⚙</button></div>
-    <div class="pd-datechip-row"><label class="pd-datechip" for="provday-fecha-cal"><span class="ic">📅</span><input type="date" id="provday-fecha-cal"><span class="car">▾</span></label></div>
+    <div class="pd-datechip-row"><button type="button" class="pd-datechip-nav" id="provday-fecha-cal-prev" aria-label="Día anterior"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 6 9 12 15 18"/></svg></button><label class="pd-datechip" for="provday-fecha-cal"><span class="ic">📅</span><input type="date" id="provday-fecha-cal"><span class="car">▾</span></label><button type="button" class="pd-datechip-nav" id="provday-fecha-cal-next" aria-label="Día siguiente"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></button></div>
     <div class="provday" id="provday"></div>
   </div>
 </div>
@@ -2765,7 +2772,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
     <div class="mm-topbar"><button class="loadbtn" id="rd-cerrar" style="width:100%">Cerrar</button></div>
     <div class="mm-body">
       <div class="cat" style="margin-bottom:8px;line-height:1.4">Todos los movimientos registrados ese día: recepciones, mermas, ajustes de stock, vencimientos gestionados y más — mismo historial que ya queda en auditoría, filtrado por fecha.</div>
-      <div class="pd-datechip-row" style="margin-bottom:10px"><label class="pd-datechip" for="rd-fecha"><span class="ic">📅</span><input type="date" id="rd-fecha"><span class="car">▾</span></label></div>
+      <div class="pd-datechip-row" style="margin-bottom:10px"><button type="button" class="pd-datechip-nav" id="rd-fecha-prev" aria-label="Día anterior"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 6 9 12 15 18"/></svg></button><label class="pd-datechip" for="rd-fecha"><span class="ic">📅</span><input type="date" id="rd-fecha"><span class="car">▾</span></label><button type="button" class="pd-datechip-nav" id="rd-fecha-next" aria-label="Día siguiente"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></button></div>
       <div class="hm-summary" style="margin-bottom:8px"><span class="lbl" id="rd-lbl">—</span></div>
       <div id="rd-list"></div>
     </div>
@@ -4792,7 +4799,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-02.2';
+const APP_VERSION='2026-10-02.3';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -14492,6 +14499,7 @@ document.getElementById('rd-list').addEventListener('click',async(e)=>{
   }
 });
 document.getElementById('rd-fecha').onchange=rdCargar;
+wireFlechasFecha('rd-fecha');
 document.getElementById('rz-prov').onchange=rzRender;
 document.getElementById('rz-clase').onchange=rzRender;
 document.getElementById('rz-ver-excluidos').onclick=rzMostrarExcluidos;
@@ -14981,6 +14989,25 @@ function estimarFechaLlegada(provNombre){
 }
 // 'YYYY-MM-DD' en horario local (evita el corrimiento de día de toISOString, que usa UTC).
 function isoLocalDate(d){const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
+// Flechas ◀ ▶ junto a un selector de fecha tipo "qué día estoy viendo" (Proveedores que
+// llegan, A quién pedir, Reportes del día) — suman/restan 1 día y disparan el mismo evento
+// 'change' que cada pantalla ya escucha en su <input type="date">, sin duplicar acá su lógica
+// de recarga. No se usa en campos para ingresar una fecha específica y lejana (vencimiento de
+// lote, recepción, préstamos, etc.) — ahí avanzar de a 1 día no tiene sentido.
+function wireFlechasFecha(inputId){
+  const inp=document.getElementById(inputId);
+  const prev=document.getElementById(inputId+'-prev');
+  const next=document.getElementById(inputId+'-next');
+  if(!inp||!prev||!next)return;
+  const mover=delta=>{
+    const base=inp.value?new Date(inp.value+'T00:00:00'):new Date();
+    base.setDate(base.getDate()+delta);
+    inp.value=isoLocalDate(base);
+    inp.dispatchEvent(new Event('change'));
+  };
+  prev.onclick=()=>mover(-1);
+  next.onclick=()=>mover(1);
+}
 // Inversa de isoLocalDate: arma la Date con año/mes/día explícitos (horario local), para no
 // repetir el mismo corrimiento de día que new Date('YYYY-MM-DD') tiene en husos horarios
 // negativos (esa forma la interpreta como UTC medianoche).
@@ -15744,6 +15771,7 @@ function refrescarProveedoresHoy(){
   if(provdayFecha){
     provdayFecha.value=isoLocalDate(new Date());
     provdayFecha.onchange=()=>{try{renderProvHoyReal();}catch(e){}};
+    wireFlechasFecha('provday-fecha');
   }
 }
 {
@@ -15751,6 +15779,7 @@ function refrescarProveedoresHoy(){
   if(provdayFechaCal){
     provdayFechaCal.value=isoLocalDate(new Date());
     provdayFechaCal.onchange=()=>{_provDayExpandido=false;try{renderProvDay();}catch(e){}};
+    wireFlechasFecha('provday-fecha-cal');
   }
 }
 
