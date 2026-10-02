@@ -4626,6 +4626,7 @@ async function cgGuardarCarritoActual(){
     CARRITOS_GUARDADOS=CARRITOS_GUARDADOS.filter(d=>d.provId!==provId); // dedupe: un solo borrador por proveedor
     CARRITOS_GUARDADOS.unshift(draft);
     cgRenderLista();
+    sonidoGuardado();
     showToast('Carrito de "'+provLabel+'" guardado como borrador ('+items.length+' producto'+(items.length===1?'':'s')+')');
   }catch(e){showToast(''+e.message);}
   finally{if(btn)btn.disabled=false;}
@@ -4755,13 +4756,43 @@ async function renderInsumosChart(){
   }catch(e){cc.innerHTML='<div class="cc-empty">Error de conexión.</div>';}
 }
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');const dur=m.length>60?4600:2600;clearTimeout(window._toastT);window._toastT=setTimeout(()=>t.classList.remove('show'),dur);}
+// Sonido corto de confirmación al guardar — Web Audio generado en código, sin archivos externos
+// (coherente con que este archivo no carga nada por <script src>, funciona sin conexión). Se
+// llama SOLO en la rama de éxito real de cada "Guardar"/"Confirmar"/"Aplicar", nunca en errores.
+// El AudioContext se crea una sola vez y se "desbloquea" con el primer toque de la página —
+// algunos navegadores (y WebViews de tablets POS baratas) exigen un gesto del usuario antes de
+// dejar sonar audio; sin esto, el primer "Guardar" de la sesión podría quedar mudo.
+let _audioCtx=null;
+function _getAudioCtx(){
+  if(!_audioCtx){try{_audioCtx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){return null;}}
+  return _audioCtx;
+}
+document.addEventListener('pointerdown',()=>{const ctx=_getAudioCtx();if(ctx&&ctx.state==='suspended')ctx.resume().catch(()=>{});},{once:true});
+function sonidoGuardado(){
+  try{
+    const ctx=_getAudioCtx();
+    if(!ctx)return;
+    if(ctx.state==='suspended')ctx.resume().catch(()=>{});
+    const ahora=ctx.currentTime;
+    [[880,0,0.09],[1318.51,0.08,0.13]].forEach(([freq,retraso,dur])=>{
+      const inicio=ahora+retraso;
+      const osc=ctx.createOscillator(),gain=ctx.createGain();
+      osc.type='sine';osc.frequency.value=freq;
+      gain.gain.setValueAtTime(0.0001,inicio);
+      gain.gain.exponentialRampToValueAtTime(0.25,inicio+0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001,inicio+dur);
+      osc.connect(gain);gain.connect(ctx.destination);
+      osc.start(inicio);osc.stop(inicio+dur+0.02);
+    });
+  }catch(e){/* sin audio disponible — nunca debe interrumpir el guardado */}
+}
 
 // ===================== VERSIÓN Y AUTO-ACTUALIZACIÓN =====================
 // Cada vez que se sube un cambio a GitHub Pages, este texto cambia. La app se revisa a sí
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-09-30.1';
+const APP_VERSION='2026-10-02.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -4910,6 +4941,7 @@ async function aplicarPrecioABC(){
       }})});
     const j=await res.json();
     if(j&&j.ok){
+      sonidoGuardado();
       showToast('Precio actualizado y sincronizado con Loyverse');
       const it=DB.items.find(i=>i.ref===_abcRef);
       if(it&&j.precio!=null)it.precio=j.precio;
@@ -6154,6 +6186,7 @@ async function fpGuardarRecuento(sku){
       const it=DB.items.find(x=>x.ref===sku);
       if(it){it.stock=j.stockNuevo!=null?j.stockNuevo:nuevo;if(j.trackHabilitado)it.track=true;}
       persist();
+      sonidoGuardado();
       showToast((j.trackHabilitado?'Seguimiento activado · ':'Recuento guardado: ')+fmt1(nuevo));
       const scrollActual=document.getElementById('fp-scroll').scrollTop;
       await fpAbrir(sku,{scroll:scrollActual});
@@ -6254,6 +6287,7 @@ async function fpCopiarAOtroLocal(p,modo){
     const j=await res.json();
     if(j&&j.ok){
       box.innerHTML='<span style="color:var(--verde);font-weight:700">✅ '+(j.creado?'Creado':'Actualizado')+' en '+OTRO_LOCAL_NOMBRE+'.</span>';
+      sonidoGuardado();
       showToast((j.creado?'Creado en ':'Actualizado en ')+OTRO_LOCAL_NOMBRE);
     }else{
       box.innerHTML='<span style="color:var(--rojo)">No se pudo copiar: '+((j&&j.error)||'error desconocido')+'</span>';
@@ -6719,6 +6753,7 @@ function fpPaneProveedores(f){
           itLocal.proveedorIdsTodos=(itLocal.proveedorIdsTodos||[]).includes(Number(provId))
             ?itLocal.proveedorIdsTodos:[...(itLocal.proveedorIdsTodos||[]),Number(provId)];
         }
+        sonidoGuardado();
         showToast('Ahora también se pide a '+j.proveedor_nombre);
         fpPaneProveedores(f);render();
       }else{showToast(''+((j&&j.error)||'No se pudo agregar'));}
@@ -6891,6 +6926,7 @@ async function fpEditarFechaLote(filaIndex,nuevaFecha){
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_fecha_venc',payload:{filaIndex:Number(filaIndex),nuevaFecha:nuevaFecha}})});
     const j=await res.json();
     if(j&&j.ok){
+      sonidoGuardado();
       showToast('Fecha corregida a '+j.nuevaFecha+' ('+j.estado+')');
       await fpRecargarTrasLotes(p.sku);
     }else showToast('Error: '+((j&&j.error)||'no se pudo corregir la fecha'));
@@ -7102,6 +7138,7 @@ async function fpGuardarTodo(){
     }
     if(sector)psGuardarAprendizaje(nombre.toUpperCase(),proveedorId||null,sector);
     persist();
+    sonidoGuardado();
     showToast('Producto actualizado'+avisoBarcode+avisoPrecio);
     // Al guardar: cierra la ficha y vuelve directo al buscador de "Editar producto", listo
     // para buscar o escanear el siguiente — antes reabría la misma ficha, obligando a salir
@@ -7345,6 +7382,7 @@ async function rkActivarInventario(btn){
       const it=DB.items.find(x=>x.ref===ref);
       if(it){it.track=true;if(it.stock==null)it.stock=0;}
       persist();
+      sonidoGuardado();
       showToast('Seguimiento activado · '+(it?it.nombre:ref)+' — ahora ingresa el conteo');
       rkRender(); // vuelve a dibujar esta fila ya con el campo de conteo habilitado
     }else{
@@ -7374,6 +7412,7 @@ async function rkGuardarFila(inp){
       inp.value='';
       inp.placeholder=fmt1(nuevo);
       if(row){row.classList.add('flash-update');setTimeout(()=>row.classList.remove('flash-update'),900);}
+      sonidoGuardado();
       if(j.avisoStock)showToast(j.avisoStock);
       else showToast((j.trackHabilitado?'Seguimiento activado · ':'')+(it?it.nombre:ref)+' → '+fmt1(nuevo));
     }else{
@@ -7740,6 +7779,7 @@ async function ejecutarRenombrar(){
       const idx=_psProveedores.findIndex(p=>p.id===_renombrarCtx.id);
       if(idx>-1)_psProveedores[idx].nombre=j.proveedor.nombre;
       _psProveedores.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+      sonidoGuardado();
       showToast('Proveedor renombrado a "'+j.proveedor.nombre+'"');
       cerrarModal('rn-ov');
       if(_renombrarCtx.onRenombrado)_renombrarCtx.onRenombrado(j.proveedor.nombre);
@@ -7753,6 +7793,7 @@ async function ejecutarRenombrar(){
       if(!_psSectores.includes(nuevoUpper))_psSectores.push(nuevoUpper);
       _psSectores.sort((a,b)=>a.localeCompare(b,'es'));
       const msg=j.fusionado?('Fusionado con el sector existente · '+j.productosActualizados+' producto(s)'):('Sector renombrado · '+j.productosActualizados+' producto(s) actualizados');
+      sonidoGuardado();
       showToast(msg);
       cerrarModal('rn-ov');
       if(_renombrarCtx.onRenombrado)_renombrarCtx.onRenombrado(nuevoUpper);
@@ -8386,6 +8427,7 @@ async function _gpGuardarMultiplo(ref,fila,valorEnUnidades,empaqueEnUnidades,pal
     // fuera de #ptbody, nunca se ven afectados) — salvo el panel de Armar pedido, que ya se
     // encargó de refrescar lo que corresponde sin tocar renderTable().
     if(!enPanelPedidos)try{render();}catch(_){}
+    sonidoGuardado();
     showToast('Mínimo actualizado');
   }catch(e){
     showToast('No se pudo guardar el mínimo: '+(e&&e.message?e.message:String(e)));
@@ -8470,6 +8512,7 @@ document.getElementById('gp-crear').onclick=async()=>{
     inp.value='';
     document.getElementById('gp-crear').style.display='none';
     document.getElementById('gp-x').style.display='none';
+    sonidoGuardado();
     showToast((esSector?'Sector creado: ':'Proveedor creado: ')+nombreCreado);
     gpCargar(); // recarga proveedores Y sectores (misma acción action=proveedores) y repinta la pestaña activa
   }catch(e){showToast(''+e.message);}
@@ -8857,6 +8900,7 @@ document.getElementById('mcg-aplicar-seleccion').onclick=async()=>{
     // skus.length (lo marcado) — antes decía "actualizados" aunque el UPDATE no tocara nada.
     const realProv=j.actualizadosProveedor||0, realSect=j.actualizadosSector||0;
     const totalReal=provId&&sectorVal?Math.max(realProv,realSect):(provId?realProv:realSect);
+    sonidoGuardado();
     showToast(''+totalReal+' producto(s) actualizados'+extra);
     mcRefrescarChipActivo(realProv,realSect);
     await mcSeleccionarCategoria(_mcCategoriaActiva); // recarga la lista con el estado real
@@ -8880,6 +8924,7 @@ document.getElementById('mcg-aplicar-categoria').onclick=async()=>{
     const j=await res.json();
     if(!j||!j.ok)throw new Error((j&&j.error)||'No se pudo aplicar');
     const extra=j.agregadosComoAdicional?(' · '+j.agregadosComoAdicional+' ya tenían otro proveedor: se sumó como adicional'):'';
+    sonidoGuardado();
     showToast(''+categoria+': '+Math.max(j.actualizadosProveedor||0,j.actualizadosSector||0)+' producto(s) actualizados'+extra);
     const idx=_mcCategorias.findIndex(c=>c.categoria===categoria);
     if(idx>-1){if(provId)_mcCategorias[idx].sin_proveedor=0;if(sectorVal)_mcCategorias[idx].sin_sector=0;}
@@ -9592,6 +9637,7 @@ document.getElementById('cp-cat-crear').onclick=async()=>{
       cpLlenarSelect(c.id);
       document.getElementById('cp-cat-nuevabox').classList.add('hidden');
       document.getElementById('cp-cat-nuevanom').value='';
+      if(!c.yaExistia)sonidoGuardado();
       showToast(c.yaExistia?('Ya existía: '+c.name):('Categoría creada: '+c.name));
     }else showToast('Error: '+((j&&j.error)||'no se pudo crear'));
   }catch(e){showToast('Error de conexión');}
@@ -9852,6 +9898,7 @@ document.getElementById('cp-guardar').onclick=async()=>{
       else if(j.producto.enEstaTienda===false)m+=' ⚠️ no asignado a tu tienda';
       else m+=' ✓ verificado en Loyverse';
       if(j.advertencia)m+=' — '+j.advertencia;
+      sonidoGuardado();
       showToast(m);
       if(_cpImagenUrl||_cpImagenBase64){
         const payloadImg=_cpImagenBase64?{sku:j.producto.ref,image_base64:_cpImagenBase64,content_type:_cpImagenContentType}:{sku:j.producto.ref,image_url:_cpImagenUrl};
@@ -10162,6 +10209,7 @@ document.getElementById('mm-save').onclick=async()=>{
       let msg='Merma registrada: '+j.resumen.n+' producto'+(j.resumen.n===1?'':'s')+' · '+peso(j.resumen.total);
       if((j.filas||[]).some(f=>f.estadoCosto&&f.estadoCosto.indexOf('⚠')===0))msg+=' · ⚠️ revisar costo';
       if(j.resumen.avisoStock)msg+=' · '+j.resumen.avisoStock;
+      sonidoGuardado();
       showToast(msg);
       // Los productos que vienen de "Merma"/"Consumo interno" en Vencimientos (mmPrefill) recién
       // cierran su lote acá, ahora que la merma se guardó de verdad (con stock ya descontado) —
@@ -11430,6 +11478,7 @@ async function vcAjustarStockLote(filaIndex,sku){
       const it=(DB.items||[]).find(x=>x.ref===sku);
       if(it){it.stock=j.stockNuevo!=null?j.stockNuevo:nuevo;if(j.trackHabilitado)it.track=true;}
       persist();
+      sonidoGuardado();
       showToast((j.trackHabilitado?'Seguimiento activado · ':'Stock ajustado: ')+fmt1(nuevo));
       vcAplicarFiltro();   // repinta la tarjeta con el nuevo "Stock actual" y cierra el mini-formulario
     }else{
@@ -11471,6 +11520,7 @@ async function vcRetirarLote(filaIndex,sku,cantidadTotal){
       const msg=f.cantidadRestante!=null
         ?('Retirado: '+cantidad+' · quedan '+f.cantidadRestante+' pendientes en Lista')
         :('Retirado: '+cantidad+' · pasa a Pendientes');
+      sonidoGuardado();
       showToast(msg+(f.avisoStock?' · '+f.avisoStock:''));
       vcLoad();
     }else{
@@ -11509,6 +11559,7 @@ async function vcAplicarPrecio(btn){
       const precioOriginal=it?it.precio:null;
       if(it){it.precio=j.precioAplicado!=null?j.precioAplicado:precio;persist();}
       btn.textContent='✓ Aplicado';
+      sonidoGuardado();
       showToast(j.advertencia?j.advertencia:'Precio aplicado y sincronizado — pasó a Descuentos activos');
       // Saca esta fila de la lista en memoria y vuelve a pintar — mismo criterio que ya usa
       // vcAplicarFiltro para excluir 'Retirado': el lote ya no pertenece a esta vista. El
@@ -11644,6 +11695,7 @@ async function daRestaurarPrecio(filaIndex){
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'restaurar_precio_descuento',payload:{filaIndex}})});
     const j=await res.json();
     if(j&&j.ok){
+      sonidoGuardado();
       showToast('Precio restaurado en Loyverse');
       _daLotes=_daLotes.filter(l=>String(l.filaIndex)!==String(filaIndex));
       _daPendientesRestaurar=_daPendientesRestaurar.filter(l=>String(l.filaIndex)!==String(filaIndex));
@@ -11668,6 +11720,7 @@ async function daRegistrar(filaIndex){
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'registrar_gestion_descuento',payload:{filaIndex,cantidadVendida,cantidadMerma}})});
     const j=await res.json();
     if(j&&j.ok){
+      sonidoGuardado();
       if(j.cerrado){
         showToast('Lote completado — pasó a Historial');
         _daLotes=_daLotes.filter(l=>String(l.filaIndex)!==String(filaIndex));
@@ -11697,6 +11750,7 @@ async function daCerrar(filaIndex){
       // Si el backend no pudo restaurar el precio en Loyverse al cerrar, avisa acá en vez de
       // quedar invisible — el lote igual se cierra (recarga daCargar() para que aparezca en
       // "Precios pendientes de restaurar" y se pueda reintentar desde ahí).
+      sonidoGuardado();
       showToast(j.advertencia?j.advertencia:'Gestión cerrada — pasó a Historial');
       _daLotes=_daLotes.filter(x=>String(x.filaIndex)!==String(filaIndex));
       daRender();
@@ -11724,6 +11778,7 @@ async function vcEditarFecha(filaIndex,nuevaFecha){
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_fecha_venc',payload:{filaIndex:Number(filaIndex),nuevaFecha:nuevaFecha}})});
     const j=await res.json();
     if(j&&j.ok){
+      sonidoGuardado();
       showToast('Fecha corregida a '+j.nuevaFecha+' ('+j.estado+')');
       vcRefreshCurrentView();
     }else{showToast('Error: '+((j&&j.error)||'no se pudo corregir la fecha'));}
@@ -11754,6 +11809,7 @@ async function vcMarcarCambiado(filaIndex,nombre,cantidadTotal,unidad,cantidadCa
       // saltar a Recibir — para poder seguir procesando otros lotes uno atrás de otro sin
       // reabrir la pantalla cada vez. vcRefreshCurrentView (no vcLoad) porque vcLoad siempre
       // vuelve a la pestaña "Lista".
+      sonidoGuardado();
       if(f.parcial){
         showToast('Cambio parcial: '+cantidadCambiada+' de '+total+' '+(unidad||'u')+' de '+(nombre||f.nombre)+fechaTxt+' — quedan '+f.cantidadRestante+' pendientes'+(f.avisoStock?' · '+f.avisoStock:''));
       }else{
@@ -11793,6 +11849,7 @@ async function vcMarcarDescuento(filaIndex,nombre,sku,cantidad){
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'marcar_descuento_factura',payload:{filaIndex:filaIndex,revisadoPor:'',montoDescuento:monto}})});
     const j=await res.json();
     if(j&&j.ok){
+      sonidoGuardado();
       showToast('Descuento registrado: '+(nombre||j.fila.nombre)+(monto?' · '+peso(monto):''));
       _vcTodos=_vcTodos.filter(l=>String(l.filaIndex)!==String(filaIndex));
       vcRefreshCurrentView();
@@ -11819,6 +11876,7 @@ async function vcRevisar(filaIndex,resultado,recargar){
       }
       if(recargar){
         const msgs={vendido:'Marcado como vendido/liquidado',merma:'Registrado como merma',revisado:'Marcado como revisado',retirado:'Retirado — pasa a Pendientes'};
+        sonidoGuardado();
         showToast((msgs[resultado]||'Lote revisado')+(f.avisoStock?' · '+f.avisoStock:''));
         // 'retirado' NO se saca de _vcTodos — sigue existiendo (estado='Retirado'), solo se
         // mueve visualmente a la pestaña Pendientes. Los demás cierres ('vendido'/'merma'/
@@ -11981,6 +12039,7 @@ document.getElementById('vc-guardar').onclick=async()=>{
     }})});
     const j=await res.json();
     if(j&&j.ok){
+      sonidoGuardado();
       showToast('Lote registrado: '+it.nombre);
       // Agrega el lote nuevo a la lista en memoria y repinta YA, sin volver a pedir
       // toda la lista al servidor (evita un viaje de red completo de más).
@@ -12485,6 +12544,7 @@ document.getElementById('in-guardar').onclick=async()=>{
     if(j&&j.ok){
       let msg='Consumo registrado: '+j.resumen.n+' producto'+(j.resumen.n===1?'':'s')+' · '+peso(j.resumen.total);
       if(j.resumen.avisoStock)msg+=' · '+j.resumen.avisoStock;
+      sonidoGuardado();
       showToast(msg);
       inLimpiarBorrador();
       closeInsumos();
@@ -12623,6 +12683,7 @@ document.getElementById('pr-guardar').onclick=async()=>{
       let msg=(prState.dir==='salida'?'Salida registrada: ':'Entrada registrada: ')+j.nombre+' · '+j.cantidad+(j.unidad||'');
       if(j.avisoStock)msg+=' · '+j.avisoStock;
       if(j.avisoLote)msg+=' · '+j.avisoLote;
+      sonidoGuardado();
       showToast(msg);
       prState.item=null;
       document.getElementById('pr-search').value='';
@@ -12677,6 +12738,7 @@ async function prDevolver(id,btn){
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'devolver_prestamo',payload:{id}})});
     const j=await res.json();
     if(j&&j.ok){
+      sonidoGuardado();
       showToast('Préstamo #'+id+' marcado como devuelto'+(j.avisoStock?' · '+j.avisoStock:''));
       prCargarPendientes();
     }else{showToast('Error: '+((j&&j.error)||'no se pudo guardar'));btn.disabled=false;btn.textContent='Devuelto';}
@@ -12700,6 +12762,7 @@ async function prCorregirDireccion(id,btn,direccionActual,sku,cantidad,costoUnit
     const res2=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'registrar_prestamo',payload:{sku,direccion:nuevaDir,cantidad,costoManual:costoUnitario||0,responsable:responsable||''}})});
     const j2=await res2.json();
     if(j2&&j2.ok){
+      sonidoGuardado();
       showToast('Dirección corregida a "'+nuevaDirTxt+'"'+(j2.avisoStock?' · '+j2.avisoStock:''));
       prCargarPendientes();
     }else{
@@ -12941,6 +13004,7 @@ document.getElementById('cf-aplicar').onclick=async()=>{
         }
         let msg='Aplicado: '+it.nombre+' → costo '+peso(j.costo)+(j.precio!=null?' · precio '+peso(j.precio):'');
         if(j.advertencia)msg+=' · '+j.advertencia;
+        sonidoGuardado();
         showToast(msg);
         render();
       }
@@ -13252,6 +13316,7 @@ document.getElementById('rc-provid-add').onclick=async()=>{
       it.proveedorIdsTodos=(it.proveedorIdsTodos||[]).includes(Number(provId))?it.proveedorIdsTodos:[...(it.proveedorIdsTodos||[]),Number(provId)];
       it.proveedorNombresExtra=it.proveedorNombresExtra||[];
       if(!it.proveedorNombresExtra.includes(j.proveedor_nombre))it.proveedorNombresExtra.push(j.proveedor_nombre);
+      sonidoGuardado();
       showToast('Ahora también se pide a '+j.proveedor_nombre);
       rcRenderProveedores(it);
       render();
@@ -13304,7 +13369,7 @@ document.getElementById('rc-activar-inv').onclick=async()=>{
       document.getElementById('rc-cantidad-field').classList.remove('hidden');
       document.getElementById('rc-sin-track-msg').classList.add('hidden');
       if(j.yaEstaba){btn.textContent='Inventario ya activado';}
-      else{btn.textContent='Inventario activado';showToast('Seguimiento activado · '+it.nombre);}
+      else{btn.textContent='Inventario activado';sonidoGuardado();showToast('Seguimiento activado · '+it.nombre);}
       btn.style.opacity=.7;
       // se queda deshabilitado para este producto — vuelve a habilitarse solo al elegir otro (rcPick)
     }else{
@@ -13443,6 +13508,7 @@ async function rcAjustarGuardar(){
       const stockTxt=(it.stock==null)?'sin control':(it.stock+(it.peso?' kg':' u'));
       document.getElementById('rc-stock').textContent='Stock actual: '+stockTxt;
       rcRenderMovimientos(it);
+      sonidoGuardado();
       showToast((j.trackHabilitado?'Seguimiento activado · ':'Stock ajustado: ')+fmt1(nuevo));
       inp.value='';
       render();
@@ -13976,6 +14042,7 @@ document.getElementById('rc-guardar').onclick=async()=>{
       let msg='Recibido: '+it.nombre+' · +'+cantidad+' '+(it.peso?'kg':'u')+(fecha?(' · vence '+fecha):' · sin vencimiento');
       if(costoCambio||precioCambio)msg+=' · '+(costoCambio?'costo':'')+(costoCambio&&precioCambio?' y ':'')+(precioCambio?'precio':'')+' actualizados';
       if(j.fila.avisoStock)msg+=' · '+j.fila.avisoStock;
+      sonidoGuardado();
       showToast(msg);
       // No cerramos: reseteamos y dejamos la ventana lista para el siguiente producto,
       // así puedes recibir varios seguidos sin tener que reabrir Recepción.
@@ -14022,6 +14089,7 @@ async function rcGuardarSoloPrecio(it){
         }
         let msg='Actualizado: '+it.nombre+' · '+(costoCambio&&precioCambio?'costo y precio':(costoCambio?'costo':'precio'));
         if(j.advertencia)msg+=' · '+j.advertencia;
+        sonidoGuardado();
         showToast(msg);
         render();
       }
@@ -14277,6 +14345,7 @@ async function rzGuardarStock(sku,rid){
       // localmente y devuelve ok:true + avisoStock — hay que avisar eso en vez del toast de
       // éxito genérico, o el usuario cree que quedó todo sincronizado cuando no fue así (mismo
       // chequeo que ya hace rkGuardarFila en Reconteo de stock).
+      sonidoGuardado();
       if(j.avisoStock)showToast(j.avisoStock);
       else showToast((j.trackHabilitado?'Seguimiento activado · ':'Stock corregido: ')+fmt1(nuevo));
       rzRender(); // vuelve a calcular el riesgo con el stock ya corregido — el producto puede salir de la lista si ya no está en riesgo
@@ -14774,7 +14843,7 @@ async function llGuardarFecha(filaIndex){
   try{
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'asignar_llegada',payload:{filaIndex:filaIndex,fechaVencimiento:fecha}})});
     const j=await res.json();
-    if(j&&j.ok){showToast('Lote creado en Vencimientos · vence '+fecha);row.remove();llCheckBadge();}
+    if(j&&j.ok){sonidoGuardado();showToast('Lote creado en Vencimientos · vence '+fecha);row.remove();llCheckBadge();}
     else{showToast('Error: '+((j&&j.error)||'no se pudo guardar'));btn.disabled=false;btn.textContent='Guardar';}
   }catch(e){showToast('Error de conexión');btn.disabled=false;btn.textContent='Guardar';}
 }
@@ -15235,6 +15304,7 @@ function confirmarPedidoConCanal(canal){
       const guardado=await marcarPedidoRealizado(lineasAGuardar,canal,fecha,soloEsteProv?state.prov:null);
       if(btn)btn.disabled=false;
       if(!guardado)return; // marcarPedidoRealizado ya mostró el toast de error — no se toca el carrito ni se copia nada
+      sonidoGuardado();
       // El pedido ya quedó guardado — recién ahora se vacía TODO el carrito, sin cargar
       // sugeridos de inmediato después (eso solo pasa la próxima vez que se elija un
       // proveedor con el carrito ya vacío, ver pickProv).

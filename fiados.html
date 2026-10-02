@@ -281,6 +281,33 @@ function fechaChileLegible(isoUtc){
   return get('day')+'/'+get('month')+'/'+get('year')+' '+get('hour')+':'+get('minute')+' '+ampm;
 }
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');const dur=m.length>60?4600:2600;clearTimeout(window._toastT);window._toastT=setTimeout(()=>t.classList.remove('show'),dur);}
+// Sonido corto de confirmación al guardar/cobrar — mismo mecanismo que index.html (Web Audio
+// generado en código, sin archivos externos, funciona sin conexión). Solo en la rama de éxito
+// real, nunca en errores. Ver comentario completo en index.html.
+let _audioCtx=null;
+function _getAudioCtx(){
+  if(!_audioCtx){try{_audioCtx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){return null;}}
+  return _audioCtx;
+}
+document.addEventListener('pointerdown',()=>{const ctx=_getAudioCtx();if(ctx&&ctx.state==='suspended')ctx.resume().catch(()=>{});},{once:true});
+function sonidoGuardado(){
+  try{
+    const ctx=_getAudioCtx();
+    if(!ctx)return;
+    if(ctx.state==='suspended')ctx.resume().catch(()=>{});
+    const ahora=ctx.currentTime;
+    [[880,0,0.09],[1318.51,0.08,0.13]].forEach(([freq,retraso,dur])=>{
+      const inicio=ahora+retraso;
+      const osc=ctx.createOscillator(),gain=ctx.createGain();
+      osc.type='sine';osc.frequency.value=freq;
+      gain.gain.setValueAtTime(0.0001,inicio);
+      gain.gain.exponentialRampToValueAtTime(0.25,inicio+0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001,inicio+dur);
+      osc.connect(gain);gain.connect(ctx.destination);
+      osc.start(inicio);osc.stop(inicio+dur+0.02);
+    });
+  }catch(e){/* sin audio disponible — nunca debe interrumpir el guardado */}
+}
 // El backend guarda monto_total del fiado tal cual lo entrega Loyverse (r.total_money), que ya
 // viene neto de cualquier descuento del ticket (de línea o del total) — el saldo/lo que se
 // cobra SIEMPRE es correcto, sin importar el descuento. Lo único que no reconciliaba a simple
@@ -557,6 +584,7 @@ async function fdEjecutarFusion(origenId,destinoId){
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'fiados_fusionar_clientes',payload:{cliente_origen_id:origenId,cliente_destino_id:destinoId}})});
     const j=await res.json();
     if(j&&j.ok){
+      sonidoGuardado();
       showToast('Clientes fusionados: ahora todo está bajo "'+nombreDestino+'"');
       fdCargarListaFiados();
     }else{showToast('Error: '+((j&&j.error)||'no se pudo fusionar'));}
@@ -775,6 +803,7 @@ async function fdConfirmarEliminarLinea(row){
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'fiados_eliminar_linea',payload:{linea_id:lineaId}})});
     const j=await res.json();
     if(j&&j.ok){
+      sonidoGuardado();
       showToast(j.avisoStock?('Línea eliminada. '+j.avisoStock):'Línea eliminada, stock devuelto');
       fdAbrirDetalle(fdState.clienteId,fdState.clienteNombre);
     }else{
@@ -906,6 +935,7 @@ async function fdConfirmarCobro(){
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'fiados_cobrar',payload:{cliente_id:fdState.clienteId,monto,metodo_pago:fdState.metodoPago}})});
     const j=await res.json();
     if(j&&j.ok){
+      sonidoGuardado();
       fdState.ultimoCobro=Object.assign({},j,{monto,metodoPago:fdState.metodoPago,vuelto:fdState.metodoPago==='efectivo'?Math.max(0,recibido-monto):0,clienteNombre:fdState.clienteNombre});
       fdRenderComprobante(fdState.ultimoCobro);
       // El cobro ya se registró — deja de estar "abierto para cobrar", así que un refresco
@@ -995,6 +1025,7 @@ async function fdAsignarCliente(fiadoId,clienteId){
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'fiados_asignar_cliente',payload:{fiado_id:Number(fiadoId),cliente_id:clienteId}})});
     const j=await res.json();
     if(j&&j.ok){
+      sonidoGuardado();
       showToast('Cliente asignado correctamente');
       history.back();
       fdCargarSinCliente();
