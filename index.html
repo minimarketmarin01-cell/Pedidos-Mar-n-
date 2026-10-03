@@ -16032,7 +16032,11 @@ _actualizarVisibilidadFab();
 const REABRIR_MODULO={
   'rc-ov':()=>{try{rcReset();}catch(e){}abrirModal('rc-ov');try{const d=rcCargarBorrador();if(d)rcAplicarBorrador(d);}catch(e){}},
   'vc-ov':()=>{abrirModal('vc-ov');try{vcShowList();}catch(e){}try{vcLoad();}catch(e){}},
-  'cp-ov':()=>{try{cpReset();}catch(e){}abrirModal('cp-ov');try{cpCargarCatalogo();}catch(e){}},
+  // Antes era una copia manual de cpAbrir() que se quedó corta: no llamaba a psInitCombo, así
+  // que un F5 dejaba los buscadores de Proveedor y Sector sin conectar (no desplegaban nada al
+  // tocarlos) hasta cerrar y reabrir el modal a mano. Se llama a cpAbrir() directo para que un
+  // F5 abra exactamente lo mismo que tocar "Crear producto", sin volver a duplicar su lógica.
+  'cp-ov':()=>{try{cpAbrir();}catch(e){}},
   'in-ov':()=>{
     const d=inCargarBorrador();
     if(d){
