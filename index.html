@@ -3013,7 +3013,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
               <input id="cp-barcode" placeholder="Escanea o escribe" autocomplete="off" style="padding-right:58px">
               <button class="mm-scan cam-btn" id="cp-scan" type="button" aria-label="Escanear"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button>
             </div>
-            <div style="font-size:11px;color:var(--muted);margin-top:5px">Si el código se reconoce, el nombre se completa solo.</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:5px">Si el código se reconoce, el nombre se completa solo. <button type="button" id="cp-generar-codigo" style="background:none;border:none;color:var(--azul);font-weight:700;cursor:pointer;padding:0;font-size:11px;text-decoration:underline">¿No tiene código de barras? Generar uno</button></div>
           </div>
           <div style="font-size:11.5px;color:var(--muted);margin:2px 0 10px">El código interno (SKU) se genera <b>automáticamente</b> y es único — no se edita a mano.</div>
         </section>
@@ -4799,7 +4799,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-02.3';
+const APP_VERSION='2026-10-05.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -6316,13 +6316,22 @@ function fpPaneUnidad(f){
     '</div>'+
     fpCampo('Código de barras (opcional)',
       '<div class="mm-search"><input id="fp-g-barcode" value="'+(p.barcode||'').replace(/"/g,'&quot;')+'" placeholder="Escanea o escribe" autocomplete="off" style="padding-right:58px">'+
-      '<button class="mm-scan cam-btn" id="fp-g-scan" type="button" aria-label="Escanear"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button></div>');
+      '<button class="mm-scan cam-btn" id="fp-g-scan" type="button" aria-label="Escanear"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg></button></div>',
+      '<button type="button" id="fp-g-generar-codigo" style="background:none;border:none;color:var(--azul);font-weight:700;cursor:pointer;padding:0;font-size:11px;text-decoration:underline">¿No tiene código de barras? Generar uno</button>');
   document.querySelectorAll('#fp-g-barcode').forEach(el=>el&&el.addEventListener('input',fpGuardarBorrador));
   const fpBarcodeInp=document.getElementById('fp-g-barcode');
   document.getElementById('fp-g-scan').onclick=()=>{
     const reopen=()=>{document.getElementById('fp-ov').classList.remove('hidden');_sincronizarNav();};
     document.getElementById('fp-ov').classList.add('hidden');
     openScanner(code=>{reopen();fpBarcodeInp.value=code;},reopen);
+  };
+  document.getElementById('fp-g-generar-codigo').onclick=()=>{
+    if((fpBarcodeInp.value||'').trim()&&!confirm('Ya hay un código escrito ("'+fpBarcodeInp.value.trim()+'"). ¿Reemplazarlo por uno generado?'))return;
+    const codigo=generarCodigoBarrasInterno();
+    if(!codigo){showToast('No se pudo generar un código único — intenta de nuevo');return;}
+    fpBarcodeInp.value=codigo;
+    fpGuardarBorrador();
+    showToast('Código interno generado: '+codigo+' — toca "Guardar cambios" y luego imprime la etiqueta');
   };
   const fpPintarTipoVenta=()=>{
     const bU=document.getElementById('fp-g-tipo-unidad'),bP=document.getElementById('fp-g-tipo-peso');
@@ -9841,6 +9850,15 @@ document.getElementById('cp-scan').onclick=()=>{
   document.getElementById('cp-ov').classList.add('hidden');
   openScanner(code=>{reopen();document.getElementById('cp-barcode').value=code;cpAutocompletarPorCodigo(code);},reopen);
 };
+document.getElementById('cp-generar-codigo').onclick=()=>{
+  const inp=document.getElementById('cp-barcode');
+  if((inp.value||'').trim()&&!confirm('Ya hay un código escrito ("'+inp.value.trim()+'"). ¿Reemplazarlo por uno generado?'))return;
+  const codigo=generarCodigoBarrasInterno();
+  if(!codigo){showToast('No se pudo generar un código único — intenta de nuevo');return;}
+  inp.value=codigo;
+  cpValidar();
+  showToast('Código interno generado: '+codigo+' — imprime la etiqueta para poder escanearlo en caja');
+};
 // Wrapper fino sobre PriceCalc para el guardado real — Loyverse siempre guarda el costo POR
 // UNIDAD, nunca el de la caja/display: si cpPState.modo es 'caja', costoBruto ya divide por
 // "Unidades por caja" internamente (mismo mecanismo que Ficha/Recepción).
@@ -10349,6 +10367,26 @@ const EAN13=(function(){
   }
   return {svg,esValido};
 })();
+
+// Genera un código de barras interno EAN-13 válido para productos que no vienen con código de
+// fábrica (verduras sueltas, productos elaborados en el local, etc.) — usa el prefijo "20",
+// parte del rango 20-29 que el estándar GS1 reserva para uso interno de cada comercio (nunca
+// puede colisionar con un código real de fábrica de otro producto). Se valida contra TODOS los
+// códigos de barras ya usados en el catálogo cargado (DB.items) para garantizar unicidad. Usado
+// tanto en Crear producto como en Ficha de producto (botón "Generar uno" junto al campo).
+function generarCodigoBarrasInterno(){
+  const existentes=new Set((DB.items||[]).map(it=>String(it.barcode||'').trim()).filter(Boolean));
+  for(let intento=0;intento<200;intento++){
+    let cuerpo='20';
+    for(let i=0;i<10;i++)cuerpo+=Math.floor(Math.random()*10);
+    let suma=0;
+    for(let i=0;i<12;i++){const d=Number(cuerpo[i]);suma+=(i%2===0)?d:d*3;}
+    const control=String((10-(suma%10))%10);
+    const codigo=cuerpo+control;
+    if(!existentes.has(codigo))return codigo;
+  }
+  return null; // prácticamente imposible (10^10 combinaciones) — si pasa, se avisa en vez de arriesgar un duplicado
+}
 
 // Code 128 (subconjunto B) — se usa SOLO para el caso puntual que ni el ancho de módulos ni la
 // altura de guardas de EAN-13 pueden resolver: un código guardado con 13 dígitos y el primero en
