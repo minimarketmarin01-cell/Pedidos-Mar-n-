@@ -4799,7 +4799,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-06.1';
+const APP_VERSION='2026-10-06.2';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -10369,15 +10369,24 @@ const EAN13=(function(){
 })();
 
 // Genera un código de barras interno EAN-13 válido para productos que no vienen con código de
-// fábrica (verduras sueltas, productos elaborados en el local, etc.) — usa el prefijo "20",
-// parte del rango 20-29 que el estándar GS1 reserva para uso interno de cada comercio (nunca
-// puede colisionar con un código real de fábrica de otro producto). Se valida contra TODOS los
-// códigos de barras ya usados en el catálogo cargado (DB.items) para garantizar unicidad. Usado
-// tanto en Crear producto como en Ficha de producto (botón "Generar uno" junto al campo).
+// fábrica (verduras sueltas, productos elaborados en el local, etc.). Usa el prefijo "04", parte
+// del rango 040-049 que GS1 reserva para uso interno de cada comercio (nunca puede colisionar con
+// un código real de fábrica de otro producto) — a propósito NO se usa el rango "20-29": Loyverse
+// (y varios sistemas de punto de venta/balanzas) interpretan CUALQUIER código que empiece con "20"
+// como un "código con peso embebido" (formato 20+SKU 5 dígitos+peso en gramos 5 dígitos+dígito de
+// control, ver help.loyverse.com/help/barcodes-with-embedded-weight) — así que al escanear un
+// código nuestro con ese prefijo, Loyverse lo parseaba mal (sacaba un "SKU" de 5 dígitos inventado
+// de en medio del código, no el código completo) y tiraba "Artículo no encontrado" en vez de
+// reconocer el producto, aunque el código en sí fuera perfectamente válido y legible. Reportado:
+// el lector sí detectaba el código (una vez corregido el alto de la etiqueta) pero la caja daba
+// "No se encontró el SKU de barras 66458" — exactamente los dígitos 3 a 7 del código generado.
+// Se valida contra TODOS los códigos de barras ya usados en el catálogo cargado (DB.items) para
+// garantizar unicidad. Usado tanto en Crear producto como en Ficha de producto (botón "Generar
+// uno" junto al campo).
 function generarCodigoBarrasInterno(){
   const existentes=new Set((DB.items||[]).map(it=>String(it.barcode||'').trim()).filter(Boolean));
   for(let intento=0;intento<200;intento++){
-    let cuerpo='20';
+    let cuerpo='04';
     for(let i=0;i<10;i++)cuerpo+=Math.floor(Math.random()*10);
     let suma=0;
     for(let i=0;i<12;i++){const d=Number(cuerpo[i]);suma+=(i%2===0)?d:d*3;}
