@@ -4799,7 +4799,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-05.1';
+const APP_VERSION='2026-10-05.2';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -10297,7 +10297,7 @@ const Barcode39=(function(){
       }
       if(i<secuencia.length-1)x+=1; // espacio entre caracteres (1 unidad angosta)
     });
-    return `<svg viewBox="0 0 ${x.toFixed(2)} ${alto}" preserveAspectRatio="none" style="width:100%;height:100%;display:block">${barras.join('')}</svg>`;
+    return `<svg viewBox="0 0 ${x.toFixed(2)} ${alto}" preserveAspectRatio="none" shape-rendering="crispEdges" style="width:100%;height:100%;display:block">${barras.join('')}</svg>`;
   }
   return {svg,sanear};
 })();
@@ -10363,7 +10363,7 @@ const EAN13=(function(){
         barras.push(`<rect x="${x}" y="0" width="1" height="${h}"/>`);
       }
     }
-    return `<svg viewBox="0 0 ${modulos.length} ${alto}" preserveAspectRatio="none" style="width:100%;height:100%;display:block">${barras.join('')}</svg>`;
+    return `<svg viewBox="0 0 ${modulos.length} ${alto}" preserveAspectRatio="none" shape-rendering="crispEdges" style="width:100%;height:100%;display:block">${barras.join('')}</svg>`;
   }
   return {svg,esValido};
 })();
@@ -10448,7 +10448,7 @@ const Code128=(function(){
     for(let x=0;x<modulos.length;x++){
       if(modulos[x]==='1')barras.push(`<rect x="${x}" y="0" width="1" height="${alto}"/>`);
     }
-    return `<svg viewBox="0 0 ${modulos.length} ${alto}" preserveAspectRatio="none" style="width:100%;height:100%;display:block">${barras.join('')}</svg>`;
+    return `<svg viewBox="0 0 ${modulos.length} ${alto}" preserveAspectRatio="none" shape-rendering="crispEdges" style="width:100%;height:100%;display:block">${barras.join('')}</svg>`;
   }
   return {svg};
 })();
