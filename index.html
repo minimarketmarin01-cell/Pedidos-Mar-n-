@@ -4799,7 +4799,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-05.2';
+const APP_VERSION='2026-10-06.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -10557,14 +10557,18 @@ function etCargarTamano(){
     if(raw){const d=JSON.parse(raw);if(d&&d.ancho&&d.alto)return {ancho:d.ancho,alto:d.alto,texto:ET_TEXTO_PRESETS[d.texto]?d.texto:'normal'};}
   }catch(e){}
   // ancho: 58mm, el ancho físico real del rollo autoadhesivo de la tiquetera (no cambia). alto:
-  // 22mm por defecto — con texto al doble (ET_TEXTO_PRESETS) no entraba en los 15mm originales
-  // sin volver a apretar el código de barras; como se imprime de un rollo continuo no hay límite
-  // físico real en el alto, solo rinden menos etiquetas por metro de rollo. Sigue siendo editable.
-  return {ancho:58,alto:22,texto:'normal'};
+  // 32mm por defecto — con 22mm el código de barras quedaba con solo ~7mm de alto real (una vez
+  // descontado nombre/precio/código/fecha), muy por debajo de los ~15-23mm de un código de fábrica
+  // normal: un lector láser de mostrador necesita barrer una franja más alta para enganchar el
+  // código de forma confiable (reportado: el celular sí lo leía por foto, pero el lector de caja
+  // no — la cámara analiza la imagen completa, el láser necesita barrer físicamente las barras).
+  // Con 32mm el código queda con ~17mm de alto real. Como se imprime de un rollo continuo no hay
+  // límite físico real en el alto, solo rinden menos etiquetas por metro de rollo. Editable igual.
+  return {ancho:58,alto:32,texto:'normal'};
 }
 function etGuardarTamano(){
   const ancho=Number(document.getElementById('et-ancho').value)||58;
-  const alto=Number(document.getElementById('et-alto').value)||15;
+  const alto=Number(document.getElementById('et-alto').value)||32;
   const selBtn=document.querySelector('#et-texto button.sel');
   const texto=(selBtn&&ET_TEXTO_PRESETS[selBtn.dataset.t])?selBtn.dataset.t:'normal';
   try{localStorage.setItem(ET_TAMANO_LS_KEY,JSON.stringify({ancho,alto,texto}));}catch(e){}
@@ -10574,7 +10578,7 @@ function etGuardarTamano(){
 function etRenderPreview(){
   const it=etState.item;
   const ancho=Number(document.getElementById('et-ancho').value)||58;
-  const alto=Number(document.getElementById('et-alto').value)||15;
+  const alto=Number(document.getElementById('et-alto').value)||32;
   const mmPx=3.6; // conversión aproximada mm→px solo para que la vista previa se vea a escala
   const label=document.getElementById('et-preview-label');
   label.style.width=(ancho*mmPx)+'px';
@@ -10635,7 +10639,7 @@ function etImprimir(){
   if(!it)return;
   const cantidad=Math.max(1,Math.min(50,Number(document.getElementById('et-cantidad').value)||1));
   const ancho=Number(document.getElementById('et-ancho').value)||58;
-  const alto=Number(document.getElementById('et-alto').value)||15;
+  const alto=Number(document.getElementById('et-alto').value)||32;
   const codigo=etCodigoDe(it);
   const dd=document.getElementById('et-fecha-dd').value,mm=document.getElementById('et-fecha-mm').value,aa=document.getElementById('et-fecha-aaaa').value;
   const fechaTxt=(dd.length===2&&mm.length===2&&aa.length===2)?('Vence: '+dd+'/'+mm+'/20'+aa):'';
