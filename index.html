@@ -455,6 +455,40 @@ html.carrito-fijo #rc-ov .mm-sections{
 .et-label .et-bottom{display:flex;justify-content:space-between;align-items:center;gap:4px;flex:none}
 .et-label .et-cod{font-size:6.5px;font-family:'JetBrains Mono';letter-spacing:.03em;line-height:1}
 .et-label .et-fecha{font-size:6.5px;color:var(--muted);line-height:1}
+/* Etiquetas de ensaladas (#eq-ov) — pantalla pensada para una persona mayor: letras y botones
+   grandes, pocos pasos. El estilo de la etiqueta en sí (.eq-label) NO vive acá: se genera en JS
+   (eqCssEtiqueta) y se usa igual en la vista previa y en el HTML que se manda a imprimir. */
+.eq-mas-btn{display:flex;align-items:center;gap:12px;width:100%;padding:16px;margin-bottom:12px;border:1.5px solid var(--ink);border-radius:var(--radius-card);background:var(--card);font:700 17px 'Manrope',sans-serif;color:var(--ink);text-align:left;cursor:pointer}
+.eq-mas-btn small{display:block;font:500 12.5px 'Inter',sans-serif;color:var(--muted);margin-top:2px}
+.eq-sec{margin-bottom:18px}
+.eq-tit{font:800 17px 'Manrope',sans-serif;margin-bottom:8px}
+.eq-search{width:100%;padding:14px;border:1.5px solid var(--line);border-radius:12px;font-size:17px;box-sizing:border-box}
+.eq-tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}
+.eq-tile{min-height:68px;padding:10px 12px;border:1.5px solid var(--line);border-radius:12px;background:var(--card);text-align:left;cursor:pointer;font:700 16px 'Manrope',sans-serif;color:var(--ink);line-height:1.2}
+.eq-tile small{display:block;font:500 12px 'Inter',sans-serif;color:var(--muted);margin-top:3px}
+.eq-tile.on{border-color:var(--ink);background:var(--paper)}
+.eq-vacio{font-size:15px;color:var(--muted);padding:6px 2px}
+.eq-row{border:1.5px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;background:var(--card)}
+.eq-row-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px}
+.eq-row-nom{font:800 17px 'Manrope',sans-serif;line-height:1.2}
+.eq-link{background:none;border:none;color:var(--azul);font-weight:700;font-size:14px;text-decoration:underline;cursor:pointer;padding:6px 0}
+.eq-qty{display:flex;align-items:center;gap:10px}
+.eq-qty button{width:56px;height:56px;border:1.5px solid var(--ink);border-radius:12px;background:var(--card);font-size:28px;font-weight:700;cursor:pointer;color:var(--ink)}
+.eq-qty input{width:84px;height:56px;text-align:center;font:800 24px 'JetBrains Mono',monospace;border:1.5px solid var(--line);border-radius:12px;min-width:0}
+.eq-qty span{font-size:15px;color:var(--muted);font-weight:600}
+.eq-cod-ok{font-size:13px;color:var(--muted);margin-top:8px;word-break:break-all}
+.eq-cod-falta{margin-top:10px;padding:10px;border-radius:10px;background:var(--rojo-bg);color:var(--rojo);font-weight:700;font-size:14px;line-height:1.35}
+.eq-crear{width:100%;min-height:56px;margin-top:8px;border:none;border-radius:12px;background:var(--rojo);color:#fff;font:800 17px 'Manrope',sans-serif;cursor:pointer}
+.eq-crear:disabled{opacity:.6}
+.eq-det{margin-top:8px;font-size:14px}
+.eq-det summary{cursor:pointer;color:var(--azul);font-weight:700;padding:6px 0}
+.eq-det input{width:100%;padding:11px;border:1.5px solid var(--line);border-radius:10px;font-size:16px;margin:4px 0 8px;box-sizing:border-box}
+.eq-vence button{min-height:52px;font-size:15px}
+.eq-prev{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;padding:14px;background:var(--paper);border-radius:12px}
+.eq-prev-item{text-align:center;font-size:13px;color:var(--muted);font-weight:600}
+.eq-prev-item .eq-label{margin:0 auto 4px;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.eq-imprimir{min-height:64px;font-size:19px}
+.eq-hint{font-size:14px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.4}
 /* Input de texto genérico de formulario — antes repetido con el mismo style="..." inline en
    varios campos de distintos módulos (Vencimientos, Crear producto, Renombrar, Ficha de
    producto); centralizado acá para que un cambio de diseño futuro no requiera editar cada
@@ -1979,6 +2013,66 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
         </div>
       </div>
     </div>
+    <div class="mm-ov hidden" id="eq-ov">
+      <div class="mm-card">
+        <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mm-head-ic"><rect x="3" y="7" width="18" height="4" rx="1"/><line x1="6" y1="7" x2="6" y2="11"/><line x1="9" y1="7" x2="9" y2="11"/><line x1="12" y1="7" x2="12" y2="11"/><line x1="16" y1="7" x2="16" y2="11"/><line x1="19" y1="7" x2="19" y2="11"/><path d="M4 15h16v6H4z"/></svg>Etiquetas de ensaladas</h3><button class="loadbtn" type="button" id="eq-cerrar" style="padding:8px 14px;font-size:14px;white-space:nowrap;flex:none">Cerrar</button></div>
+        <div class="mm-body">
+
+        <div class="eq-sec">
+          <div class="eq-tit">1. Toca la ensalada</div>
+          <input id="eq-search" class="eq-search" placeholder="Buscar: lechuga, repollo, espinaca…" autocomplete="off">
+          <div class="eq-tiles" id="eq-tiles"></div>
+        </div>
+
+        <div class="eq-sec">
+          <div class="eq-tit">2. ¿Cuántas etiquetas de cada una?</div>
+          <div id="eq-sel"></div>
+        </div>
+
+        <div class="eq-sec">
+          <div class="eq-tit">3. Fechas</div>
+          <div class="mm-field">
+            <label>Fecha de elaboración</label>
+            <div class="fecha-wrap">
+              <input id="eq-elab-dd" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="DD" autocomplete="off">
+              <span class="fecha-sep">/</span>
+              <input id="eq-elab-mm" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="off">
+              <span class="fecha-sep">/</span>
+              <input id="eq-elab-aaaa" class="fecha-seg" inputmode="numeric" maxlength="2" placeholder="AA" autocomplete="off">
+              <button type="button" class="fecha-cal-btn" id="eq-elab-cal" aria-label="Elegir en calendario"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></button>
+              <input type="date" id="eq-elab" class="fecha-date-hidden" tabindex="-1">
+            </div>
+            <div class="cat" style="margin-top:5px;font-size:13px">Ya viene con la fecha de hoy.</div>
+          </div>
+          <div class="mm-field">
+            <label>Vencimiento (opcional)</label>
+            <div class="mm-resp eq-vence" id="eq-vence">
+              <button type="button" data-d="0" class="sel">Sin vencimiento</button>
+              <button type="button" data-d="2">+2 días</button>
+              <button type="button" data-d="3">+3 días</button>
+              <button type="button" data-d="4">+4 días</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="eq-sec">
+          <div class="eq-tit">Así quedará</div>
+          <div class="eq-prev" id="eq-prev"></div>
+        </div>
+
+        <details class="eq-det">
+          <summary>Tamaño de la etiqueta (normalmente no se toca)</summary>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <div style="flex:1"><div class="et-size-lbl">ANCHO (mm)</div><input id="eq-ancho" inputmode="numeric" class="et-size-input"></div>
+            <div style="flex:1"><div class="et-size-lbl">ALTO (mm)</div><input id="eq-alto" inputmode="numeric" class="et-size-input"></div>
+          </div>
+        </details>
+
+        <button class="mm-save eq-imprimir" id="eq-imprimir" type="button" disabled>Imprimir etiquetas</button>
+        <div class="eq-hint" id="eq-hint"></div>
+        </div>
+      </div>
+    </div>
     <div class="mm-ov hidden" id="abc-ov">
       <div class="mm-card">
         <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mm-head-ic"><path d="M20.6 12.1 12.7 4.2a2 2 0 0 0-1.4-.6H5a1 1 0 0 0-1 1v6.3c0 .5.2 1 .6 1.4l7.9 7.9a2 2 0 0 0 2.8 0l5.3-5.3a2 2 0 0 0 0-2.8Z"/><circle cx="8" cy="8.5" r="1.5"/></svg>Precio sugerido (ABC)</h3></div>
@@ -2630,6 +2724,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
     <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mm-head-ic"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>Más</h3></div>
     <div class="mm-topbar"><button class="loadbtn" id="mas-cerrar" style="width:100%">Cerrar</button></div>
     <div class="mm-body">
+      <button type="button" class="eq-mas-btn" id="mas-eq-btn"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><rect x="3" y="7" width="18" height="4" rx="1"/><line x1="6" y1="7" x2="6" y2="11"/><line x1="9" y1="7" x2="9" y2="11"/><line x1="12" y1="7" x2="12" y2="11"/><line x1="16" y1="7" x2="16" y2="11"/><line x1="19" y1="7" x2="19" y2="11"/><path d="M4 15h16v6H4z"/></svg><span>Etiquetas de ensaladas<small>Imprimir etiquetas con código de barras</small></span></button>
       <div class="mas-grp mas-grp-fiados">
         <div class="mas-grp-head" id="mas-grp-fiados-head"><span class="mas-grp-t"><span class="ic">💰</span> Fiados (cuentas por cobrar)</span><svg class="accordion-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
         <div class="mas-grp-body accordion-body collapsed" id="mas-grp-fiados-body">
@@ -4799,7 +4894,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-07.2';
+const APP_VERSION='2026-10-07.3';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -10757,6 +10852,244 @@ wireFechaSegmentada('et-fecha-dd','et-fecha-mm','et-fecha-aaaa','et-fecha','et-f
 ['et-fecha-dd','et-fecha-mm','et-fecha-aaaa'].forEach(id=>document.getElementById(id).addEventListener('input',etRenderPreview));
 document.getElementById('et-imprimir').onclick=etImprimir;
 
+/* ===== Etiquetas de ensaladas (#eq-ov) =====
+   Módulo propio, separado de "Imprimir etiquetas" (et-*), que queda intacto. Reutiliza solo piezas
+   ya existentes: Code128.svg, generarCodigoBarrasInterno, el endpoint editar_codigo_barras, la
+   fecha segmentada y la técnica de impresión por iframe oculto. Pensado para una persona mayor:
+   un toque elige la ensalada, botones grandes, la fecha de hoy ya puesta. */
+const EQ_REC_KEY='marin_eq_recientes', EQ_TAM_KEY='marin_eq_tamano';
+const eqState={sel:[],vence:0,query:'',creando:null};
+function eqLsGet(k,def){try{const r=localStorage.getItem(k);return r?JSON.parse(r):def;}catch(e){return def;}}
+function eqLsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function eqEsc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function eqTamano(){const t=eqLsGet(EQ_TAM_KEY,null)||{};return{ancho:Number(t.ancho)||58,alto:Number(t.alto)||40};}
+// Quita el precio que a veces va al final del nombre del catálogo ("Ensalada de lechuga 1000").
+function eqNombreLimpio(n){return String(n||'').replace(/\s+\d{3,5}\s*$/,'').trim();}
+function eqItem(ref){return (DB.items||[]).find(i=>i.ref===ref)||null;}
+function eqCodigoValido(c){return !!c&&Code128.svg(c,10)!=='';}
+function eqRecientes(){return (eqLsGet(EQ_REC_KEY,[])||[]).filter(r=>r&&eqItem(r.ref));}
+function eqFechaISO(){return document.getElementById('eq-elab').value||'';}
+function eqFmtFecha(d){const p=n=>String(n).padStart(2,'0');return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear();}
+function eqElabTxt(){const v=eqFechaISO();return v?fmtDateInputToDDMMAAAA(v):'';}
+function eqVenceTxt(){
+  const dias=eqState.vence;const v=eqFechaISO();
+  if(!dias||!v)return '';
+  const [y,m,d]=v.split('-').map(Number);
+  return eqFmtFecha(new Date(y,m-1,d+dias));
+}
+// CSS de la etiqueta: UNA sola fuente para la vista previa y para lo que se manda a imprimir.
+function eqCssEtiqueta(t){
+  return `.eq-label{width:${t.ancho}mm;height:${t.alto}mm;border:0.35mm solid #000;border-radius:1.2mm;padding:1.6mm 2mm;display:flex;flex-direction:column;gap:0.8mm;overflow:hidden;color:#000;background:#fff;font-family:Arial,Helvetica,sans-serif;box-sizing:border-box}
+.eq-label .eq-head{font-size:2.6mm;font-weight:700;letter-spacing:.35mm;text-align:center;border-bottom:0.25mm solid #000;padding-bottom:0.7mm;flex:none;line-height:1.15}
+.eq-label .eq-r{display:flex;justify-content:space-between;align-items:center;gap:2mm;flex:none}
+.eq-label .eq-n{font-size:4.2mm;font-weight:800;line-height:1.1;flex:1;min-width:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-transform:uppercase}
+.eq-label .eq-rt{display:flex;flex-direction:column;align-items:flex-end;flex:none;line-height:1.1}
+.eq-label .eq-p{font-size:3.6mm;font-weight:800;white-space:nowrap}
+.eq-label .eq-pr{font-size:4.6mm;font-weight:800;white-space:nowrap}
+.eq-label .eq-b{width:calc(100% - 4mm);margin:0.6mm auto 0;height:13mm;flex:none}
+.eq-label .eq-c{font-family:'Courier New',monospace;font-size:3mm;letter-spacing:.5mm;text-align:center;line-height:1;flex:none}
+.eq-label .eq-f{display:flex;justify-content:space-between;font-size:3mm;font-weight:700;flex:none;margin-top:auto;line-height:1.1}`;
+}
+function eqEtiquetaHtml(f,elab,vence){
+  return `<div class="eq-label"><div class="eq-head">MARÍN 376 MINI MARKET</div>`+
+    `<div class="eq-r"><div class="eq-n">${eqEsc(f.nombre)}</div><div class="eq-rt">${f.peso?`<div class="eq-p">${eqEsc(f.peso)}</div>`:''}${f.precio>0?`<div class="eq-pr">${eqEsc(peso(f.precio))}</div>`:''}</div></div>`+
+    `<div class="eq-b">${Code128.svg(f.codigo,10)}</div><div class="eq-c">${eqEsc(f.codigo)}</div>`+
+    `<div class="eq-f"><span>ELAB: ${eqEsc(elab)}</span>${vence?`<span>VENCE: ${eqEsc(vence)}</span>`:''}</div></div>`;
+}
+// Filas listas para imprimir: solo las que ya tienen un código de barras válido.
+function eqFilas(){
+  return eqState.sel.map(s=>{const it=eqItem(s.ref);return{ref:s.ref,cant:s.cant,nombre:s.nombre,peso:s.peso,precio:it?(Number(it.precio)||0):0,codigo:it?(it.barcode||''):''};});
+}
+function eqTilesData(){
+  const items=DB.items||[];
+  const q=normTxt(eqState.query||'').trim();
+  if(q.length>=2){
+    const words=q.split(/\s+/).filter(Boolean);
+    return items.filter(i=>{const h=normTxt((i.nombre||'')+' '+(i.ref||'')+' '+(i.barcode||''));return words.every(w=>h.indexOf(w)>=0);}).slice(0,8);
+  }
+  const rec=eqRecientes().map(r=>eqItem(r.ref)).filter(Boolean).slice(0,8);
+  if(rec.length)return rec;
+  return items.filter(i=>normTxt(i.nombre||'').indexOf('ensalada')>=0).slice(0,8);
+}
+function eqRenderTiles(){
+  const box=document.getElementById('eq-tiles');
+  const q=normTxt(eqState.query||'').trim();
+  const list=eqTilesData();
+  if(!list.length){box.innerHTML='<div class="eq-vacio" style="grid-column:1/-1">'+(q.length>=2?'No encontré esa ensalada. Prueba con otra palabra.':'Escribe arriba el nombre de la ensalada.')+'</div>';return;}
+  const rec=q.length<2&&eqRecientes().length>0;
+  box.innerHTML=(rec?'<div class="eq-vacio" style="grid-column:1/-1;padding:0">Las que usaste antes:</div>':'')+
+    list.map(i=>{const on=eqState.sel.some(s=>s.ref===i.ref);return `<button type="button" class="eq-tile${on?' on':''}" data-ref="${eqEsc(i.ref)}">${eqEsc(eqNombreLimpio(i.nombre))}<small>${on?'✓ Agregada · toca para sumar 1':'Toca para agregar'}</small></button>`;}).join('');
+}
+function eqRenderSel(){
+  const box=document.getElementById('eq-sel');
+  if(!eqState.sel.length){box.innerHTML='<div class="eq-vacio">Todavía no elegiste ninguna ensalada.</div>';return;}
+  box.innerHTML=eqState.sel.map(s=>{
+    const it=eqItem(s.ref);const cod=it?(it.barcode||''):'';
+    const codHtml=cod
+      ?`<div class="eq-cod-ok">Código: <b>${eqEsc(cod)}</b>${eqCodigoValido(cod)?'':' <span style="color:var(--rojo)">(este código tiene caracteres que no se pueden imprimir)</span>'}<br><button type="button" class="eq-link" data-act="nuevo">Generar código nuevo</button></div>`
+      :`<div class="eq-cod-falta">Esta ensalada todavía no tiene código de barras.</div><button type="button" class="eq-crear" data-act="crear"${eqState.creando===s.ref?' disabled':''}>${eqState.creando===s.ref?'Creando…':'Crear código'}</button>`;
+    return `<div class="eq-row" data-ref="${eqEsc(s.ref)}">`+
+      `<div class="eq-row-top"><div class="eq-row-nom">${eqEsc(eqNombreLimpio(s.nombre))}</div><button type="button" class="eq-link" data-act="quitar">Quitar</button></div>`+
+      `<div class="eq-qty"><button type="button" data-act="menos" aria-label="Menos">−</button><input inputmode="numeric" value="${s.cant}" data-f="cant" aria-label="Cantidad"><button type="button" data-act="mas" aria-label="Más">+</button><span>etiquetas</span></div>`+
+      codHtml+
+      `<details class="eq-det"><summary>Cambiar nombre o peso</summary><label>Nombre en la etiqueta</label><input data-f="nombre" value="${eqEsc(s.nombre)}"><label>Peso</label><input data-f="peso" value="${eqEsc(s.peso)}" placeholder="Ej: 200 g"></details>`+
+      `</div>`;
+  }).join('');
+}
+function eqRenderPrev(){
+  const t=eqTamano();
+  let st=document.getElementById('eq-style');
+  if(!st){st=document.createElement('style');st.id='eq-style';document.head.appendChild(st);}
+  st.textContent=eqCssEtiqueta(t);
+  const box=document.getElementById('eq-prev');
+  const elab=eqElabTxt(),vence=eqVenceTxt();
+  const filas=eqFilas().filter(f=>eqCodigoValido(f.codigo));
+  box.innerHTML=filas.length
+    ?filas.map(f=>`<div class="eq-prev-item">${eqEtiquetaHtml(f,elab||'—',vence)}<div>${f.cant} etiqueta${f.cant===1?'':'s'}</div></div>`).join('')
+    :'<div class="eq-vacio">Aquí verás cómo queda la etiqueta.</div>';
+}
+function eqValidar(){
+  const btn=document.getElementById('eq-imprimir'),hint=document.getElementById('eq-hint');
+  const filas=eqFilas();
+  const total=filas.reduce((a,f)=>a+f.cant,0);
+  let motivo='';
+  if(!filas.length)motivo='Elige al menos una ensalada.';
+  else if(filas.some(f=>!eqCodigoValido(f.codigo)))motivo='Falta crear el código de: '+filas.filter(f=>!eqCodigoValido(f.codigo)).map(f=>eqNombreLimpio(f.nombre)).join(', ')+'.';
+  else if(filas.some(f=>!(f.cant>0)))motivo='La cantidad debe ser 1 o más.';
+  else if(!eqElabTxt())motivo='Falta la fecha de elaboración.';
+  btn.disabled=!!motivo;
+  btn.textContent=total>0&&!motivo?'Imprimir '+total+' etiqueta'+(total===1?'':'s'):'Imprimir etiquetas';
+  hint.textContent=motivo;
+}
+function eqRender(){eqRenderTiles();eqRenderSel();eqRenderPrev();eqValidar();}
+function eqAgregar(ref){
+  const ya=eqState.sel.find(s=>s.ref===ref);
+  if(ya){ya.cant=Math.min(50,ya.cant+1);eqRender();return;}
+  const it=eqItem(ref);if(!it)return;
+  const rec=eqRecientes().find(r=>r.ref===ref);
+  eqState.sel.push({ref,cant:rec?Math.max(1,Math.min(50,Number(rec.cant)||1)):1,nombre:rec&&rec.nombre?rec.nombre:eqNombreLimpio(it.nombre),peso:rec&&rec.peso!=null?rec.peso:'200 g'});
+  eqRender();
+  eqRefrescarCodigo(it);
+}
+// El código en DB.items puede estar desactualizado (se editó en otra pantalla sin resync): se
+// confirma contra el servidor, igual que hace "Imprimir etiquetas" (etRefrescarCodigoDesdeServidor).
+async function eqRefrescarCodigo(it){
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=ficha_producto&sku='+encodeURIComponent(it.ref));
+    const j=await res.json();
+    if(!j||!j.ok||!j.ficha||!j.ficha.producto)return;
+    const real=j.ficha.producto.barcode||'';
+    if(real!==(it.barcode||'')){it.barcode=real;if(!document.getElementById('eq-ov').classList.contains('hidden'))eqRender();}
+  }catch(e){/* mejor esfuerzo: si falla se queda con el dato local */}
+}
+async function eqCrearCodigo(ref,reemplazar){
+  const it=eqItem(ref);if(!it||eqState.creando)return;
+  if(reemplazar&&!confirm('Esta ensalada ya tiene el código "'+it.barcode+'".\n\n¿Cambiarlo por uno nuevo? Las etiquetas viejas dejarán de funcionar en la caja.'))return;
+  const codigo=generarCodigoBarrasInterno();
+  if(!codigo){showToast('No se pudo crear un código único — intenta de nuevo');return;}
+  eqState.creando=ref;eqRender();
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_codigo_barras',payload:{sku:ref,barcode:codigo,responsable:''}})});
+    const j=await res.json();
+    if(j&&j.ok){it.barcode=codigo;persist();sonidoGuardado();showToast('Código creado: '+codigo);}
+    else showToast(''+((j&&j.error)||'No se pudo guardar el código'));
+  }catch(e){showToast('Error de conexión al crear el código');}
+  finally{eqState.creando=null;eqRender();}
+}
+function eqGuardarRecientes(filas){
+  let rec=eqLsGet(EQ_REC_KEY,[])||[];
+  filas.slice().reverse().forEach(f=>{
+    rec=rec.filter(r=>r.ref!==f.ref);
+    rec.unshift({ref:f.ref,cant:f.cant,nombre:f.nombre,peso:f.peso});
+  });
+  eqLsSet(EQ_REC_KEY,rec.slice(0,8));
+}
+function eqImprimir(){
+  const filas=eqFilas();
+  if(!filas.length||filas.some(f=>!eqCodigoValido(f.codigo)||!(f.cant>0))){eqValidar();return;}
+  const elab=eqElabTxt(),vence=eqVenceTxt();
+  if(!elab){eqValidar();return;}
+  const t=eqTamano();
+  const body=filas.map(f=>eqEtiquetaHtml(f,elab,vence).repeat(f.cant)).join('');
+  const html=`<!doctype html><html><head><meta charset="utf-8"><style>
+    @page{size:${t.ancho}mm ${t.alto}mm;margin:0}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    ${eqCssEtiqueta(t)}
+    .eq-label{page-break-after:always;break-after:page}
+    .eq-label:last-child{page-break-after:auto;break-after:auto}
+    </style></head><body>${body}</body></html>`;
+  eqGuardarRecientes(filas);
+  const iframe=document.createElement('iframe');
+  iframe.style.position='fixed';iframe.style.right='0';iframe.style.bottom='0';
+  iframe.style.width='0';iframe.style.height='0';iframe.style.border='0';
+  document.body.appendChild(iframe);
+  const doc=iframe.contentDocument||iframe.contentWindow.document;
+  doc.open();doc.write(html);doc.close();
+  const limpiar=()=>{if(iframe.parentNode)iframe.parentNode.removeChild(iframe);};
+  iframe.contentWindow.onafterprint=limpiar;
+  setTimeout(()=>{
+    try{iframe.contentWindow.focus();iframe.contentWindow.print();}catch(e){}
+    setTimeout(limpiar,60000);
+  },200);
+}
+function eqSetElabHoy(){
+  const h=document.getElementById('eq-elab');
+  h.value=isoLocalDate(new Date());
+  h.dispatchEvent(new Event('change',{bubbles:true}));
+}
+function eqAbrir(){
+  eqState.sel=[];eqState.vence=0;eqState.query='';eqState.creando=null;
+  document.getElementById('eq-search').value='';
+  document.querySelectorAll('#eq-vence button').forEach(b=>b.classList.toggle('sel',b.dataset.d==='0'));
+  const t=eqTamano();
+  document.getElementById('eq-ancho').value=t.ancho;
+  document.getElementById('eq-alto').value=t.alto;
+  eqSetElabHoy();
+  abrirModal('eq-ov');
+  eqRender();
+}
+wireFechaSegmentada('eq-elab-dd','eq-elab-mm','eq-elab-aaaa','eq-elab','eq-elab-cal');
+document.getElementById('eq-elab').addEventListener('input',()=>{eqRenderPrev();eqValidar();});
+document.getElementById('mas-eq-btn').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');eqAbrir();};
+document.getElementById('eq-cerrar').onclick=()=>cerrarModal('eq-ov');
+document.getElementById('eq-search').oninput=e=>{eqState.query=e.target.value;eqRenderTiles();};
+document.getElementById('eq-tiles').onclick=e=>{const b=e.target.closest('.eq-tile');if(b)eqAgregar(b.dataset.ref);};
+document.getElementById('eq-vence').onclick=e=>{
+  const b=e.target.closest('button[data-d]');if(!b)return;
+  eqState.vence=Number(b.dataset.d)||0;
+  document.querySelectorAll('#eq-vence button').forEach(x=>x.classList.toggle('sel',x===b));
+  eqRenderPrev();eqValidar();
+};
+document.getElementById('eq-sel').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-act]');if(!b)return;
+  const row=b.closest('.eq-row');if(!row)return;
+  const s=eqState.sel.find(x=>x.ref===row.dataset.ref);if(!s)return;
+  const act=b.dataset.act;
+  if(act==='menos')s.cant=Math.max(1,s.cant-1);
+  else if(act==='mas')s.cant=Math.min(50,s.cant+1);
+  else if(act==='quitar')eqState.sel=eqState.sel.filter(x=>x!==s);
+  else if(act==='crear'){eqCrearCodigo(s.ref,false);return;}
+  else if(act==='nuevo'){eqCrearCodigo(s.ref,true);return;}
+  eqRender();
+});
+document.getElementById('eq-sel').addEventListener('input',e=>{
+  const inp=e.target;const f=inp.dataset.f;if(!f)return;
+  const row=inp.closest('.eq-row');const s=row&&eqState.sel.find(x=>x.ref===row.dataset.ref);if(!s)return;
+  if(f==='nombre')s.nombre=inp.value;
+  else if(f==='peso')s.peso=inp.value;
+  else if(f==='cant'){const n=Number(String(inp.value).replace(/\D/g,''))||0;s.cant=Math.max(0,Math.min(50,n));}
+  eqRenderPrev();eqValidar();
+});
+document.getElementById('eq-sel').addEventListener('change',e=>{
+  if(e.target.dataset.f==='cant'){const row=e.target.closest('.eq-row');const s=row&&eqState.sel.find(x=>x.ref===row.dataset.ref);if(s&&!(s.cant>0))s.cant=1;eqRender();}
+});
+['eq-ancho','eq-alto'].forEach(id=>document.getElementById(id).oninput=()=>{
+  eqLsSet(EQ_TAM_KEY,{ancho:Number(document.getElementById('eq-ancho').value)||58,alto:Number(document.getElementById('eq-alto').value)||40});
+  eqRenderPrev();
+});
+document.getElementById('eq-imprimir').onclick=eqImprimir;
+
 // ===================== VENCIMIENTOS =====================
 const vcNew={item:null};
 let _vcTodos=[];   // lista completa de lotes cargada; el buscador filtra sobre esta copia (sin volver a pedir al servidor)
@@ -16121,6 +16454,7 @@ _actualizarVisibilidadFab();
 // lo que no está en este mapa simplemente usa abrirModal(id) tal cual (ya cubre Más, etc.).
 const REABRIR_MODULO={
   'rc-ov':()=>{try{rcReset();}catch(e){}abrirModal('rc-ov');try{const d=rcCargarBorrador();if(d)rcAplicarBorrador(d);}catch(e){}},
+  'eq-ov':()=>{try{eqAbrir();}catch(e){}},
   'vc-ov':()=>{abrirModal('vc-ov');try{vcShowList();}catch(e){}try{vcLoad();}catch(e){}},
   // Antes era una copia manual de cpAbrir() que se quedó corta: no llamaba a psInitCombo, así
   // que un F5 dejaba los buscadores de Proveedor y Sector sin conectar (no desplegaban nada al
