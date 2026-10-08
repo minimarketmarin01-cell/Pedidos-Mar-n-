@@ -3902,17 +3902,32 @@ function toggleStockPacks(ref){
   document.querySelectorAll('.card-cell[data-ref="'+CSS.escape(ref)+'"] .stk-val').forEach(el=>{el.innerHTML=html;});
 }
 function onQty(inp){const ref=inp.dataset.ref,fmt=+inp.dataset.fmt;let b=Math.max(0,parseInt(inp.value)||0);state.edits[ref]=b*fmt;const cell=inp.closest('.qcell');cell.querySelector('.qstep').classList.toggle('has',b>0);const it=DB.items.find(i=>i.ref===ref);const qw=cell.querySelector('.qword');if(qw&&it)qw.textContent=labelFor(it,b);
+  // Producto que NO es del proveedor activo (se encontró buscándolo): antes de agregarlo se
+  // advierte que también quedará asignado a ese proveedor (proveedor extra real, mismo mecanismo
+  // que Ficha de producto/Recepción) y se pide confirmar — antes se asignaba en silencio y el
+  // aviso llegaba recién después. Si se cancela, la cantidad vuelve a 0 y no se asigna nada. La
+  // confirmación se pide una sola vez por producto+proveedor y sesión (no en cada +/-).
+  if(it&&b>0&&!state.allProv&&state.prov&&it.proveedorNombre&&!esDelProveedor(it,state.prov)){
+    state._provExtraOk=state._provExtraOk||{};
+    const clave=ref+'|'+state.prov;
+    if(!state._provExtraOk[clave]){
+      const ok=confirm('⚠️ Este producto es de "'+it.proveedorNombre+'".\n\nAl agregarlo al pedido de "'+state.prov+'", también quedará asignado a "'+state.prov+'" como proveedor del producto.\n\n¿Quieres agregarlo?');
+      if(!ok){
+        inp.value=0;state.edits[ref]=0;
+        cell.querySelector('.qstep').classList.remove('has');
+        if(qw)qw.textContent=labelFor(it,0);
+        renderOrder();renderScale();persistUI();
+        return;
+      }
+      state._provExtraOk[clave]=true;
+    }
+    agregarProveedorExtraSiFalta(it,state.prov);
+  }
   // Aviso único por sesión: la primera vez que se toca la cantidad de un producto que ya
   // tiene un pedido pendiente a otro proveedor, para no interrumpir en cada click de +/-.
   if(it&&b>0&&!state.pendWarned[ref]){
     const pend=pendienteDe(it);
     if(pend){state.pendWarned[ref]=true;showToast('Ojo: ya se pidió a '+(pend.proveedor||'otro proveedor')+' el '+(pend.fecha||'')+' · '+(pend.cantidad||0)+' u — revisa antes de repetir');}
-  }
-  // Si se agrega cantidad a un producto que no es del proveedor activo, se le asigna ese
-  // proveedor como proveedor extra real (mismo mecanismo que Ficha de producto/Recepción) en
-  // vez de dejarlo solo en el carrito sin clasificar bajo ese proveedor.
-  if(it&&b>0&&!state.allProv&&state.prov&&it.proveedorNombre&&!esDelProveedor(it,state.prov)){
-    agregarProveedorExtraSiFalta(it,state.prov);
   }
   renderOrder();renderScale();persistUI();}
 function stepQty(btn){const cell=btn.closest('.qcell');const inp=cell.querySelector('.qty-in');const st=+inp.dataset.step||1;inp.value=Math.max(0,(parseInt(inp.value)||0)+(+btn.dataset.d)*st);onQty(inp);}
@@ -3943,8 +3958,16 @@ async function agregarProveedorExtraSiFalta(it,provNombre){
       if(!it.proveedorNombresExtra.includes(provNombre))it.proveedorNombresExtra.push(provNombre);
       showToast('Agregado — ahora '+it.nombre+' también se pide a '+provNombre);
       render();
+    }else{
+      // Ya se le advirtió y confirmó al usuario que el producto se asignaría — si no se pudo,
+      // se avisa (y se vuelve a pedir confirmar en el próximo intento) en vez de fallar callado.
+      if(state._provExtraOk)delete state._provExtraOk[it.ref+'|'+provNombre];
+      showToast('No se pudo asignar '+it.nombre+' a '+provNombre+': '+((j&&j.error)||'error del servidor'));
     }
-  }catch(e){/* silencioso: no se interrumpe el armado del pedido por un fallo de red en este agregado en segundo plano */}
+  }catch(e){
+    if(state._provExtraOk)delete state._provExtraOk[it.ref+'|'+provNombre];
+    showToast('No se pudo asignar el producto a '+provNombre+' (sin conexión). El pedido sigue armado.');
+  }
   finally{state._provExtraEnCurso.delete(it.ref);}
 }
 function ccuMixedPacks(){let p=0;itemsForCategoria('CCU').forEach(it=>{if(it.scale==='ccu_ret'){const a=analyze(it);p+=Math.ceil(qOf(it,a)/it.fmt);}});return p;}
@@ -4894,7 +4917,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-07.3';
+const APP_VERSION='2026-10-08.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
