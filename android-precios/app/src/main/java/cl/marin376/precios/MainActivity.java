@@ -503,12 +503,12 @@ public class MainActivity extends Activity {
     Producto p;
     int cantidad = 1, confirmando = 0;
     boolean creando = false;
-    String vence = "";
+    String vence = "", elab = "";
     boolean venceManual = false;
     AlertDialog dlg;
     TextView txtPrecio, txtCodigo, txtCant, txtAviso, txtEstado, txtVenceInfo;
     ImageView vista;
-    Button btnImprimir, btnVence, btnSinVence, btnCodigo;
+    Button btnImprimir, btnVence, btnSinVence, btnCodigo, btnSinElab, btnElabHoy, btnElab;
   }
 
   private Ventana ven;
@@ -559,6 +559,22 @@ public class MainActivity extends Activity {
     }
     c.addView(filaCant, lp(-1, -2, 4));
 
+    c.addView(texto("Elaboración (opcional)", 18, true, NEGRO), lp(-1, -2, 14));
+    LinearLayout filaElab = fila();
+    w.btnSinElab = boton("Sin fecha", GRIS, NEGRO);
+    w.btnSinElab.setTextSize(18);
+    w.btnSinElab.setOnClickListener(v -> { w.elab = ""; pintarVentana(w); });
+    filaElab.addView(w.btnSinElab, peso(dp(56), 0));
+    w.btnElabHoy = boton("Hoy", GRIS, NEGRO);
+    w.btnElabHoy.setTextSize(18);
+    w.btnElabHoy.setOnClickListener(v -> { w.elab = fmt(Calendar.getInstance()); pintarVentana(w); });
+    filaElab.addView(w.btnElabHoy, peso(dp(56), 8));
+    w.btnElab = boton("Otra fecha", GRIS, NEGRO);
+    w.btnElab.setTextSize(18);
+    w.btnElab.setOnClickListener(v -> pedirFecha(w.elab, f -> { w.elab = f; pintarVentana(w); }));
+    filaElab.addView(w.btnElab, peso(dp(56), 8));
+    c.addView(filaElab, lp(-1, -2, 4));
+
     c.addView(texto("Vencimiento (opcional)", 18, true, NEGRO), lp(-1, -2, 14));
     LinearLayout filaVence = fila();
     w.btnSinVence = boton("Sin fecha", GRIS, NEGRO);
@@ -599,6 +615,7 @@ public class MainActivity extends Activity {
     e.precio = precioTxt(w.p.precio);
     e.codigo = w.p.codigo();
     e.vence = w.vence;
+    e.elab = w.elab;
     return e;
   }
 
@@ -623,6 +640,12 @@ public class MainActivity extends Activity {
     w.btnCodigo.setEnabled(puedeCodigo);
     w.btnCodigo.setAlpha(puedeCodigo ? 1f : 0.45f);
     w.txtCant.setText(String.valueOf(w.cantidad));
+    String hoy = fmt(Calendar.getInstance());
+    boolean elabHoy = w.elab.equals(hoy), elabOtra = !w.elab.isEmpty() && !elabHoy;
+    colorear(w.btnSinElab, w.elab.isEmpty() ? VERDE : GRIS, w.elab.isEmpty() ? Color.WHITE : NEGRO);
+    colorear(w.btnElabHoy, elabHoy ? VERDE : GRIS, elabHoy ? Color.WHITE : NEGRO);
+    colorear(w.btnElab, elabOtra ? VERDE : GRIS, elabOtra ? Color.WHITE : NEGRO);
+    w.btnElab.setText(elabOtra ? w.elab : "Otra fecha");
     boolean hay = !w.vence.isEmpty();
     colorear(w.btnSinVence, hay ? GRIS : VERDE, hay ? NEGRO : Color.WHITE);
     colorear(w.btnVence, hay ? VERDE : GRIS, hay ? Color.WHITE : NEGRO);
@@ -748,19 +771,31 @@ public class MainActivity extends Activity {
   }
 
   private void elegirFecha(final Ventana w) {
-    Calendar c = Calendar.getInstance();
-    if (!w.vence.isEmpty()) {
-      try {
-        String[] d = w.vence.split("/");
-        c.set(Integer.parseInt(d[2]), Integer.parseInt(d[1]) - 1, Integer.parseInt(d[0]));
-      } catch (Exception ignore) {}
-    }
-    new DatePickerDialog(this, (v, y, m, d) -> {
-      w.vence = String.format(Locale.ROOT, "%02d/%02d/%04d", d, m + 1, y);
+    pedirFecha(w.vence, f -> {
+      w.vence = f;
       w.venceManual = true;
       w.txtVenceInfo.setText("");
       pintarVentana(w);
-    }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show();
+    });
+  }
+
+  private interface AlElegir { void fecha(String ddmmaaaa); }
+
+  private static String fmt(Calendar c) {
+    return String.format(Locale.ROOT, "%02d/%02d/%04d", c.get(Calendar.DAY_OF_MONTH), c.get(Calendar.MONTH) + 1, c.get(Calendar.YEAR));
+  }
+
+  /** Calendario del equipo, partiendo de la fecha actual del campo (o de hoy). */
+  private void pedirFecha(String actual, final AlElegir listo) {
+    Calendar c = Calendar.getInstance();
+    if (actual != null && !actual.isEmpty()) {
+      try {
+        String[] d = actual.split("/");
+        c.set(Integer.parseInt(d[2]), Integer.parseInt(d[1]) - 1, Integer.parseInt(d[0]));
+      } catch (Exception ignore) {}
+    }
+    new DatePickerDialog(this, (v, y, m, d) -> listo.fecha(String.format(Locale.ROOT, "%02d/%02d/%04d", d, m + 1, y)),
+        c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show();
   }
 
   // ---------------------------------------------------------------- impresión
@@ -790,6 +825,7 @@ public class MainActivity extends Activity {
     e.nombre = "PRUEBA Coca Cola 1,5 L";
     e.precio = "$1.990";
     e.codigo = "0412345678905";   // código interno (empieza en 0) → Code 128
+    e.elab = fmt(Calendar.getInstance());
     e.vence = "31/12/2026";
     enviar(bytesDe(render(e), 1), null, "Etiqueta de prueba enviada. Pasa el lector: debe leer 0412345678905.");
   }

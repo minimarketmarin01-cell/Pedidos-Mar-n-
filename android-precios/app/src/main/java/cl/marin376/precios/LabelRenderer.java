@@ -54,6 +54,11 @@ public final class LabelRenderer {
     return l;
   }
 
+  /** 09/10/2026 → 09/10/26 */
+  private static String corta(String f) {
+    return f.matches("\\d{2}/\\d{2}/\\d{4}") ? f.substring(0, 6) + f.substring(8) : f;
+  }
+
   private static float baseline(Paint p, float top, float alto) {
     Paint.FontMetrics fm = p.getFontMetrics();
     return top + (alto - (fm.descent - fm.ascent)) / 2f - fm.ascent;
@@ -101,7 +106,21 @@ public final class LabelRenderer {
     pFecha.setColor(Color.BLACK);
     pFecha.setTypeface(Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD));
     float tCod = mm[2] * MM;
-    String fecha = e.vence.isEmpty() ? "" : "Vence: " + e.vence;
+    // Con fecha de elaboración las dos fechas van en una fila propia (año en 2 dígitos para que
+    // quepan): "Elab: 09/10/26   Vence: 12/10/26"; abajo queda solo el código.
+    boolean conElab = !e.elab.isEmpty();
+    String fecha = conElab || e.vence.isEmpty() ? "" : "Vence: " + e.vence;
+    String fElab = conElab ? "Elab: " + corta(e.elab) : "";
+    String fVence = conElab && !e.vence.isEmpty() ? "Vence: " + corta(e.vence) : "";
+    float tFechas = mm[2] * MM;
+    if (conElab) {
+      while (true) {
+        pFecha.setTextSize(tFechas);
+        float total = pFecha.measureText(fElab) + (fVence.isEmpty() ? 0 : pFecha.measureText(fVence) + 1f * MM);
+        if (total <= interior || tFechas <= mm[2] * MM * 0.6f) break;
+        tFechas -= 1;
+      }
+    }
     while (true) {
       pCod.setTextSize(tCod);
       pFecha.setTextSize(tCod);
@@ -110,7 +129,8 @@ public final class LabelRenderer {
       tCod -= 1;
     }
     float altoAbajo = (e.codigo.isEmpty() && fecha.isEmpty()) ? 0 : tCod * 1.1f;
-    float abajoTop = h - padY - altoAbajo;
+    float altoFechas = conElab ? tFechas * 1.1f : 0;
+    float abajoTop = h - padY - altoAbajo - altoFechas;
 
     // Fila de arriba: 1 línea; si el nombre no cabe, 2 líneas solo si las barras siguen ≥ 12 mm.
     float altoUna = Math.max(tNom, e.precio.isEmpty() ? 0 : mm[1] * MM) * 1.15f;
@@ -132,8 +152,16 @@ public final class LabelRenderer {
       arribaFin += tNom * 1.15f;
     }
 
+    if (conElab) {
+      pFecha.setTextSize(tFechas);
+      float yf = baseline(pFecha, abajoTop, altoFechas);
+      pFecha.setTextAlign(Paint.Align.LEFT);
+      c.drawText(fElab, padX, yf, pFecha);
+      if (!fVence.isEmpty()) { pFecha.setTextAlign(Paint.Align.RIGHT); c.drawText(fVence, w - padX, yf, pFecha); }
+      pFecha.setTextSize(tCod);
+    }
     if (altoAbajo > 0) {
-      float yb = baseline(pCod, abajoTop, altoAbajo);
+      float yb = baseline(pCod, abajoTop + altoFechas, altoAbajo);
       pCod.setTextAlign(Paint.Align.LEFT);
       c.drawText(e.codigo, padX, yb, pCod);
       if (!fecha.isEmpty()) { pFecha.setTextAlign(Paint.Align.RIGHT); c.drawText(fecha, w - padX, yb, pFecha); }
