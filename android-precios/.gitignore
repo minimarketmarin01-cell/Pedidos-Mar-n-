@@ -1,0 +1,5 @@
+build/
+.gradle/
+app/build/
+pruebas/out/
+pruebas/cls/

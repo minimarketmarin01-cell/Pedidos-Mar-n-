@@ -1,0 +1,43 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'cl.marin376.precios'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'cl.marin376.precios'
+        minSdk 26          // Android 8.0 y 8.1
+        targetSdk 27
+        versionCode 1
+        versionName '1.0'
+    }
+
+    signingConfigs {
+        marin {
+            // Misma llave fija (no secreta) que la app de ensaladas: cada versión nueva se instala encima.
+            storeFile file('../../android-etiquetas/etiquetas.keystore')
+            storePassword 'marin376'
+            keyAlias 'etiquetas'
+            keyPassword 'marin376'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.marin
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+}
