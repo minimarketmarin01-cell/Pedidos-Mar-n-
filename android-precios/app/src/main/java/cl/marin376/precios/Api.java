@@ -58,7 +58,11 @@ public final class Api {
     }
   }
 
-  /** Lee {productos:[[sku,nombre,precio,barcode],…]} o {items:{rows:{sku:{…}}}}; null si no hay ninguno. */
+  /**
+   * Lee {productos:[[sku,nombre,precio,barcode,categoria,imagen],…]} o {items:{rows:{sku:{…}}}}.
+   * null si no hay ninguno. En el catálogo completo la categoría viene en "cat" (Argomedo, donde
+   * "prov" es el proveedor) o en "prov" (Marín, donde "prov" ya es la categoría de Loyverse).
+   */
   static List<Producto> parsear(JsonReader r) throws IOException {
     List<Producto> out = null;
     r.beginObject();
@@ -66,16 +70,9 @@ public final class Api {
       String k = r.nextName();
       if ("productos".equals(k) && r.peek() == JsonToken.BEGIN_ARRAY) {
         out = new ArrayList<>();
-        r.beginArray();   // [[sku, nombre, precio, barcode], …]
+        r.beginArray();
         while (r.hasNext()) {
-          r.beginArray();
-          Producto p = new Producto();
-          p.sku = texto(r);
-          p.nombre = texto(r);
-          p.precio = entero(r);
-          p.barcode = texto(r);
-          while (r.hasNext()) r.skipValue();
-          r.endArray();
+          Producto p = fila(r);
           if (!p.sku.isEmpty() && !p.nombre.isEmpty()) out.add(p);
         }
         r.endArray();
@@ -89,6 +86,7 @@ public final class Api {
               String sku = r.nextName();
               Producto p = new Producto();
               p.sku = sku;
+              String prov = "", cat = null;
               r.beginObject();
               while (r.hasNext()) {
                 String f = r.nextName();
@@ -96,9 +94,13 @@ public final class Api {
                 else if ("nombre".equals(f)) p.nombre = texto(r);
                 else if ("precio".equals(f)) p.precio = entero(r);
                 else if ("barcode".equals(f)) p.barcode = texto(r);
+                else if ("imagen".equals(f)) p.imagen = texto(r);
+                else if ("cat".equals(f)) cat = texto(r);
+                else if ("prov".equals(f)) prov = texto(r);
                 else r.skipValue();
               }
               r.endObject();
+              p.categoria = cat != null ? cat : prov;
               if (!p.sku.isEmpty() && !p.nombre.isEmpty()) out.add(p);
             }
             r.endObject();
@@ -109,6 +111,21 @@ public final class Api {
     }
     r.endObject();
     return out;
+  }
+
+  /** [sku, nombre, precio, barcode, categoria?, imagen?] — mismo formato que el archivo guardado. */
+  static Producto fila(JsonReader r) throws IOException {
+    r.beginArray();
+    Producto p = new Producto();
+    p.sku = texto(r);
+    p.nombre = texto(r);
+    p.precio = r.hasNext() ? entero(r) : 0;
+    p.barcode = r.hasNext() ? texto(r) : "";
+    p.categoria = r.hasNext() ? texto(r) : "";
+    p.imagen = r.hasNext() ? texto(r) : "";
+    while (r.hasNext()) r.skipValue();
+    r.endArray();
+    return p;
   }
 
   static String texto(JsonReader r) throws IOException {

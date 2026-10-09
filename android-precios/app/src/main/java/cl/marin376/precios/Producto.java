@@ -2,7 +2,7 @@ package cl.marin376.precios;
 
 /** Producto del catálogo (solo lo necesario para la etiqueta de precio). */
 public class Producto {
-  public String sku = "", nombre = "", barcode = "";
+  public String sku = "", nombre = "", barcode = "", categoria = "", imagen = "";
   public int precio = 0;
   /** Texto normalizado (sin acentos, minúsculas) para buscar rápido. */
   String nombreNorm = "";

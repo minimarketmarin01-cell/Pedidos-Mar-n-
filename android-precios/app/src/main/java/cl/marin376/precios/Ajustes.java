@@ -19,6 +19,9 @@ public class Ajustes {
   public int avance = Raster.AVANCE_NADA;
   public boolean invertir = false; // solo TSPL
   public int texto = TEXTO_NORMAL;
+  // Papel que se avanza al terminar de imprimir, para que la última etiqueta salga entera por el
+  // borde de corte (en el POS la cabeza térmica queda ~1 cm antes del borde dentado).
+  public int finalMm = 12;
   public String local = Local.MARIN.id;
 
   public int altoPuntos() { return altoMm * 8; }
@@ -36,6 +39,7 @@ public class Ajustes {
     a.avance = p.getInt("avance", Raster.AVANCE_NADA);
     a.invertir = p.getBoolean("invertir", false);
     a.texto = Math.max(0, Math.min(2, p.getInt("texto", TEXTO_NORMAL)));
+    a.finalMm = p.getInt("finalMm", 12);
     a.local = Local.de(p.getString("local", Local.MARIN.id)).id;
     return a;
   }
@@ -45,6 +49,6 @@ public class Ajustes {
         .putString("mac", mac).putString("impNombre", nombreImpresora)
         .putInt("anchoPuntos", anchoPuntos).putInt("altoMm", altoMm).putInt("anchoMm", anchoMm)
         .putInt("gapMm", gapMm).putInt("modo", modo).putInt("avance", avance)
-        .putBoolean("invertir", invertir).putInt("texto", texto).putString("local", local).apply();
+        .putBoolean("invertir", invertir).putInt("texto", texto).putInt("finalMm", finalMm).putString("local", local).apply();
   }
 }
