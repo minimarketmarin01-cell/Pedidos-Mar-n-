@@ -22,6 +22,7 @@ public final class Catalogo {
   public List<Producto> productos = new ArrayList<>();
   public List<String> categorias = new ArrayList<>();
   public long hora = 0;   // cuándo se bajó (ms)
+  static final int VERSION = 2;   // 2 = con categoría y foto
   private Map<String, Producto> porCodigo = new HashMap<>();
 
   public Catalogo(Local l) { local = l; }
@@ -91,11 +92,13 @@ public final class Catalogo {
     if (!f.exists()) return cat;
     List<Producto> lista = new ArrayList<>();
     long hora = 0;
+    int version = 1;
     try (JsonReader r = new JsonReader(new InputStreamReader(new FileInputStream(f), "UTF-8"))) {
       r.beginObject();
       while (r.hasNext()) {
         String k = r.nextName();
         if ("hora".equals(k)) hora = r.nextLong();
+        else if ("v".equals(k)) version = r.nextInt();
         else if ("p".equals(k)) {
           r.beginArray();
           while (r.hasNext()) lista.add(Api.fila(r));
@@ -106,14 +109,16 @@ public final class Catalogo {
     } catch (Exception e) {
       return cat;   // archivo dañado: se vuelve a bajar
     }
-    cat.poner(lista, hora);
+    // Lista guardada por la versión 1.0 (sin categoría ni foto): se usa mientras tanto, pero con
+    // hora 0 para que se vuelva a bajar al abrir la app y aparezcan las categorías.
+    cat.poner(lista, version >= VERSION ? hora : 0);
     return cat;
   }
 
   public void guardar(Context c) {
     File f = archivo(c, local), tmp = new File(f.getPath() + ".tmp");
     try (JsonWriter w = new JsonWriter(new OutputStreamWriter(new FileOutputStream(tmp), "UTF-8"))) {
-      w.beginObject().name("hora").value(hora).name("p").beginArray();
+      w.beginObject().name("v").value(VERSION).name("hora").value(hora).name("p").beginArray();
       for (Producto p : productos) w.beginArray().value(p.sku).value(p.nombre).value(p.precio).value(p.barcode).value(p.categoria).value(p.imagen).endArray();
       w.endArray().endObject();
     } catch (Exception e) {

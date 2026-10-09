@@ -23,7 +23,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.Button;
@@ -62,13 +61,13 @@ public class MainActivity extends Activity {
   private List<Producto> visibles = new ArrayList<>();
 
   private TextView txtTitulo, txtMensaje, txtVacio;
-  private Spinner spCategoria;
+  private TextView spCategoria;   // selector de categoría (abre una lista grande)
+  private String categoria = null; // null = todos los artículos
   private EditText buscador;
   private Button btnBuscar;
   private ListView lista;
   private final Adaptador adaptador = new Adaptador();
   private final Runnable buscarLuego = this::filtrar;
-  private boolean pintandoCategorias = false;
 
   // ---------------------------------------------------------------- utilidades de vista
   private int dp(float v) { return Math.round(v * getResources().getDisplayMetrics().density); }
@@ -214,16 +213,14 @@ public class MainActivity extends Activity {
     // Fila: categoría (o buscador) + lupa
     LinearLayout filtro = fila();
     filtro.setPadding(dp(8), 0, 0, 0);
-    spCategoria = new Spinner(this, Spinner.MODE_DROPDOWN);
-    spCategoria.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-      public void onItemSelected(AdapterView<?> a, View v, int pos, long id) {
-        if (pintandoCategorias) return;
-        prefs.edit().putString("categoria_" + aj.local, pos == 0 ? "" : (String) a.getItemAtPosition(pos)).apply();
-        filtrar();
-        lista.setSelection(0);
-      }
-      public void onNothingSelected(AdapterView<?> a) {}
-    });
+    // Selector propio (no Spinner): en el POS con Android 8.1 el desplegable nativo no abría bien.
+    spCategoria = texto(TODOS + "  ▾", 20, false, NEGRO);
+    spCategoria.setSingleLine(true);
+    spCategoria.setEllipsize(TextUtils.TruncateAt.END);
+    spCategoria.setGravity(Gravity.CENTER_VERTICAL);
+    spCategoria.setPadding(dp(8), 0, dp(8), 0);
+    spCategoria.setClickable(true);
+    spCategoria.setOnClickListener(v -> elegirCategoria());
     filtro.addView(spCategoria, new LinearLayout.LayoutParams(0, dp(64), 1));
     buscador = new EditText(this);
     buscador.setHint("Buscar: nombre, código o SKU");
@@ -315,41 +312,49 @@ public class MainActivity extends Activity {
     filtrar();
   }
 
+  /** Restaura la categoría guardada del local (si todavía existe en la lista). */
   private void pintarCategorias() {
-    pintandoCategorias = true;
-    List<String> ops = new ArrayList<>();
+    String guardada = prefs.getString("categoria_" + aj.local, "");
+    categoria = null;
+    for (String c : cat.categorias) if (c.equalsIgnoreCase(guardada)) categoria = c;
+    spCategoria.setText((categoria == null ? TODOS : categoria) + "  ▾");
+  }
+
+  private void elegirCategoria() {
+    if (cat.categorias.isEmpty()) {
+      new AlertDialog.Builder(this).setTitle("Sin categorías")
+          .setMessage(cat.productos.isEmpty() || bajando
+              ? "Todavía se están bajando los productos. Espera un momento y vuelve a tocar."
+              : "La lista guardada no trae categorías. Toca «Actualizar productos» para bajarlas.")
+          .setPositiveButton("Actualizar productos", (d, i) -> actualizarProductos())
+          .setNegativeButton("Cerrar", null).show();
+      return;
+    }
+    final List<String> ops = new ArrayList<>();
     ops.add(TODOS);
     ops.addAll(cat.categorias);
-    ArrayAdapter<String> ad = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, ops) {
+    int sel = 0;
+    for (int i = 1; i < ops.size(); i++) if (ops.get(i).equals(categoria)) sel = i;
+    ArrayAdapter<String> ad = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_single_choice, ops) {
       @Override public View getView(int pos, View v, ViewGroup p) {
         TextView t = (TextView) super.getView(pos, v, p);
         t.setTextSize(20);
         t.setTextColor(NEGRO);
-        t.setSingleLine(true);
-        t.setEllipsize(TextUtils.TruncateAt.END);
-        return t;
-      }
-      @Override public View getDropDownView(int pos, View v, ViewGroup p) {
-        TextView t = (TextView) super.getDropDownView(pos, v, p);
-        t.setTextSize(20);
-        t.setTextColor(NEGRO);
-        t.setPadding(dp(16), dp(14), dp(16), dp(14));
+        t.setMinHeight(dp(60));
         return t;
       }
     };
-    ad.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-    spCategoria.setAdapter(ad);
-    String guardada = prefs.getString("categoria_" + aj.local, "");
-    int sel = 0;
-    for (int i = 1; i < ops.size(); i++) if (ops.get(i).equalsIgnoreCase(guardada)) sel = i;
-    spCategoria.setSelection(sel, false);
-    ui.post(() -> pintandoCategorias = false);
+    new AlertDialog.Builder(this).setTitle("Categoría").setSingleChoiceItems(ad, sel, (d, i) -> {
+      d.dismiss();
+      categoria = i == 0 ? null : ops.get(i);
+      prefs.edit().putString("categoria_" + aj.local, categoria == null ? "" : categoria).apply();
+      spCategoria.setText((categoria == null ? TODOS : categoria) + "  ▾");
+      filtrar();
+      lista.setSelection(0);
+    }).show();
   }
 
-  private String categoriaElegida() {
-    int pos = spCategoria.getSelectedItemPosition();
-    return pos <= 0 ? null : (String) spCategoria.getItemAtPosition(pos);
-  }
+  private String categoriaElegida() { return categoria; }
 
   private void filtrar() {
     if (buscando) {
