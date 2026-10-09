@@ -1,0 +1,43 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'cl.marin376.etiquetas'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'cl.marin376.etiquetas'
+        minSdk 26          // Android 8.0 y 8.1
+        targetSdk 27
+        versionCode 1
+        versionName '1.0'
+    }
+
+    signingConfigs {
+        marin {
+            // Llave fija (no secreta): así cada versión nueva se instala encima de la anterior sin desinstalar.
+            storeFile file('../etiquetas.keystore')
+            storePassword 'marin376'
+            keyAlias 'etiquetas'
+            keyPassword 'marin376'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.marin
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+}
