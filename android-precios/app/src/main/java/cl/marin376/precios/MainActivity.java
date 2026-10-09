@@ -316,7 +316,7 @@ public class MainActivity extends Activity {
   private void pintarCategorias() {
     String guardada = prefs.getString("categoria_" + aj.local, "");
     categoria = null;
-    for (String c : cat.categorias) if (c.equalsIgnoreCase(guardada)) categoria = c;
+    for (String c : categoriasVisibles()) if (c.equalsIgnoreCase(guardada)) categoria = c;
     spCategoria.setText((categoria == null ? TODOS : categoria) + "  ▾");
   }
 
@@ -332,7 +332,7 @@ public class MainActivity extends Activity {
     }
     final List<String> ops = new ArrayList<>();
     ops.add(TODOS);
-    ops.addAll(cat.categorias);
+    ops.addAll(categoriasVisibles());
     int sel = 0;
     for (int i = 1; i < ops.size(); i++) if (ops.get(i).equals(categoria)) sel = i;
     ArrayAdapter<String> ad = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_single_choice, ops) {
@@ -356,6 +356,78 @@ public class MainActivity extends Activity {
 
   private String categoriaElegida() { return categoria; }
 
+  // ---------------------------------------------------------------- categorías a mostrar (por local)
+  /** Categorías marcadas en "Elegir categorías a mostrar" (en minúsculas); null = todas. */
+  private java.util.Set<String> categoriasMarcadas() {
+    String raw = prefs.getString("cats_visibles_" + aj.local, null);
+    if (raw == null) return null;
+    java.util.Set<String> out = new java.util.HashSet<>();
+    try {
+      org.json.JSONArray a = new org.json.JSONArray(raw);
+      for (int i = 0; i < a.length(); i++) out.add(a.optString(i).toLowerCase(Locale.ROOT));
+    } catch (Exception e) { return null; }
+    return out;
+  }
+
+  private List<String> categoriasVisibles() {
+    java.util.Set<String> m = categoriasMarcadas();
+    if (m == null) return cat.categorias;
+    List<String> out = new ArrayList<>();
+    for (String c : cat.categorias) if (m.contains(c.toLowerCase(Locale.ROOT))) out.add(c);
+    return out;
+  }
+
+  /** Lista sin buscar: la categoría elegida, o "Todos" = solo las categorías marcadas. El buscador no usa esto. */
+  private List<Producto> productosVisibles(String categoria) {
+    if (categoria != null) return cat.deCategoria(categoria);
+    java.util.Set<String> m = categoriasMarcadas();
+    if (m == null) return cat.productos;
+    List<Producto> out = new ArrayList<>();
+    for (Producto p : cat.productos) if (m.contains(p.categoria.toLowerCase(Locale.ROOT))) out.add(p);
+    return out;
+  }
+
+  private void elegirCategoriasVisibles() {
+    if (cat.categorias.isEmpty()) { elegirCategoria(); return; }   // explica que faltan categorías
+    final String[] cats = cat.categorias.toArray(new String[0]);
+    final boolean[] marc = new boolean[cats.length];
+    java.util.Set<String> m = categoriasMarcadas();
+    for (int i = 0; i < cats.length; i++) marc[i] = m == null || m.contains(cats[i].toLowerCase(Locale.ROOT));
+    final AlertDialog d = new AlertDialog.Builder(this)
+        .setTitle("Categorías a mostrar en " + local().nombre)
+        .setMultiChoiceItems(cats, marc, (dlg, i, on) -> marc[i] = on)
+        .setPositiveButton("Guardar", null)
+        .setNeutralButton("Marcar todas", null)
+        .setNegativeButton("Cancelar", null)
+        .create();
+    d.setOnShowListener(x -> {
+      // "Marcar todas" / "Quitar todas" sin cerrar la ventana
+      final Button bTodas = d.getButton(AlertDialog.BUTTON_NEUTRAL);
+      boolean todasAl = true;
+      for (boolean x2 : marc) todasAl &= x2;
+      bTodas.setText(todasAl ? "Quitar todas" : "Marcar todas");
+      bTodas.setOnClickListener(v -> {
+        boolean todas = true;
+        for (boolean b : marc) todas &= b;
+        for (int i = 0; i < marc.length; i++) { marc[i] = !todas; d.getListView().setItemChecked(i, !todas); }
+        bTodas.setText(todas ? "Marcar todas" : "Quitar todas");
+      });
+      d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+        org.json.JSONArray a = new org.json.JSONArray();
+        int n = 0;
+        for (int i = 0; i < cats.length; i++) if (marc[i]) { a.put(cats[i]); n++; }
+        if (n == 0) { Toast.makeText(this, "Marca al menos una categoría.", Toast.LENGTH_LONG).show(); return; }
+        if (n == cats.length) prefs.edit().remove("cats_visibles_" + aj.local).apply();   // todas = sin filtro (incluye nuevas)
+        else prefs.edit().putString("cats_visibles_" + aj.local, a.toString()).apply();
+        d.dismiss();
+        pintarCategorias();
+        filtrar();
+        Toast.makeText(this, n == cats.length ? "Se muestran todas las categorías." : "Se muestran " + n + " categorías. El buscador 🔍 sigue buscando en todos los productos.", Toast.LENGTH_LONG).show();
+      });
+    });
+    d.show();
+  }
+
   private void filtrar() {
     if (buscando) {
       String q = buscador.getText().toString().trim();
@@ -364,7 +436,7 @@ public class MainActivity extends Activity {
       Producto ex = cat.exacto(q);
       if (ex != null && q.length() >= 8 && q.matches("[0-9]+")) { buscador.setText(""); abrirEtiqueta(ex); }
     } else {
-      visibles = cat.deCategoria(categoriaElegida());
+      visibles = productosVisibles(categoriaElegida());
     }
     adaptador.notifyDataSetChanged();
     String vacio = "";
@@ -434,6 +506,7 @@ public class MainActivity extends Activity {
       "Imprimir etiqueta de prueba",
       "Actualizar productos",
       "Ajustes de impresión",
+      "Elegir categorías a mostrar",
     };
     String lista = cat.productos.isEmpty() ? "Sin lista guardada" : miles(cat.productos.size()) + " productos · actualizada " + horaTxt(cat.hora);
     new AlertDialog.Builder(this).setTitle(lista).setItems(ops, (d, i) -> {
@@ -442,7 +515,8 @@ public class MainActivity extends Activity {
         case 1: elegirImpresora(null); break;
         case 2: imprimirPrueba(); break;
         case 3: actualizarProductos(); break;
-        default: abrirAjustes(); break;
+        case 4: abrirAjustes(); break;
+        default: elegirCategoriasVisibles(); break;
       }
     }).show();
   }
