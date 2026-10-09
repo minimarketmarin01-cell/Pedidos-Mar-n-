@@ -35,6 +35,25 @@ public final class Barras {
     return null;
   }
 
+  // ------------------------------------------------------------------ código interno
+  /**
+   * Igual que generarCodigoBarrasInterno() de la app web: "04" (rango GS1 040-049 de uso interno,
+   * nunca choca con un código de fábrica ni con el "20…" de peso que Loyverse interpreta distinto)
+   * + 10 dígitos al azar + dígito verificador EAN-13. Se descarta si ya lo usa otro producto.
+   * null si en 200 intentos no sale uno libre (prácticamente imposible).
+   */
+  public static String generarInterno(java.util.Set<String> usados, java.util.Random r) {
+    for (int intento = 0; intento < 200; intento++) {
+      StringBuilder c = new StringBuilder("04");
+      for (int i = 0; i < 10; i++) c.append(r.nextInt(10));
+      int suma = 0;
+      for (int i = 0; i < 12; i++) { int d = c.charAt(i) - '0'; suma += (i % 2 == 0) ? d : d * 3; }
+      c.append((10 - suma % 10) % 10);
+      if (!usados.contains(c.toString())) return c.toString();
+    }
+    return null;
+  }
+
   // ------------------------------------------------------------------ EAN-13
   private static final String[] L = {"0001101", "0011001", "0010011", "0111101", "0100011",
       "0110001", "0101111", "0111011", "0110111", "0001011"};

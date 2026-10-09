@@ -6,6 +6,10 @@ térmica de 58 mm o la interna del POS «InnerPrinter», ESC/POS o TSPL). No car
 Pantalla igual a la venta de Loyverse: barra verde, categoría arriba (o 🔍 buscar), lista alfabética con
 foto, nombre y precio. Tocar un producto abre «Imprimir etiqueta» (cantidad, vencimiento, vista previa);
 al imprimir bien vuelve sola a la lista. ☰ = local, impresora, prueba, actualizar, ajustes.
+Si el producto no tiene código de barras, «Crear código de barras» genera uno igual que la app web
+(`generarCodigoBarrasInterno`: 04 + 10 dígitos al azar + verificador EAN-13, sin repetir en el catálogo) y lo
+guarda en Loyverse con `editar_codigo_barras` (el servidor rechaza repetidos). También permite cambiarlo, con
+confirmación porque las etiquetas viejas dejan de servir.
 Al terminar se avanza papel (12 mm por defecto, «Papel extra al terminar») para que la última etiqueta
 salga entera por el borde de corte.
 

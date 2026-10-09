@@ -144,6 +144,35 @@ public final class Api {
     return 0;
   }
 
+  /**
+   * Guarda un código de barras nuevo (mismo endpoint que la app web: editar_codigo_barras). El
+   * servidor lo graba en Loyverse y rechaza códigos que ya use otro producto.
+   */
+  public static void guardarCodigo(Local l, String sku, String codigo) throws Exception {
+    HttpURLConnection c = abrir(l.url, 60000);
+    try {
+      c.setRequestMethod("POST");
+      c.setDoOutput(true);
+      c.setRequestProperty("Content-Type", "application/json");
+      JSONObject payload = new JSONObject().put("sku", sku).put("barcode", codigo).put("responsable", "App Precios");
+      byte[] body = new JSONObject().put("action", "editar_codigo_barras").put("payload", payload).toString().getBytes("UTF-8");
+      try (java.io.OutputStream os = c.getOutputStream()) { os.write(body); }
+      InputStream in = c.getResponseCode() >= 400 ? c.getErrorStream() : c.getInputStream();
+      ByteArrayOutputStream o = new ByteArrayOutputStream();
+      if (in != null) {
+        byte[] b = new byte[4096];
+        int n;
+        while ((n = in.read(b)) > 0) o.write(b, 0, n);
+        in.close();
+      }
+      JSONObject j;
+      try { j = new JSONObject(o.toString("UTF-8")); } catch (Exception e) { throw new IOException("El servidor no respondió bien"); }
+      if (!j.optBoolean("ok", false)) throw new Exception(j.optString("error", "No se pudo guardar el código"));
+    } finally {
+      c.disconnect();
+    }
+  }
+
   /** Datos frescos de UN producto (precio, código y vencimiento del lote más próximo). */
   public static final class Ficha {
     public Integer precio;

@@ -497,12 +497,13 @@ public class MainActivity extends Activity {
   private class Ventana {
     Producto p;
     int cantidad = 1, confirmando = 0;
+    boolean creando = false;
     String vence = "";
     boolean venceManual = false;
     AlertDialog dlg;
     TextView txtPrecio, txtCodigo, txtCant, txtAviso, txtEstado, txtVenceInfo;
     ImageView vista;
-    Button btnImprimir, btnVence, btnSinVence;
+    Button btnImprimir, btnVence, btnSinVence, btnCodigo;
   }
 
   private Ventana ven;
@@ -522,6 +523,10 @@ public class MainActivity extends Activity {
     c.addView(w.txtPrecio, lp(-1, -2, 2));
     w.txtCodigo = texto("", 15, false, PLOMO);
     c.addView(w.txtCodigo, lp(-1, -2, 2));
+    w.btnCodigo = boton("", VERDE, Color.WHITE);
+    w.btnCodigo.setTextSize(18);
+    w.btnCodigo.setOnClickListener(v -> crearCodigo(w));
+    c.addView(w.btnCodigo, lp(-1, dp(56), 6));
 
     w.vista = new ImageView(this);
     w.vista.setAdjustViewBounds(true);
@@ -601,6 +606,17 @@ public class MainActivity extends Activity {
     w.txtPrecio.setTextColor(w.p.precio > 0 ? NEGRO : ROJO);
     w.txtCodigo.setText("Código: " + w.p.codigo() + (w.p.barcode.isEmpty() ? " (SKU, sin código de barras)" : "")
         + (w.confirmando > 0 ? "\nConfirmando precio con el servidor…" : ""));
+    boolean sinCodigo = w.p.barcode.isEmpty();
+    if (sinCodigo) {
+      colorear(w.btnCodigo, VERDE, Color.WHITE);
+      w.btnCodigo.setText(w.creando ? "Creando código…" : "Crear código de barras");
+    } else {
+      colorear(w.btnCodigo, GRIS, NEGRO);
+      w.btnCodigo.setText(w.creando ? "Creando código…" : "Cambiar código de barras");
+    }
+    boolean puedeCodigo = !w.creando && w.confirmando == 0 && !imprimiendo;
+    w.btnCodigo.setEnabled(puedeCodigo);
+    w.btnCodigo.setAlpha(puedeCodigo ? 1f : 0.45f);
     w.txtCant.setText(String.valueOf(w.cantidad));
     boolean hay = !w.vence.isEmpty();
     colorear(w.btnSinVence, hay ? GRIS : VERDE, hay ? NEGRO : Color.WHITE);
@@ -609,11 +625,12 @@ public class MainActivity extends Activity {
     LabelRenderer.Resultado r = render(etiquetaDe(w));
     w.vista.setImageBitmap(r.vista);
     String aviso = r.aviso;
+    if (sinCodigo) aviso = "Este producto no tiene código de barras: la etiqueta sale con la SKU. Toca «Crear código de barras» para que la caja lo lea.";
     if (w.p.precio <= 0) aviso = "Ojo: este producto no tiene precio en el sistema.";
     if (aj.mac.isEmpty()) aviso = "Falta elegir la impresora: al tocar Imprimir te la pido.";
     w.txtAviso.setText(aviso);
     w.txtAviso.setVisibility(aviso.isEmpty() ? View.GONE : View.VISIBLE);
-    boolean ok = !imprimiendo && w.confirmando == 0;
+    boolean ok = !imprimiendo && w.confirmando == 0 && !w.creando;
     w.btnImprimir.setEnabled(ok);
     w.btnImprimir.setAlpha(ok ? 1f : 0.45f);
     w.btnImprimir.setText(imprimiendo ? "Imprimiendo…" : (w.confirmando > 0 ? "Confirmando precio…"
@@ -671,6 +688,56 @@ public class MainActivity extends Activity {
           w.txtEstado.setText("No pude confirmar el precio (sin internet): uso la lista guardada.");
         }
         pintarVentana(w);
+      });
+    }).start();
+  }
+
+  // ---------------------------------------------------------------- crear código (igual que la web)
+  private void crearCodigo(final Ventana w) {
+    if (w.creando || w.confirmando > 0) return;
+    if (!w.p.barcode.isEmpty()) {
+      new AlertDialog.Builder(this).setTitle("¿Cambiar el código de barras?")
+          .setMessage("Este producto ya tiene el código «" + w.p.barcode + "».\n\nSi lo cambias, las etiquetas viejas dejarán de funcionar en la caja.")
+          .setPositiveButton("Sí, cambiarlo", (d, i) -> guardarCodigoNuevo(w))
+          .setNegativeButton("No", null).show();
+      return;
+    }
+    guardarCodigoNuevo(w);
+  }
+
+  private void guardarCodigoNuevo(final Ventana w) {
+    java.util.HashSet<String> usados = new java.util.HashSet<>();
+    for (Producto p : cat.productos) if (!p.barcode.isEmpty()) usados.add(p.barcode.trim());
+    final String codigo = Barras.generarInterno(usados, new java.util.Random());
+    if (codigo == null) { Toast.makeText(this, "No se pudo crear un código único. Intenta de nuevo.", Toast.LENGTH_LONG).show(); return; }
+    final Local l = local();
+    final Producto p = w.p;
+    w.creando = true;
+    w.txtEstado.setTextColor(NEGRO);
+    w.txtEstado.setText("Guardando el código en el sistema…");
+    pintarVentana(w);
+    new Thread(() -> {
+      String err = null;
+      try { Api.guardarCodigo(l, p.sku, codigo); }
+      catch (Exception e) { err = e instanceof java.io.IOException ? "Sin internet: no se pudo guardar el código. Inténtalo de nuevo." : (e.getMessage() == null ? "No se pudo guardar el código." : e.getMessage()); }
+      final String fe = err;
+      ui.post(() -> {
+        w.creando = false;
+        if (fe == null) {
+          p.barcode = codigo;
+          if (l.id.equals(aj.local)) {
+            cat.poner(new ArrayList<>(cat.productos), cat.hora);
+            final Catalogo cg = cat;
+            new Thread(() -> cg.guardar(getApplicationContext())).start();
+            adaptador.notifyDataSetChanged();
+          }
+          w.txtEstado.setTextColor(VERDE);
+          w.txtEstado.setText("Código creado: " + codigo + ". Ya quedó en Loyverse; imprime la etiqueta.");
+        } else {
+          w.txtEstado.setTextColor(ROJO);
+          w.txtEstado.setText(fe);
+        }
+        if (ven == w) pintarVentana(w);
       });
     }).start();
   }

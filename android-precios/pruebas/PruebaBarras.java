@@ -15,10 +15,36 @@ public class PruebaBarras {
     "C39_10234", "C39_ABC-12"                            // Code 39 forzado (respaldo)
   };
 
+  /** Códigos internos como los crea la app (y la web): 04 + 10 al azar + verificador, sin repetir. */
+  static boolean probarGenerador(java.util.List<String> salida) {
+    java.util.Random r = new java.util.Random(376);
+    java.util.HashSet<String> usados = new java.util.HashSet<>();
+    usados.add("0412345678905");
+    boolean ok = true;
+    for (int i = 0; i < 5000; i++) {
+      String c = Barras.generarInterno(usados, r);
+      boolean bien = c != null && c.matches("04[0-9]{11}") && Barras.ean13Valido(c) && !usados.contains(c)
+          && Barras.C128.equals(Barras.elegir(c).tipo);
+      if (!bien) { System.out.println("FALLA generador: " + c); ok = false; break; }
+      usados.add(c);
+      if (i < 3) salida.add(c);
+    }
+    // Si todos los códigos posibles ya están usados, debe devolver null (no repetir).
+    java.util.Set<String> todos = new java.util.AbstractSet<String>() {
+      public boolean contains(Object o) { return true; }
+      public java.util.Iterator<String> iterator() { return java.util.Collections.<String>emptyIterator(); }
+      public int size() { return Integer.MAX_VALUE; }
+    };
+    if (Barras.generarInterno(todos, r) != null) { System.out.println("FALLA generador: repitió un código usado"); ok = false; }
+    System.out.println((ok ? "OK    " : "FALLA ") + "generador: 5000 códigos 04…, verificador correcto, sin repetir, salen en Code 128");
+    return ok;
+  }
+
   public static void main(String[] a) throws Exception {
     new File("out").mkdirs();
-    boolean ok = true;
-    for (String cod : a.length > 0 ? a : CODIGOS) {
+    java.util.List<String> lista = new java.util.ArrayList<>(java.util.Arrays.asList(a.length > 0 ? a : CODIGOS));
+    boolean ok = probarGenerador(lista);   // agrega 3 códigos generados para que pyzbar también los lea
+    for (String cod : lista) {
       boolean forzar39 = cod.startsWith("C39_");
       if (forzar39) cod = cod.substring(4);
       Barras.Codigo c = forzar39 ? new Barras.Codigo(Barras.C39, Barras.code39(cod), 10) : Barras.elegir(cod);
