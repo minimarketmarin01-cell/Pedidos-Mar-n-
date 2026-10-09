@@ -878,11 +878,15 @@ public class MainActivity extends Activity {
     if (aj.modo == Ajustes.MODO_TSPL)
       return Raster.tspl(r.bits, r.w, r.h, aj.anchoMm, aj.altoMm, aj.gapMm, aj.invertir, copias);
     byte[] una = Raster.escpos(r.bits, r.w, r.h, aj.avance);
+    byte[] sep = Raster.separador(r.w, aj.espacioMm);   // espacio + línea punteada entre etiquetas
     byte[] fin = Raster.avanzar(aj.finalMm);
-    byte[] out = new byte[una.length * copias + fin.length];
-    for (int i = 0; i < copias; i++) System.arraycopy(una, 0, out, i * una.length, una.length);
-    System.arraycopy(fin, 0, out, una.length * copias, fin.length);
-    return out;
+    java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+    for (int i = 0; i < copias; i++) {
+      out.write(una, 0, una.length);
+      if (i < copias - 1) out.write(sep, 0, sep.length);
+    }
+    out.write(fin, 0, fin.length);
+    return out.toByteArray();
   }
 
   private void imprimir(final Ventana w) {
@@ -990,6 +994,7 @@ public class MainActivity extends Activity {
     sv.addView(c);
     final Spinner texto = listaOpciones(c, "Tamaño de la letra", new String[]{"Pequeña", "Normal", "Grande"}, aj.texto);
     final EditText alto = campoNum(c, "Alto de la etiqueta en mm (32 es lo normal; las barras deben medir 12 mm o más)", aj.altoMm);
+    final EditText espacio = campoNum(c, "Espacio para cortar entre etiquetas, en mm (con línea punteada; 0 = pegadas)", aj.espacioMm);
     final EditText fin = campoNum(c, "Papel extra al terminar, en mm (para cortar sin cortar las barras; 12 en el POS)", aj.finalMm);
     final Spinner modo = listaOpciones(c, "Lenguaje de la impresora", new String[]{"ESC/POS (la mayoría de 58 mm)", "TSPL (impresoras de etiquetas)"}, aj.modo);
     final EditText ancho = campoNum(c, "Ancho imprimible en puntos (384 es lo normal en 58 mm)", aj.anchoPuntos);
@@ -1006,6 +1011,7 @@ public class MainActivity extends Activity {
           aj.texto = texto.getSelectedItemPosition();
           aj.altoMm = num(alto, 32, 20, 100);
           aj.finalMm = num(fin, 12, 0, 40);
+          aj.espacioMm = num(espacio, 6, 0, 30);
           aj.modo = modo.getSelectedItemPosition();
           aj.anchoPuntos = num(ancho, 384, 200, 832);
           aj.avance = av.getSelectedItemPosition();
