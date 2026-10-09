@@ -48,6 +48,23 @@ public final class Raster {
     return o.toByteArray();
   }
 
+  /**
+   * ESC/POS: espacio en blanco de mm milímetros entre dos etiquetas, con una línea punteada al
+   * medio como guía para cortar con tijera (rollo continuo). Vacío si mm <= 0.
+   */
+  public static byte[] separador(int w, int mm) {
+    if (mm <= 0) return new byte[0];
+    int h = mm * 8;
+    boolean[] negro = new boolean[w * h];
+    if (mm >= 3) {
+      int y0 = h / 2 - 1;
+      for (int y = y0; y < y0 + 2; y++)
+        for (int x = 8; x < w - 8; x++)
+          if ((x - 8) % 20 < 12) negro[y * w + x] = true;   // trazos de 12 puntos (1,5 mm), huecos de 8
+    }
+    return escpos(empaquetar(negro, w, h), w, h, AVANCE_NADA);
+  }
+
   /** TSPL: una etiqueta. invertir = true si la impresora toma 1 como "blanco". */
   public static byte[] tspl(byte[] bits, int w, int h, int anchoMm, int altoMm, int gapMm, boolean invertir) {
     return tspl(bits, w, h, anchoMm, altoMm, gapMm, invertir, 1);
