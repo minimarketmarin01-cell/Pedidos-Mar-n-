@@ -4,7 +4,7 @@ App liviana para el POS con Android 8.1 para **imprimir etiquetas de precio** po
 térmica de 58 mm o la interna del POS «InnerPrinter», ESC/POS o TSPL). No carga la app web.
 
 Pantalla igual a la venta de Loyverse: barra verde, categoría arriba (o 🔍 buscar), lista alfabética con
-foto, nombre y precio. Tocar un producto abre «Imprimir etiqueta» (cantidad, vencimiento, vista previa);
+foto, nombre y precio. Tocar un producto abre «Imprimir etiqueta» (cantidad, elaboración y vencimiento opcionales, vista previa);
 al imprimir bien vuelve sola a la lista. ☰ = local, impresora, prueba, actualizar, ajustes.
 Si el producto no tiene código de barras, «Crear código de barras» genera uno igual que la app web
 (`generarCodigoBarrasInterno`: 04 + 10 dígitos al azar + verificador EAN-13, sin repetir en el catálogo) y lo
