@@ -4,14 +4,14 @@
 completo. Publicarla solo hace la actualización más rápida y liviana (no se calculan ventas, pendientes,
 favoritos, costeo, etc.).
 
-Respuesta: `{"ok":true,"productos":[["sku","nombre",precio,"barcode"], …]}` — solo lectura (un `SELECT`).
+Respuesta: `{"ok":true,"productos":[["sku","nombre",precio,"barcode","categoria","imagen"], …]}` — solo lectura (un `SELECT`).
 
 ```js
       if (action === "catalogo_etiquetas") {
-        const { results } = await env.DB.prepare("SELECT sku, nombre, precio, barcode FROM productos").all();
+        const { results } = await env.DB.prepare("SELECT sku, nombre, precio, barcode, categoria, imagen_url FROM productos").all();
         return json({
           ok: true,
-          productos: (results || []).map((p) => [p.sku, p.nombre, Math.round(p.precio || 0), p.barcode || ""])
+          productos: (results || []).map((p) => [p.sku, p.nombre, Math.round(p.precio || 0), p.barcode || "", p.categoria || "SIN CATEGORÍA", p.imagen_url || ""])
         });
       }
 ```

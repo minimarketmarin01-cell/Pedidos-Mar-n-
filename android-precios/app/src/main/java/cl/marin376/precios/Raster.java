@@ -36,6 +36,18 @@ public final class Raster {
     return o.toByteArray();
   }
 
+  /** ESC/POS: avanza el papel mm milímetros (ESC J, de a 255 puntos como máximo). */
+  public static byte[] avanzar(int mm) {
+    ByteArrayOutputStream o = new ByteArrayOutputStream();
+    int puntos = Math.max(0, mm) * 8;
+    while (puntos > 0) {
+      int n = Math.min(255, puntos);
+      o.write(0x1B); o.write(0x4A); o.write(n);
+      puntos -= n;
+    }
+    return o.toByteArray();
+  }
+
   /** TSPL: una etiqueta. invertir = true si la impresora toma 1 como "blanco". */
   public static byte[] tspl(byte[] bits, int w, int h, int anchoMm, int altoMm, int gapMm, boolean invertir) {
     return tspl(bits, w, h, anchoMm, altoMm, gapMm, invertir, 1);

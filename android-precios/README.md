@@ -1,7 +1,13 @@
 # Precios Marín (app Android)
 
-App liviana para el POS con Android 8.1: **buscar producto → cantidad → imprimir etiqueta de precio**
-por Bluetooth (impresora térmica de 58 mm, ESC/POS o TSPL). No carga la app web.
+App liviana para el POS con Android 8.1 para **imprimir etiquetas de precio** por Bluetooth (impresora
+térmica de 58 mm o la interna del POS «InnerPrinter», ESC/POS o TSPL). No carga la app web.
+
+Pantalla igual a la venta de Loyverse: barra verde, categoría arriba (o 🔍 buscar), lista alfabética con
+foto, nombre y precio. Tocar un producto abre «Imprimir etiqueta» (cantidad, vencimiento, vista previa);
+al imprimir bien vuelve sola a la lista. ☰ = local, impresora, prueba, actualizar, ajustes.
+Al terminar se avanza papel (12 mm por defecto, «Papel extra al terminar») para que la última etiqueta
+salga entera por el borde de corte.
 
 - Locales: **Marín 376** y **Argomedo 455** (cada uno con su servidor y su lista guardada).
 - Lista de productos guardada en el equipo (`catalogo_<local>.json`): abre al instante y funciona sin internet.

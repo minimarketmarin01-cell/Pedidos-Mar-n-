@@ -20,6 +20,7 @@ import java.util.Map;
 public final class Catalogo {
   public final Local local;
   public List<Producto> productos = new ArrayList<>();
+  public List<String> categorias = new ArrayList<>();
   public long hora = 0;   // cuándo se bajó (ms)
   private Map<String, Producto> porCodigo = new HashMap<>();
 
@@ -40,10 +41,22 @@ public final class Catalogo {
       if (p.barcode != null && !p.barcode.isEmpty()) m.put(p.barcode, p);
     }
     for (Producto p : lista) m.put(p.sku, p);   // la SKU manda si choca con un código
-    Collections.sort(lista, (a, b) -> a.nombreNorm.compareTo(b.nombreNorm));
+    // Mismo orden que la lista de Loyverse: alfabético sin distinguir mayúsculas.
+    Collections.sort(lista, (a, b) -> a.nombre.compareToIgnoreCase(b.nombre));
+    java.util.TreeSet<String> cats = new java.util.TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+    for (Producto p : lista) if (!p.categoria.isEmpty()) cats.add(p.categoria);
+    categorias = new ArrayList<>(cats);
     productos = lista;
     porCodigo = m;
     hora = cuando;
+  }
+
+  /** Productos de una categoría (null = todos), en orden alfabético. */
+  public List<Producto> deCategoria(String c) {
+    if (c == null) return productos;
+    List<Producto> out = new ArrayList<>();
+    for (Producto p : productos) if (c.equalsIgnoreCase(p.categoria)) out.add(p);
+    return out;
   }
 
   public Producto exacto(String codigo) { return codigo == null ? null : porCodigo.get(codigo.trim()); }
@@ -85,17 +98,7 @@ public final class Catalogo {
         if ("hora".equals(k)) hora = r.nextLong();
         else if ("p".equals(k)) {
           r.beginArray();
-          while (r.hasNext()) {
-            r.beginArray();
-            Producto p = new Producto();
-            p.sku = Api.texto(r);
-            p.nombre = Api.texto(r);
-            p.precio = Api.entero(r);
-            p.barcode = Api.texto(r);
-            while (r.hasNext()) r.skipValue();
-            r.endArray();
-            lista.add(p);
-          }
+          while (r.hasNext()) lista.add(Api.fila(r));
           r.endArray();
         } else r.skipValue();
       }
@@ -111,7 +114,7 @@ public final class Catalogo {
     File f = archivo(c, local), tmp = new File(f.getPath() + ".tmp");
     try (JsonWriter w = new JsonWriter(new OutputStreamWriter(new FileOutputStream(tmp), "UTF-8"))) {
       w.beginObject().name("hora").value(hora).name("p").beginArray();
-      for (Producto p : productos) w.beginArray().value(p.sku).value(p.nombre).value(p.precio).value(p.barcode).endArray();
+      for (Producto p : productos) w.beginArray().value(p.sku).value(p.nombre).value(p.precio).value(p.barcode).value(p.categoria).value(p.imagen).endArray();
       w.endArray().endObject();
     } catch (Exception e) {
       tmp.delete();
