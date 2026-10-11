@@ -43,6 +43,11 @@ jobs:
         run: |
           mkdir -p descargas
           cp android-precios/app/build/outputs/apk/release/app-release.apk descargas/precios-marin376.apk
+          # Versión publicada: la app la lee al abrirse para ofrecer la actualización (Actualizador.java).
+          CODE=$(grep -oP 'versionCode\s+\K[0-9]+' android-precios/app/build.gradle)
+          NAME=$(grep -oP "versionName\s+'\K[^']+" android-precios/app/build.gradle)
+          printf '{"versionCode":%s,"versionName":"%s","apk":"precios-marin376.apk"}\n' "$CODE" "$NAME" > descargas/precios-version.json
+          cat descargas/precios-version.json
       - uses: actions/upload-artifact@v4
         with:
           name: precios-marin376
@@ -52,7 +57,7 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git add descargas/precios-marin376.apk
+          git add descargas/precios-marin376.apk descargas/precios-version.json
           if git diff --cached --quiet; then echo "APK sin cambios"; else
             git commit -m "APK Precios Marín (compilado automáticamente)"
             git pull --rebase origin main
