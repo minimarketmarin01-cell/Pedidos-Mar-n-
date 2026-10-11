@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ícono: la M de Marín (blanca) y la A de Argomedo (naranja) fusionadas. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:pathData="M27,78 L27,34 L54,62 L81,34 L81,78"
+        android:strokeColor="#FFFFFF" android:strokeWidth="9"
+        android:strokeLineCap="round" android:strokeLineJoin="round" />
+    <path android:pathData="M38,80 L54,32 L70,80 M44.5,64 L63.5,64"
+        android:strokeColor="#FF8A3D" android:strokeWidth="7"
+        android:strokeLineCap="round" android:strokeLineJoin="round" />
+</vector>
