@@ -43,3 +43,10 @@ y la app avisa si las barras quedan bajo 12 mm de alto.
 ## Catálogo liviano en el servidor (opcional, recomendado)
 Ver [`worker-catalogo-etiquetas.md`](worker-catalogo-etiquetas.md). Sin ese cambio la app funciona igual
 (baja el catálogo completo y descarta en el momento todo lo que no es sku/nombre/precio/código).
+
+## Actualizaciones
+El CI publica, junto al APK, `descargas/precios-version.json` (`versionCode` y `versionName` de `app/build.gradle`).
+Al abrirse (cada 3 h como máximo) o desde ☰ → «Buscar actualización», la app compara ese número con el
+instalado. Si hay uno nuevo, baja el APK y abre el instalador (`ApkProvider` lo entrega como `content://`), y la
+persona solo toca «Instalar». La primera vez Android 8 pide activar «Permitir de esta fuente» para la app.
+**Cada cambio debe subir `versionCode`**, si no la app no se entera.

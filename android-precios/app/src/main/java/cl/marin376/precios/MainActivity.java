@@ -160,6 +160,7 @@ public class MainActivity extends Activity {
     fotos = new Imagenes(this, dp(48));
     construir();
     abrirLocal();
+    new Actualizador(this).revisar(false);   // si hay versión nueva, ofrece actualizar
   }
 
   @Override
@@ -507,6 +508,7 @@ public class MainActivity extends Activity {
       "Actualizar productos",
       "Ajustes de impresión",
       "Elegir categorías a mostrar",
+      "Buscar actualización de la app (versión " + Actualizador.nombreInstalado(this) + ")",
     };
     String lista = cat.productos.isEmpty() ? "Sin lista guardada" : miles(cat.productos.size()) + " productos · actualizada " + horaTxt(cat.hora);
     new AlertDialog.Builder(this).setTitle(lista).setItems(ops, (d, i) -> {
@@ -516,7 +518,8 @@ public class MainActivity extends Activity {
         case 2: imprimirPrueba(); break;
         case 3: actualizarProductos(); break;
         case 4: abrirAjustes(); break;
-        default: elegirCategoriasVisibles(); break;
+        case 5: elegirCategoriasVisibles(); break;
+        default: new Actualizador(this).revisar(true); break;
       }
     }).show();
   }
