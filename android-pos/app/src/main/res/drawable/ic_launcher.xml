@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ícono: caja registradora simple, azul oscuro (el color de la app). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <path android:fillColor="#16395F"
+        android:pathData="M4,10 a6,6 0 0 1 6,-6 h28 a6,6 0 0 1 6,6 v28 a6,6 0 0 1 -6,6 h-28 a6,6 0 0 1 -6,-6 z" />
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M12,10 h24 v10 h-24 z" />
+    <path android:fillColor="#16395F"
+        android:pathData="M14,12 h20 v6 h-20 z" />
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M10,24 h28 v4 h-28 z M10,31 h6 v5 h-6 z M18,31 h6 v5 h-6 z M26,31 h6 v5 h-6 z" />
+</vector>
