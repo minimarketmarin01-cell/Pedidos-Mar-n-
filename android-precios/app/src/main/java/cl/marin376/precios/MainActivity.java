@@ -1089,7 +1089,7 @@ public class MainActivity extends Activity {
         detalle += "\n";
       }
       txtCalc.setText(calc[0] > 0
-          ? detalle + "Precio calculado: " + precioTxt(calc[0])
+          ? detalle + "Precio calculado: " + precioTxt(calc[0]) + " → " + precioTxt(Precio.sugerido(calc[0]))
           : "Escribe el costo y el margen para calcular el precio.");
       if (!tocado[0]) {
         poniendo[0] = true;
@@ -1109,7 +1109,7 @@ public class MainActivity extends Activity {
       }
       chips.removeAllViews();
       List<Integer> ops = Precio.redondeos(calc[0]);
-      if (calc[0] > 0 && !ops.contains(calc[0])) ops.add(0, calc[0]);
+      // Solo precios cobrables en pesos chilenos: terminados en 00, 50 o 90 (nunca $1.125).
       for (final int r : ops) {
         boolean on = r == pv;
         Button ch = boton(precioTxt(r), on ? VERDE : GRIS, on ? Color.WHITE : NEGRO);
@@ -1249,6 +1249,18 @@ public class MainActivity extends Activity {
       String nom = nombre.getText().toString().trim();
       if (nom.isEmpty()) { estado.setTextColor(ROJO); estado.setText("Falta el nombre."); return; }
       if ((int) numero(precio) <= 0) { estado.setTextColor(ROJO); estado.setText("Falta el precio de venta."); return; }
+      int escrito = (int) numero(precio);
+      if (escrito % 10 != 0) {
+        // Pesos chilenos: la moneda más chica es $10 (y el efectivo se redondea a la decena).
+        int ajustado = Precio.aDecena(escrito);
+        poniendo[0] = true;
+        precio.setText(String.valueOf(ajustado));
+        poniendo[0] = false;
+        recalcular[0].run();
+        estado.setTextColor(ROJO);
+        estado.setText("Precio ajustado a " + precioTxt(ajustado) + " (en Chile no hay monedas bajo $10). Revisa y toca Crear otra vez.");
+        return;
+      }
       Producto igual = null;
       String nn = Catalogo.norm(nom);
       for (Producto p : cat.productos) if (Catalogo.norm(p.nombre).equals(nn)) { igual = p; break; }
