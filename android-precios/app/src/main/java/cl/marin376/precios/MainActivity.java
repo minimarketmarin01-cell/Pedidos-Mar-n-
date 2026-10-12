@@ -966,6 +966,27 @@ public class MainActivity extends Activity {
     filaCosto.addView(bSin, ps);
     c.addView(filaCosto, lp(-1, -2, 4));
 
+    // + % producción (mano de obra, materiales, luz): se suma al costo antes de calcular el precio.
+    c.addView(texto("+ % producción (mano de obra, materiales, luz)", 17, true, NEGRO), lp(-1, -2, 10));
+    LinearLayout filaProd = fila();
+    final EditText produccion = new EditText(this);
+    produccion.setTextSize(22);
+    produccion.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+    String pctGuardado = prefs.getString("pctProduccion", "0");
+    produccion.setText(pctGuardado);
+    filaProd.addView(produccion, new LinearLayout.LayoutParams(dp(90), ViewGroup.LayoutParams.WRAP_CONTENT));
+    final Button[] chipsProd = new Button[4];
+    final int[] pcts = {0, 10, 20, 30};
+    for (int i = 0; i < pcts.length; i++) {
+      final int pct = pcts[i];
+      Button b = boton(pct + " %", GRIS, NEGRO);
+      b.setTextSize(16);
+      b.setOnClickListener(v -> produccion.setText(String.valueOf(pct)));
+      chipsProd[i] = b;
+      filaProd.addView(b, peso(dp(48), 6));
+    }
+    c.addView(filaProd, lp(-1, -2, 4));
+
     c.addView(texto("Margen sobre venta (%)", 17, true, NEGRO), lp(-1, -2, 10));
     final EditText margen = new EditText(this);
     margen.setTextSize(22);
@@ -1011,10 +1032,27 @@ public class MainActivity extends Activity {
 
     final Runnable[] recalcular = new Runnable[1];
     recalcular[0] = () -> {
-      double cb = Precio.costoBruto(numero(costo), conIva[0]);
+      double pct = numero(produccion);
+      for (int i = 0; i < pcts.length; i++) {
+        boolean on = pct == pcts[i];
+        colorear(chipsProd[i], on ? VERDE : GRIS, on ? Color.WHITE : NEGRO);
+      }
+      double cIva = Precio.costoBruto(numero(costo), conIva[0]);
+      double cb = Precio.conProduccion(cIva, pct);
       calc[0] = Precio.desdeMargen(cb, numero(margen));
+      String detalle = "";
+      if (cIva > 0) {
+        detalle = "Costo total: " + precioTxt((int) Math.round(cb));
+        if (!conIva[0] || pct > 0) {
+          detalle += " (" + precioTxt((int) Math.round(numero(costo)));
+          if (!conIva[0]) detalle += " + 19 % IVA";
+          if (pct > 0) detalle += " + " + CalcMotor.fmtNum(String.valueOf(pct).replaceAll("\\.0$", "")) + " % producción";
+          detalle += ")";
+        }
+        detalle += "\n";
+      }
       txtCalc.setText(calc[0] > 0
-          ? "Precio calculado: " + precioTxt(calc[0]) + (conIva[0] ? "" : " (costo + 19 % IVA = " + precioTxt((int) Math.round(cb)) + ")")
+          ? detalle + "Precio calculado: " + precioTxt(calc[0])
           : "Escribe el costo y el margen para calcular el precio.");
       if (!tocado[0]) {
         poniendo[0] = true;
@@ -1040,6 +1078,7 @@ public class MainActivity extends Activity {
       public void afterTextChanged(Editable e) { recalcular[0].run(); }
     };
     costo.addTextChangedListener(alCambiar);
+    produccion.addTextChangedListener(alCambiar);
     margen.addTextChangedListener(alCambiar);
     precio.addTextChangedListener(new TextWatcher() {
       public void beforeTextChanged(CharSequence x, int a, int b, int d) {}
@@ -1056,7 +1095,9 @@ public class MainActivity extends Activity {
     crear[0] = () -> {
       final String nom = nombre.getText().toString().trim();
       final int pv = (int) numero(precio);
-      final double cb = Precio.costoBruto(numero(costo), conIva[0]);
+      final double pctProd = numero(produccion);
+      final double cb = Precio.conProduccion(Precio.costoBruto(numero(costo), conIva[0]), pctProd);
+      prefs.edit().putString("pctProduccion", produccion.getText().toString().trim()).apply();   // se recuerda para la próxima
       final boolean conCodigo = crearCod.isChecked();
       final boolean esKg = kg[0];
       creando[0] = true;

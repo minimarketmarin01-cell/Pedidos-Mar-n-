@@ -55,7 +55,7 @@ persona solo toca «Instalar». La primera vez Android 8 pide activar «Permitir
 Botón «＋ Verdura» en la barra verde (o ☰ → «Verdura rápida»). Igual que «Verdura rápida» de la app web:
 `crear_producto` en la categoría «VERDURAS y ENSALADAS» (id leído con `catalogo_crear`), IVA, inventario activo
 sin stock inicial. Precio = costo bruto / (1 − margen) con margen 30 % por defecto (`Precio.java`, mismo cálculo que
-`PriceCalc`); se propone la siguiente terminación en 90 y hay botones .50/.90/.00. Por defecto crea también el código
+`PriceCalc`); con «+ % producción» (mano de obra, materiales, luz; se recuerda el último valor) sumado al costo antes del margen; se propone la siguiente terminación en 90 y hay botones .50/.90/.00. Por defecto crea también el código
 interno 04… para imprimir la etiqueta al tiro. Avisa si ya existe un producto con el mismo nombre.
 
 ## Calculadora
