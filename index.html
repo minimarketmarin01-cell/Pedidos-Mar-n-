@@ -4929,7 +4929,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-11.12';
+const APP_VERSION='2026-10-11.13';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -14530,7 +14530,7 @@ document.getElementById('rc-guardar').onclick=async()=>{
   // accidentales (doble tap sin querer) que sumaban stock de más. Solo se pregunta cuando
   // realmente va a sumar stock (cantidad>0) — guardar solo precio/costo (cantidad=0, rama de
   // abajo) no toca stock y no tiene ese riesgo.
-  if(cantidad>0&&!confirm('¿Confirmar recepción en '+LOCAL_NOMBRE+' de '+fmt1(cantidad)+' '+(it.peso?'kg':'u')+' de "'+it.nombre+'"?\n\nEl stock quedará en '+fmt1((Number(it.stock)||0)+cantidad)+'.'))return;
+  if(cantidad>0&&!confirm('¿Confirmar recepción en '+LOCAL_NOMBRE+' de '+fmt1(cantidad)+' '+(it.peso?'kg':'u')+' de "'+it.nombre+'"?\n\nEl stock quedará en '+fmt1(Math.max(0,Number(it.stock)||0)+cantidad)+'.'))return;
   await rcGuardarNombreSiCambio(it);
   // Cantidad=0: no hay nada que recibir — si costo/precio cambiaron, se guardan solos, sin
   // crear ningún lote de vencimiento ni tocar stock (ver rcGuardarSoloPrecio).
