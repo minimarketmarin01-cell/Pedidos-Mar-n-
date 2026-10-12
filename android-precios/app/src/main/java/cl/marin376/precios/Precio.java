@@ -64,6 +64,12 @@ public final class Precio {
     return out;
   }
 
+  /** Sube a la decena siguiente: $1.125 → $1.130 (la moneda más chica en Chile es $10). */
+  public static int aDecena(int precio) {
+    if (precio <= 0) return 0;
+    return ((precio + 9) / 10) * 10;
+  }
+
   /** Precio psicológico de Marín 376: sube a la siguiente terminación en 90 ($1.437 → $1.490). */
   public static int sugerido(int precio) {
     if (precio <= 0) return 0;
