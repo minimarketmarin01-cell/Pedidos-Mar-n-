@@ -95,6 +95,7 @@ public final class Api {
                 else if ("precio".equals(f)) p.precio = entero(r);
                 else if ("barcode".equals(f)) p.barcode = texto(r);
                 else if ("imagen".equals(f)) p.imagen = texto(r);
+                else if ("coste".equals(f)) p.costo = entero(r);
                 else if ("cat".equals(f)) cat = texto(r);
                 else if ("prov".equals(f)) prov = texto(r);
                 else r.skipValue();
@@ -113,7 +114,7 @@ public final class Api {
     return out;
   }
 
-  /** [sku, nombre, precio, barcode, categoria?, imagen?] — mismo formato que el archivo guardado. */
+  /** [sku, nombre, precio, barcode, categoria?, imagen?, costo?] — mismo formato que el archivo guardado. */
   static Producto fila(JsonReader r) throws IOException {
     r.beginArray();
     Producto p = new Producto();
@@ -123,6 +124,7 @@ public final class Api {
     p.barcode = r.hasNext() ? texto(r) : "";
     p.categoria = r.hasNext() ? texto(r) : "";
     p.imagen = r.hasNext() ? texto(r) : "";
+    p.costo = r.hasNext() ? entero(r) : 0;
     while (r.hasNext()) r.skipValue();
     r.endArray();
     return p;
@@ -216,9 +218,33 @@ public final class Api {
     }
   }
 
-  /** Datos frescos de UN producto (precio, código y vencimiento del lote más próximo). */
+  /**
+   * Cambia precio y/o costo (POST editar_precio, el mismo de la Ficha de producto de la web): el
+   * servidor lo graba en Loyverse y en el historial de precios. null = no se cambia ese dato.
+   * Devuelve la respuesta ({ok, precio, costo, sinCambios?, advertencia?}).
+   */
+  public static JSONObject editarPrecio(Local l, String sku, Integer precio, Integer costo) throws Exception {
+    HttpURLConnection c = abrir(l.url, 60000);
+    try {
+      c.setRequestMethod("POST");
+      c.setDoOutput(true);
+      c.setRequestProperty("Content-Type", "application/json");
+      JSONObject payload = new JSONObject().put("sku", sku).put("responsable", "App Precios");
+      if (precio != null) payload.put("precio", precio.intValue());
+      if (costo != null) payload.put("costo", costo.intValue());
+      byte[] body = new JSONObject().put("action", "editar_precio").put("payload", payload).toString().getBytes("UTF-8");
+      try (java.io.OutputStream os = c.getOutputStream()) { os.write(body); }
+      JSONObject j = leerJson(c);
+      if (!j.optBoolean("ok", false)) throw new Exception(j.optString("error", "No se pudo guardar el precio"));
+      return j;
+    } finally {
+      c.disconnect();
+    }
+  }
+
+  /** Datos frescos de UN producto (precio, costo, código y vencimiento del lote más próximo). */
   public static final class Ficha {
-    public Integer precio;
+    public Integer precio, costo;
     public String barcode, vence;   // vence = DD/MM/AAAA o null
   }
 
@@ -245,6 +271,8 @@ public final class Api {
     if (p != null) {
       if (p.has("precio") && !p.isNull("precio")) out.precio = (int) Math.round(p.optDouble("precio", 0));
       out.barcode = p.isNull("barcode") ? "" : p.optString("barcode", "");
+      for (String k : new String[]{"coste", "costo"})
+        if (out.costo == null && p.has(k) && !p.isNull(k)) out.costo = (int) Math.round(p.optDouble(k, 0));
     }
     JSONArray lotes = f.optJSONArray("lotes");
     if (lotes != null && lotes.length() > 0) out.vence = fechaDDMMAAAA(lotes.optJSONObject(0).optString("fechaVencimiento", ""));

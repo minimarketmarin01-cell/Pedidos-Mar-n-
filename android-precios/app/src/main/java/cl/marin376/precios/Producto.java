@@ -4,6 +4,8 @@ package cl.marin376.precios;
 public class Producto {
   public String sku = "", nombre = "", barcode = "", categoria = "", imagen = "";
   public int precio = 0;
+  /** Costo con IVA de Loyverse (0 = no se sabe). */
+  public int costo = 0;
   /** Texto normalizado (sin acentos, minúsculas) para buscar rápido. */
   String nombreNorm = "";
 

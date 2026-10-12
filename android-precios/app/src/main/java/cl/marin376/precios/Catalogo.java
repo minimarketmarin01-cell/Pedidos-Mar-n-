@@ -119,7 +119,7 @@ public final class Catalogo {
     File f = archivo(c, local), tmp = new File(f.getPath() + ".tmp");
     try (JsonWriter w = new JsonWriter(new OutputStreamWriter(new FileOutputStream(tmp), "UTF-8"))) {
       w.beginObject().name("v").value(VERSION).name("hora").value(hora).name("p").beginArray();
-      for (Producto p : productos) w.beginArray().value(p.sku).value(p.nombre).value(p.precio).value(p.barcode).value(p.categoria).value(p.imagen).endArray();
+      for (Producto p : productos) w.beginArray().value(p.sku).value(p.nombre).value(p.precio).value(p.barcode).value(p.categoria).value(p.imagen).value(p.costo).endArray();
       w.endArray().endObject();
     } catch (Exception e) {
       tmp.delete();

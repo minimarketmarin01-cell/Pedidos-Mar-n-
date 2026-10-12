@@ -51,6 +51,14 @@ instalado. Si hay uno nuevo, baja el APK y abre el instalador (`ApkProvider` lo 
 persona solo toca «Instalar». La primera vez Android 8 pide activar «Permitir de esta fuente» para la app.
 **Cada cambio debe subir `versionCode`**, si no la app no se entera.
 
+## Cambiar precio (solo Marín 376)
+En «Imprimir etiqueta», botón «✏ Cambiar precio» al lado del precio. Abre la misma calculadora de
+«Verdura rápida» (costo + 🧮, Con/Sin IVA, tipo/divisor o Manual, chips $…90/$…50/$…00, margen real
+con aviso bajo 30 %). Se puede escribir el precio directo (el margen se calcula con el costo de
+Loyverse) o un costo nuevo para que sugiera el precio. «Guardar en Loyverse» usa `editar_precio`
+(igual que la Ficha de producto de la web: queda en el historial de precios); el costo solo se
+cambia si se escribió uno nuevo. La etiqueta queda al tiro con el precio nuevo.
+
 ## Verdura rápida (solo Marín 376)
 Botón «＋ Verdura» en la barra verde (o ☰ → «Verdura rápida»). Igual que «Verdura rápida» de la app web:
 `crear_producto` en la categoría «VERDURAS y ENSALADAS» (id leído con `catalogo_crear`), IVA, inventario activo
