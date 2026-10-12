@@ -37,3 +37,16 @@ variable general del producto, no el de la tienda.
 
 Efecto: al guardar un precio, el producto queda con precio FIJO en la tienda (la caja deja de
 pedir digitar el precio). No hay que actualizar la app.
+
+## Opcional (recomendado): más tiempo para Loyverse
+
+Error que arregla: `The operation was aborted due to timeout` al crear un producto (Loyverse
+tarda más de 12 s en responder y el Worker corta la espera, aunque a veces igual lo crea).
+
+En el mismo editor busca `var LOYVERSE_TIMEOUT_MS = 12e3;` y cámbialo por:
+
+```js
+var LOYVERSE_TIMEOUT_MS = 25e3;
+```
+
+Deploy. (La app 1.14 ya comprueba sola si el producto quedó creado antes de dejar reintentar.)

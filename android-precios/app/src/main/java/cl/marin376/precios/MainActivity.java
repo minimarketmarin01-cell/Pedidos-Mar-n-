@@ -31,6 +31,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -96,6 +97,55 @@ public class MainActivity extends Activity {
     LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(w, h);
     p.topMargin = dp(mt);
     return p;
+  }
+
+  /** Rueda girando (centrada) para las esperas largas; arranca oculta. */
+  private ProgressBar ruedita(LinearLayout c) {
+    ProgressBar pb = new ProgressBar(this);
+    pb.setIndeterminate(true);
+    pb.setVisibility(View.GONE);
+    LinearLayout.LayoutParams p = lp(dp(46), dp(46), 6);
+    p.gravity = Gravity.CENTER_HORIZONTAL;
+    c.addView(pb, p);
+    return pb;
+  }
+
+  /**
+   * Animación mientras se espera a Loyverse: el botón late, dice «Creando…» con puntos que se
+   * mueven, gira la rueda y se cuentan los segundos. Devuelve lo que hay que llamar al terminar.
+   */
+  private Runnable ocupado(final Button b, final TextView estado, final View rueda, final String verbo, final String detalle) {
+    final long t0 = System.currentTimeMillis();
+    final boolean[] vivo = {true};
+    final android.animation.ObjectAnimator pulso = android.animation.ObjectAnimator.ofFloat(b, "alpha", 1f, 0.5f);
+    pulso.setDuration(700);
+    pulso.setRepeatMode(android.animation.ValueAnimator.REVERSE);
+    pulso.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+    pulso.start();
+    rueda.setVisibility(View.VISIBLE);
+    final Runnable[] tick = new Runnable[1];
+    tick[0] = () -> {
+      if (!vivo[0]) return;
+      long ms = System.currentTimeMillis() - t0;
+      b.setText(verbo + "...".substring(0, (int) (ms / 400 % 4)));
+      estado.setTextColor(NEGRO);
+      estado.setText(detalle + " " + (ms / 1000) + " s" + (ms > 12000 ? "\nLoyverse está lento; sigo esperando, no cierres." : ""));
+      ui.postDelayed(tick[0], 400);
+    };
+    tick[0].run();
+    return () -> {
+      vivo[0] = false;
+      ui.removeCallbacks(tick[0]);
+      pulso.cancel();
+      b.setAlpha(1f);
+      rueda.setVisibility(View.GONE);
+    };
+  }
+
+  /** Falla que pudo haber llegado a Loyverse (se cortó esperando): conviene comprobar antes de reintentar. */
+  private static boolean incierto(Exception e) {
+    String m = e.getMessage() == null ? "" : e.getMessage().toLowerCase(Locale.ROOT);
+    return e instanceof java.net.SocketTimeoutException || m.contains("timeout") || m.contains("timed out") || m.contains("aborted");
   }
 
   private LinearLayout.LayoutParams peso(int h, int ml) {
@@ -1175,6 +1225,7 @@ public class MainActivity extends Activity {
     c.addView(txtCambio, lp(-1, -2, 8));
     final TextView estado = texto("", 16, true, NEGRO);
     c.addView(estado, lp(-1, -2, 8));
+    final ProgressBar rueda = ruedita(c);
     final Button bGuardar = boton("Guardar en Loyverse", VERDE_BOTON, Color.WHITE);
     bGuardar.setTextSize(22);
     c.addView(bGuardar, lp(-1, dp(70), 6));
@@ -1213,18 +1264,32 @@ public class MainActivity extends Activity {
       pp.guardarPrefs();
       guardando[0] = true;
       bGuardar.setEnabled(false);
-      bGuardar.setText("Guardando…");
-      estado.setTextColor(NEGRO);
-      estado.setText("Guardando en Loyverse…");
+      final Runnable parar = ocupado(bGuardar, estado, rueda, "Guardando", "Guardando en Loyverse…");
       new Thread(() -> {
         String err = null;
         org.json.JSONObject res = null;
         try { res = Api.editarPrecio(l, p.sku, nuevoPrecio, nuevoCosto); }
-        catch (java.io.IOException e) { err = "Sin internet: no se guardó. Revisa la conexión e inténtalo de nuevo."; }
-        catch (Exception e) { err = e.getMessage() == null ? "No se pudo guardar el precio." : e.getMessage(); }
+        catch (Exception e) {
+          if (incierto(e)) {
+            // Se cortó la espera: se mira si Loyverse alcanzó a guardarlo.
+            try {
+              Thread.sleep(2000);
+              Api.Ficha f = Api.ficha(l, p.sku);
+              if (f != null && f.precio != null && (nuevoPrecio == null || f.precio.intValue() == nuevoPrecio.intValue())
+                  && (nuevoCosto == null || (f.costo != null && f.costo.intValue() == nuevoCosto.intValue()))) {
+                res = new org.json.JSONObject().put("precio", f.precio.intValue());
+                if (f.costo != null) res.put("costo", f.costo.intValue());
+              } else err = "Loyverse se demoró y NO guardó el cambio. Toca «Guardar en Loyverse» otra vez.";
+            } catch (Exception e2) {
+              err = "Loyverse se demoró y no pude comprobar si se guardó. Cierra y abre el producto para ver el precio actual.";
+            }
+          } else if (e instanceof java.io.IOException) err = "Sin internet: no se guardó. Revisa la conexión e inténtalo de nuevo.";
+          else err = e.getMessage() == null ? "No se pudo guardar el precio." : e.getMessage();
+        }
         final String fe = err;
         final org.json.JSONObject fres = res;
         ui.post(() -> {
+          parar.run();
           guardando[0] = false;
           bGuardar.setEnabled(true);
           bGuardar.setText("Guardar en Loyverse");
@@ -1322,6 +1387,7 @@ public class MainActivity extends Activity {
 
     final TextView estado = texto("", 16, true, NEGRO);
     c.addView(estado, lp(-1, -2, 10));
+    final ProgressBar rueda = ruedita(c);
     final Button bCrear = boton("Crear en Loyverse", VERDE_BOTON, Color.WHITE);
     bCrear.setTextSize(22);
     c.addView(bCrear, lp(-1, dp(70), 6));
@@ -1350,12 +1416,13 @@ public class MainActivity extends Activity {
       final boolean esKg = kg[0];
       creando[0] = true;
       bCrear.setEnabled(false);
-      bCrear.setText("Creando…");
-      estado.setTextColor(NEGRO);
-      estado.setText("Creando en Loyverse… (puede tardar unos segundos)");
+      final Runnable parar = ocupado(bCrear, estado, rueda, "Creando", "Creando en Loyverse…");
+      final java.util.HashSet<String> skusAntes = new java.util.HashSet<>();
+      for (Producto q : cat.productos) skusAntes.add(q.sku);
       new Thread(() -> {
         String err = null;
         org.json.JSONObject res = null;
+        Producto hallado = null;
         String categoria = CAT_VERDURAS, codigo = "";
         try {
           if (catalogoLoyverse == null) catalogoLoyverse = Api.catalogoCrear(l);
@@ -1388,25 +1455,44 @@ public class MainActivity extends Activity {
               .put("proveedor_id", org.json.JSONObject.NULL).put("sector", org.json.JSONObject.NULL)
               .put("responsable", "App Precios");
           res = Api.crearProducto(l, payload);
-        } catch (java.io.IOException e) {
-          err = "Sin internet: no se creó. Revisa la conexión e inténtalo de nuevo.";
         } catch (Exception e) {
-          err = e.getMessage() == null ? "No se pudo crear el producto." : e.getMessage();
+          if (incierto(e)) {
+            // Loyverse se demoró y se cortó la espera: puede que igual lo haya creado. Se mira la
+            // lista antes de dejar reintentar, para no crear el mismo producto dos veces.
+            try {
+              Thread.sleep(3000);
+              String nn = Catalogo.norm(nom);
+              for (Producto q : Api.catalogo(l))
+                if (!skusAntes.contains(q.sku) && Catalogo.norm(q.nombre).equals(nn)) { hallado = q; break; }
+              if (hallado == null) err = "Loyverse se demoró y NO creó «" + nom + "». Toca «Crear en Loyverse» otra vez.";
+            } catch (Exception e2) {
+              err = "Loyverse se demoró y no pude comprobar si se creó «" + nom + "». Búscalo en Loyverse antes de intentar otra vez.";
+            }
+          } else if (e instanceof java.io.IOException) {
+            err = "Sin internet: no se creó. Revisa la conexión e inténtalo de nuevo.";
+          } else {
+            err = e.getMessage() == null ? "No se pudo crear el producto." : e.getMessage();
+          }
         }
         final String fe = err, fcat = categoria;
         final org.json.JSONObject fres = res;
+        final Producto fhallado = hallado;
         ui.post(() -> {
+          parar.run();
           creando[0] = false;
           bCrear.setEnabled(true);
           bCrear.setText("Crear en Loyverse");
           if (fe != null) { estado.setTextColor(ROJO); estado.setText(fe); return; }
-          org.json.JSONObject pj = fres.optJSONObject("producto");
-          Producto p = new Producto();
-          p.sku = pj.optString("ref");
-          p.nombre = pj.optString("nombre", nom);
-          p.precio = pj.isNull("precio") ? pv : (int) Math.round(pj.optDouble("precio", pv));
-          p.barcode = pj.optString("barcode", "");
-          p.categoria = fcat;
+          org.json.JSONObject pj = fres == null ? null : fres.optJSONObject("producto");
+          Producto p = fhallado;
+          if (p == null) {
+            p = new Producto();
+            p.sku = pj.optString("ref");
+            p.nombre = pj.optString("nombre", nom);
+            p.precio = pj.isNull("precio") ? pv : (int) Math.round(pj.optDouble("precio", pv));
+            p.barcode = pj.optString("barcode", "");
+            p.categoria = fcat;
+          }
           if (l.id.equals(aj.local)) {
             List<Producto> nueva = new ArrayList<>(cat.productos);
             nueva.add(p);
@@ -1418,9 +1504,10 @@ public class MainActivity extends Activity {
           }
           String m = "✓ Creado: " + p.nombre + " · SKU " + p.sku + " · " + precioTxt(p.precio)
               + (p.barcode.isEmpty() ? "" : " · código " + p.barcode);
-          if (pj.has("confirmado") && !pj.optBoolean("confirmado", true)) m += "\n⚠ NO verificado en Loyverse";
+          if (pj == null) m += "\n(Loyverse se demoró, pero sí quedó creado.)";
+          else if (pj.has("confirmado") && !pj.optBoolean("confirmado", true)) m += "\n⚠ NO verificado en Loyverse";
           else if (pj.has("enEstaTienda") && !pj.optBoolean("enEstaTienda", true)) m += "\n⚠ No quedó asignado a tu tienda";
-          if (!fres.optString("advertencia", "").isEmpty()) m += "\n" + fres.optString("advertencia");
+          if (fres != null && !fres.optString("advertencia", "").isEmpty()) m += "\n" + fres.optString("advertencia");
           estado.setTextColor(VERDE);
           estado.setText(m + "\nListo para la siguiente verdura.");
           ultimo[0] = p;
