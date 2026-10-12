@@ -15,6 +15,15 @@ public final class Precio {
     return conIva ? costo : costo * (1 + IVA);
   }
 
+  /**
+   * Costo de producción: costo + % por mano de obra, materiales y luz (sobre el costo).
+   * Ej.: 500 + 10 % = 550. Este es el costo que se usa para el precio y el que se guarda.
+   */
+  public static double conProduccion(double costoBruto, double pctProduccion) {
+    if (costoBruto <= 0) return 0;
+    return costoBruto * (1 + Math.max(0, pctProduccion) / 100.0);
+  }
+
   /** Margen SOBRE VENTA: Precio = Costo / (1 − Margen). 0 si faltan datos. */
   public static int desdeMargen(double costoBruto, double margenPct) {
     if (costoBruto <= 0 || margenPct <= 0 || margenPct >= 100) return 0;
