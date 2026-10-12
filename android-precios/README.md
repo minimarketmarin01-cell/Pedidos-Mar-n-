@@ -62,3 +62,9 @@ interno 04… para imprimir la etiqueta al tiro. Avisa si ya existe un producto 
 «🧮 Calculadora» en «Verdura rápida» (junto a Costo, con «Usar como costo») y en ☰. Es la «Calculadora normal»
 de la web estilo Samsung: `CalcMotor.java` es la traducción 1:1 de `Calc` (index.html) y el CI la compara con el
 JavaScript de la web en 3.000 secuencias de teclas (`pruebas/comparar_calculadora.sh`).
+
+### Tipo de producto (divisor)
+En «Verdura rápida»: Manual · Reventa ÷0,65 · Fraccionado ÷0,61 · Bandeja ÷0,50 · Cocido ÷0,40 · Picado ÷0,30.
+Precio = costo de materia prima ÷ divisor (incluye producción típica y ~40 % de ganancia real; 35 % en reventa y
+fraccionado). El costo guardado en Loyverse es materia + producción del tipo ($0/$65/$170/$250/$300). Si el margen
+real queda bajo 30 % (verdura muy barata) avisa en rojo con el precio mínimo. «Manual» = % producción + margen.

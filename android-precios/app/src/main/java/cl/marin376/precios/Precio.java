@@ -24,6 +24,21 @@ public final class Precio {
     return costoBruto * (1 + Math.max(0, pctProduccion) / 100.0);
   }
 
+  // ------------------------------------------------------------------ divisores por tipo
+  // Precio = costo de materia prima ÷ divisor. Cada divisor ya incluye la producción típica del
+  // tipo (mano de obra a $3.041,5/h + bolsa $9 + fijo $7, y luz en cocidos) y deja ~40 % de
+  // ganancia real (35 % en reventa y fraccionado, por competencia). PRODUCCION es lo que se
+  // suma al costo que se guarda en Loyverse para que el margen de los reportes sea el real.
+  public static final String[] TIPOS = {"Manual", "Reventa", "Fraccionado", "Bandeja", "Cocido", "Picado"};
+  public static final double[] DIVISOR = {0, 0.65, 0.61, 0.50, 0.40, 0.30};
+  public static final int[] PRODUCCION = {0, 0, 65, 170, 250, 300};
+
+  /** Precio por divisor (sin redondear). 0 si faltan datos. */
+  public static int desdeDivisor(double costo, double divisor) {
+    if (costo <= 0 || divisor <= 0 || divisor >= 1) return 0;
+    return (int) Math.round(costo / divisor);
+  }
+
   /** Margen SOBRE VENTA: Precio = Costo / (1 − Margen). 0 si faltan datos. */
   public static int desdeMargen(double costoBruto, double margenPct) {
     if (costoBruto <= 0 || margenPct <= 0 || margenPct >= 100) return 0;

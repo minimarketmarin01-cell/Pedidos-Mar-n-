@@ -966,8 +966,27 @@ public class MainActivity extends Activity {
     filaCosto.addView(bSin, ps);
     c.addView(filaCosto, lp(-1, -2, 4));
 
+    // Tipo de producto: precio = costo ÷ divisor (incluye producción y ~40 % de ganancia real).
+    // "Manual" deja el cálculo con % producción y margen.
+    c.addView(texto("Tipo de producto (divisor)", 17, true, NEGRO), lp(-1, -2, 10));
+    final int[] tipo = {Math.max(0, Math.min(Precio.TIPOS.length - 1, prefs.getInt("tipoVerdura", 0)))};
+    final Button[] bTipos = new Button[Precio.TIPOS.length];
+    LinearLayout filaTipo1 = fila(), filaTipo2 = fila();
+    for (int i = 0; i < Precio.TIPOS.length; i++) {
+      String etq = i == 0 ? "Manual" : Precio.TIPOS[i] + "\n÷ " + String.format(Locale.ROOT, "%.2f", Precio.DIVISOR[i]).replace('.', ',');
+      Button b = boton(etq, GRIS, NEGRO);
+      b.setTextSize(15);
+      bTipos[i] = b;
+      (i < 3 ? filaTipo1 : filaTipo2).addView(b, peso(dp(58), i % 3 == 0 ? 0 : 6));
+    }
+    c.addView(filaTipo1, lp(-1, -2, 4));
+    c.addView(filaTipo2, lp(-1, -2, 6));
+    final LinearLayout cajaManual = new LinearLayout(this);   // % producción + margen (solo en Manual)
+    cajaManual.setOrientation(LinearLayout.VERTICAL);
+    c.addView(cajaManual, lp(-1, -2, 0));
+
     // + % producción (mano de obra, materiales, luz): se suma al costo antes de calcular el precio.
-    c.addView(texto("+ % producción (mano de obra, materiales, luz)", 17, true, NEGRO), lp(-1, -2, 10));
+    cajaManual.addView(texto("+ % producción (mano de obra, materiales, luz)", 17, true, NEGRO), lp(-1, -2, 10));
     LinearLayout filaProd = fila();
     final EditText produccion = new EditText(this);
     produccion.setTextSize(22);
@@ -985,14 +1004,14 @@ public class MainActivity extends Activity {
       chipsProd[i] = b;
       filaProd.addView(b, peso(dp(48), 6));
     }
-    c.addView(filaProd, lp(-1, -2, 4));
+    cajaManual.addView(filaProd, lp(-1, -2, 4));
 
-    c.addView(texto("Margen sobre venta (%)", 17, true, NEGRO), lp(-1, -2, 10));
+    cajaManual.addView(texto("Margen sobre venta (%)", 17, true, NEGRO), lp(-1, -2, 10));
     final EditText margen = new EditText(this);
     margen.setTextSize(22);
     margen.setText("30");
     margen.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-    c.addView(margen);
+    cajaManual.addView(margen);
     final TextView txtCalc = texto("", 15, false, PLOMO);
     c.addView(txtCalc, lp(-1, -2, 4));
 
@@ -1037,11 +1056,29 @@ public class MainActivity extends Activity {
         boolean on = pct == pcts[i];
         colorear(chipsProd[i], on ? VERDE : GRIS, on ? Color.WHITE : NEGRO);
       }
+      for (int i = 0; i < bTipos.length; i++) {
+        boolean on = tipo[0] == i;
+        colorear(bTipos[i], on ? VERDE : GRIS, on ? Color.WHITE : NEGRO);
+      }
+      cajaManual.setVisibility(tipo[0] == 0 ? View.VISIBLE : View.GONE);
       double cIva = Precio.costoBruto(numero(costo), conIva[0]);
-      double cb = Precio.conProduccion(cIva, pct);
-      calc[0] = Precio.desdeMargen(cb, numero(margen));
+      double cb;
       String detalle = "";
-      if (cIva > 0) {
+      if (tipo[0] > 0) {
+        // Divisor por tipo: precio desde la materia prima; costo real = materia + producción del tipo.
+        cb = cIva > 0 ? cIva + Precio.PRODUCCION[tipo[0]] : 0;
+        calc[0] = Precio.desdeDivisor(cIva, Precio.DIVISOR[tipo[0]]);
+        if (cIva > 0) {
+          detalle = Precio.TIPOS[tipo[0]] + ": " + precioTxt((int) Math.round(cIva)) + (conIva[0] ? "" : " (con IVA)")
+              + " ÷ " + String.format(Locale.ROOT, "%.2f", Precio.DIVISOR[tipo[0]]).replace('.', ',')
+              + "\nCosto real con producción: " + precioTxt((int) Math.round(cb))
+              + (Precio.PRODUCCION[tipo[0]] > 0 ? " (+" + precioTxt(Precio.PRODUCCION[tipo[0]]) + ")" : "") + "\n";
+        }
+      } else {
+        cb = Precio.conProduccion(cIva, pct);
+        calc[0] = Precio.desdeMargen(cb, numero(margen));
+      }
+      if (tipo[0] == 0 && cIva > 0) {
         detalle = "Costo total: " + precioTxt((int) Math.round(cb));
         if (!conIva[0] || pct > 0) {
           detalle += " (" + precioTxt((int) Math.round(numero(costo)));
@@ -1060,7 +1097,16 @@ public class MainActivity extends Activity {
         poniendo[0] = false;
       }
       int pv = (int) numero(precio);
-      txtMargen.setText(pv > 0 && cb > 0 ? String.format(Locale.ROOT, "Margen real: %.1f %%", Precio.margenReal(pv, cb)) : "");
+      double mr = pv > 0 && cb > 0 ? Precio.margenReal(pv, cb) : 0;
+      if (pv > 0 && cb > 0 && mr < 30) {
+        // Bajo el mínimo recomendado (30 % real): pasa con verdura muy barata, donde casi todo es mano de obra.
+        int minimo = Precio.sugerido((int) Math.round(cb / 0.70));
+        txtMargen.setTextColor(ROJO);
+        txtMargen.setText(String.format(Locale.ROOT, "⚠ Margen real %.1f %%: bajo el mínimo de 30 %%. Precio mínimo: %s", mr, precioTxt(minimo)));
+      } else {
+        txtMargen.setTextColor(PLOMO);
+        txtMargen.setText(pv > 0 && cb > 0 ? String.format(Locale.ROOT, "Margen real: %.1f %%", mr) : "");
+      }
       chips.removeAllViews();
       List<Integer> ops = Precio.redondeos(calc[0]);
       if (calc[0] > 0 && !ops.contains(calc[0])) ops.add(0, calc[0]);
@@ -1089,6 +1135,15 @@ public class MainActivity extends Activity {
     bKg.setOnClickListener(v -> { kg[0] = true; colorear(bKg, VERDE, Color.WHITE); colorear(bU, GRIS, NEGRO); });
     bCon.setOnClickListener(v -> { conIva[0] = true; colorear(bCon, VERDE, Color.WHITE); colorear(bSin, GRIS, NEGRO); recalcular[0].run(); });
     bSin.setOnClickListener(v -> { conIva[0] = false; colorear(bSin, VERDE, Color.WHITE); colorear(bCon, GRIS, NEGRO); recalcular[0].run(); });
+    for (int i = 0; i < bTipos.length; i++) {
+      final int t = i;
+      bTipos[i].setOnClickListener(v -> {
+        tipo[0] = t;
+        tocado[0] = false;   // el precio vuelve a calcularse con el tipo elegido
+        prefs.edit().putInt("tipoVerdura", t).apply();
+        recalcular[0].run();
+      });
+    }
     recalcular[0].run();
 
     final Runnable[] crear = new Runnable[1];
@@ -1096,8 +1151,10 @@ public class MainActivity extends Activity {
       final String nom = nombre.getText().toString().trim();
       final int pv = (int) numero(precio);
       final double pctProd = numero(produccion);
-      final double cb = Precio.conProduccion(Precio.costoBruto(numero(costo), conIva[0]), pctProd);
-      prefs.edit().putString("pctProduccion", produccion.getText().toString().trim()).apply();   // se recuerda para la próxima
+      final double cIvaCrear = Precio.costoBruto(numero(costo), conIva[0]);
+      // Costo que se guarda: el real (materia + producción del tipo, o + % producción en Manual).
+      final double cb = tipo[0] > 0 ? cIvaCrear + Precio.PRODUCCION[tipo[0]] : Precio.conProduccion(cIvaCrear, pctProd);
+      prefs.edit().putString("pctProduccion", produccion.getText().toString().trim()).putInt("tipoVerdura", tipo[0]).apply();   // se recuerda para la próxima
       final boolean conCodigo = crearCod.isChecked();
       final boolean esKg = kg[0];
       creando[0] = true;
