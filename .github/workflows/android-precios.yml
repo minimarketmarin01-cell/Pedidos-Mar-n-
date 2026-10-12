@@ -33,6 +33,8 @@ jobs:
           javac -encoding UTF-8 -d cls ../app/src/main/java/cl/marin376/precios/{Barras,Code128,Raster}.java PruebaBarras.java
           java -cp cls PruebaBarras
           python3 decodificar.py out
+      - name: Probar calculadora (misma lógica que la de la web)
+        run: android-precios/pruebas/comparar_calculadora.sh
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'

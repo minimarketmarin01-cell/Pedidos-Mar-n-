@@ -57,3 +57,8 @@ Botón «＋ Verdura» en la barra verde (o ☰ → «Verdura rápida»). Igual 
 sin stock inicial. Precio = costo bruto / (1 − margen) con margen 30 % por defecto (`Precio.java`, mismo cálculo que
 `PriceCalc`); se propone la siguiente terminación en 90 y hay botones .50/.90/.00. Por defecto crea también el código
 interno 04… para imprimir la etiqueta al tiro. Avisa si ya existe un producto con el mismo nombre.
+
+## Calculadora
+«🧮 Calculadora» en «Verdura rápida» (junto a Costo, con «Usar como costo») y en ☰. Es la «Calculadora normal»
+de la web estilo Samsung: `CalcMotor.java` es la traducción 1:1 de `Calc` (index.html) y el CI la compara con el
+JavaScript de la web en 3.000 secuencias de teclas (`pruebas/comparar_calculadora.sh`).

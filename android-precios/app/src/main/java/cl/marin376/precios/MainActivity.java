@@ -509,6 +509,7 @@ public class MainActivity extends Activity {
     String[] ops = {
       "Local: " + local().nombre + " (cambiar)",
       "Verdura rápida (crear producto en Loyverse)",
+      "Calculadora",
       "Impresora: " + (aj.mac.isEmpty() ? "sin elegir" : (aj.nombreImpresora.isEmpty() ? aj.mac : aj.nombreImpresora)),
       "Imprimir etiqueta de prueba",
       "Actualizar productos",
@@ -521,11 +522,12 @@ public class MainActivity extends Activity {
       switch (i) {
         case 0: elegirLocal(); break;
         case 1: abrirVerduraRapida(); break;
-        case 2: elegirImpresora(null); break;
-        case 3: imprimirPrueba(); break;
-        case 4: actualizarProductos(); break;
-        case 5: abrirAjustes(); break;
-        case 6: elegirCategoriasVisibles(); break;
+        case 2: Calculadora.abrir(this, null, null); break;
+        case 3: elegirImpresora(null); break;
+        case 4: imprimirPrueba(); break;
+        case 5: actualizarProductos(); break;
+        case 6: abrirAjustes(); break;
+        case 7: elegirCategoriasVisibles(); break;
         default: new Actualizador(this).revisar(true); break;
       }
     }).show();
@@ -935,9 +937,20 @@ public class MainActivity extends Activity {
     filaVenta.addView(bKg, peso(dp(54), 8));
     c.addView(filaVenta, lp(-1, -2, 4));
 
-    c.addView(texto("Costo (por unidad o por kg)", 17, true, NEGRO), lp(-1, -2, 10));
+    LinearLayout tituloCosto = fila();
+    tituloCosto.addView(texto("Costo (por unidad o por kg)", 17, true, NEGRO), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+    Button bCalc = boton("🧮 Calculadora", Color.WHITE, Color.parseColor("#12A88A"));
+    bCalc.setTextSize(15);
+    tituloCosto.addView(bCalc, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(44)));
+    c.addView(tituloCosto, lp(-1, -2, 10));
     LinearLayout filaCosto = fila();
     final EditText costo = new EditText(this);
+    // Calculadora tipo Samsung (igual a la de la web); "Usar como costo" pasa el resultado al campo.
+    bCalc.setOnClickListener(v -> Calculadora.abrir(this, "Usar como costo", val -> {
+      double r = Math.round(val * 100) / 100.0;
+      costo.setText(r == Math.rint(r) ? String.valueOf((long) r) : String.valueOf(r).replace('.', ','));
+      costo.setSelection(costo.getText().length());
+    }));
     costo.setTextSize(22);
     costo.setHint("$");
     costo.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
