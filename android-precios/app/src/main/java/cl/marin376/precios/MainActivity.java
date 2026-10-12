@@ -209,6 +209,11 @@ public class MainActivity extends Activity {
     txtTitulo.setEllipsize(TextUtils.TruncateAt.END);
     txtTitulo.setOnClickListener(v -> elegirLocal());
     barra.addView(txtTitulo, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+    TextView verdura = texto("＋ Verdura", 18, true, Color.WHITE);
+    verdura.setGravity(Gravity.CENTER);
+    verdura.setPadding(dp(10), 0, dp(4), 0);
+    verdura.setOnClickListener(v -> abrirVerduraRapida());
+    barra.addView(verdura, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(56)));
     raiz.addView(barra, new LinearLayout.LayoutParams(-1, dp(56)));
 
     // Fila: categoría (o buscador) + lupa
@@ -503,6 +508,7 @@ public class MainActivity extends Activity {
   private void abrirMenu() {
     String[] ops = {
       "Local: " + local().nombre + " (cambiar)",
+      "Verdura rápida (crear producto en Loyverse)",
       "Impresora: " + (aj.mac.isEmpty() ? "sin elegir" : (aj.nombreImpresora.isEmpty() ? aj.mac : aj.nombreImpresora)),
       "Imprimir etiqueta de prueba",
       "Actualizar productos",
@@ -514,11 +520,12 @@ public class MainActivity extends Activity {
     new AlertDialog.Builder(this).setTitle(lista).setItems(ops, (d, i) -> {
       switch (i) {
         case 0: elegirLocal(); break;
-        case 1: elegirImpresora(null); break;
-        case 2: imprimirPrueba(); break;
-        case 3: actualizarProductos(); break;
-        case 4: abrirAjustes(); break;
-        case 5: elegirCategoriasVisibles(); break;
+        case 1: abrirVerduraRapida(); break;
+        case 2: elegirImpresora(null); break;
+        case 3: imprimirPrueba(); break;
+        case 4: actualizarProductos(); break;
+        case 5: abrirAjustes(); break;
+        case 6: elegirCategoriasVisibles(); break;
         default: new Actualizador(this).revisar(true); break;
       }
     }).show();
@@ -873,6 +880,279 @@ public class MainActivity extends Activity {
     }
     new DatePickerDialog(this, (v, y, m, d) -> listo.fecha(String.format(Locale.ROOT, "%02d/%02d/%04d", d, m + 1, y)),
         c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show();
+  }
+
+  // ---------------------------------------------------------------- Verdura rápida (crear producto)
+  // Mismo flujo que "Verdura rápida" de la app web (cpAbrir quick): categoría VERDURAS y
+  // ENSALADAS, IVA, inventario activo sin stock inicial, precio = costo / (1 − margen) con margen
+  // 30 % por defecto; tras crear queda lista para la siguiente. Extra: crea el código de barras
+  // interno 04… para poder imprimir la etiqueta al tiro.
+  private static final String CAT_VERDURAS = "VERDURAS y ENSALADAS";
+  private org.json.JSONObject catalogoLoyverse;   // categorías e impuestos (se pide una vez)
+
+  /** "1.500" = 1500 (punto de miles), "2,5" = 2.5, "32.5" = 32.5. */
+  static double numero(String t) {
+    t = t == null ? "" : t.trim().replace("$", "").replace(" ", "");
+    if (t.contains(",")) t = t.replace(".", "").replace(',', '.');
+    else if (t.matches("\\d{1,3}(\\.\\d{3})+")) t = t.replace(".", "");
+    try { return Double.parseDouble(t); } catch (Exception x) { return 0; }
+  }
+
+  private static double numero(EditText e) { return numero(e.getText().toString()); }
+
+  private void abrirVerduraRapida() {
+    if (!Local.MARIN.id.equals(aj.local)) {
+      Toast.makeText(this, "Verdura rápida por ahora funciona solo en Marín 376.", Toast.LENGTH_LONG).show();
+      return;
+    }
+    final Local l = local();
+    final boolean[] kg = {false}, conIva = {true}, tocado = {false}, poniendo = {false}, creando = {false};
+    final int[] calc = {0};
+    final Producto[] ultimo = {null};
+
+    ScrollView sv = new ScrollView(this);
+    LinearLayout c = new LinearLayout(this);
+    c.setOrientation(LinearLayout.VERTICAL);
+    c.setPadding(dp(18), dp(14), dp(18), dp(14));
+    sv.addView(c);
+    c.addView(texto("Verdura rápida", 24, true, NEGRO));
+    c.addView(texto("Se crea en Loyverse, categoría " + CAT_VERDURAS + ".", 14, false, PLOMO), lp(-1, -2, 2));
+
+    c.addView(texto("Nombre", 17, true, NEGRO), lp(-1, -2, 12));
+    final EditText nombre = new EditText(this);
+    nombre.setTextSize(22);
+    nombre.setSingleLine(true);
+    nombre.setHint("Ej: Apio");
+    nombre.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+    c.addView(nombre);
+
+    c.addView(texto("Se vende por", 17, true, NEGRO), lp(-1, -2, 10));
+    LinearLayout filaVenta = fila();
+    final Button bU = boton("Unidad", VERDE, Color.WHITE), bKg = boton("Peso (kg)", GRIS, NEGRO);
+    bU.setTextSize(18);
+    bKg.setTextSize(18);
+    filaVenta.addView(bU, peso(dp(54), 0));
+    filaVenta.addView(bKg, peso(dp(54), 8));
+    c.addView(filaVenta, lp(-1, -2, 4));
+
+    c.addView(texto("Costo (por unidad o por kg)", 17, true, NEGRO), lp(-1, -2, 10));
+    LinearLayout filaCosto = fila();
+    final EditText costo = new EditText(this);
+    costo.setTextSize(22);
+    costo.setHint("$");
+    costo.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+    filaCosto.addView(costo, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+    final Button bCon = boton("Con IVA", VERDE, Color.WHITE), bSin = boton("Sin IVA", GRIS, NEGRO);
+    bCon.setTextSize(16);
+    bSin.setTextSize(16);
+    LinearLayout.LayoutParams pc = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(50));
+    pc.leftMargin = dp(6);
+    filaCosto.addView(bCon, pc);
+    LinearLayout.LayoutParams ps = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(50));
+    ps.leftMargin = dp(6);
+    filaCosto.addView(bSin, ps);
+    c.addView(filaCosto, lp(-1, -2, 4));
+
+    c.addView(texto("Margen sobre venta (%)", 17, true, NEGRO), lp(-1, -2, 10));
+    final EditText margen = new EditText(this);
+    margen.setTextSize(22);
+    margen.setText("30");
+    margen.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+    c.addView(margen);
+    final TextView txtCalc = texto("", 15, false, PLOMO);
+    c.addView(txtCalc, lp(-1, -2, 4));
+
+    c.addView(texto("Precio de venta", 17, true, NEGRO), lp(-1, -2, 10));
+    final LinearLayout chips = fila();
+    c.addView(chips, lp(-1, -2, 4));
+    final EditText precio = new EditText(this);
+    precio.setTextSize(26);
+    precio.setTypeface(Typeface.DEFAULT_BOLD);
+    precio.setHint("$");
+    precio.setInputType(InputType.TYPE_CLASS_NUMBER);
+    c.addView(precio, lp(-1, -2, 4));
+    final TextView txtMargen = texto("", 15, false, PLOMO);
+    c.addView(txtMargen, lp(-1, -2, 2));
+
+    final CheckBox crearCod = new CheckBox(this);
+    crearCod.setText("Crear código de barras (04…) para la etiqueta");
+    crearCod.setTextSize(16);
+    crearCod.setChecked(true);
+    c.addView(crearCod, lp(-1, -2, 10));
+
+    final TextView estado = texto("", 16, true, NEGRO);
+    c.addView(estado, lp(-1, -2, 10));
+    final Button bCrear = boton("Crear en Loyverse", VERDE_BOTON, Color.WHITE);
+    bCrear.setTextSize(22);
+    c.addView(bCrear, lp(-1, dp(70), 6));
+    final Button bImp = boton("", GRIS, NEGRO);
+    bImp.setTextSize(18);
+    bImp.setVisibility(View.GONE);
+    c.addView(bImp, lp(-1, dp(56), 6));
+    Button bCerrar = boton("Cerrar", Color.WHITE, PLOMO);
+    bCerrar.setTextSize(18);
+    c.addView(bCerrar, lp(-1, dp(50), 6));
+
+    final AlertDialog dlg = new AlertDialog.Builder(this).setView(sv).create();
+    bCerrar.setOnClickListener(v -> dlg.dismiss());
+
+    final Runnable[] recalcular = new Runnable[1];
+    recalcular[0] = () -> {
+      double cb = Precio.costoBruto(numero(costo), conIva[0]);
+      calc[0] = Precio.desdeMargen(cb, numero(margen));
+      txtCalc.setText(calc[0] > 0
+          ? "Precio calculado: " + precioTxt(calc[0]) + (conIva[0] ? "" : " (costo + 19 % IVA = " + precioTxt((int) Math.round(cb)) + ")")
+          : "Escribe el costo y el margen para calcular el precio.");
+      if (!tocado[0]) {
+        poniendo[0] = true;
+        precio.setText(calc[0] > 0 ? String.valueOf(Precio.sugerido(calc[0])) : "");
+        poniendo[0] = false;
+      }
+      int pv = (int) numero(precio);
+      txtMargen.setText(pv > 0 && cb > 0 ? String.format(Locale.ROOT, "Margen real: %.1f %%", Precio.margenReal(pv, cb)) : "");
+      chips.removeAllViews();
+      List<Integer> ops = Precio.redondeos(calc[0]);
+      if (calc[0] > 0 && !ops.contains(calc[0])) ops.add(0, calc[0]);
+      for (final int r : ops) {
+        boolean on = r == pv;
+        Button ch = boton(precioTxt(r), on ? VERDE : GRIS, on ? Color.WHITE : NEGRO);
+        ch.setTextSize(16);
+        ch.setOnClickListener(v -> { tocado[0] = true; poniendo[0] = true; precio.setText(String.valueOf(r)); poniendo[0] = false; recalcular[0].run(); });
+        chips.addView(ch, peso(dp(48), chips.getChildCount() == 0 ? 0 : 6));
+      }
+    };
+    TextWatcher alCambiar = new TextWatcher() {
+      public void beforeTextChanged(CharSequence x, int a, int b, int d) {}
+      public void onTextChanged(CharSequence x, int a, int b, int d) {}
+      public void afterTextChanged(Editable e) { recalcular[0].run(); }
+    };
+    costo.addTextChangedListener(alCambiar);
+    margen.addTextChangedListener(alCambiar);
+    precio.addTextChangedListener(new TextWatcher() {
+      public void beforeTextChanged(CharSequence x, int a, int b, int d) {}
+      public void onTextChanged(CharSequence x, int a, int b, int d) {}
+      public void afterTextChanged(Editable e) { if (!poniendo[0]) { tocado[0] = true; recalcular[0].run(); } }
+    });
+    bU.setOnClickListener(v -> { kg[0] = false; colorear(bU, VERDE, Color.WHITE); colorear(bKg, GRIS, NEGRO); });
+    bKg.setOnClickListener(v -> { kg[0] = true; colorear(bKg, VERDE, Color.WHITE); colorear(bU, GRIS, NEGRO); });
+    bCon.setOnClickListener(v -> { conIva[0] = true; colorear(bCon, VERDE, Color.WHITE); colorear(bSin, GRIS, NEGRO); recalcular[0].run(); });
+    bSin.setOnClickListener(v -> { conIva[0] = false; colorear(bSin, VERDE, Color.WHITE); colorear(bCon, GRIS, NEGRO); recalcular[0].run(); });
+    recalcular[0].run();
+
+    final Runnable[] crear = new Runnable[1];
+    crear[0] = () -> {
+      final String nom = nombre.getText().toString().trim();
+      final int pv = (int) numero(precio);
+      final double cb = Precio.costoBruto(numero(costo), conIva[0]);
+      final boolean conCodigo = crearCod.isChecked();
+      final boolean esKg = kg[0];
+      creando[0] = true;
+      bCrear.setEnabled(false);
+      bCrear.setText("Creando…");
+      estado.setTextColor(NEGRO);
+      estado.setText("Creando en Loyverse… (puede tardar unos segundos)");
+      new Thread(() -> {
+        String err = null;
+        org.json.JSONObject res = null;
+        String categoria = CAT_VERDURAS, codigo = "";
+        try {
+          if (catalogoLoyverse == null) catalogoLoyverse = Api.catalogoCrear(l);
+          org.json.JSONArray cats = catalogoLoyverse.optJSONArray("categorias");
+          String catId = null;
+          String objetivo = Catalogo.norm(CAT_VERDURAS);
+          for (int i = 0; cats != null && i < cats.length() && catId == null; i++)
+            if (Catalogo.norm(cats.getJSONObject(i).optString("name")).equals(objetivo)) { catId = cats.getJSONObject(i).optString("id"); categoria = cats.getJSONObject(i).optString("name"); }
+          for (int i = 0; cats != null && i < cats.length() && catId == null; i++)
+            if (Catalogo.norm(cats.getJSONObject(i).optString("name")).contains(objetivo)) { catId = cats.getJSONObject(i).optString("id"); categoria = cats.getJSONObject(i).optString("name"); }
+          if (catId == null) throw new Exception("No encontré la categoría " + CAT_VERDURAS + " en Loyverse.");
+          org.json.JSONArray taxIds = new org.json.JSONArray();
+          org.json.JSONArray imps = catalogoLoyverse.optJSONArray("impuestos");
+          for (int i = 0; imps != null && i < imps.length(); i++) {
+            org.json.JSONObject t = imps.getJSONObject(i);
+            if (t.optString("name").toLowerCase(Locale.ROOT).contains("iva") || t.optDouble("rate", 0) == 19) { taxIds.put(t.optString("id")); break; }
+          }
+          if (conCodigo) {
+            java.util.HashSet<String> usados = new java.util.HashSet<>();
+            for (Producto p : cat.productos) if (!p.barcode.isEmpty()) usados.add(p.barcode.trim());
+            codigo = Barras.generarInterno(usados, new java.util.Random());
+            if (codigo == null) codigo = "";
+          }
+          org.json.JSONObject payload = new org.json.JSONObject()
+              .put("nombre", nom).put("categoryId", catId).put("categoriaNombre", categoria)
+              .put("soldByWeight", esKg).put("precio", pv).put("coste", Math.max(0, Math.round(cb)))
+              .put("barcode", codigo).put("trackStock", true).put("stockInicial", 0)
+              .put("stockMinimo", org.json.JSONObject.NULL).put("fechaVencimiento", "")
+              .put("taxIds", taxIds).put("activo", true)
+              .put("proveedor_id", org.json.JSONObject.NULL).put("sector", org.json.JSONObject.NULL)
+              .put("responsable", "App Precios");
+          res = Api.crearProducto(l, payload);
+        } catch (java.io.IOException e) {
+          err = "Sin internet: no se creó. Revisa la conexión e inténtalo de nuevo.";
+        } catch (Exception e) {
+          err = e.getMessage() == null ? "No se pudo crear el producto." : e.getMessage();
+        }
+        final String fe = err, fcat = categoria;
+        final org.json.JSONObject fres = res;
+        ui.post(() -> {
+          creando[0] = false;
+          bCrear.setEnabled(true);
+          bCrear.setText("Crear en Loyverse");
+          if (fe != null) { estado.setTextColor(ROJO); estado.setText(fe); return; }
+          org.json.JSONObject pj = fres.optJSONObject("producto");
+          Producto p = new Producto();
+          p.sku = pj.optString("ref");
+          p.nombre = pj.optString("nombre", nom);
+          p.precio = pj.isNull("precio") ? pv : (int) Math.round(pj.optDouble("precio", pv));
+          p.barcode = pj.optString("barcode", "");
+          p.categoria = fcat;
+          if (l.id.equals(aj.local)) {
+            List<Producto> nueva = new ArrayList<>(cat.productos);
+            nueva.add(p);
+            cat.poner(nueva, cat.hora);
+            final Catalogo cg = cat;
+            new Thread(() -> cg.guardar(getApplicationContext())).start();
+            pintarCategorias();
+            filtrar();
+          }
+          String m = "✓ Creado: " + p.nombre + " · SKU " + p.sku + " · " + precioTxt(p.precio)
+              + (p.barcode.isEmpty() ? "" : " · código " + p.barcode);
+          if (pj.has("confirmado") && !pj.optBoolean("confirmado", true)) m += "\n⚠ NO verificado en Loyverse";
+          else if (pj.has("enEstaTienda") && !pj.optBoolean("enEstaTienda", true)) m += "\n⚠ No quedó asignado a tu tienda";
+          if (!fres.optString("advertencia", "").isEmpty()) m += "\n" + fres.optString("advertencia");
+          estado.setTextColor(VERDE);
+          estado.setText(m + "\nListo para la siguiente verdura.");
+          ultimo[0] = p;
+          bImp.setText("Imprimir etiqueta de " + p.nombre);
+          bImp.setVisibility(View.VISIBLE);
+          // Como la web: queda lista para la siguiente (se conserva venta, IVA y margen).
+          nombre.setText("");
+          costo.setText("");
+          tocado[0] = false;
+          recalcular[0].run();
+          nombre.requestFocus();
+        });
+      }).start();
+    };
+    bCrear.setOnClickListener(v -> {
+      if (creando[0]) return;
+      String nom = nombre.getText().toString().trim();
+      if (nom.isEmpty()) { estado.setTextColor(ROJO); estado.setText("Falta el nombre."); return; }
+      if ((int) numero(precio) <= 0) { estado.setTextColor(ROJO); estado.setText("Falta el precio de venta."); return; }
+      Producto igual = null;
+      String nn = Catalogo.norm(nom);
+      for (Producto p : cat.productos) if (Catalogo.norm(p.nombre).equals(nn)) { igual = p; break; }
+      if (igual != null) {
+        new AlertDialog.Builder(this).setTitle("Ya existe")
+            .setMessage("Ya hay un producto «" + igual.nombre + "» (SKU " + igual.sku + ", " + precioTxt(igual.precio) + ").\n\n¿Crear otro igual de todas formas?")
+            .setPositiveButton("Crear igual", (d, i) -> crear[0].run())
+            .setNegativeButton("No", null).show();
+        return;
+      }
+      crear[0].run();
+    });
+    bImp.setOnClickListener(v -> { if (ultimo[0] != null) abrirEtiqueta(ultimo[0]); });
+    dlg.show();
+    nombre.requestFocus();
   }
 
   // ---------------------------------------------------------------- impresión

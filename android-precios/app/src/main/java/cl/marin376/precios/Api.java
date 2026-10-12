@@ -173,6 +173,49 @@ public final class Api {
     }
   }
 
+  /** Lee una respuesta JSON (también la de error) del servidor. */
+  private static JSONObject leerJson(HttpURLConnection c) throws Exception {
+    InputStream in = c.getResponseCode() >= 400 ? c.getErrorStream() : c.getInputStream();
+    ByteArrayOutputStream o = new ByteArrayOutputStream();
+    if (in != null) {
+      byte[] b = new byte[4096];
+      int n;
+      while ((n = in.read(b)) > 0) o.write(b, 0, n);
+      in.close();
+    }
+    try { return new JSONObject(o.toString("UTF-8")); } catch (Exception e) { throw new IOException("El servidor no respondió bien"); }
+  }
+
+  /** Categorías e impuestos de Loyverse (mismo endpoint que "Crear producto" de la web). */
+  public static JSONObject catalogoCrear(Local l) throws Exception {
+    HttpURLConnection c = abrir(l.url + "?action=catalogo_crear", 30000);
+    try {
+      JSONObject j = leerJson(c);
+      if (!j.optBoolean("ok", false)) throw new Exception(j.optString("error", "No se pudieron leer las categorías"));
+      return j;
+    } finally {
+      c.disconnect();
+    }
+  }
+
+  /** Crea el producto en Loyverse (POST crear_producto, mismo payload que la web). Devuelve la respuesta completa. */
+  public static JSONObject crearProducto(Local l, JSONObject payload) throws Exception {
+    HttpURLConnection c = abrir(l.url, 60000);
+    try {
+      c.setRequestMethod("POST");
+      c.setDoOutput(true);
+      c.setRequestProperty("Content-Type", "application/json");
+      byte[] body = new JSONObject().put("action", "crear_producto").put("payload", payload).toString().getBytes("UTF-8");
+      try (java.io.OutputStream os = c.getOutputStream()) { os.write(body); }
+      JSONObject j = leerJson(c);
+      if (!j.optBoolean("ok", false) || j.optJSONObject("producto") == null)
+        throw new Exception(j.optString("error", "No se pudo crear el producto"));
+      return j;
+    } finally {
+      c.disconnect();
+    }
+  }
+
   /** Datos frescos de UN producto (precio, código y vencimiento del lote más próximo). */
   public static final class Ficha {
     public Integer precio;
