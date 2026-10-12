@@ -594,7 +594,7 @@ public class MainActivity extends Activity {
     AlertDialog dlg;
     TextView txtPrecio, txtCodigo, txtCant, txtAviso, txtEstado, txtVenceInfo;
     ImageView vista;
-    Button btnImprimir, btnVence, btnSinVence, btnCodigo, btnSinElab, btnElabHoy, btnElab;
+    Button btnImprimir, btnVence, btnSinVence, btnCodigo, btnPrecio, btnSinElab, btnElabHoy, btnElab;
   }
 
   private Ventana ven;
@@ -610,8 +610,17 @@ public class MainActivity extends Activity {
     sv.addView(c);
 
     c.addView(texto(p.nombre, 22, true, NEGRO));
+    LinearLayout filaPrecio = fila();
+    filaPrecio.setGravity(Gravity.CENTER_VERTICAL);
     w.txtPrecio = texto("", 30, true, NEGRO);
-    c.addView(w.txtPrecio, lp(-1, -2, 2));
+    filaPrecio.addView(w.txtPrecio, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+    // Cambiar precio/costo al tiro (misma calculadora que Verdura rápida). Por ahora solo Marín.
+    w.btnPrecio = boton("✏ Cambiar precio", Color.WHITE, Color.parseColor("#12A88A"));
+    w.btnPrecio.setTextSize(16);
+    w.btnPrecio.setOnClickListener(v -> { if (w.confirmando == 0 && !w.creando && !imprimiendo) abrirCambiarPrecio(w); });
+    w.btnPrecio.setVisibility(Local.MARIN.id.equals(aj.local) ? View.VISIBLE : View.GONE);
+    filaPrecio.addView(w.btnPrecio, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(52)));
+    c.addView(filaPrecio, lp(-1, -2, 2));
     w.txtCodigo = texto("", 15, false, PLOMO);
     c.addView(w.txtCodigo, lp(-1, -2, 2));
     w.btnCodigo = boton("", VERDE, Color.WHITE);
@@ -725,6 +734,8 @@ public class MainActivity extends Activity {
     boolean puedeCodigo = !w.creando && w.confirmando == 0 && !imprimiendo;
     w.btnCodigo.setEnabled(puedeCodigo);
     w.btnCodigo.setAlpha(puedeCodigo ? 1f : 0.45f);
+    w.btnPrecio.setEnabled(puedeCodigo);
+    w.btnPrecio.setAlpha(puedeCodigo ? 1f : 0.45f);
     w.txtCant.setText(String.valueOf(w.cantidad));
     String hoy = fmt(Calendar.getInstance());
     boolean elabHoy = w.elab.equals(hoy), elabOtra = !w.elab.isEmpty() && !elabHoy;
@@ -781,9 +792,15 @@ public class MainActivity extends Activity {
             cambios.add("precio " + precioTxt(p.precio) + " → " + precioTxt(ff.precio));
             p.precio = ff.precio;
           }
+          boolean costoNuevo = ff.costo != null && ff.costo > 0 && ff.costo != p.costo;
+          if (costoNuevo) p.costo = ff.costo;   // para "Cambiar precio" (no se avisa)
           if (ff.barcode != null && !ff.barcode.equals(p.barcode)) {
             cambios.add("código " + p.codigo() + " → " + (ff.barcode.isEmpty() ? p.sku : ff.barcode));
             p.barcode = ff.barcode;
+          }
+          if (costoNuevo && cambios.isEmpty() && l.id.equals(aj.local)) {
+            final Catalogo cg = cat;
+            new Thread(() -> cg.guardar(getApplicationContext())).start();
           }
           if (!cambios.isEmpty() && l.id.equals(aj.local)) {
             cat.poner(new ArrayList<>(cat.productos), cat.hora);
@@ -902,14 +919,372 @@ public class MainActivity extends Activity {
 
   private static double numero(EditText e) { return numero(e.getText().toString()); }
 
+  /**
+   * Calculadora de precio (la de Verdura rápida, también en "Cambiar precio"): costo + 🧮,
+   * Con/Sin IVA, tipo de producto (divisor) o Manual (% producción + margen), chips con precios
+   * cobrables (00/50/90), precio editable y margen real con aviso bajo 30 %.
+   */
+  private final class PanelPrecio {
+    EditText costo, produccion, margen, precio;
+    TextView txtCalc, txtMargen;
+    LinearLayout chips, cajaManual;
+    Button bCon, bSin;
+    final Button[] bTipos = new Button[Precio.TIPOS.length], chipsProd = new Button[4];
+    final int[] pcts = {0, 10, 20, 30};
+    final String claveTipo;
+    boolean conIva = true, tocado = false, poniendo = false;
+    /** true: al cambiar el costo se vuelve a sugerir el precio aunque ya haya uno escrito. */
+    boolean costoRecalcula = false;
+    int tipo, calc = 0;
+    /** Costo real ya guardado (solo para mostrar el margen mientras no se escriba uno nuevo). */
+    int costoGuardado = 0;
+    /** Precio que queda si se borra el costo (0 = vacío). */
+    int precioInicial = 0;
+    /** Aviso a la ventana dueña cada vez que cambia algo (opcional). */
+    Runnable alCambiar;
+
+    PanelPrecio(LinearLayout c, String claveTipo, String tituloCosto) {
+      this.claveTipo = claveTipo;
+      tipo = Math.max(0, Math.min(Precio.TIPOS.length - 1, prefs.getInt(claveTipo, 0)));
+      LinearLayout titulo = fila();
+      titulo.addView(texto(tituloCosto, 17, true, NEGRO), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+      Button bCalc = boton("🧮 Calculadora", Color.WHITE, Color.parseColor("#12A88A"));
+      bCalc.setTextSize(15);
+      titulo.addView(bCalc, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(44)));
+      c.addView(titulo, lp(-1, -2, 10));
+      LinearLayout filaCosto = fila();
+      costo = new EditText(MainActivity.this);
+      // Calculadora tipo Samsung (igual a la de la web); "Usar como costo" pasa el resultado al campo.
+      bCalc.setOnClickListener(v -> Calculadora.abrir(MainActivity.this, "Usar como costo", val -> {
+        double r = Math.round(val * 100) / 100.0;
+        costo.setText(r == Math.rint(r) ? String.valueOf((long) r) : String.valueOf(r).replace('.', ','));
+        costo.setSelection(costo.getText().length());
+      }));
+      costo.setTextSize(22);
+      costo.setHint("$");
+      costo.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+      filaCosto.addView(costo, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+      bCon = boton("Con IVA", VERDE, Color.WHITE);
+      bSin = boton("Sin IVA", GRIS, NEGRO);
+      bCon.setTextSize(16);
+      bSin.setTextSize(16);
+      LinearLayout.LayoutParams pc = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(50));
+      pc.leftMargin = dp(6);
+      filaCosto.addView(bCon, pc);
+      LinearLayout.LayoutParams ps = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(50));
+      ps.leftMargin = dp(6);
+      filaCosto.addView(bSin, ps);
+      c.addView(filaCosto, lp(-1, -2, 4));
+
+      // Tipo de producto: precio = costo ÷ divisor (incluye producción y ~40 % de ganancia real).
+      // "Manual" deja el cálculo con % producción y margen.
+      c.addView(texto("Tipo de producto (divisor)", 17, true, NEGRO), lp(-1, -2, 10));
+      LinearLayout filaTipo1 = fila(), filaTipo2 = fila();
+      for (int i = 0; i < Precio.TIPOS.length; i++) {
+        String etq = i == 0 ? "Manual" : Precio.TIPOS[i] + "\n÷ " + String.format(Locale.ROOT, "%.2f", Precio.DIVISOR[i]).replace('.', ',');
+        Button b = boton(etq, GRIS, NEGRO);
+        b.setTextSize(15);
+        bTipos[i] = b;
+        (i < 3 ? filaTipo1 : filaTipo2).addView(b, peso(dp(58), i % 3 == 0 ? 0 : 6));
+      }
+      c.addView(filaTipo1, lp(-1, -2, 4));
+      c.addView(filaTipo2, lp(-1, -2, 6));
+      cajaManual = new LinearLayout(MainActivity.this);   // % producción + margen (solo en Manual)
+      cajaManual.setOrientation(LinearLayout.VERTICAL);
+      c.addView(cajaManual, lp(-1, -2, 0));
+
+      // + % producción (mano de obra, materiales, luz): se suma al costo antes de calcular el precio.
+      cajaManual.addView(texto("+ % producción (mano de obra, materiales, luz)", 17, true, NEGRO), lp(-1, -2, 10));
+      LinearLayout filaProd = fila();
+      produccion = new EditText(MainActivity.this);
+      produccion.setTextSize(22);
+      produccion.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+      produccion.setText(prefs.getString("pctProduccion", "0"));
+      filaProd.addView(produccion, new LinearLayout.LayoutParams(dp(90), ViewGroup.LayoutParams.WRAP_CONTENT));
+      for (int i = 0; i < pcts.length; i++) {
+        final int pct = pcts[i];
+        Button b = boton(pct + " %", GRIS, NEGRO);
+        b.setTextSize(16);
+        b.setOnClickListener(v -> produccion.setText(String.valueOf(pct)));
+        chipsProd[i] = b;
+        filaProd.addView(b, peso(dp(48), 6));
+      }
+      cajaManual.addView(filaProd, lp(-1, -2, 4));
+
+      cajaManual.addView(texto("Margen sobre venta (%)", 17, true, NEGRO), lp(-1, -2, 10));
+      margen = new EditText(MainActivity.this);
+      margen.setTextSize(22);
+      margen.setText("30");
+      margen.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+      cajaManual.addView(margen);
+      txtCalc = texto("", 15, false, PLOMO);
+      c.addView(txtCalc, lp(-1, -2, 4));
+
+      c.addView(texto("Precio de venta", 17, true, NEGRO), lp(-1, -2, 10));
+      chips = fila();
+      c.addView(chips, lp(-1, -2, 4));
+      precio = new EditText(MainActivity.this);
+      precio.setTextSize(26);
+      precio.setTypeface(Typeface.DEFAULT_BOLD);
+      precio.setHint("$");
+      precio.setInputType(InputType.TYPE_CLASS_NUMBER);
+      c.addView(precio, lp(-1, -2, 4));
+      txtMargen = texto("", 15, false, PLOMO);
+      c.addView(txtMargen, lp(-1, -2, 2));
+
+      costo.addTextChangedListener(new TextWatcher() {
+        public void beforeTextChanged(CharSequence x, int a, int b, int d) {}
+        public void onTextChanged(CharSequence x, int a, int b, int d) {}
+        public void afterTextChanged(Editable e) { if (costoRecalcula) tocado = false; recalcular(); }
+      });
+      TextWatcher cambio = new TextWatcher() {
+        public void beforeTextChanged(CharSequence x, int a, int b, int d) {}
+        public void onTextChanged(CharSequence x, int a, int b, int d) {}
+        public void afterTextChanged(Editable e) { recalcular(); }
+      };
+      produccion.addTextChangedListener(cambio);
+      margen.addTextChangedListener(cambio);
+      precio.addTextChangedListener(new TextWatcher() {
+        public void beforeTextChanged(CharSequence x, int a, int b, int d) {}
+        public void onTextChanged(CharSequence x, int a, int b, int d) {}
+        public void afterTextChanged(Editable e) { if (!poniendo) { tocado = true; recalcular(); } }
+      });
+      bCon.setOnClickListener(v -> { conIva = true; if (costoRecalcula) tocado = false; recalcular(); });
+      bSin.setOnClickListener(v -> { conIva = false; if (costoRecalcula) tocado = false; recalcular(); });
+      for (int i = 0; i < bTipos.length; i++) {
+        final int t = i;
+        bTipos[i].setOnClickListener(v -> {
+          tipo = t;
+          tocado = false;   // el precio vuelve a calcularse con el tipo elegido
+          prefs.edit().putInt(claveTipo, t).apply();
+          recalcular();
+        });
+      }
+      recalcular();
+    }
+
+    double costoIva() { return Precio.costoBruto(numero(costo), conIva); }
+
+    /** Costo real: materia + producción del tipo, o + % producción en Manual. 0 si no hay costo. */
+    double costoReal() {
+      double ci = costoIva();
+      if (ci <= 0) return 0;
+      return tipo > 0 ? ci + Precio.PRODUCCION[tipo] : Precio.conProduccion(ci, numero(produccion));
+    }
+
+    int precioVenta() { return (int) numero(precio); }
+
+    void ponerPrecio(int v) {
+      poniendo = true;
+      precio.setText(v > 0 ? String.valueOf(v) : "");
+      poniendo = false;
+    }
+
+    void guardarPrefs() {
+      prefs.edit().putString("pctProduccion", produccion.getText().toString().trim()).putInt(claveTipo, tipo).apply();
+    }
+
+    void recalcular() {
+      double pct = numero(produccion);
+      for (int i = 0; i < pcts.length; i++) {
+        boolean on = pct == pcts[i];
+        colorear(chipsProd[i], on ? VERDE : GRIS, on ? Color.WHITE : NEGRO);
+      }
+      for (int i = 0; i < bTipos.length; i++) {
+        boolean on = tipo == i;
+        colorear(bTipos[i], on ? VERDE : GRIS, on ? Color.WHITE : NEGRO);
+      }
+      colorear(bCon, conIva ? VERDE : GRIS, conIva ? Color.WHITE : NEGRO);
+      colorear(bSin, conIva ? GRIS : VERDE, conIva ? NEGRO : Color.WHITE);
+      cajaManual.setVisibility(tipo == 0 ? View.VISIBLE : View.GONE);
+      double cIva = costoIva();
+      double cb = costoReal();
+      double cbMargen = cb > 0 ? cb : costoGuardado;
+      String detalle = "";
+      if (tipo > 0) {
+        // Divisor por tipo: precio desde la materia prima; costo real = materia + producción del tipo.
+        calc = Precio.desdeDivisor(cIva, Precio.DIVISOR[tipo]);
+        if (cIva > 0) {
+          detalle = Precio.TIPOS[tipo] + ": " + precioTxt((int) Math.round(cIva)) + (conIva ? "" : " (con IVA)")
+              + " ÷ " + String.format(Locale.ROOT, "%.2f", Precio.DIVISOR[tipo]).replace('.', ',')
+              + "\nCosto real con producción: " + precioTxt((int) Math.round(cb))
+              + (Precio.PRODUCCION[tipo] > 0 ? " (+" + precioTxt(Precio.PRODUCCION[tipo]) + ")" : "") + "\n";
+        }
+      } else {
+        calc = Precio.desdeMargen(cb, numero(margen));
+        if (cIva > 0) {
+          detalle = "Costo total: " + precioTxt((int) Math.round(cb));
+          if (!conIva || pct > 0) {
+            detalle += " (" + precioTxt((int) Math.round(numero(costo)));
+            if (!conIva) detalle += " + 19 % IVA";
+            if (pct > 0) detalle += " + " + CalcMotor.fmtNum(String.valueOf(pct).replaceAll("\\.0$", "")) + " % producción";
+            detalle += ")";
+          }
+          detalle += "\n";
+        }
+      }
+      txtCalc.setText(calc > 0
+          ? detalle + "Precio calculado: " + precioTxt(calc) + " → " + precioTxt(Precio.sugerido(calc))
+          : (costoGuardado > 0 ? "Escribe el costo nuevo para calcular, o cambia el precio directo."
+              : "Escribe el costo y el margen para calcular el precio."));
+      if (!tocado) ponerPrecio(calc > 0 ? Precio.sugerido(calc) : precioInicial);
+      int pv = precioVenta();
+      double mr = pv > 0 && cbMargen > 0 ? Precio.margenReal(pv, cbMargen) : 0;
+      if (pv > 0 && cbMargen > 0 && mr < 30) {
+        // Bajo el mínimo recomendado (30 % real): pasa con verdura muy barata, donde casi todo es mano de obra.
+        int minimo = Precio.sugerido((int) Math.round(cbMargen / 0.70));
+        txtMargen.setTextColor(ROJO);
+        txtMargen.setText(String.format(Locale.ROOT, "⚠ Margen real %.1f %%: bajo el mínimo de 30 %%. Precio mínimo: %s", mr, precioTxt(minimo)));
+      } else {
+        txtMargen.setTextColor(PLOMO);
+        txtMargen.setText(pv > 0 && cbMargen > 0 ? String.format(Locale.ROOT, "Margen real: %.1f %%", mr)
+            + (cb > 0 ? "" : " (con el costo de Loyverse)") : "");
+      }
+      chips.removeAllViews();
+      // Solo precios cobrables en pesos chilenos: terminados en 00, 50 o 90 (nunca $1.125).
+      for (final int r : Precio.redondeos(calc)) {
+        boolean on = r == pv;
+        Button ch = boton(precioTxt(r), on ? VERDE : GRIS, on ? Color.WHITE : NEGRO);
+        ch.setTextSize(16);
+        ch.setOnClickListener(v -> { tocado = true; ponerPrecio(r); recalcular(); });
+        chips.addView(ch, peso(dp(48), chips.getChildCount() == 0 ? 0 : 6));
+      }
+      if (alCambiar != null) alCambiar.run();
+    }
+  }
+
+  // ---------------------------------------------------------------- Cambiar precio (desde la etiqueta)
+  // Misma calculadora que Verdura rápida. Guarda con editar_precio (igual que la Ficha de producto
+  // de la web: queda en Loyverse y en el historial de precios) y la etiqueta sale con el precio nuevo.
+  private void abrirCambiarPrecio(final Ventana w) {
+    final Producto p = w.p;
+    final Local l = local();
+    final boolean[] guardando = {false};
+    ScrollView sv = new ScrollView(this);
+    LinearLayout c = new LinearLayout(this);
+    c.setOrientation(LinearLayout.VERTICAL);
+    c.setPadding(dp(18), dp(14), dp(18), dp(14));
+    sv.addView(c);
+    c.addView(texto("Cambiar precio", 24, true, NEGRO));
+    c.addView(texto(p.nombre, 17, true, PLOMO), lp(-1, -2, 2));
+    c.addView(texto("Precio actual: " + (p.precio > 0 ? precioTxt(p.precio) : "—")
+        + "   ·   Costo en Loyverse: " + (p.costo > 0 ? precioTxt(p.costo) : "—"), 16, false, NEGRO), lp(-1, -2, 4));
+
+    final PanelPrecio pp = new PanelPrecio(c, "tipoPrecio", "Costo nuevo (con o sin IVA)");
+    final TextView txtCambio = texto("", 17, true, NEGRO);
+    c.addView(txtCambio, lp(-1, -2, 8));
+    final TextView estado = texto("", 16, true, NEGRO);
+    c.addView(estado, lp(-1, -2, 8));
+    final Button bGuardar = boton("Guardar en Loyverse", VERDE_BOTON, Color.WHITE);
+    bGuardar.setTextSize(22);
+    c.addView(bGuardar, lp(-1, dp(70), 6));
+    Button bCerrar = boton("Cancelar", Color.WHITE, PLOMO);
+    bCerrar.setTextSize(18);
+    c.addView(bCerrar, lp(-1, dp(50), 6));
+
+    pp.alCambiar = () -> {
+      int pv = pp.precioVenta();
+      if (pv <= 0 || pv == p.precio) { txtCambio.setText(pv == p.precio && pv > 0 ? "Mismo precio que ahora." : ""); return; }
+      String t = "Etiqueta: " + (p.precio > 0 ? precioTxt(p.precio) + " → " : "") + precioTxt(pv);
+      if (p.precio > 0) t += String.format(Locale.ROOT, " (%+.0f %%)", (pv - p.precio) * 100.0 / p.precio);
+      txtCambio.setText(t);
+    };
+    // Parte con el precio actual y el margen sobre el costo de Loyverse. Al escribir un costo nuevo
+    // (o cambiar IVA/tipo) se sugiere el precio; también se puede escribir el precio directo.
+    pp.costoRecalcula = true;
+    pp.costoGuardado = p.costo;
+    pp.precioInicial = p.precio;
+    if (p.costo > 0) pp.costo.setHint("Actual " + precioTxt(p.costo));
+    pp.tocado = true;
+    pp.ponerPrecio(p.precio);
+    pp.recalcular();
+
+    final AlertDialog dlg = new AlertDialog.Builder(this).setView(sv).create();
+    bCerrar.setOnClickListener(v -> dlg.dismiss());
+
+    final Runnable[] guardar = new Runnable[1];
+    guardar[0] = () -> {
+      final int pv = pp.precioVenta();
+      final int cr = (int) Math.round(pp.costoReal());
+      final Integer nuevoPrecio = pv != p.precio ? pv : null;
+      // El costo solo se cambia si se escribió uno nuevo.
+      final Integer nuevoCosto = cr > 0 && cr != p.costo ? cr : null;
+      final int antes = p.precio;
+      pp.guardarPrefs();
+      guardando[0] = true;
+      bGuardar.setEnabled(false);
+      bGuardar.setText("Guardando…");
+      estado.setTextColor(NEGRO);
+      estado.setText("Guardando en Loyverse…");
+      new Thread(() -> {
+        String err = null;
+        org.json.JSONObject res = null;
+        try { res = Api.editarPrecio(l, p.sku, nuevoPrecio, nuevoCosto); }
+        catch (java.io.IOException e) { err = "Sin internet: no se guardó. Revisa la conexión e inténtalo de nuevo."; }
+        catch (Exception e) { err = e.getMessage() == null ? "No se pudo guardar el precio." : e.getMessage(); }
+        final String fe = err;
+        final org.json.JSONObject fres = res;
+        ui.post(() -> {
+          guardando[0] = false;
+          bGuardar.setEnabled(true);
+          bGuardar.setText("Guardar en Loyverse");
+          if (fe != null) { estado.setTextColor(ROJO); estado.setText(fe); return; }
+          p.precio = fres.has("precio") && !fres.isNull("precio") ? (int) Math.round(fres.optDouble("precio", pv)) : pv;
+          if (fres.has("costo") && !fres.isNull("costo")) p.costo = (int) Math.round(fres.optDouble("costo", p.costo));
+          else if (nuevoCosto != null) p.costo = nuevoCosto;
+          if (l.id.equals(aj.local)) {
+            cat.poner(new ArrayList<>(cat.productos), cat.hora);
+            final Catalogo cg = cat;
+            new Thread(() -> cg.guardar(getApplicationContext())).start();
+            adaptador.notifyDataSetChanged();
+          }
+          String m = antes != p.precio
+              ? "✓ Precio guardado en Loyverse: " + precioTxt(antes) + " → " + precioTxt(p.precio) + ". Imprime la etiqueta nueva."
+              : "✓ Costo guardado en Loyverse: " + precioTxt(p.costo) + ".";
+          if (!fres.optString("advertencia", "").isEmpty()) m += "\n⚠ " + fres.optString("advertencia");
+          w.txtEstado.setTextColor(VERDE);
+          w.txtEstado.setText(m);
+          dlg.dismiss();
+          if (ven == w) pintarVentana(w);
+        });
+      }).start();
+    };
+    bGuardar.setOnClickListener(v -> {
+      if (guardando[0]) return;
+      int pv = pp.precioVenta();
+      if (pv <= 0) { estado.setTextColor(ROJO); estado.setText("Falta el precio de venta."); return; }
+      if (pv % 10 != 0) {
+        // Pesos chilenos: la moneda más chica es $10.
+        int ajustado = Precio.aDecena(pv);
+        pp.tocado = true;
+        pp.ponerPrecio(ajustado);
+        pp.recalcular();
+        estado.setTextColor(ROJO);
+        estado.setText("Precio ajustado a " + precioTxt(ajustado) + " (en Chile no hay monedas bajo $10). Revisa y toca Guardar otra vez.");
+        return;
+      }
+      int cr = (int) Math.round(pp.costoReal());
+      if (pv == p.precio && (cr <= 0 || cr == p.costo)) { estado.setTextColor(PLOMO); estado.setText("No cambiaste nada."); return; }
+      int costoVs = cr > 0 ? cr : p.costo;
+      if (costoVs > 0 && pv <= costoVs) {
+        new AlertDialog.Builder(this).setTitle("Precio bajo el costo")
+            .setMessage("Vendes a " + precioTxt(pv) + " y te cuesta " + precioTxt(costoVs) + ": pierdes plata en cada venta.\n\n¿Guardar igual?")
+            .setPositiveButton("Guardar igual", (d, i) -> guardar[0].run())
+            .setNegativeButton("No", null).show();
+        return;
+      }
+      guardar[0].run();
+    });
+    dlg.show();
+  }
+
   private void abrirVerduraRapida() {
     if (!Local.MARIN.id.equals(aj.local)) {
       Toast.makeText(this, "Verdura rápida por ahora funciona solo en Marín 376.", Toast.LENGTH_LONG).show();
       return;
     }
     final Local l = local();
-    final boolean[] kg = {false}, conIva = {true}, tocado = {false}, poniendo = {false}, creando = {false};
-    final int[] calc = {0};
+    final boolean[] kg = {false}, creando = {false};
     final Producto[] ultimo = {null};
 
     ScrollView sv = new ScrollView(this);
@@ -937,95 +1312,7 @@ public class MainActivity extends Activity {
     filaVenta.addView(bKg, peso(dp(54), 8));
     c.addView(filaVenta, lp(-1, -2, 4));
 
-    LinearLayout tituloCosto = fila();
-    tituloCosto.addView(texto("Costo (por unidad o por kg)", 17, true, NEGRO), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-    Button bCalc = boton("🧮 Calculadora", Color.WHITE, Color.parseColor("#12A88A"));
-    bCalc.setTextSize(15);
-    tituloCosto.addView(bCalc, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(44)));
-    c.addView(tituloCosto, lp(-1, -2, 10));
-    LinearLayout filaCosto = fila();
-    final EditText costo = new EditText(this);
-    // Calculadora tipo Samsung (igual a la de la web); "Usar como costo" pasa el resultado al campo.
-    bCalc.setOnClickListener(v -> Calculadora.abrir(this, "Usar como costo", val -> {
-      double r = Math.round(val * 100) / 100.0;
-      costo.setText(r == Math.rint(r) ? String.valueOf((long) r) : String.valueOf(r).replace('.', ','));
-      costo.setSelection(costo.getText().length());
-    }));
-    costo.setTextSize(22);
-    costo.setHint("$");
-    costo.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-    filaCosto.addView(costo, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-    final Button bCon = boton("Con IVA", VERDE, Color.WHITE), bSin = boton("Sin IVA", GRIS, NEGRO);
-    bCon.setTextSize(16);
-    bSin.setTextSize(16);
-    LinearLayout.LayoutParams pc = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(50));
-    pc.leftMargin = dp(6);
-    filaCosto.addView(bCon, pc);
-    LinearLayout.LayoutParams ps = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(50));
-    ps.leftMargin = dp(6);
-    filaCosto.addView(bSin, ps);
-    c.addView(filaCosto, lp(-1, -2, 4));
-
-    // Tipo de producto: precio = costo ÷ divisor (incluye producción y ~40 % de ganancia real).
-    // "Manual" deja el cálculo con % producción y margen.
-    c.addView(texto("Tipo de producto (divisor)", 17, true, NEGRO), lp(-1, -2, 10));
-    final int[] tipo = {Math.max(0, Math.min(Precio.TIPOS.length - 1, prefs.getInt("tipoVerdura", 0)))};
-    final Button[] bTipos = new Button[Precio.TIPOS.length];
-    LinearLayout filaTipo1 = fila(), filaTipo2 = fila();
-    for (int i = 0; i < Precio.TIPOS.length; i++) {
-      String etq = i == 0 ? "Manual" : Precio.TIPOS[i] + "\n÷ " + String.format(Locale.ROOT, "%.2f", Precio.DIVISOR[i]).replace('.', ',');
-      Button b = boton(etq, GRIS, NEGRO);
-      b.setTextSize(15);
-      bTipos[i] = b;
-      (i < 3 ? filaTipo1 : filaTipo2).addView(b, peso(dp(58), i % 3 == 0 ? 0 : 6));
-    }
-    c.addView(filaTipo1, lp(-1, -2, 4));
-    c.addView(filaTipo2, lp(-1, -2, 6));
-    final LinearLayout cajaManual = new LinearLayout(this);   // % producción + margen (solo en Manual)
-    cajaManual.setOrientation(LinearLayout.VERTICAL);
-    c.addView(cajaManual, lp(-1, -2, 0));
-
-    // + % producción (mano de obra, materiales, luz): se suma al costo antes de calcular el precio.
-    cajaManual.addView(texto("+ % producción (mano de obra, materiales, luz)", 17, true, NEGRO), lp(-1, -2, 10));
-    LinearLayout filaProd = fila();
-    final EditText produccion = new EditText(this);
-    produccion.setTextSize(22);
-    produccion.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-    String pctGuardado = prefs.getString("pctProduccion", "0");
-    produccion.setText(pctGuardado);
-    filaProd.addView(produccion, new LinearLayout.LayoutParams(dp(90), ViewGroup.LayoutParams.WRAP_CONTENT));
-    final Button[] chipsProd = new Button[4];
-    final int[] pcts = {0, 10, 20, 30};
-    for (int i = 0; i < pcts.length; i++) {
-      final int pct = pcts[i];
-      Button b = boton(pct + " %", GRIS, NEGRO);
-      b.setTextSize(16);
-      b.setOnClickListener(v -> produccion.setText(String.valueOf(pct)));
-      chipsProd[i] = b;
-      filaProd.addView(b, peso(dp(48), 6));
-    }
-    cajaManual.addView(filaProd, lp(-1, -2, 4));
-
-    cajaManual.addView(texto("Margen sobre venta (%)", 17, true, NEGRO), lp(-1, -2, 10));
-    final EditText margen = new EditText(this);
-    margen.setTextSize(22);
-    margen.setText("30");
-    margen.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-    cajaManual.addView(margen);
-    final TextView txtCalc = texto("", 15, false, PLOMO);
-    c.addView(txtCalc, lp(-1, -2, 4));
-
-    c.addView(texto("Precio de venta", 17, true, NEGRO), lp(-1, -2, 10));
-    final LinearLayout chips = fila();
-    c.addView(chips, lp(-1, -2, 4));
-    final EditText precio = new EditText(this);
-    precio.setTextSize(26);
-    precio.setTypeface(Typeface.DEFAULT_BOLD);
-    precio.setHint("$");
-    precio.setInputType(InputType.TYPE_CLASS_NUMBER);
-    c.addView(precio, lp(-1, -2, 4));
-    final TextView txtMargen = texto("", 15, false, PLOMO);
-    c.addView(txtMargen, lp(-1, -2, 2));
+    final PanelPrecio pp = new PanelPrecio(c, "tipoVerdura", "Costo (por unidad o por kg)");
 
     final CheckBox crearCod = new CheckBox(this);
     crearCod.setText("Crear código de barras (04…) para la etiqueta");
@@ -1049,112 +1336,16 @@ public class MainActivity extends Activity {
     final AlertDialog dlg = new AlertDialog.Builder(this).setView(sv).create();
     bCerrar.setOnClickListener(v -> dlg.dismiss());
 
-    final Runnable[] recalcular = new Runnable[1];
-    recalcular[0] = () -> {
-      double pct = numero(produccion);
-      for (int i = 0; i < pcts.length; i++) {
-        boolean on = pct == pcts[i];
-        colorear(chipsProd[i], on ? VERDE : GRIS, on ? Color.WHITE : NEGRO);
-      }
-      for (int i = 0; i < bTipos.length; i++) {
-        boolean on = tipo[0] == i;
-        colorear(bTipos[i], on ? VERDE : GRIS, on ? Color.WHITE : NEGRO);
-      }
-      cajaManual.setVisibility(tipo[0] == 0 ? View.VISIBLE : View.GONE);
-      double cIva = Precio.costoBruto(numero(costo), conIva[0]);
-      double cb;
-      String detalle = "";
-      if (tipo[0] > 0) {
-        // Divisor por tipo: precio desde la materia prima; costo real = materia + producción del tipo.
-        cb = cIva > 0 ? cIva + Precio.PRODUCCION[tipo[0]] : 0;
-        calc[0] = Precio.desdeDivisor(cIva, Precio.DIVISOR[tipo[0]]);
-        if (cIva > 0) {
-          detalle = Precio.TIPOS[tipo[0]] + ": " + precioTxt((int) Math.round(cIva)) + (conIva[0] ? "" : " (con IVA)")
-              + " ÷ " + String.format(Locale.ROOT, "%.2f", Precio.DIVISOR[tipo[0]]).replace('.', ',')
-              + "\nCosto real con producción: " + precioTxt((int) Math.round(cb))
-              + (Precio.PRODUCCION[tipo[0]] > 0 ? " (+" + precioTxt(Precio.PRODUCCION[tipo[0]]) + ")" : "") + "\n";
-        }
-      } else {
-        cb = Precio.conProduccion(cIva, pct);
-        calc[0] = Precio.desdeMargen(cb, numero(margen));
-      }
-      if (tipo[0] == 0 && cIva > 0) {
-        detalle = "Costo total: " + precioTxt((int) Math.round(cb));
-        if (!conIva[0] || pct > 0) {
-          detalle += " (" + precioTxt((int) Math.round(numero(costo)));
-          if (!conIva[0]) detalle += " + 19 % IVA";
-          if (pct > 0) detalle += " + " + CalcMotor.fmtNum(String.valueOf(pct).replaceAll("\\.0$", "")) + " % producción";
-          detalle += ")";
-        }
-        detalle += "\n";
-      }
-      txtCalc.setText(calc[0] > 0
-          ? detalle + "Precio calculado: " + precioTxt(calc[0]) + " → " + precioTxt(Precio.sugerido(calc[0]))
-          : "Escribe el costo y el margen para calcular el precio.");
-      if (!tocado[0]) {
-        poniendo[0] = true;
-        precio.setText(calc[0] > 0 ? String.valueOf(Precio.sugerido(calc[0])) : "");
-        poniendo[0] = false;
-      }
-      int pv = (int) numero(precio);
-      double mr = pv > 0 && cb > 0 ? Precio.margenReal(pv, cb) : 0;
-      if (pv > 0 && cb > 0 && mr < 30) {
-        // Bajo el mínimo recomendado (30 % real): pasa con verdura muy barata, donde casi todo es mano de obra.
-        int minimo = Precio.sugerido((int) Math.round(cb / 0.70));
-        txtMargen.setTextColor(ROJO);
-        txtMargen.setText(String.format(Locale.ROOT, "⚠ Margen real %.1f %%: bajo el mínimo de 30 %%. Precio mínimo: %s", mr, precioTxt(minimo)));
-      } else {
-        txtMargen.setTextColor(PLOMO);
-        txtMargen.setText(pv > 0 && cb > 0 ? String.format(Locale.ROOT, "Margen real: %.1f %%", mr) : "");
-      }
-      chips.removeAllViews();
-      List<Integer> ops = Precio.redondeos(calc[0]);
-      // Solo precios cobrables en pesos chilenos: terminados en 00, 50 o 90 (nunca $1.125).
-      for (final int r : ops) {
-        boolean on = r == pv;
-        Button ch = boton(precioTxt(r), on ? VERDE : GRIS, on ? Color.WHITE : NEGRO);
-        ch.setTextSize(16);
-        ch.setOnClickListener(v -> { tocado[0] = true; poniendo[0] = true; precio.setText(String.valueOf(r)); poniendo[0] = false; recalcular[0].run(); });
-        chips.addView(ch, peso(dp(48), chips.getChildCount() == 0 ? 0 : 6));
-      }
-    };
-    TextWatcher alCambiar = new TextWatcher() {
-      public void beforeTextChanged(CharSequence x, int a, int b, int d) {}
-      public void onTextChanged(CharSequence x, int a, int b, int d) {}
-      public void afterTextChanged(Editable e) { recalcular[0].run(); }
-    };
-    costo.addTextChangedListener(alCambiar);
-    produccion.addTextChangedListener(alCambiar);
-    margen.addTextChangedListener(alCambiar);
-    precio.addTextChangedListener(new TextWatcher() {
-      public void beforeTextChanged(CharSequence x, int a, int b, int d) {}
-      public void onTextChanged(CharSequence x, int a, int b, int d) {}
-      public void afterTextChanged(Editable e) { if (!poniendo[0]) { tocado[0] = true; recalcular[0].run(); } }
-    });
     bU.setOnClickListener(v -> { kg[0] = false; colorear(bU, VERDE, Color.WHITE); colorear(bKg, GRIS, NEGRO); });
     bKg.setOnClickListener(v -> { kg[0] = true; colorear(bKg, VERDE, Color.WHITE); colorear(bU, GRIS, NEGRO); });
-    bCon.setOnClickListener(v -> { conIva[0] = true; colorear(bCon, VERDE, Color.WHITE); colorear(bSin, GRIS, NEGRO); recalcular[0].run(); });
-    bSin.setOnClickListener(v -> { conIva[0] = false; colorear(bSin, VERDE, Color.WHITE); colorear(bCon, GRIS, NEGRO); recalcular[0].run(); });
-    for (int i = 0; i < bTipos.length; i++) {
-      final int t = i;
-      bTipos[i].setOnClickListener(v -> {
-        tipo[0] = t;
-        tocado[0] = false;   // el precio vuelve a calcularse con el tipo elegido
-        prefs.edit().putInt("tipoVerdura", t).apply();
-        recalcular[0].run();
-      });
-    }
-    recalcular[0].run();
 
     final Runnable[] crear = new Runnable[1];
     crear[0] = () -> {
       final String nom = nombre.getText().toString().trim();
-      final int pv = (int) numero(precio);
-      final double pctProd = numero(produccion);
-      final double cIvaCrear = Precio.costoBruto(numero(costo), conIva[0]);
+      final int pv = pp.precioVenta();
       // Costo que se guarda: el real (materia + producción del tipo, o + % producción en Manual).
-      final double cb = tipo[0] > 0 ? cIvaCrear + Precio.PRODUCCION[tipo[0]] : Precio.conProduccion(cIvaCrear, pctProd);
-      prefs.edit().putString("pctProduccion", produccion.getText().toString().trim()).putInt("tipoVerdura", tipo[0]).apply();   // se recuerda para la próxima
+      final double cb = pp.costoReal();
+      pp.guardarPrefs();   // se recuerda para la próxima
       final boolean conCodigo = crearCod.isChecked();
       final boolean esKg = kg[0];
       creando[0] = true;
@@ -1237,9 +1428,9 @@ public class MainActivity extends Activity {
           bImp.setVisibility(View.VISIBLE);
           // Como la web: queda lista para la siguiente (se conserva venta, IVA y margen).
           nombre.setText("");
-          costo.setText("");
-          tocado[0] = false;
-          recalcular[0].run();
+          pp.costo.setText("");
+          pp.tocado = false;
+          pp.recalcular();
           nombre.requestFocus();
         });
       }).start();
@@ -1248,15 +1439,13 @@ public class MainActivity extends Activity {
       if (creando[0]) return;
       String nom = nombre.getText().toString().trim();
       if (nom.isEmpty()) { estado.setTextColor(ROJO); estado.setText("Falta el nombre."); return; }
-      if ((int) numero(precio) <= 0) { estado.setTextColor(ROJO); estado.setText("Falta el precio de venta."); return; }
-      int escrito = (int) numero(precio);
+      if (pp.precioVenta() <= 0) { estado.setTextColor(ROJO); estado.setText("Falta el precio de venta."); return; }
+      int escrito = pp.precioVenta();
       if (escrito % 10 != 0) {
         // Pesos chilenos: la moneda más chica es $10 (y el efectivo se redondea a la decena).
         int ajustado = Precio.aDecena(escrito);
-        poniendo[0] = true;
-        precio.setText(String.valueOf(ajustado));
-        poniendo[0] = false;
-        recalcular[0].run();
+        pp.ponerPrecio(ajustado);
+        pp.recalcular();
         estado.setTextColor(ROJO);
         estado.setText("Precio ajustado a " + precioTxt(ajustado) + " (en Chile no hay monedas bajo $10). Revisa y toca Crear otra vez.");
         return;
