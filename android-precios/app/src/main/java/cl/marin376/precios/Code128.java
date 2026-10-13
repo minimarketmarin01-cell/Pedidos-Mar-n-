@@ -3,7 +3,7 @@ package cl.marin376.precios;
 /** Codificador Code 128 (subconjuntos B y C). Java puro, sin dependencias de Android. */
 public final class Code128 {
   // Misma tabla (107 patrones) que usa index.html (JsBarcode). 11 módulos por símbolo, STOP 13.
-  private static final String[] BARS = {
+  static final String[] BARS = {
     "11011001100",
     "11001101100",
     "11001100110",

@@ -55,9 +55,9 @@ public final class Barras {
   }
 
   // ------------------------------------------------------------------ EAN-13
-  private static final String[] L = {"0001101", "0011001", "0010011", "0111101", "0100011",
+  public static final String[] L = {"0001101", "0011001", "0010011", "0111101", "0100011",
       "0110001", "0101111", "0111011", "0110111", "0001011"};
-  private static final String[] PARIDAD = {"LLLLLL", "LLGLGG", "LLGGLG", "LLGGGL", "LGLLGG",
+  static final String[] PARIDAD = {"LLLLLL", "LLGLGG", "LLGGLG", "LLGGGL", "LGLLGG",
       "LGGLLG", "LGGGLL", "LGLGLG", "LGLGGL", "LGGLGL"};
 
   public static boolean ean13Valido(String c) {
