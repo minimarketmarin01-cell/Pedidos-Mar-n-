@@ -308,6 +308,11 @@ public class MainActivity extends Activity {
     filtro.addView(buscador, new LinearLayout.LayoutParams(0, dp(64), 1));
     View sep = linea();
     filtro.addView(sep, new LinearLayout.LayoutParams(dp(1), dp(64)));
+    // Escanear con la cámara (el ícono se dibuja a mano: no depende de los emojis del equipo).
+    IconoCamara camara = new IconoCamara(this, PLOMO);
+    camara.setClickable(true);
+    camara.setOnClickListener(v -> escanear());
+    filtro.addView(camara, new LinearLayout.LayoutParams(dp(64), dp(64)));
     btnBuscar = new Button(this);
     btnBuscar.setText("🔍");
     btnBuscar.setTextSize(24);
@@ -339,6 +344,47 @@ public class MainActivity extends Activity {
     raiz.addView(lista, new LinearLayout.LayoutParams(-1, 0, 1));
 
     setContentView(raiz);
+  }
+
+  // ---------------------------------------------------------------- escanear con la cámara
+  private static final int PEDIR_CAMARA = 77;
+
+  private void escanear() {
+    if (android.os.Build.VERSION.SDK_INT >= 23
+        && checkSelfPermission(android.Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+      requestPermissions(new String[]{android.Manifest.permission.CAMERA}, PEDIR_CAMARA);
+      return;
+    }
+    EscanerCamara.abrir(this, this::alLeerCodigo);
+  }
+
+  @Override public void onRequestPermissionsResult(int code, String[] permisos, int[] res) {
+    super.onRequestPermissionsResult(code, permisos, res);
+    if (code != PEDIR_CAMARA) return;
+    if (res.length > 0 && res[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) escanear();
+    else Toast.makeText(this, "Sin permiso de cámara. Actívalo en Ajustes del equipo → Aplicaciones → Precios Marín → Permisos.", Toast.LENGTH_LONG).show();
+  }
+
+  @Override protected void onPause() {
+    EscanerCamara.cerrarActivo();
+    super.onPause();
+  }
+
+  /** Mismo camino que el lector físico: si el código es de un producto, abre su etiqueta. */
+  private void alLeerCodigo(String codigo) {
+    Producto p = cat.exacto(codigo);
+    // Un UPC-A de 12 dígitos viene de la cámara como EAN-13 con 0 inicial (y al revés).
+    if (p == null && codigo.length() == 13 && codigo.startsWith("0")) p = cat.exacto(codigo.substring(1));
+    if (p == null && codigo.length() == 12) p = cat.exacto("0" + codigo);
+    if (p != null) {
+      if (buscando) cerrarBusqueda();
+      mensaje("");
+      abrirEtiqueta(p);
+      return;
+    }
+    if (!buscando) abrirBusqueda();
+    buscador.setText(codigo);
+    mensaje("No encontré el código " + codigo + " en " + local().nombre + ". Si es un producto nuevo, créalo en Loyverse.");
   }
 
   private void mensaje(String t) {
@@ -499,7 +545,7 @@ public class MainActivity extends Activity {
     if (cargandoLista) vacio = "Abriendo lista guardada…";
     else if (cat.productos.isEmpty()) vacio = bajando ? "Bajando productos… (solo la primera vez demora)" : "No hay productos guardados.\nToca ☰ → «Actualizar productos».";
     else if (visibles.isEmpty()) vacio = buscando
-        ? (buscador.getText().toString().trim().isEmpty() ? "Escribe el nombre o pasa el lector por el código." : "No encontré «" + buscador.getText().toString().trim() + "».")
+        ? (buscador.getText().toString().trim().isEmpty() ? "Escribe el nombre, pasa el lector o toca la cámara para escanear." : "No encontré «" + buscador.getText().toString().trim() + "».")
         : "Esta categoría no tiene productos.";
     txtVacio.setText(vacio);
     txtVacio.setVisibility(vacio.isEmpty() ? View.GONE : View.VISIBLE);
@@ -1013,7 +1059,7 @@ public class MainActivity extends Activity {
       tipo = Math.max(0, Math.min(Precio.TIPOS.length - 1, prefs.getInt(claveTipo, 0)));
       LinearLayout titulo = fila();
       titulo.addView(texto(tituloCosto, 17, true, NEGRO), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-      Button bCalc = boton("🧮 Calculadora", Color.WHITE, Color.parseColor("#12A88A"));
+      Button bCalc = boton("Calculadora", Color.WHITE, Color.parseColor("#12A88A"));
       bCalc.setTextSize(15);
       titulo.addView(bCalc, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(44)));
       c.addView(titulo, lp(-1, -2, 10));

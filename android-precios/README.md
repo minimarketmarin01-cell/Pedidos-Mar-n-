@@ -51,6 +51,13 @@ instalado. Si hay uno nuevo, baja el APK y abre el instalador (`ApkProvider` lo 
 persona solo toca «Instalar». La primera vez Android 8 pide activar «Permitir de esta fuente» para la app.
 **Cada cambio debe subir `versionCode`**, si no la app no se entera.
 
+## Escanear con la cámara
+Ícono de cámara junto a la lupa. Pide permiso de cámara la primera vez; apunta al código (se lee en
+cualquier orientación) y, si es de un producto, abre su etiqueta; si no, deja el código en el buscador.
+Botón «Luz» para el flash. Lee EAN-13/UPC-A, EAN-8 y Code 128 con un lector propio (`Escaner.java`,
+Java puro, sin librerías): se acepta cuando sale igual en 2 cuadros seguidos. El CI lo prueba
+(`pruebas/PruebaEscaner.java`) con imágenes borrosas, con ruido, giradas y sin código (cero lecturas falsas).
+
 ## Cambiar nombre (solo Marín 376)
 En «Imprimir etiqueta», botón «✏ Nombre» junto al nombre del artículo. Guarda con `editar_producto`
 (solo se manda el nombre; no toca categoría, proveedor ni stock), queda en Loyverse y la etiqueta sale

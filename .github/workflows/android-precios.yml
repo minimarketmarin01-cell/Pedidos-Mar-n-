@@ -30,9 +30,11 @@ jobs:
           pip install pyzbar pillow >/dev/null
           cd android-precios/pruebas
           mkdir -p cls
-          javac -encoding UTF-8 -d cls ../app/src/main/java/cl/marin376/precios/{Barras,Code128,Raster}.java PruebaBarras.java
+          javac -encoding UTF-8 -d cls ../app/src/main/java/cl/marin376/precios/{Barras,Code128,Raster,Escaner}.java PruebaBarras.java PruebaEscaner.java
           java -cp cls PruebaBarras
           python3 decodificar.py out
+          # Lector de la cámara: lee los mismos códigos desde imágenes borrosas/ruidosas/giradas, sin lecturas falsas
+          java -cp cls PruebaEscaner
       - name: Probar calculadora (misma lógica que la de la web)
         run: android-precios/pruebas/comparar_calculadora.sh
       - uses: gradle/actions/setup-gradle@v4
