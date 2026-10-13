@@ -644,6 +644,8 @@ public class MainActivity extends Activity {
     AlertDialog dlg;
     TextView txtPrecio, txtCodigo, txtCant, txtAviso, txtEstado, txtVenceInfo;
     ImageView vista;
+    TextView txtNombre;
+    Button btnNombre;
     Button btnImprimir, btnVence, btnSinVence, btnCodigo, btnPrecio, btnSinElab, btnElabHoy, btnElab;
   }
 
@@ -659,7 +661,17 @@ public class MainActivity extends Activity {
     c.setPadding(dp(18), dp(14), dp(18), dp(14));
     sv.addView(c);
 
-    c.addView(texto(p.nombre, 22, true, NEGRO));
+    LinearLayout filaNombre = fila();
+    filaNombre.setGravity(Gravity.CENTER_VERTICAL);
+    w.txtNombre = texto(p.nombre, 22, true, NEGRO);
+    filaNombre.addView(w.txtNombre, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+    // Cambiar el nombre del artículo (queda en Loyverse). Por ahora solo Marín 376.
+    w.btnNombre = boton("✏ Nombre", Color.WHITE, Color.parseColor("#12A88A"));
+    w.btnNombre.setTextSize(15);
+    w.btnNombre.setOnClickListener(v -> { if (w.confirmando == 0 && !w.creando && !imprimiendo) abrirCambiarNombre(w); });
+    w.btnNombre.setVisibility(Local.MARIN.id.equals(aj.local) ? View.VISIBLE : View.GONE);
+    filaNombre.addView(w.btnNombre, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(48)));
+    c.addView(filaNombre);
     LinearLayout filaPrecio = fila();
     filaPrecio.setGravity(Gravity.CENTER_VERTICAL);
     w.txtPrecio = texto("", 30, true, NEGRO);
@@ -784,6 +796,9 @@ public class MainActivity extends Activity {
     boolean puedeCodigo = !w.creando && w.confirmando == 0 && !imprimiendo;
     w.btnCodigo.setEnabled(puedeCodigo);
     w.btnCodigo.setAlpha(puedeCodigo ? 1f : 0.45f);
+    w.txtNombre.setText(w.p.nombre);
+    w.btnNombre.setEnabled(puedeCodigo);
+    w.btnNombre.setAlpha(puedeCodigo ? 1f : 0.45f);
     w.btnPrecio.setEnabled(puedeCodigo);
     w.btnPrecio.setAlpha(puedeCodigo ? 1f : 0.45f);
     w.txtCant.setText(String.valueOf(w.cantidad));
@@ -1201,6 +1216,84 @@ public class MainActivity extends Activity {
       }
       if (alCambiar != null) alCambiar.run();
     }
+  }
+
+  // ---------------------------------------------------------------- Cambiar nombre (desde la etiqueta)
+  private void abrirCambiarNombre(final Ventana w) {
+    final Producto p = w.p;
+    final Local l = local();
+    final boolean[] guardando = {false};
+    LinearLayout c = new LinearLayout(this);
+    c.setOrientation(LinearLayout.VERTICAL);
+    c.setPadding(dp(18), dp(14), dp(18), dp(14));
+    c.addView(texto("Cambiar nombre", 24, true, NEGRO));
+    c.addView(texto("SKU " + p.sku + " · queda en Loyverse y en la etiqueta.", 14, false, PLOMO), lp(-1, -2, 2));
+    final EditText nombre = new EditText(this);
+    nombre.setTextSize(22);
+    nombre.setText(p.nombre);
+    nombre.setSelection(nombre.getText().length());
+    nombre.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+    c.addView(nombre, lp(-1, -2, 10));
+    final TextView estado = texto("", 16, true, NEGRO);
+    c.addView(estado, lp(-1, -2, 8));
+    final ProgressBar rueda = ruedita(c);
+    final Button bGuardar = boton("Guardar nombre", VERDE_BOTON, Color.WHITE);
+    bGuardar.setTextSize(22);
+    c.addView(bGuardar, lp(-1, dp(70), 6));
+    Button bCerrar = boton("Cancelar", Color.WHITE, PLOMO);
+    bCerrar.setTextSize(18);
+    c.addView(bCerrar, lp(-1, dp(50), 6));
+    final AlertDialog dlg = new AlertDialog.Builder(this).setView(c).create();
+    bCerrar.setOnClickListener(v -> dlg.dismiss());
+    bGuardar.setOnClickListener(v -> {
+      if (guardando[0]) return;
+      final String nuevo = nombre.getText().toString().trim().replaceAll("\\s+", " ");
+      if (nuevo.isEmpty()) { estado.setTextColor(ROJO); estado.setText("El nombre no puede quedar vacío."); return; }
+      if (nuevo.equals(p.nombre)) { estado.setTextColor(PLOMO); estado.setText("No cambiaste nada."); return; }
+      final String antes = p.nombre;
+      guardando[0] = true;
+      bGuardar.setEnabled(false);
+      final Runnable parar = ocupado(bGuardar, estado, rueda, "Guardando", "Guardando en Loyverse…");
+      new Thread(() -> {
+        String err = null;
+        try { Api.editarNombre(l, p.sku, nuevo); }
+        catch (Exception e) {
+          if (incierto(e)) {
+            // Se cortó la espera: se mira si Loyverse alcanzó a guardarlo (el nombre no viene en la ficha,
+            // así que se baja la lista).
+            try {
+              Thread.sleep(2500);
+              boolean ok = false;
+              for (Producto q : Api.catalogo(l)) if (q.sku.equals(p.sku)) { ok = q.nombre.equals(nuevo); break; }
+              if (!ok) err = "Loyverse se demoró y NO guardó el nombre. Toca «Guardar nombre» otra vez.";
+            } catch (Exception e2) {
+              err = "Loyverse se demoró y no pude comprobar si se guardó. Actualiza productos para ver el nombre actual.";
+            }
+          } else if (e instanceof java.io.IOException) err = "Sin internet: no se guardó. Revisa la conexión e inténtalo de nuevo.";
+          else err = e.getMessage() == null ? "No se pudo cambiar el nombre." : e.getMessage();
+        }
+        final String fe = err;
+        ui.post(() -> {
+          parar.run();
+          guardando[0] = false;
+          bGuardar.setEnabled(true);
+          bGuardar.setText("Guardar nombre");
+          if (fe != null) { estado.setTextColor(ROJO); estado.setText(fe); return; }
+          p.nombre = nuevo;
+          if (l.id.equals(aj.local)) {
+            cat.poner(new ArrayList<>(cat.productos), cat.hora);   // reordena y actualiza la búsqueda
+            final Catalogo cg = cat;
+            new Thread(() -> cg.guardar(getApplicationContext())).start();
+            adaptador.notifyDataSetChanged();
+          }
+          w.txtEstado.setTextColor(VERDE);
+          w.txtEstado.setText("✓ Nombre guardado en Loyverse: " + antes + " → " + nuevo + ". Imprime la etiqueta nueva.");
+          dlg.dismiss();
+          if (ven == w) pintarVentana(w);
+        });
+      }).start();
+    });
+    dlg.show();
   }
 
   // ---------------------------------------------------------------- Cambiar precio (desde la etiqueta)

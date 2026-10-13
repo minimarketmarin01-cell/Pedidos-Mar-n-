@@ -242,6 +242,26 @@ public final class Api {
     }
   }
 
+  /**
+   * Cambia el nombre del artículo (POST editar_producto, el mismo de la Ficha de producto de la
+   * web; solo se manda el nombre, así que no toca categoría, proveedor ni nada más).
+   */
+  public static void editarNombre(Local l, String sku, String nombre) throws Exception {
+    HttpURLConnection c = abrir(l.url, 60000);
+    try {
+      c.setRequestMethod("POST");
+      c.setDoOutput(true);
+      c.setRequestProperty("Content-Type", "application/json");
+      JSONObject payload = new JSONObject().put("sku", sku).put("nombre", nombre).put("responsable", "App Precios");
+      byte[] body = new JSONObject().put("action", "editar_producto").put("payload", payload).toString().getBytes("UTF-8");
+      try (java.io.OutputStream os = c.getOutputStream()) { os.write(body); }
+      JSONObject j = leerJson(c);
+      if (!j.optBoolean("ok", false)) throw new Exception(j.optString("error", "No se pudo cambiar el nombre"));
+    } finally {
+      c.disconnect();
+    }
+  }
+
   /** Datos frescos de UN producto (precio, costo, código y vencimiento del lote más próximo). */
   public static final class Ficha {
     public Integer precio, costo;
