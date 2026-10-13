@@ -51,6 +51,11 @@ instalado. Si hay uno nuevo, baja el APK y abre el instalador (`ApkProvider` lo 
 persona solo toca «Instalar». La primera vez Android 8 pide activar «Permitir de esta fuente» para la app.
 **Cada cambio debe subir `versionCode`**, si no la app no se entera.
 
+## Cambiar nombre (solo Marín 376)
+En «Imprimir etiqueta», botón «✏ Nombre» junto al nombre del artículo. Guarda con `editar_producto`
+(solo se manda el nombre; no toca categoría, proveedor ni stock), queda en Loyverse y la etiqueta sale
+con el nombre nuevo. Reordena la lista y la búsqueda al tiro.
+
 ## Cambiar precio (solo Marín 376)
 En «Imprimir etiqueta», botón «✏ Cambiar precio» al lado del precio. Abre la misma calculadora de
 «Verdura rápida» (costo + 🧮, Con/Sin IVA, tipo/divisor o Manual, chips $…90/$…50/$…00, margen real
