@@ -504,7 +504,10 @@ async function fdCargarListaFiados(){
     document.getElementById('fd-buscar').value='';
     if(!(j&&j.ok)){
       // No mostrar "No hay fiados abiertos" cuando en realidad falló la consulta (ej. límite de la base de datos).
-      showToast('No se pudo cargar la lista de fiados: '+((j&&j.error)||'error del servidor')+'. Los fiados no se perdieron, reintenta en un momento.');
+      const em=String((j&&j.error)||'');
+      showToast(/free tier|row (read|write) limit/i.test(em)
+        ?'La base de datos alcanzó su límite diario de Cloudflare. Los fiados no se perdieron; volverán a verse cuando se libere el límite.'
+        :'No se pudo cargar la lista de fiados: '+(em||'error del servidor')+'. Los fiados no se perdieron, reintenta en un momento.');
       btn.disabled=false;btn.textContent='Ver clientes con fiado abierto';return;
     }
     fdListaFiados=j.clientes||[];
