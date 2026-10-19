@@ -2083,6 +2083,65 @@ body{font-variant-numeric:tabular-nums}
 .lv-fila-precio{flex:none;font-size:17px;color:#212121}
 :is(#rc-ov,#ed-ov) :is(#ed-results,#rc-results) > .lv-fila{padding:10px 0 !important}
 .mm-motivo.lv-fila,.mm-motivo.lv-fila .lv-fila-sub,.mm-motivo.lv-fila .lv-fila-precio,.mm-motivo.lv-fila .lv-fila-nom{font-weight:400 !important}
+
+/* ============ Carrito al estilo Loyverse (como el ticket de Loyverse) ============
+   Encabezado verde plano, líneas con divisor fino, cantidades con borde gris, papelera gris,
+   pie blanco con el total grande y CONFIRMAR verde rectangular. Solo aspecto: mismos ids y acciones. */
+#tab-carrito{--lv:#4CAF50;--lv-d:#388E3C}
+#tab-carrito .order{border:1px solid #E0E0E0;border-radius:2px;box-shadow:none;background:#fff}
+#tab-carrito .order-head{background:var(--lv);padding:14px 16px;box-shadow:0 2px 4px rgba(0,0,0,.2);position:relative;z-index:1}
+#tab-carrito .order-head .t{font-weight:500;font-size:20px;color:#fff;gap:10px}
+#tab-carrito .order-head .t .wa-ico{background:rgba(255,255,255,.25);color:#fff;border-radius:2px}
+#tab-carrito .order-head .s{color:rgba(255,255,255,.85);font-size:14px}
+#tab-carrito .order-body{padding:0 16px}
+#tab-carrito .oline{border-bottom:1px solid #E0E0E0;padding:12px 0;gap:12px}
+#tab-carrito .oline:last-child{border-bottom:1px solid #E0E0E0}
+#tab-carrito .oline .on{font-size:16px;font-weight:400;color:#212121}
+#tab-carrito .oline .oline-sub{font-size:13px;color:#757575;margin-top:3px}
+#tab-carrito .oline .qstep{border:1px solid #BDBDBD;border-radius:2px;background:#fff;box-shadow:none}
+#tab-carrito .oline .qstep.has{border-color:var(--lv)}
+#tab-carrito .oline .qbtn{background:transparent;color:var(--lv-d);border:none;border-radius:0;font-weight:500}
+#tab-carrito .oline .qty-in{border:none;border-left:1px solid #E0E0E0;border-right:1px solid #E0E0E0;border-radius:0;background:#fff;color:#212121;font-weight:500}
+#tab-carrito .odel{background:transparent;color:#757575;border-radius:2px}
+#tab-carrito .odel:active{background:#F5F5F5}
+#tab-carrito .order-foot{background:#fff;border-top:1px solid #E0E0E0;padding:12px 16px}
+#tab-carrito .tot-compact .l{font-size:12px;font-weight:500;color:#757575;letter-spacing:.04em}
+#tab-carrito .tot-compact .v{font-size:22px;font-weight:500;color:#212121}
+#tab-carrito .oact-btn{border:none;border-radius:2px;background:transparent;color:#757575;box-shadow:none}
+#tab-carrito .oact-btn:active{background:#F5F5F5}
+#tab-carrito .oact-btn.oact-danger{color:#E53935}
+#tab-carrito .btn-wa-compact{background:var(--lv);border:none;border-radius:2px;box-shadow:0 2px 4px rgba(0,0,0,.3);color:#fff}
+#tab-carrito .btn-wa-compact .oact-lbl{text-transform:uppercase;letter-spacing:.05em;font-weight:500}
+#tab-carrito .btn-wa-compact .wa-ico{background:transparent}
+#tab-carrito .scalecard{border:1px solid #E0E0E0;border-radius:2px;box-shadow:none;background:#fff}
+#tab-carrito .scale-head .t{font-weight:500;color:#212121}
+#tab-carrito #cart-back{background:transparent;border:none;box-shadow:none;color:var(--lv-d);font-weight:500;text-transform:uppercase;letter-spacing:.05em;padding:10px 0}
+/* Pantalla grande: el carrito ocupa todo el panel y la línea divisoria es UNA sola, justo en el borde,
+   con la manija centrada sobre ella (antes había dos líneas separadas y la manija quedaba corrida). */
+html.carrito-fijo #tab-carrito{overflow:visible;border-left:1px solid #E0E0E0;box-shadow:none}
+html.carrito-fijo #tab-carrito>.wrap{padding:0;max-width:none !important}
+html.carrito-fijo #tab-carrito .order{border:none;border-radius:0}
+html.carrito-fijo #tab-carrito .cart-extras{padding:8px 12px 12px;background:#fff;border-top:1px solid #E0E0E0}
+html.carrito-fijo .cart-resizer{left:-14px;width:28px}
+html.carrito-fijo .cart-resizer::after{display:none}
+html.carrito-fijo .cart-resizer .grip{left:14px;top:50%;transform:translate(-50%,-50%);width:20px;height:56px;border-radius:10px;
+  background:#fff;border:1px solid #BDBDBD;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+html.carrito-fijo .cart-resizer .grip::before{content:'';position:absolute;left:50%;top:50%;width:6px;height:22px;transform:translate(-50%,-50%);
+  border-left:2px solid #9E9E9E;border-right:2px solid #9E9E9E;box-sizing:border-box}
+html.carrito-fijo .cart-resizer:hover .grip,html.carrito-fijo .cart-resizer.dragging .grip{background:#fff;border-color:var(--lv)}
+html.carrito-fijo .cart-resizer:hover .grip::before,html.carrito-fijo .cart-resizer.dragging .grip::before{border-color:var(--lv)}
+html.carrito-fijo #tab-carrito>.wrap>div{min-width:0;width:100%;max-width:100%;margin:0;box-sizing:border-box}
+html.carrito-fijo #tab-carrito .order,html.carrito-fijo #tab-carrito .cart-extras{min-width:0;max-width:100%;box-sizing:border-box}
+html.carrito-fijo #tab-carrito .cart-extras>*{min-width:0}
+html.carrito-fijo #tab-carrito .order-body{padding:0 12px}
+html.carrito-fijo #tab-carrito .oline{gap:8px}
+html.carrito-fijo #tab-carrito .oline .qbtn{width:30px;height:36px}
+html.carrito-fijo #tab-carrito .oline .qty-in{width:40px;height:36px;font-size:15px}
+html.carrito-fijo #tab-carrito .odel{width:28px}
+html.carrito-fijo #tab-carrito .order-foot{padding:10px 12px}
+html.carrito-fijo #tab-carrito .order-row-main{gap:4px}
+html.carrito-fijo #tab-carrito .tot-compact .v{font-size:18px}
+html.carrito-fijo #tab-carrito .oact-btn{width:44px}
 </style>
 </head>
 <body>
@@ -5366,7 +5425,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-19.8';
+const APP_VERSION='2026-10-19.9';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
