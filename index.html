@@ -2383,6 +2383,10 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
 .card-thumb-empty svg{display:none}
 .prov-combo button svg,.mm-search button svg{width:20px !important;height:20px !important}
 .mm-head-ic{width:24px !important;height:24px !important}
+
+/* Encabezado del carrito sin el cuadro verde con la "W": solo el título, más limpio */
+#tab-carrito .order-head .t .wa-ico{display:none !important}
+#tab-carrito .order-head .t{gap:0 !important}
 </style>
 </head>
 <body>
@@ -5666,7 +5670,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-19.15';
+const APP_VERSION='2026-10-19.16';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
