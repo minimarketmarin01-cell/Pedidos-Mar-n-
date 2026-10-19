@@ -2016,6 +2016,142 @@ html.carrito-fijo #cp-ov .mm-card,html.carrito-fijo #ed-ov .mm-card{
   font-weight:500;font-size:14px;letter-spacing:.06em;text-transform:uppercase;box-shadow:none}
 #fp-ov .fp-btn-eliminar,#fp-ov #fp-eliminar-btn{background:transparent;border:1px solid #E0E0E0;border-radius:2px;color:#D32F2F;box-shadow:none}
 #fp-ov .fp-steps{display:none}
+/* ============ Estilo Loyverse (Material) en TODOS los módulos ============
+   Copia generalizada del bloque anterior (que era solo Recepción/Crear/Editar/Ficha) aplicada a
+   todos los .mm-ov. :is(.mm-ov,#__lv) da especificidad de id para ganarle a las reglas propias de
+   cada módulo. Los diálogos chicos (¿Actualizar el pedido?, Renombrar, Corregir stock) toman el
+   estilo pero NO pasan a pantalla completa.
+   Recepción de productos (#rc-ov), Crear producto (#cp-ov), Editar productos (#ed-ov) y Ficha de
+   producto (#fp-ov) se ven como la app de Loyverse: barra superior verde con el título y la acción
+   en mayúsculas, campos planos con línea inferior y etiqueta pequeña arriba, secciones blancas
+   separadas por una franja gris, títulos de sección en verde, botones rectangulares.
+   TODO escopado a esos ids: no cambia ids, textos ni lógica, y el resto de la app queda igual. */
+:is(.mm-ov:not(#pv-ov):not(#rn-ov):not(#stk-ov),#__lv){
+  --lv:#4CAF50;--lv-d:#388E3C;--lv-txt:#212121;--lv-sub:#757575;--lv-line:#BDBDBD;--lv-gris:#F2F2F2;
+  padding:0;align-items:stretch;background:#fff;font-family:Roboto,'Segoe UI',system-ui,sans-serif;color:var(--lv-txt)
+}
+:is(.mm-ov:not(#pv-ov):not(#rn-ov):not(#stk-ov),#__lv) .mm-card,html.carrito-fijo :is(.mm-ov:not(#pv-ov):not(#rn-ov):not(#stk-ov),#__lv) .mm-card{
+  max-width:none;max-height:none;height:100%;border-radius:0;background:#fff;box-shadow:none
+}
+/* barra superior */
+:is(.mm-ov,#__lv) .mm-head{
+  background:var(--lv);color:#fff;margin:0;padding:0 8px 0 16px;min-height:56px;box-shadow:0 2px 4px rgba(0,0,0,.28);position:relative;z-index:2;gap:8px
+}
+:is(.mm-ov,#__lv) .mm-head h3{font-family:inherit;font-weight:500;font-size:20px;color:#fff;gap:10px}
+:is(.mm-ov,#__lv) .mm-head-ic{color:#fff}
+:is(.mm-ov,#__lv) .mm-head button{
+  background:transparent;border:none;box-shadow:none;color:#fff;font-family:inherit;font-weight:500;font-size:14px;
+  letter-spacing:.06em;text-transform:uppercase;padding:10px 12px;border-radius:2px
+}
+:is(.mm-ov,#__lv) .mm-head .rc-local-chip{background:rgba(255,255,255,.22);color:#fff;font-family:inherit;font-weight:500}
+:is(.mm-ov,#__lv) .mm-topbar{padding:0;margin:0;background:#fff;border-bottom:1px solid #E0E0E0}
+:is(.mm-ov,#__lv) .mm-topbar .loadbtn{width:100%;background:transparent;border:none;box-shadow:none;border-radius:0;
+  color:var(--lv-d);font-family:inherit;font-weight:500;font-size:14px;letter-spacing:.06em;text-transform:uppercase;padding:14px}
+:is(.mm-ov,#__lv) .mm-body{padding:0 0 24px;background:#fff}
+/* secciones: bloque blanco + franja gris, título verde */
+:is(.mm-ov,#__lv) .mm-sections{gap:0}
+:is(.mm-ov,#__lv) .mm-section,:is(.mm-ov,#__lv) .mm-section.mm-section--bare{
+  background:#fff;border:none;border-radius:0;padding:16px 16px 6px;margin:0;border-bottom:8px solid var(--lv-gris)
+}
+:is(.mm-ov,#__lv) .mm-section-head{font-size:14px;font-weight:500;color:var(--lv-d);text-transform:none;letter-spacing:0;margin:0 0 12px}
+:is(.mm-ov,#__lv) .mm-section-head svg{display:none}
+#ed-ov .mm-body{padding:12px 16px 24px}
+#fp-ov .mm-body{padding:0}
+#fp-ov .fp-section-title{font-size:14px;font-weight:500;color:var(--lv-d);text-transform:none;letter-spacing:0}
+/* campos planos */
+:is(.mm-ov,#__lv) .mm-field{margin-bottom:16px}
+:is(.mm-ov,#__lv) .mm-field label{
+  font-size:14px;font-weight:400;color:var(--lv-sub);text-transform:none;letter-spacing:0;margin-bottom:0
+}
+:is(.mm-ov,#__lv) input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),
+:is(.mm-ov,#__lv) select,:is(.mm-ov,#__lv) textarea{
+  border:none;border-bottom:1px solid var(--lv-line);border-radius:0;background:transparent;box-shadow:none;outline:none;
+  font-family:inherit;font-size:20px;color:var(--lv-txt);padding-top:6px;padding-bottom:8px;padding-left:0
+}
+:is(.mm-ov,#__lv) input:focus:not([type=checkbox]):not([type=radio]),
+:is(.mm-ov,#__lv) select:focus,:is(.mm-ov,#__lv) textarea:focus{
+  border-bottom:2px solid var(--lv);padding-bottom:7px;box-shadow:none;outline:none
+}
+:is(.mm-ov,#__lv) ::placeholder{color:#9E9E9E}
+:is(.mm-ov,#__lv) .mm-search input{width:100%}
+:is(.mm-ov,#__lv) .mm-x,:is(.mm-ov,#__lv) .mm-mic,:is(.mm-ov,#__lv) .mm-scan{
+  background:transparent;border:none;color:var(--lv-sub);box-shadow:none
+}
+/* botones */
+:is(.mm-ov,#__lv) .mm-save{
+  background:var(--lv);border-radius:2px;box-shadow:0 2px 4px rgba(0,0,0,.3);font-family:inherit;font-weight:500;
+  font-size:14px;letter-spacing:.06em;text-transform:uppercase;padding:14px
+}
+:is(.mm-ov,#__lv) .loadbtn:not(.mm-topbar .loadbtn){
+  background:transparent;border:1px solid #E0E0E0;border-radius:2px;color:var(--lv-d);font-family:inherit;font-weight:500;
+  letter-spacing:.04em;text-transform:uppercase
+}
+/* selector Unidad/Peso, Recibir/Ajustar: verde Loyverse, sin pastilla */
+:is(.mm-ov,#__lv) .seg{border:none;border-bottom:2px solid #E0E0E0;border-radius:0;background:transparent}
+:is(.mm-ov,#__lv) .seg button{
+  background:transparent;color:var(--lv-sub);font-family:inherit;font-weight:500;font-size:14px;text-transform:uppercase;
+  letter-spacing:.05em;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:12px 14px
+}
+:is(.mm-ov,#__lv) .seg button.active{background:transparent;color:var(--lv-d);border-bottom-color:var(--lv)}
+/* resultados de búsqueda: filas planas con divisor, como la lista de artículos de Loyverse */
+:is(.mm-ov,#__lv) :is(.mm-results,#ed-results,#rc-results) > *{border:none;border-bottom:1px solid #E0E0E0;border-radius:0;background:#fff;box-shadow:none;padding:14px 16px;font-size:16px}
+
+:is(.mm-ov,#__lv) .mm-head .loadbtn,:is(.mm-ov,#__lv) .mm-head button{border:none;color:#fff;background:transparent;box-shadow:none}
+:is(.mm-ov,#__lv) .mm-head h3{font-size:20px;min-width:0;flex:1;white-space:nowrap}
+:is(.mm-ov,#__lv) .mm-head h3 span:first-of-type{overflow:hidden;text-overflow:ellipsis}
+:is(.mm-ov,#__lv) .mm-head .rc-local-chip{font-size:12px;padding:3px 8px;flex:none}
+/* deja visible la barra de navegación inferior, igual que antes */
+:is(.mm-ov:not(#pv-ov):not(#rn-ov):not(#stk-ov),#__lv){padding-bottom:calc(70px + env(safe-area-inset-bottom))}
+/* Por unidad / Por caja: pestañas planas con subrayado verde */
+:is(.mm-ov,#__lv) .rc-modo-btn{
+  background:transparent !important;border:none !important;border-bottom:2px solid #E0E0E0 !important;border-radius:0 !important;
+  color:var(--lv-sub) !important;font-family:inherit;font-weight:500;font-size:14px;text-transform:uppercase;letter-spacing:.05em;box-shadow:none
+}
+:is(.mm-ov,#__lv) .rc-modo-btn.active{color:var(--lv-d) !important;border-bottom-color:var(--lv) !important}
+
+:is(.mm-ov,#__lv) .mm-card .mm-head .loadbtn,:is(.mm-ov,#__lv) .mm-card .mm-head button{
+  border:none;color:#fff;background:transparent;box-shadow:none;font-size:14px;padding:10px 12px}
+:is(.mm-ov,#__lv) #ed-results > *,:is(.mm-ov,#__lv) #rc-results > *{color:#212121}
+
+/* Ficha: botones de abajo (Cancelar / Eliminar / Guardar cambios) como botones Material */
+#fp-ov .fp-btn-guardar{background:var(--lv);color:#fff;border:none;border-radius:2px;box-shadow:0 2px 4px rgba(0,0,0,.3);
+  font-family:inherit;font-weight:500;font-size:14px;letter-spacing:.06em;text-transform:uppercase}
+#fp-ov .fp-btn-cancelar,#fp-ov #fp-cancelar-btn{background:transparent;border:none;color:var(--lv-sub);border-radius:2px;font-family:inherit;
+  font-weight:500;font-size:14px;letter-spacing:.06em;text-transform:uppercase;box-shadow:none}
+#fp-ov .fp-btn-eliminar,#fp-ov #fp-eliminar-btn{background:transparent;border:1px solid #E0E0E0;border-radius:2px;color:#D32F2F;box-shadow:none}
+#fp-ov .fp-steps{display:none}
+
+/* diálogos chicos: tarjeta centrada con esquinas suaves de Material, no pantalla completa */
+:is(#pv-ov,#rn-ov,#stk-ov) .mm-card{border-radius:4px !important;overflow:hidden}
+:is(#pv-ov,#rn-ov,#stk-ov) .mm-head{background:#fff !important;box-shadow:none !important}
+:is(#pv-ov,#rn-ov,#stk-ov) .mm-head h3,:is(#pv-ov,#rn-ov,#stk-ov) .mm-head-ic{color:#212121 !important}
+:is(#pv-ov,#rn-ov,#stk-ov) .mm-head button{color:#388E3C !important}
+/* Más: grupos como lista blanca con divisor, sin colores pastel */
+#mas-ov .mas-grp{border:none !important;border-bottom:1px solid #E0E0E0 !important;border-radius:0 !important;margin:0 !important;background:#fff}
+#mas-ov .mas-grp-head{background:#fff !important;padding:16px !important;min-height:56px;box-sizing:border-box}
+#mas-ov .mas-grp-t{font-size:16px !important;font-weight:400 !important;color:#212121 !important;gap:16px !important}
+#mas-ov .mas-grp-head .accordion-chev{color:#757575 !important;width:24px;height:24px}
+#mas-ov .mas-grp-body:not(.collapsed){background:#FAFAFA;padding:8px 16px 16px !important}
+#mas-ov .mas-quick{gap:8px}
+#mas-ov .mas-quick button{background:#fff !important;border:1px solid #E0E0E0 !important;border-radius:2px !important;font-size:14px !important;font-weight:400 !important;color:#212121 !important}
+#mas-ov #ayuda-head{background:#fff !important;border-bottom:1px solid #E0E0E0;border-radius:0 !important;margin:0 !important}
+#mas-ov #ayuda-head .t{color:#212121 !important;font-size:16px !important;font-weight:400 !important}
+#mas-ov .scalecard{border:none !important;border-radius:0 !important;box-shadow:none !important;background:#fff}
+/* Vencimientos: color principal verde Loyverse en vez de azul marino */
+#vc-ov{--vc-activo:#388E3C !important}
+#vc-ov .vc-toprow button,#vc-ov #vc-viewseg button,#vc-ov .vc-chip,#vc-ov [class*=vc-] button{border-radius:2px !important}
+
+/* Ajustes del estilo general de módulos */
+:is(.mm-ov,#__lv) .mm-body{padding:12px 16px 24px}
+:is(#rc-ov,#cp-ov,#fp-ov) .mm-body{padding:0 0 24px !important}
+#fp-ov .mm-body{padding:0 !important}
+:is(.mm-ov,#__lv) .prov-combo input{padding-left:34px !important}
+:is(.mm-ov,#__lv) .prov-combo .prov-icon{left:4px}
+#mas-ov .method{background:#fff !important;border:none !important;border-bottom:1px solid #E0E0E0 !important;border-radius:0 !important;padding:0 16px 8px !important;margin:0 !important;box-shadow:none !important}
+#mas-ov #ayuda-head{margin:0 -16px !important;padding:16px !important}
+#mas-ov #ayuda-head .accordion-chev{color:#757575 !important}
+:is(.mm-ov,#__lv) .mm-motivo:not(.lv-fila),:is(.mm-ov,#__lv) .mm-resp > *,:is(.mm-ov,#__lv) .vc-mini,:is(.mm-ov,#__lv) .mm-total{border-radius:2px !important}
+:is(.mm-ov,#__lv) .mm-motivo.active,:is(.mm-ov,#__lv) .mm-motivo.on,:is(.mm-ov,#__lv) .mm-resp > .active{border-color:#4CAF50 !important;color:#388E3C !important;background:#E8F5E9 !important}
 /* ============ Estilo Loyverse (Material) en Pedidos (vista de tarjetas / celular) ============
    Barra de búsqueda verde con texto blanco y lista de artículos plana: miniatura cuadrada, nombre,
    línea de stock con color (rojo = agotado/urgente, naranja = pedir) y divisor fino, como la lista
@@ -5530,7 +5666,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-19.14';
+const APP_VERSION='2026-10-19.15';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
