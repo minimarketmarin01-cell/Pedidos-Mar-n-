@@ -2142,6 +2142,21 @@ html.carrito-fijo #tab-carrito .order-foot{padding:10px 12px}
 html.carrito-fijo #tab-carrito .order-row-main{gap:4px}
 html.carrito-fijo #tab-carrito .tot-compact .v{font-size:18px}
 html.carrito-fijo #tab-carrito .oact-btn{width:44px}
+
+/* Buscador de Pedidos al tocarlo: sin marco ni esquinas redondeadas (ni el anillo de foco del
+   navegador), solo el texto sobre la barra verde, como el buscador de Loyverse. */
+#prov-anchor .prov-combo,#prov-anchor .prov-combo:focus-within{border:none !important;border-radius:0 !important;box-shadow:none !important;outline:none !important;background:transparent !important}
+#prov-anchor .prov-combo input,#prov-anchor .prov-combo input:focus,#prov-anchor .prov-combo input:focus-visible{
+  outline:none !important;border:none !important;border-radius:0 !important;box-shadow:none !important;background:transparent !important;
+  -webkit-tap-highlight-color:transparent
+}
+#prov-anchor .prov-combo input::selection{background:rgba(255,255,255,.35);color:#fff}
+/* Encabezado del carrito como el "Ticket" de Loyverse: fondo blanco, título oscuro, sombra suave abajo */
+#tab-carrito .order-head{background:#fff !important;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+#tab-carrito .order-head .t{color:#212121}
+#tab-carrito .order-head .t .wa-ico{background:#4CAF50;color:#fff}
+#tab-carrito .order-head .s{color:#757575}
+#prov-anchor .prov-menu{border-radius:2px !important;box-shadow:0 2px 6px rgba(0,0,0,.25)}
 </style>
 </head>
 <body>
@@ -5425,7 +5440,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-19.9';
+const APP_VERSION='2026-10-19.10';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
