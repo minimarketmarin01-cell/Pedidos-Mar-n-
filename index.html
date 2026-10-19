@@ -2215,6 +2215,30 @@ html.carrito-fijo #tab-carrito .oact-btn{width:44px}
   #tab-inicio .in2-venc-mini{padding:5px 7px !important;font-size:14px !important}
   #tab-inicio #in2-venc-card > span:nth-of-type(2){font-size:14px !important}
 }
+
+/* ============ Barra inferior al estilo Loyverse ============
+   Barra oscura, íconos Material rellenos de 24 px, gris cuando no está activa y blanco cuando sí,
+   sin la píldora de fondo; texto 14 px. */
+.bottom-nav{background:#212121 !important;border-top:none !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;box-shadow:0 -1px 4px rgba(0,0,0,.25)}
+.bottom-nav .bn-item{color:#9E9E9E !important;background:transparent !important;font-family:'Roboto',system-ui,sans-serif !important;font-size:14px !important;font-weight:400 !important;gap:2px}
+.bottom-nav .bn-item.active{color:#fff !important;font-weight:500 !important;background:transparent !important}
+.bottom-nav .bn-item::before,.bottom-nav .bn-item::after{display:none !important}
+.bottom-nav .bn-item .ic{font-size:24px;transform:none !important}
+.bottom-nav .bn-item .ic svg{display:block;width:24px;height:24px}
+.bottom-nav .bn-item:active{background:rgba(255,255,255,.08) !important}
+.bottom-nav .bn-badge{border-color:#212121 !important}
+.bottom-nav .bn-dot{border-color:#212121 !important}
+html.carrito-fijo #tab-carrito .tot-compact{flex:0 0 auto;margin-right:auto;min-width:auto}
+html.carrito-fijo #tab-carrito .tot-compact .v{white-space:nowrap}
+html.carrito-fijo #tab-carrito .order-row-main .oact-btn{width:auto;min-width:38px;flex:0 1 44px;padding:6px 2px}
+html.carrito-fijo #tab-carrito .order-row-main .btn-wa-compact{flex:0 0 auto}
+/* Carrito angosto: el total va en su propia línea y los botones debajo, para que nada se monte ni se corte */
+html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
+@container (max-width:340px){
+  html.carrito-fijo #tab-carrito .order-row-main{flex-wrap:wrap;row-gap:8px}
+  html.carrito-fijo #tab-carrito .tot-compact{flex:1 0 100%;flex-direction:row;align-items:baseline;justify-content:space-between}
+  html.carrito-fijo #tab-carrito .order-row-main .btn-wa-compact{margin-left:auto}
+}
 </style>
 </head>
 <body>
@@ -3145,11 +3169,11 @@ html.carrito-fijo #tab-carrito .oact-btn{width:44px}
 <div class="toast" id="toast"></div>
 
 <nav class="bottom-nav" id="bottom-nav">
-  <button class="bn-item" id="bn-inicio"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/></svg></span>Inicio</button>
-  <button class="bn-item active" id="bn-pedidos"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M3 4h2l2.2 11h9.6L19 8H6.4"/></svg></span>Pedidos<span class="bn-badge" id="bn-pedidos-badge"></span></button>
-  <button class="bn-item" id="bn-recepcion"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="1" y="6" width="14" height="10" rx="1"/><path d="M15 9h4l3 3.5V16h-7z"/><circle cx="6" cy="18.5" r="1.6"/><circle cx="17.5" cy="18.5" r="1.6"/></svg></span>Recepción<span class="bn-badge" id="bn-recepcion-badge"></span></button>
-  <button class="bn-item" id="bn-vencimientos"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></span>Vencimientos<span class="bn-badge" id="bn-vencimientos-badge"></span></button>
-  <button class="bn-item" id="bn-mas"><span class="ic">⋯</span>Más<span class="bn-dot" id="bn-mas-dot"></span></button>
+  <button class="bn-item" id="bn-inicio"><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></span>Inicio</button>
+  <button class="bn-item active" id="bn-pedidos"><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1.003 1.003 0 0020 4H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg></span>Pedidos<span class="bn-badge" id="bn-pedidos-badge"></span></button>
+  <button class="bn-item" id="bn-recepcion"><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg></span>Recepción<span class="bn-badge" id="bn-recepcion-badge"></span></button>
+  <button class="bn-item" id="bn-vencimientos"><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg></span>Vencimientos<span class="bn-badge" id="bn-vencimientos-badge"></span></button>
+  <button class="bn-item" id="bn-mas"><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg></span>Más<span class="bn-dot" id="bn-mas-dot"></span></button>
 </nav>
 
 <div class="mm-ov hidden" id="mas-ov">
@@ -5498,7 +5522,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-19.12';
+const APP_VERSION='2026-10-19.13';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
