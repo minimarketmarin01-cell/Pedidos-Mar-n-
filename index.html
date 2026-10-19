@@ -2016,6 +2016,46 @@ html.carrito-fijo #cp-ov .mm-card,html.carrito-fijo #ed-ov .mm-card{
   font-weight:500;font-size:14px;letter-spacing:.06em;text-transform:uppercase;box-shadow:none}
 #fp-ov .fp-btn-eliminar,#fp-ov #fp-eliminar-btn{background:transparent;border:1px solid #E0E0E0;border-radius:2px;color:#D32F2F;box-shadow:none}
 #fp-ov .fp-steps{display:none}
+/* ============ Estilo Loyverse (Material) en Pedidos (vista de tarjetas / celular) ============
+   Barra de búsqueda verde con texto blanco y lista de artículos plana: miniatura cuadrada, nombre,
+   línea de stock con color (rojo = agotado/urgente, naranja = pedir) y divisor fino, como la lista
+   de artículos de Loyverse. Solo cambia el aspecto: mismos datos, ids y comportamiento. No toca la
+   vista de filas de pantallas grandes (html.vista-filas). */
+#prov-anchor{--lv:#4CAF50;--lv-d:#388E3C}
+#prov-anchor .shc-row.shc-wrap{background:var(--lv);margin:0 -12px;padding:8px 12px;box-shadow:0 2px 4px rgba(0,0,0,.25);border-radius:0;gap:8px}
+#prov-anchor .fav-toggle-btn{background:transparent;border:none;color:#fff;box-shadow:none}
+#prov-anchor .prov-combo{background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.7);border-radius:0;box-shadow:none}
+#prov-anchor .prov-combo input{background:transparent;border:none;color:#fff;font-family:Roboto,'Segoe UI',system-ui,sans-serif;font-size:18px;box-shadow:none}
+#prov-anchor .prov-combo input::placeholder{color:rgba(255,255,255,.75)}
+#prov-anchor .prov-combo .prov-icon,#prov-anchor .prov-combo button{color:#fff;background:transparent;border:none;box-shadow:none}
+#prov-anchor .seg{border:none;background:transparent}
+#prov-anchor .seg button{background:transparent;color:rgba(255,255,255,.8);border:none;border-bottom:2px solid transparent;border-radius:0;font-family:Roboto,'Segoe UI',system-ui,sans-serif;font-weight:500}
+#prov-anchor .seg button.active{color:#fff;border-bottom-color:#fff;background:transparent}
+#prov-anchor .shc-mini label{color:rgba(255,255,255,.85)}
+#prov-anchor .shc-mini input{background:rgba(255,255,255,.18);color:#fff;border:none;border-radius:2px}
+/* lista */
+html:not(.vista-filas) .card-cell{
+  background:#fff !important;border-radius:0 !important;box-shadow:none !important;border-bottom:1px solid #E0E0E0 !important;
+  padding:12px 16px !important;font-family:Roboto,'Segoe UI',system-ui,sans-serif
+}
+html:not(.vista-filas) .card-cell .prod-name{font-family:inherit;font-weight:500;font-size:17px;color:#212121;letter-spacing:0}
+html:not(.vista-filas) .card-cell .prod-meta{font-family:inherit;font-size:13px;font-weight:400;color:#757575}
+html:not(.vista-filas) .card-cell .card-thumb-wrap{flex:0 0 52px;width:52px;height:52px;position:relative}
+html:not(.vista-filas) .card-cell .card-thumb-wrap > *{border-radius:2px}
+html:not(.vista-filas) .card-cell .card-stats{font-family:inherit;font-size:14px;font-weight:400;color:#757575;gap:12px}
+html:not(.vista-filas) .card-cell .card-stats .cstat-stock,html:not(.vista-filas) .card-cell .card-stats .stk-val{font-weight:500}
+html:not(.vista-filas) .card-cell.row-urgent .cstat-stock .stk-val{color:#D32F2F}
+html:not(.vista-filas) .card-cell.row-pedir .cstat-stock .stk-val{color:#F57C00}
+/* insignia "!" sobre la miniatura (rojo = urgente, naranja = pedir), como en Loyverse */
+html:not(.vista-filas) .card-cell.row-urgent .card-thumb-wrap::after,html:not(.vista-filas) .card-cell.row-pedir .card-thumb-wrap::after{
+  content:'!';position:absolute;right:-6px;bottom:-6px;width:20px;height:20px;border-radius:50%;color:#fff;font-weight:700;font-size:13px;
+  line-height:20px;text-align:center;border:2px solid #fff;box-sizing:content-box
+}
+html:not(.vista-filas) .card-cell.row-urgent .card-thumb-wrap::after{background:#D32F2F}
+html:not(.vista-filas) .card-cell.row-pedir .card-thumb-wrap::after{background:#F57C00}
+html:not(.vista-filas) .card-cell .sug-btn{background:transparent;border:1px solid #E0E0E0;border-radius:2px;color:#388E3C;font-family:inherit;font-weight:500;text-transform:uppercase;letter-spacing:.04em;font-size:12px}
+html:not(.vista-filas) .card-cell,html:not(.vista-filas) .card-cell *{font-family:Roboto,'Segoe UI',system-ui,sans-serif !important}
+html:not(.vista-filas) .card-cell .priceline,html:not(.vista-filas) .card-cell [class*='price']{font-weight:500}
 </style>
 </head>
 <body>
@@ -5280,7 +5320,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-19.6';
+const APP_VERSION='2026-10-19.7';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
