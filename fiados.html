@@ -502,7 +502,12 @@ async function fdCargarListaFiados(){
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=fiados_resumen');
     const j=await res.json();
     document.getElementById('fd-buscar').value='';
-    fdListaFiados=(j&&j.ok)?(j.clientes||[]):[];
+    if(!(j&&j.ok)){
+      // No mostrar "No hay fiados abiertos" cuando en realidad falló la consulta (ej. límite de la base de datos).
+      showToast('No se pudo cargar la lista de fiados: '+((j&&j.error)||'error del servidor')+'. Los fiados no se perdieron, reintenta en un momento.');
+      btn.disabled=false;btn.textContent='Ver clientes con fiado abierto';return;
+    }
+    fdListaFiados=j.clientes||[];
     fdListaFiadosCargada=true;
     fdMontosRevelados.clear();fdTotalRevelado=false;fdSeleccionadosFusion.clear();
     fdRenderListaFiados();
