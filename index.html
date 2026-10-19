@@ -2173,6 +2173,48 @@ html.carrito-fijo #tab-carrito .oact-btn{width:44px}
 .prod-prices .pp-v{font-size:16px !important;font-weight:500 !important;color:#212121}
 .prod-prices .pp-c,.prod-prices .price-mg{font-size:14px !important;font-weight:400 !important}
 .prod-prices .pp-sep{display:none}
+
+/* ============ Inicio al estilo Loyverse ============
+   Barra superior verde, títulos de sección en verde, filas blancas planas sin bordes de color a la
+   izquierda, y la misma escala de letra: 16 texto principal, 14 secundario, 20 cifras. */
+#tab-inicio .in2-hdr{background:#4CAF50;color:#fff;box-shadow:0 2px 4px rgba(0,0,0,.25);border:none}
+#tab-inicio .in2-hdr *{color:#fff}
+#tab-inicio .in2-hdr-txt b{font-size:20px;font-weight:500}
+#tab-inicio .in2-hdr-txt span,#tab-inicio .in2-hdr-sub{font-size:14px;font-weight:400;color:rgba(255,255,255,.85)}
+#tab-inicio .in2-icon-btn,#tab-inicio .in2-notif-btn{background:transparent !important;border:none !important;box-shadow:none !important}
+#tab-inicio .in2-live{font-size:14px;font-weight:500}
+#tab-inicio .in2-live-dot{background:#fff !important}
+#tab-inicio .in2-hdr [class*=badge],#tab-inicio .in2-hdr .in2-notif-n{color:#fff}
+#tab-inicio .in2-section-title{font-size:14px;font-weight:500;color:#388E3C;text-transform:none;letter-spacing:0;margin:18px 0 8px}
+#tab-inicio .pd-mod-title{font-size:16px;font-weight:500;color:#212121}
+/* Requiere atención + Vence ≤15 días: misma fila, mismo tamaño */
+#tab-inicio .in2-att-row,#tab-inicio #in2-venc-card{
+  background:#fff !important;border:1px solid #E0E0E0 !important;border-radius:2px !important;padding:12px 16px !important;min-height:52px;box-sizing:border-box;gap:12px !important
+}
+#tab-inicio .in2-att-row .n,#tab-inicio #in2-venc-main-n{font-size:20px !important;font-weight:500 !important;font-family:inherit !important;color:#E53935 !important;min-width:32px;text-align:left}
+#tab-inicio .in2-att-row .t,#tab-inicio #in2-venc-card > span:nth-of-type(2){font-size:16px !important;font-weight:400 !important;color:#212121 !important}
+#tab-inicio .in2-venc-mini{border-radius:2px !important;border:1px solid #E0E0E0 !important;background:#fff !important;font-size:14px !important;font-weight:500 !important;padding:6px 10px !important}
+/* Proveedores que llegan / A quién pedir */
+#tab-inicio .provday{background:#fff;border:1px solid #E0E0E0;border-radius:2px;padding:4px 16px}
+#tab-inicio .provday .pd-date-row{font-size:14px;font-weight:400;color:#757575;margin:8px 0 4px}
+#tab-inicio .provday .pd-prov-row{background:#fff !important;border:none !important;border-bottom:1px solid #E0E0E0 !important;border-radius:0 !important;padding:12px 0 !important;margin:0 !important}
+#tab-inicio .provday .pd-prov-row:last-of-type{border-bottom:none !important}
+#tab-inicio .provday .pd-prov-nom{font-size:16px;font-weight:500;color:#212121}
+#tab-inicio .provday .pd-prov-sub{font-size:14px;color:#757575;margin-top:2px}
+#tab-inicio .provday .pd-prov-detalle{background:#FAFAFA;border:none;border-radius:0}
+#tab-inicio .provday .pd-prod-row{font-size:14px;border-bottom:1px solid #EEEEEE}
+#tab-inicio .provday .pd-empty-row{font-size:14px;padding:12px 0}
+#tab-inicio .pd-datechip-nav,#tab-inicio .pd-datechip-row input,#tab-inicio .pd-datechip-row > *{border-radius:2px !important}
+#tab-inicio .provday .pd-prov-nom{font-size:16px !important;font-weight:500 !important;color:#212121 !important}
+#tab-inicio .provday .pd-prov-sub{font-size:14px !important;color:#757575 !important}
+#tab-inicio .pd-datechip{border-radius:2px !important;background:#fff !important;border-color:#E0E0E0 !important}
+#tab-inicio .pd-datechip input[type="date"]{font-size:14px !important;font-weight:500 !important}
+#tab-inicio .pd-note{font-size:12px}
+@media (max-width:480px){
+  #tab-inicio #in2-venc-card{padding:10px 12px !important;gap:8px !important}
+  #tab-inicio .in2-venc-mini{padding:5px 7px !important;font-size:14px !important}
+  #tab-inicio #in2-venc-card > span:nth-of-type(2){font-size:14px !important}
+}
 </style>
 </head>
 <body>
@@ -5456,7 +5498,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-19.11';
+const APP_VERSION='2026-10-19.12';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
