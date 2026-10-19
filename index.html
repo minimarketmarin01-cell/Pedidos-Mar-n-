@@ -1914,6 +1914,108 @@ html.carrito-fijo .cart-resizer:hover .grip::before,html.carrito-fijo .cart-resi
 #rc-nombre-box label::before{content:'✏️ '}
 #rc-nombre-input{background:#fff !important;border:2px solid #C9A227 !important;border-radius:10px !important;font-size:15px !important;padding:11px 12px !important;font-weight:600}
 #rc-nombre-input:focus{outline:none;box-shadow:0 0 0 4px rgba(201,162,39,.28)}
+
+/* ============ Estilo Loyverse (Material) ============
+   Recepción de productos (#rc-ov), Crear producto (#cp-ov), Editar productos (#ed-ov) y Ficha de
+   producto (#fp-ov) se ven como la app de Loyverse: barra superior verde con el título y la acción
+   en mayúsculas, campos planos con línea inferior y etiqueta pequeña arriba, secciones blancas
+   separadas por una franja gris, títulos de sección en verde, botones rectangulares.
+   TODO escopado a esos ids: no cambia ids, textos ni lógica, y el resto de la app queda igual. */
+#rc-ov,#cp-ov,#ed-ov,#fp-ov{
+  --lv:#4CAF50;--lv-d:#388E3C;--lv-txt:#212121;--lv-sub:#757575;--lv-line:#BDBDBD;--lv-gris:#F2F2F2;
+  padding:0;align-items:stretch;background:#fff;font-family:Roboto,'Segoe UI',system-ui,sans-serif;color:var(--lv-txt)
+}
+#rc-ov .mm-card,#cp-ov .mm-card,#ed-ov .mm-card,#fp-ov .mm-card,
+html.carrito-fijo #cp-ov .mm-card,html.carrito-fijo #ed-ov .mm-card{
+  max-width:none;max-height:none;height:100%;border-radius:0;background:#fff;box-shadow:none
+}
+/* barra superior */
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .mm-head{
+  background:var(--lv);color:#fff;margin:0;padding:0 8px 0 16px;min-height:56px;box-shadow:0 2px 4px rgba(0,0,0,.28);position:relative;z-index:2;gap:8px
+}
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .mm-head h3{font-family:inherit;font-weight:500;font-size:20px;color:#fff;gap:10px}
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .mm-head-ic{color:#fff}
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .mm-head button{
+  background:transparent;border:none;box-shadow:none;color:#fff;font-family:inherit;font-weight:500;font-size:14px;
+  letter-spacing:.06em;text-transform:uppercase;padding:10px 12px;border-radius:2px
+}
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .mm-head .rc-local-chip{background:rgba(255,255,255,.22);color:#fff;font-family:inherit;font-weight:500}
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .mm-topbar{padding:0;margin:0;background:#fff;border-bottom:1px solid #E0E0E0}
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .mm-topbar .loadbtn{width:100%;background:transparent;border:none;box-shadow:none;border-radius:0;
+  color:var(--lv-d);font-family:inherit;font-weight:500;font-size:14px;letter-spacing:.06em;text-transform:uppercase;padding:14px}
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .mm-body{padding:0 0 24px;background:#fff}
+/* secciones: bloque blanco + franja gris, título verde */
+:is(#rc-ov,#cp-ov,#fp-ov) .mm-sections{gap:0}
+:is(#rc-ov,#cp-ov,#fp-ov) .mm-section,:is(#rc-ov,#cp-ov,#fp-ov) .mm-section.mm-section--bare{
+  background:#fff;border:none;border-radius:0;padding:16px 16px 6px;margin:0;border-bottom:8px solid var(--lv-gris)
+}
+:is(#rc-ov,#cp-ov,#fp-ov) .mm-section-head{font-size:14px;font-weight:500;color:var(--lv-d);text-transform:none;letter-spacing:0;margin:0 0 12px}
+:is(#rc-ov,#cp-ov,#fp-ov) .mm-section-head svg{display:none}
+#ed-ov .mm-body{padding:12px 16px 24px}
+#fp-ov .mm-body{padding:0}
+#fp-ov .fp-section-title{font-size:14px;font-weight:500;color:var(--lv-d);text-transform:none;letter-spacing:0}
+/* campos planos */
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .mm-field{margin-bottom:16px}
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .mm-field label{
+  font-size:13px;font-weight:400;color:var(--lv-sub);text-transform:none;letter-spacing:0;margin-bottom:0
+}
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) select,:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) textarea{
+  border:none;border-bottom:1px solid var(--lv-line);border-radius:0;background:transparent;box-shadow:none;outline:none;
+  font-family:inherit;font-size:18px;color:var(--lv-txt);padding-top:6px;padding-bottom:8px;padding-left:0
+}
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) input:focus:not([type=checkbox]):not([type=radio]),
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) select:focus,:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) textarea:focus{
+  border-bottom:2px solid var(--lv);padding-bottom:7px;box-shadow:none;outline:none
+}
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) ::placeholder{color:#9E9E9E}
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .mm-search input{width:100%}
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .mm-x,:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .mm-mic,:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .mm-scan{
+  background:transparent;border:none;color:var(--lv-sub);box-shadow:none
+}
+/* botones */
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .mm-save{
+  background:var(--lv);border-radius:2px;box-shadow:0 2px 4px rgba(0,0,0,.3);font-family:inherit;font-weight:500;
+  font-size:14px;letter-spacing:.06em;text-transform:uppercase;padding:14px
+}
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .loadbtn:not(.mm-topbar .loadbtn){
+  background:transparent;border:1px solid #E0E0E0;border-radius:2px;color:var(--lv-d);font-family:inherit;font-weight:500;
+  letter-spacing:.04em;text-transform:uppercase
+}
+/* selector Unidad/Peso, Recibir/Ajustar: verde Loyverse, sin pastilla */
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .seg{border:none;border-bottom:2px solid #E0E0E0;border-radius:0;background:transparent}
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .seg button{
+  background:transparent;color:var(--lv-sub);font-family:inherit;font-weight:500;font-size:14px;text-transform:uppercase;
+  letter-spacing:.05em;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:12px 14px
+}
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .seg button.active{background:transparent;color:var(--lv-d);border-bottom-color:var(--lv)}
+/* resultados de búsqueda: filas planas con divisor, como la lista de artículos de Loyverse */
+:is(#rc-ov,#ed-ov) :is(.mm-results,#ed-results,#rc-results) > *{border:none;border-bottom:1px solid #E0E0E0;border-radius:0;background:#fff;box-shadow:none;padding:14px 16px;font-size:17px}
+
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .mm-head .loadbtn,:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .mm-head button{border:none;color:#fff;background:transparent;box-shadow:none}
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .mm-head h3{font-size:18px;min-width:0;flex:1;white-space:nowrap}
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .mm-head h3 span:first-of-type{overflow:hidden;text-overflow:ellipsis}
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .mm-head .rc-local-chip{font-size:11px;padding:3px 8px;flex:none}
+/* deja visible la barra de navegación inferior, igual que antes */
+#rc-ov,#cp-ov,#ed-ov,#fp-ov{padding-bottom:calc(70px + env(safe-area-inset-bottom))}
+/* Por unidad / Por caja: pestañas planas con subrayado verde */
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .rc-modo-btn{
+  background:transparent !important;border:none !important;border-bottom:2px solid #E0E0E0 !important;border-radius:0 !important;
+  color:var(--lv-sub) !important;font-family:inherit;font-weight:500;font-size:14px;text-transform:uppercase;letter-spacing:.05em;box-shadow:none
+}
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .rc-modo-btn.active{color:var(--lv-d) !important;border-bottom-color:var(--lv) !important}
+
+:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov).mm-ov .mm-card .mm-head .loadbtn,:is(#rc-ov,#cp-ov,#ed-ov,#fp-ov).mm-ov .mm-card .mm-head button{
+  border:none;color:#fff;background:transparent;box-shadow:none;font-size:14px;padding:10px 12px}
+:is(#rc-ov,#ed-ov) #ed-results > *,:is(#rc-ov,#ed-ov) #rc-results > *{color:#212121}
+
+/* Ficha: botones de abajo (Cancelar / Eliminar / Guardar cambios) como botones Material */
+#fp-ov .fp-btn-guardar{background:var(--lv);color:#fff;border:none;border-radius:2px;box-shadow:0 2px 4px rgba(0,0,0,.3);
+  font-family:inherit;font-weight:500;font-size:14px;letter-spacing:.06em;text-transform:uppercase}
+#fp-ov .fp-btn-cancelar,#fp-ov #fp-cancelar-btn{background:transparent;border:none;color:var(--lv-sub);border-radius:2px;font-family:inherit;
+  font-weight:500;font-size:14px;letter-spacing:.06em;text-transform:uppercase;box-shadow:none}
+#fp-ov .fp-btn-eliminar,#fp-ov #fp-eliminar-btn{background:transparent;border:1px solid #E0E0E0;border-radius:2px;color:#D32F2F;box-shadow:none}
+#fp-ov .fp-steps{display:none}
 </style>
 </head>
 <body>
@@ -5178,7 +5280,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-19.2';
+const APP_VERSION='2026-10-19.5';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
