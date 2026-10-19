@@ -5178,7 +5178,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-19.2';
+const APP_VERSION='2026-10-19.4';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -15871,13 +15871,22 @@ document.getElementById('ll-cerrar').onclick=()=>document.getElementById('ll-ov'
 async function marcarPedidoRealizado(lines,canal,fechaLlegadaEstimada,provContexto){
   if(!lines||!lines.length)return false;
   const items=lines.map(l=>{const costoUnitario=tierCostUn(l.it);return{sku:l.it.ref,barcode:l.it.barcode||'',nombre:l.it.nombre,proveedor:provContexto||l.it.proveedorNombre||l.it.prov,cantidad:l.q,costoUnitario:costoUnitario};});
-  let j;
+  let j,encolar=false;
   try{
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'marcar_pedido_realizado',payload:{items:items,canal:canal,fechaLlegadaEstimada:fechaLlegadaEstimada||''}})});
     j=await res.json();
   }catch(e){
-    showToast('Error de conexión — el pedido no se guardó, intentá de nuevo');
-    return false;
+    encolar=true;
+  }
+  if(!encolar&&(!j||!j.ok)&&_errorPedidoReintentable(j&&j.error))encolar=true;
+  if(encolar){
+    // El servidor no responde (sin internet o límite diario de la base de datos): el pedido queda guardado
+    // en este celular y se envía solo apenas el servidor vuelva a responder (ver vaciarColaPedidos).
+    const cola=_colaPedLeer();
+    cola.push({ts:Date.now(),payload:{items:items,canal:canal,fechaLlegadaEstimada:fechaLlegadaEstimada||''}});
+    _colaPedGuardar(cola);
+    showToast('El servidor no responde: el pedido quedó guardado en este celular y se enviará solo cuando vuelva ('+cola.length+' en espera)');
+    j={ok:true,omitidos:[]};
   }
   if(!j||!j.ok){
     showToast('Error al guardar el pedido: '+((j&&j.error)||'no se pudo')+' — intentá de nuevo');
@@ -15916,6 +15925,36 @@ async function marcarPedidoRealizado(lines,canal,fechaLlegadaEstimada,provContex
   }
   return true;
 }
+// Cola de pedidos que no se pudieron enviar (sin internet o límite diario de la base de datos).
+// marcar_pedido_realizado guarda por sku (reemplaza), así que reenviar un pedido nunca lo duplica.
+const COLA_PED_KEY='marin_cola_pedidos';
+function _colaPedLeer(){try{const a=JSON.parse(localStorage.getItem(COLA_PED_KEY)||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}}
+function _colaPedGuardar(a){try{localStorage.setItem(COLA_PED_KEY,JSON.stringify(a));}catch(e){}}
+function _errorPedidoReintentable(msg){return /D1_ERROR|exceeded D1|daily row (write|read) limit|free tier|failed to fetch|network|timeout|HTTP 5\d\d/i.test(String(msg||''));}
+let _colaPedEnviando=false;
+async function vaciarColaPedidos(){
+  if(_colaPedEnviando)return;
+  if(!_colaPedLeer().length)return;
+  _colaPedEnviando=true;
+  try{
+    let enviados=0;
+    for(const p of _colaPedLeer()){
+      let j=null;
+      try{
+        const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'marcar_pedido_realizado',payload:p.payload})});
+        j=await res.json();
+      }catch(e){break;}
+      const quitar=()=>_colaPedGuardar(_colaPedLeer().filter(x=>x.ts!==p.ts));
+      if(j&&j.ok){quitar();enviados++;}
+      else if(!j||_errorPedidoReintentable(j.error))break;
+      else{quitar();showToast('Un pedido guardado en el celular no se pudo registrar: '+(j.error||'error del servidor'));}
+    }
+    if(enviados)showToast(enviados+' pedido(s) que estaban en espera ya se enviaron al servidor ✓');
+  }finally{_colaPedEnviando=false;}
+}
+setTimeout(vaciarColaPedidos,4000);
+setInterval(vaciarColaPedidos,60000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')vaciarColaPedidos();});
 // "Finalizar como incompleto" (Recepción de productos) — cierra el pedido de un proveedor
 // aunque no haya llegado completo. Solo toca los artículos que TODAVÍA no tienen recepción
 // registrada (estado 'confirmado'): pasan a 'incompleto' y quedan libres para pedirse de
