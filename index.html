@@ -11,7 +11,7 @@
 <title>Marín Pedidos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
 :root{
   /* ===== PALETA PASTEL — verdes salvia/oliva + lavanda =====
@@ -2056,6 +2056,33 @@ html:not(.vista-filas) .card-cell.row-pedir .card-thumb-wrap::after{background:#
 html:not(.vista-filas) .card-cell .sug-btn{background:transparent;border:1px solid #E0E0E0;border-radius:2px;color:#388E3C;font-family:inherit;font-weight:500;text-transform:uppercase;letter-spacing:.04em;font-size:12px}
 html:not(.vista-filas) .card-cell,html:not(.vista-filas) .card-cell *{font-family:Roboto,'Segoe UI',system-ui,sans-serif !important}
 html:not(.vista-filas) .card-cell .priceline,html:not(.vista-filas) .card-cell [class*='price']{font-weight:500}
+
+/* ============ Letra de Loyverse (Roboto) en toda la aplicación ============
+   Loyverse usa Roboto (la letra estándar de Android). Se fuerza en todo el documento; los números
+   mantienen ancho fijo (tabular) para que las columnas de stock/ventas sigan alineadas. */
+body,body *{font-family:'Roboto',system-ui,-apple-system,'Segoe UI',sans-serif !important}
+body{font-variant-numeric:tabular-nums}
+/* ============ Resultados de búsqueda al estilo Loyverse (todos los buscadores) ============ */
+.mm-motivo.lv-fila{
+  display:flex !important;align-items:center;gap:16px;margin:0 !important;padding:10px 4px !important;cursor:pointer;
+  background:#fff !important;border:none !important;border-bottom:1px solid #E0E0E0 !important;border-radius:0 !important;box-shadow:none !important
+}
+.lv-fila-img{position:relative;flex:0 0 52px;width:52px;height:52px;background:#E0E0E0;border-radius:2px;display:block}
+.lv-fila-img img{width:100%;height:100%;object-fit:contain;background:#fff;border-radius:2px;display:block}
+.lv-fila-img.lv-agotado::after,.lv-fila-img.lv-pedir::after{
+  content:'!';position:absolute;right:-7px;bottom:-7px;width:20px;height:20px;border-radius:50%;border:2px solid #fff;
+  color:#fff;font-weight:700;font-size:13px;line-height:20px;text-align:center;box-sizing:content-box
+}
+.lv-fila-img.lv-agotado::after{background:#E53935}
+.lv-fila-img.lv-pedir::after{background:#F57C00}
+.lv-fila-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.lv-fila-nom{font-size:17px;font-weight:400;color:#212121;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lv-fila-sub{font-size:15px;color:#757575}
+.lv-fila-sub.lv-agotado{color:#E53935}
+.lv-fila-sub.lv-pedir{color:#F57C00}
+.lv-fila-precio{flex:none;font-size:17px;color:#212121}
+:is(#rc-ov,#ed-ov) :is(#ed-results,#rc-results) > .lv-fila{padding:10px 0 !important}
+.mm-motivo.lv-fila,.mm-motivo.lv-fila .lv-fila-sub,.mm-motivo.lv-fila .lv-fila-precio,.mm-motivo.lv-fila .lv-fila-nom{font-weight:400 !important}
 </style>
 </head>
 <body>
@@ -4703,6 +4730,25 @@ function toggleMinimoPedido(ref){
   if(it)panel.innerHTML=_gpFilaConfig(it);
   panel.classList.remove('hidden');
 }
+// Fila de resultado de búsqueda al estilo Loyverse: miniatura cuadrada (con "!" rojo/naranja si
+// está agotado o hay que pedir), nombre, stock coloreado debajo y precio a la derecha.
+// Lleva data-ref (o el atributo que se pase) para que los manejadores de cada buscador sigan igual.
+function lvFilaBusqueda(it,attr){
+  attr=attr||('data-ref="'+it.ref+'"');
+  let st='ok',estado=null;
+  try{estado=analyze(it).status;}catch(e){}
+  const seguido=it.track&&it.stock!=null;
+  if(seguido&&it.stock<=0)st='agotado';else if(estado==='urgente')st='agotado';else if(estado==='pedir')st='pedir';
+  const sub=seguido?fmt1(it.stock)+' en inventario':'—';
+  const img=it.imagen
+    ?`<img src="${it.imagen}" loading="lazy" alt="" onerror="this.remove()">`
+    :'';
+  return `<div class="mm-motivo lv-fila" ${attr}>`+
+    `<span class="lv-fila-img${st!=='ok'?' lv-'+st:''}">${img}</span>`+
+    `<span class="lv-fila-txt"><span class="lv-fila-nom">${it.nombre}</span><span class="lv-fila-sub${seguido&&st!=='ok'?' lv-'+st:''}">${sub}</span></span>`+
+    `<span class="lv-fila-precio">${it.precio!=null?peso(it.precio):''}</span>`+
+  `</div>`;
+}
 function rowHTML(it,a,f){const cant=qOf(it,a);
   const bundles=it.fmt>1?Math.round(cant/it.fmt):cant;
   const covTxt=a.cov==null?'—':a.cov===Infinity?'∞':(a.cov>=100?'99+':fmt1(a.cov)+'d');
@@ -5320,7 +5366,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-19.7';
+const APP_VERSION='2026-10-19.8';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -9233,10 +9279,7 @@ function edRenderResultados(list){
   const hint=document.getElementById('ed-hint');
   if(!list.length){box.innerHTML='';hint.classList.remove('hidden');return;}
   hint.classList.add('hidden');
-  box.innerHTML=list.map(it=>`<div class="fp-row" data-ed-ref="${it.ref}" style="cursor:pointer">
-    <span class="k">${it.nombre}</span>
-    <span class="v" style="font-size:11px;color:var(--muted);text-align:right;font-weight:600">${it.prov||''}</span>
-  </div>`).join('');
+  box.innerHTML=list.map(it=>lvFilaBusqueda(it,'data-ed-ref="'+it.ref+'"')).join('');
   // Lleva los resultados recién pintados a la vista — necesario con el teclado abierto, ver el
   // IIFE de abajo ("resultados siempre visibles sobre el teclado") que ajusta la altura real de
   // la tarjeta para que esto realmente funcione en vez de no hacer nada.
@@ -10794,7 +10837,7 @@ function mmFindItems(q){
 function mmRenderResults(list){
   const box=document.getElementById('mm-results');
   if(!list.length){box.innerHTML='';return;}
-  box.innerHTML=list.map(it=>`<div class="mm-motivo" style="display:block;margin-bottom:6px;cursor:pointer" data-ref="${it.ref}">${it.nombre} <span style="color:var(--muted);font-weight:400">· ${it.prov}</span></div>`).join('');
+  box.innerHTML=list.map(it=>lvFilaBusqueda(it)).join('');
   box.querySelectorAll('[data-ref]').forEach(el=>el.onclick=()=>mmAdd(el.dataset.ref));
 }
 function mmAdd(ref){
@@ -11179,7 +11222,7 @@ function etFindItems(q){
 function etRenderResults(list){
   const box=document.getElementById('et-results');
   if(!list.length){box.innerHTML='';return;}
-  box.innerHTML=list.map(it=>`<div class="mm-motivo" style="display:block;margin-bottom:6px;cursor:pointer" data-ref="${it.ref}">${it.nombre} <span style="color:var(--muted);font-weight:400">· ${it.prov}</span></div>`).join('');
+  box.innerHTML=list.map(it=>lvFilaBusqueda(it)).join('');
   box.querySelectorAll('[data-ref]').forEach(el=>el.onclick=()=>etPick(el.dataset.ref));
 }
 function etPick(ref){
@@ -13050,7 +13093,7 @@ async function vcCancelarForm(){
 document.getElementById('vc-cancelar').onclick=vcCancelarForm;
 document.getElementById('vc-search').oninput=e=>{
   const list=mmFindItems(e.target.value);
-  document.getElementById('vc-results').innerHTML=list.map(it=>`<div class="mm-motivo" style="display:block;margin-bottom:6px;cursor:pointer" data-ref="${it.ref}">${it.nombre} <span style="color:var(--muted);font-weight:400">· ${it.prov}</span></div>`).join('');
+  document.getElementById('vc-results').innerHTML=list.map(it=>lvFilaBusqueda(it)).join('');
   document.querySelectorAll('#vc-results [data-ref]').forEach(el=>el.onclick=()=>vcPick(el.dataset.ref));
 };
 document.getElementById('vc-scan').onclick=()=>{
@@ -13559,7 +13602,7 @@ async function inDescartar(){
 document.getElementById('in-cancelar').onclick=inDescartar;
 document.getElementById('in-search').oninput=e=>{
   const list=inFindItems(e.target.value).filter(it=>!inCart.some(c=>c.ref===it.ref));
-  document.getElementById('in-results').innerHTML=list.map(it=>`<div class="mm-motivo" style="display:block;margin-bottom:6px;cursor:pointer" data-ref="${it.ref}">${it.nombre} <span style="color:var(--muted);font-weight:400">· ${it.prov}</span></div>`).join('');
+  document.getElementById('in-results').innerHTML=list.map(it=>lvFilaBusqueda(it)).join('');
   document.querySelectorAll('#in-results [data-ref]').forEach(el=>el.onclick=()=>inAdd(el.dataset.ref));
 };
 document.getElementById('in-scan').onclick=()=>{
@@ -13660,7 +13703,7 @@ document.getElementById('pr-search').addEventListener('input',ev=>{
   const q=ev.target.value;
   const list=q.trim()?mmFindItems(q):[];
   if(list.length){
-    document.getElementById('pr-results').innerHTML=list.map(it=>`<div class="mm-motivo" style="display:block;margin-bottom:6px;cursor:pointer" data-ref="${it.ref}">${it.nombre} <span style="color:var(--muted);font-weight:400">· ${it.prov}</span></div>`).join('');
+    document.getElementById('pr-results').innerHTML=list.map(it=>lvFilaBusqueda(it)).join('');
     document.querySelectorAll('#pr-results [data-ref]').forEach(el=>el.onclick=()=>prPick(el.dataset.ref));
   }else{
     document.getElementById('pr-results').innerHTML='';
@@ -13991,7 +14034,7 @@ document.getElementById('cf-search').addEventListener('input',ev=>{
   document.getElementById('cf-lx').style.display=q?'block':'none';
   const list=q.trim()?mmFindItems(q):[];
   if(list.length){
-    document.getElementById('cf-results').innerHTML=list.map(it=>`<div class="mm-motivo" style="display:block;margin-bottom:6px;cursor:pointer" data-ref="${it.ref}">${it.nombre} <span style="color:var(--muted);font-weight:400">· ${it.prov}</span></div>`).join('');
+    document.getElementById('cf-results').innerHTML=list.map(it=>lvFilaBusqueda(it)).join('');
     document.querySelectorAll('#cf-results [data-ref]').forEach(el=>el.onclick=()=>cfPick(el.dataset.ref));
   }else{
     document.getElementById('cf-results').innerHTML='';
@@ -14719,7 +14762,7 @@ document.getElementById('rc-search').oninput=e=>{
   }
   const list=mmFindItems(q);
   if(list.length){
-    document.getElementById('rc-results').innerHTML=list.map(it=>`<div class="mm-motivo" style="display:block;margin-bottom:6px;cursor:pointer" data-ref="${it.ref}">${it.nombre} <span style="color:var(--muted);font-weight:400">· ${it.prov}</span></div>`).join('');
+    document.getElementById('rc-results').innerHTML=list.map(it=>lvFilaBusqueda(it)).join('');
     document.querySelectorAll('#rc-results [data-ref]').forEach(el=>el.onclick=()=>rcPick(el.dataset.ref));
   }else if(q.trim().length>=3){
     document.getElementById('rc-results').innerHTML='<div class="mm-motivo" style="display:block;color:var(--muted)">Sin coincidencias. <span id="rc-crear-nuevo" style="color:var(--azul);font-weight:700;cursor:pointer;text-decoration:underline">Crear producto nuevo</span></div>';
