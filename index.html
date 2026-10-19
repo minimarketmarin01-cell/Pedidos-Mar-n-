@@ -5178,7 +5178,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-19.1';
+const APP_VERSION='2026-10-19.2';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -5628,12 +5628,28 @@ async function autoSyncIfStale(){
   iniciarPollingTiempoReal();
 }
 
-let _pollingTiempoReal=null, _ultimoPollOk=Date.now();
+let _pollingTiempoReal=null, _ultimoPollOk=Date.now(), _marcaConocida=null, _ultimoPollCompleto=Date.now();
 function iniciarPollingTiempoReal(){
   if(_pollingTiempoReal)clearInterval(_pollingTiempoReal);
-  _pollingTiempoReal=setInterval(()=>{
+  // Cada 5 s solo se pregunta "¿cambió algo?" (1 fila en el servidor); los datos completos se piden recién cuando
+  // la marca cambia, y como respaldo cada 5 min. Antes se pedía TODO el dashboard cada 5 s por aparato y eso agotó
+  // el límite diario de lecturas de la base de datos.
+  _pollingTiempoReal=setInterval(async()=>{
     if(document.visibilityState!=='visible')return;
-    pollFondo();
+    try{
+      const res=await fetch(SYNC_URL+'?action=ultima_actualizacion');
+      const j=await res.json();
+      if(j&&j.ok&&j.actualizadoEn!==undefined){
+        _ultimoPollOk=Date.now();
+        const hayCambio=_marcaConocida!==null&&j.actualizadoEn!==_marcaConocida;
+        const respaldo=Date.now()-_ultimoPollCompleto>5*60*1000;
+        _marcaConocida=j.actualizadoEn;
+        if(hayCambio||respaldo){_ultimoPollCompleto=Date.now();pollFondo();}
+        return;
+      }
+    }catch(e){/* sin red: se reintenta en 5 s */}
+    // Servidor sin la marca (versión vieja) o respuesta inesperada: comportamiento anterior, pero más espaciado.
+    if(Date.now()-_ultimoPollCompleto>15000){_ultimoPollCompleto=Date.now();pollFondo();}
   },5000);
   // Respaldo: cada 10 min sí consulta a Loyverse directo (stock+ventas), por si algún
   // webhook se perdió y la base quedó desactualizada sin que nadie lo note. Solo dibuja
