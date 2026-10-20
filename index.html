@@ -5675,7 +5675,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-20.1';
+const APP_VERSION='2026-10-20.2';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -5714,7 +5714,19 @@ const APP_VERSION='2026-10-20.1';
 })();
 
 // ===================== SINCRONIZACIÓN — Cloudflare Worker (D1) =====================
-const SYNC_URL='https://marin376-api.minimarketmarin01.workers.dev';
+// Modo de prueba: abrir la app con ?bd=supabase hace que todo vaya a la copia de Supabase en vez de Cloudflare.
+const MODO_SUPABASE=/[?&]bd=supabase\b/.test(location.search);
+const SYNC_URL='https://marin376-api.minimarketmarin01.workers.dev'+(MODO_SUPABASE?'/?db=supabase':'');
+
+// Aviso permanente cuando se está en el modo de prueba, para no confundirlo con la app real.
+if(MODO_SUPABASE){
+  document.addEventListener('DOMContentLoaded',()=>{
+    const b=document.createElement('div');
+    b.textContent='MODO PRUEBA · datos de Supabase (copia)';
+    b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#F57C00;color:#fff;text-align:center;font:500 12px Roboto,sans-serif;padding:3px;pointer-events:none';
+    document.body.appendChild(b);
+  });
+}
 // Respaldo temporal: funciones que TODAVÍA no están en el Worker nuevo
 // (crear/eliminar productos, categorías, costo, consumo interno) siguen
 // en Apps Script hasta que se migren en una próxima sesión.
@@ -6134,7 +6146,7 @@ function iniciarPollingTiempoReal(){
   _pollingTiempoReal=setInterval(async()=>{
     if(document.visibilityState!=='visible')return;
     try{
-      const res=await fetch(SYNC_URL+'?action=ultima_actualizacion');
+      const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=ultima_actualizacion');
       const j=await res.json();
       if(j&&j.ok&&j.actualizadoEn!==undefined){
         _ultimoPollOk=Date.now();
@@ -12317,7 +12329,7 @@ async function vcLoad(){
 // entrar a la pestaña) compitan por escribir "Cargando…" en el mismo contenedor a la vez.
 async function daCargarBadgeSolo(){
   try{
-    const res=await fetch(SYNC_URL+'?action=descuentos_activos');
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=descuentos_activos');
     const j=await res.json();
     _daLotes=(j&&j.ok&&Array.isArray(j.lotes))?j.lotes:[];
     _daInicializado=true;
@@ -12961,7 +12973,7 @@ async function daCargar(){
   const box=document.getElementById('da-list');
   box.innerHTML='<div class="vc-empty">Cargando…</div>';
   try{
-    const res=await fetch(SYNC_URL+'?action=descuentos_activos');
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=descuentos_activos');
     const j=await res.json();
     _daLotes=(j&&j.ok&&Array.isArray(j.lotes))?j.lotes:[];
     _daInicializado=true;
@@ -12979,7 +12991,7 @@ async function daCargar(){
 // incluye y puede dejar _daInicializado en true antes de que esto se pida.
 async function daCargarPendientes(){
   try{
-    const res=await fetch(SYNC_URL+'?action=precios_pendientes_restaurar');
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=precios_pendientes_restaurar');
     const j=await res.json();
     _daPendientesRestaurar=(j&&j.ok&&Array.isArray(j.lotes))?j.lotes:[];
   }catch(e){
@@ -16465,7 +16477,7 @@ async function marcarPedidoRealizado(lines,canal,fechaLlegadaEstimada,provContex
 }
 // Cola de pedidos que no se pudieron enviar (sin internet o límite diario de la base de datos).
 // marcar_pedido_realizado guarda por sku (reemplaza), así que reenviar un pedido nunca lo duplica.
-const COLA_PED_KEY='marin_cola_pedidos';
+const COLA_PED_KEY='marin_cola_pedidos'+(MODO_SUPABASE?'_sb':'');
 function _colaPedLeer(){try{const a=JSON.parse(localStorage.getItem(COLA_PED_KEY)||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}}
 function _colaPedGuardar(a){try{localStorage.setItem(COLA_PED_KEY,JSON.stringify(a));}catch(e){}}
 function _errorPedidoReintentable(msg){return /D1_ERROR|exceeded D1|daily row (write|read) limit|free tier|failed to fetch|network|timeout|HTTP 5\d\d/i.test(String(msg||''));}

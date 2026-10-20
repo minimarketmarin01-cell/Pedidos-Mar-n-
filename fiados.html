@@ -256,7 +256,9 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
   <div id="toast"></div>
 
 <script>
-const SYNC_URL='https://marin376-api.minimarketmarin01.workers.dev';
+// Modo de prueba: abrir la app con ?bd=supabase hace que todo vaya a la copia de Supabase en vez de Cloudflare.
+const MODO_SUPABASE=/[?&]bd=supabase\b/.test(location.search);
+const SYNC_URL='https://marin376-api.minimarketmarin01.workers.dev'+(MODO_SUPABASE?'/?db=supabase':'');
 const fmt=new Intl.NumberFormat('es-CL');
 const peso=n=>'$'+fmt.format(Math.round(n||0));
 // Lee el valor NUMÉRICO real de un input de monto, sin importar si ya está formateado como
