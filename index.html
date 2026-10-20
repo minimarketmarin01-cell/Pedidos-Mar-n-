@@ -5691,7 +5691,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-20.5';
+const APP_VERSION='2026-10-20.6';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -6055,6 +6055,7 @@ async function cloudSync(silent,live,full,origen){
     try{j=await res.json();}
     catch(parseErr){throw new Error('Respuesta no es JSON válido (status '+res.status+') — posible corte de conexión');}
     if(j&&j.ok){
+      if(j.items&&j.ventas)_recordarPanelCompleto(j);
       // Poll de fondo (silencioso, cada 5s, sin que el usuario haya tocado nada): si los
       // datos son EXACTAMENTE los mismos de la última vez, no se toca el DOM para nada —
       // así el scroll y cualquier edición en curso quedan intactos.
@@ -6168,8 +6169,15 @@ function iniciarPollingTiempoReal(){
         _ultimoPollOk=Date.now();
         const hayCambio=_marcaConocida!==null&&j.actualizadoEn!==_marcaConocida;
         const respaldo=Date.now()-_ultimoPollCompleto>5*60*1000;
+        if(_marcaConocida===null&&_versionCompletaConocida===null)_versionCompletaConocida=j.versionCompleta; // recién cargó todo
         _marcaConocida=j.actualizadoEn;
-        if(hayCambio||respaldo){_ultimoPollCompleto=Date.now();pollFondo();}
+        if(hayCambio||respaldo){
+          _ultimoPollCompleto=Date.now();
+          // Carga completa solo si cambió algo más que ventas/stock (o el servidor no informa), o como respaldo cada 1 hora.
+          if(j.versionCompleta===undefined||j.versionCompleta!==_versionCompletaConocida||Date.now()-_panelBaseTs>60*60*1000){
+            _versionCompletaConocida=j.versionCompleta;pollFondo();
+          }else pollLigero();
+        }
         return;
       }
     }catch(e){/* sin red: se reintenta en 5 s */}
@@ -6194,6 +6202,38 @@ async function pollFondo(){
     if(!res.ok){_ultimaActualizacionConocida='reintentar';return;}
     let j;try{j=await res.json();}catch(e){_ultimaActualizacionConocida='reintentar';return;}
     if(!j||!j.ok){_ultimaActualizacionConocida='reintentar';return;}
+    _recordarPanelCompleto(j);
+    aplicarPanelDeFondo(j);
+  }catch(e){_ultimaActualizacionConocida='reintentar';}
+}
+
+// Refresco liviano (?action=panel_ligero): trae solo el stock de todos los productos y las ventas de los vendidos hoy
+// (~70 KB en vez de ~1,5 MB) y los combina con la última carga completa, que se pinta por el mismo camino de siempre.
+// Ante cualquier duda (producto nuevo o eliminado, cambio de día, una venta de hoy que desapareció) hace la carga completa.
+let _panelBase=null,_panelBaseTs=0,_versionCompletaConocida=null;
+function _recordarPanelCompleto(j){_panelBase=j;_panelBaseTs=Date.now();}
+async function pollLigero(){
+  const base=_panelBase;
+  if(!base||!base.items||!base.items.rows||!base.ventas||!base.ventas.hoy)return pollFondo();
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=panel_ligero');
+    if(!res.ok)return pollFondo();
+    const l=await res.json();
+    if(!l||!l.ok||!l.stock||!l.ventas||!l.ventas.hoy)return pollFondo();
+    const filas=base.items.rows,skus=Object.keys(l.stock),hoyNuevo=l.ventas.hoy.rows||{};
+    if(l.ventas.hoy.fecha!==base.ventas.hoy.fecha||skus.length!==Object.keys(filas).length||skus.some(k=>!filas[k]))return pollFondo();
+    if(Object.keys(base.ventas.hoy.rows||{}).some(k=>!hoyNuevo[k]))return pollFondo();
+    const rows={};
+    skus.forEach(k=>{rows[k]=filas[k].stock===l.stock[k]?filas[k]:Object.assign({},filas[k],{stock:l.stock[k]});});
+    const j=Object.assign({},base,{ventasHoy:l.ventasHoy,serverTime:l.serverTime,synced:false,syncMsg:'',
+      items:Object.assign({},base.items,{rows}),
+      ventas:Object.assign({},base.ventas,{rows:Object.assign({},base.ventas.rows,l.ventas.rows),hoy:l.ventas.hoy})});
+    _panelBase=j; // base del próximo refresco liviano (no reinicia el reloj de la carga completa)
+    aplicarPanelDeFondo(j);
+  }catch(e){_ultimaActualizacionConocida='reintentar';}
+}
+
+function aplicarPanelDeFondo(j){
     _ultimoPollOk=Date.now();
     actualizarIndicadorEnVivo();
 
@@ -6211,7 +6251,6 @@ async function pollFondo(){
     if(usuarioActivo()){_repintadoPendiente=true;return;} // se aplicará solo cuando se detenga
 
     aplicarRepintadoDiferido();
-  }catch(e){_ultimaActualizacionConocida='reintentar';}
 }
 
 let _repintadoPendiente=false;
