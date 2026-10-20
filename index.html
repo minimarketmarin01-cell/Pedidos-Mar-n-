@@ -5675,7 +5675,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-20.2';
+const APP_VERSION='2026-10-20.3';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -5722,7 +5722,7 @@ const SYNC_URL='https://marin376-api.minimarketmarin01.workers.dev'+(MODO_SUPABA
 if(MODO_SUPABASE){
   document.addEventListener('DOMContentLoaded',()=>{
     const b=document.createElement('div');
-    b.textContent='MODO PRUEBA · datos de Supabase (copia)';
+    b.textContent='MODO PRUEBA · Supabase · solo lectura';
     b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#F57C00;color:#fff;text-align:center;font:500 12px Roboto,sans-serif;padding:3px;pointer-events:none';
     document.body.appendChild(b);
   });
