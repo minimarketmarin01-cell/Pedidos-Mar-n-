@@ -26,7 +26,7 @@ import org.json.JSONObject;
  */
 public final class Actualizador {
   static final String BASE = "https://minimarketmarin01-cell.github.io/Pedidos-Mar-n-/descargas/";
-  private static final long CADA_MS = 3L * 3600 * 1000;   // revisa sola como máximo cada 3 h
+  private static final long CADA_MS = 30L * 60 * 1000;   // revisa sola como máximo cada 30 min
 
   private final Activity act;
   private final Handler ui = new Handler(Looper.getMainLooper());
