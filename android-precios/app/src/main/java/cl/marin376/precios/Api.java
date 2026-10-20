@@ -35,6 +35,8 @@ public final class Api {
   }
 
   private static HttpURLConnection abrir(String url, int lecturaMs) throws IOException {
+    // Marca de la app: el servidor cuenta aparte lo que usa esta app (uso_diario, app "etiquetas").
+    url += (url.contains("?") ? "&" : "?") + "app=etiquetas";
     HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
     c.setConnectTimeout(15000);
     c.setReadTimeout(lecturaMs);
