@@ -2152,6 +2152,11 @@ html.carrito-fijo #cp-ov .mm-card,html.carrito-fijo #ed-ov .mm-card{
 #mas-ov #ayuda-head .accordion-chev{color:#757575 !important}
 :is(.mm-ov,#__lv) .mm-motivo:not(.lv-fila),:is(.mm-ov,#__lv) .mm-resp > *,:is(.mm-ov,#__lv) .vc-mini,:is(.mm-ov,#__lv) .mm-total{border-radius:2px !important}
 :is(.mm-ov,#__lv) .mm-motivo.active,:is(.mm-ov,#__lv) .mm-motivo.on,:is(.mm-ov,#__lv) .mm-resp > .active{border-color:#4CAF50 !important;color:#388E3C !important;background:#E8F5E9 !important}
+#ll-ov .ll-row{background:#fff !important;border:none !important;border-bottom:1px solid #E0E0E0 !important;border-radius:0 !important;padding:12px 0 !important;margin:0 !important}
+#ll-ov .ll-row .nom{font-size:16px !important;font-weight:400 !important;color:#212121}
+#ll-ov .ll-row .cat{font-size:14px !important;color:#757575}
+#ll-ov .btn-guardar-fecha,#ll-ov .btn-ignorar{border-radius:2px !important;text-transform:uppercase;letter-spacing:.05em;font-size:14px !important;font-weight:500 !important}
+#ll-ov .btn-guardar-fecha{background:#4CAF50 !important;color:#fff !important;box-shadow:0 2px 4px rgba(0,0,0,.25)}
 /* ============ Estilo Loyverse (Material) en Pedidos (vista de tarjetas / celular) ============
    Barra de búsqueda verde con texto blanco y lista de artículos plana: miniatura cuadrada, nombre,
    línea de stock con color (rojo = agotado/urgente, naranja = pedir) y divisor fino, como la lista
@@ -5670,7 +5675,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-19.16';
+const APP_VERSION='2026-10-20.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -6375,6 +6380,13 @@ function cerrarModal(id){
   // sin tener que reabrir el módulo a mano cada vez — ver ed-results/ed-scan, que setean
   // _fpVolverA='ed' justo antes de llamar a fpAbrir(). No usa history (a diferencia del caso
   // 'gp' de arriba): "Editar productos" es un único nivel plano, sin retroceso por niveles.
+  if(id==='fp-ov'&&typeof _fpVolverA!=='undefined'&&_fpVolverA==='ll'){
+    _fpVolverA=null;
+    _llUltClasif=0;
+    document.getElementById('ll-ov').classList.remove('hidden');
+    llLoad();
+    return;
+  }
   if(id==='fp-ov'&&typeof _fpVolverA!=='undefined'&&_fpVolverA==='ed'){
     _fpVolverA=null;
     edAbrir();
@@ -15565,16 +15577,47 @@ async function rcGuardarSoloPrecio(it){
 }
 
 // ===================== RECIÉN LLEGADO =====================
+// Productos que entraron por Loyverse (pedido, compra o creación directa) y todavía no tienen proveedor y/o sector.
+// Se muestran en Recién llegado para completarlos desde la Ficha. Se ignoran los artículos técnicos de Loyverse.
+let _llSinClasif=[];
+const LL_TECNICOS=/^(abono fiado|precio variable)$/i;
+async function llCargarSinClasificar(){
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=productos_por_revisar');
+    const j=await res.json();
+    if(j&&j.ok)_llSinClasif=(j.productos||[]).filter(p=>!LL_TECNICOS.test(String(p.nombre||'').trim()));
+  }catch(e){}
+  return _llSinClasif;
+}
+function llFaltaTxt(p){const f=[];if(!p.proveedor_id)f.push('proveedor');if(!p.sector)f.push('sector');return 'Falta '+f.join(' y ');}
+function llHtmlSinClasificar(){
+  if(!_llSinClasif.length)return '';
+  return '<div class="in2-section-title" style="margin:16px 0 8px">Sin proveedor o sector ('+_llSinClasif.length+')</div>'+
+    _llSinClasif.map(p=>`<div class="ll-row" data-clasif="${p.sku}" style="cursor:pointer"><div class="nom">${p.nombre}</div><div class="cat">${p.categoria||'Sin categoría'} · <span class="plus" style="color:#E53935">${llFaltaTxt(p)}</span></div><div class="fecharow"><button class="btn-guardar-fecha" type="button" data-clasif-btn="${p.sku}">Clasificar</button></div></div>`).join('');
+}
+function llCablearSinClasificar(box){
+  box.querySelectorAll('[data-clasif]').forEach(el=>el.onclick=()=>{
+    const sku=el.dataset.clasif;
+    document.getElementById('ll-ov').classList.add('hidden');
+    _fpVolverA='ll'; // al cerrar la Ficha vuelve a Recién llegado (ver cerrarModal)
+    fpAbrir(sku);
+  });
+}
 async function llLoad(){
   const box=document.getElementById('ll-list'),lbl=document.getElementById('ll-lbl');
   box.innerHTML='';lbl.textContent='Cargando…';
   try{
-    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=llegadas');
+    const [res]=await Promise.all([fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=llegadas'),llCargarSinClasificar()]);
     const j=await res.json();
     if(!j||!j.ok){lbl.textContent='Error al cargar.';return;}
     const lst=j.llegadas;
     llUpdateBadge(lst.length);
-    if(!lst.length){lbl.textContent='';box.innerHTML='<div class="vc-empty">Sin llegadas pendientes por fechar</div>';return;}
+    if(!lst.length){
+      lbl.textContent='';
+      box.innerHTML=_llSinClasif.length?'<div class="vc-empty" style="padding:8px 0">Sin llegadas pendientes por fechar</div>'+llHtmlSinClasificar():'<div class="vc-empty">Sin llegadas pendientes por fechar</div>';
+      llCablearSinClasificar(box);
+      return;
+    }
     lbl.textContent=lst.length+' producto'+(lst.length===1?'':'s')+' con stock nuevo (agregado directo en Loyverse), esperando fecha';
     box.innerHTML=lst.map(it=>`
       <div class="ll-row" id="ll-row-${it.filaIndex}">
@@ -15597,10 +15640,14 @@ async function llLoad(){
     lst.forEach(it=>wireFechaSegmentada('ll-fecha-dd-'+it.filaIndex,'ll-fecha-mm-'+it.filaIndex,'ll-fecha-aaaa-'+it.filaIndex,'ll-fecha-'+it.filaIndex,'ll-fecha-cal-'+it.filaIndex));
     box.querySelectorAll('.btn-guardar-fecha').forEach(b=>b.onclick=()=>llGuardarFecha(b.dataset.i));
     box.querySelectorAll('.btn-ignorar').forEach(b=>b.onclick=()=>llIgnorar(b.dataset.ig));
+    box.insertAdjacentHTML('beforeend',llHtmlSinClasificar());
+    llCablearSinClasificar(box);
   }catch(e){lbl.textContent='Error de conexión.';}
 }
 let _rzUltimoConteo=0; // se actualiza cada vez que se recalcula el riesgo de quiebre (ver rzCalcular) — el punto de la nav combina esto con las llegadas pendientes
-function llUpdateBadge(n){
+let _llLlegadasN=0;
+function llUpdateBadge(n0){
+  _llLlegadasN=n0;const n=n0+_llSinClasif.length;
   const b=document.getElementById('ll-badge');
   if(b){
     const txt=n>99?'99+':String(n);
@@ -16304,8 +16351,10 @@ document.getElementById('rz-activar-push').onclick=async()=>{
 // entre una apertura y otra, el botón no queda mostrando información vieja.
 const _rzAbrirOriginal=rzAbrir;
 rzAbrir=function(){_rzAbrirOriginal();rzPintarEstadoPush();};
+let _llUltClasif=0;
 async function llCheckBadge(){
   try{
+    if(Date.now()-_llUltClasif>10*60*1000){_llUltClasif=Date.now();await llCargarSinClasificar();}
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=llegadas');
     const j=await res.json();
     if(j&&j.ok)llUpdateBadge(j.llegadas.length);
