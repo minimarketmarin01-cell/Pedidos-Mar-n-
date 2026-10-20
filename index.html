@@ -3329,6 +3329,20 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
   <button class="bn-item" id="bn-mas"><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg></span>Más<span class="bn-dot" id="bn-mas-dot"></span></button>
 </nav>
 
+
+<div class="mm-ov hidden" id="sb-ov">
+  <div class="mm-card">
+    <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" class="mm-head-ic" fill="currentColor"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM10 17l-3.5-3.5 1.41-1.41L10 14.17 15.18 9l1.41 1.41L10 17z"/></svg>Respaldo en Supabase</h3></div>
+    <div class="mm-topbar"><button class="loadbtn" id="sb-cerrar" style="width:100%">Cerrar</button></div>
+    <div class="mm-body">
+      <div id="sb-estado" style="font-size:20px;font-weight:500;margin:8px 0 4px">Revisando…</div>
+      <div id="sb-sub" style="font-size:14px;color:#757575;margin-bottom:16px">Comparando Cloudflare (principal) con Supabase (copia)…</div>
+      <div id="sb-lista"></div>
+      <button class="mm-save" id="sb-revisar" style="margin-top:16px">Volver a revisar</button>
+      <div style="font-size:12px;color:#757575;margin-top:12px">Cada vez que la app guarda algo en Cloudflare, se copia solo a Supabase en segundo plano. Esta pantalla compara las dos bases: cantidad de registros de cada tabla y las sumas más importantes.</div>
+    </div>
+  </div>
+</div>
 <div class="mm-ov hidden" id="mas-ov">
   <div class="mm-card">
     <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" class="mm-head-ic" fill="currentColor"><path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>Más</h3></div>
@@ -3406,6 +3420,7 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
             <button id="mas-q-ventasdia"><svg width="16" height="16" viewBox="0 0 24 24" style="vertical-align:-3px" fill="currentColor"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg><br>Ventas por día</button>
             <button id="mas-q-mermasdia"><svg width="16" height="16" viewBox="0 0 24 24" style="vertical-align:-3px" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg><br>Mermas por día</button>
             <button id="mas-q-reportedia"><svg width="16" height="16" viewBox="0 0 24 24" style="vertical-align:-3px" fill="currentColor"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg><br>Reportes del día</button>
+            <button id="mas-q-supabase"><svg width="16" height="16" viewBox="0 0 24 24" style="vertical-align:-3px" fill="currentColor"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM10 17l-3.5-3.5 1.41-1.41L10 14.17 15.18 9l1.41 1.41L10 17z"/></svg><br>Respaldo en Supabase</button>
           </div>
         </div>
       </div>
@@ -5675,7 +5690,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-20.3';
+const APP_VERSION='2026-10-20.4';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -16111,6 +16126,35 @@ function vdRenderLista(){
 }
 function vdRender(){vdRenderChart();vdRenderLista();}
 document.getElementById('mas-q-ventasdia').onclick=vdAbrir;
+
+// ===================== RESPALDO EN SUPABASE (estado del espejo) =====================
+// Pide al servidor la comparación liviana (conteos por tabla + sumas clave) entre Cloudflare D1 y Supabase.
+const _sbFmt=n=>Number.isFinite(n)?new Intl.NumberFormat('es-CL').format(n):'—';
+async function sbRevisar(){
+  const est=document.getElementById('sb-estado'),sub=document.getElementById('sb-sub'),lista=document.getElementById('sb-lista'),btn=document.getElementById('sb-revisar');
+  est.textContent='Revisando…';est.style.color='#212121';sub.textContent='Comparando Cloudflare (principal) con Supabase (copia)…';lista.innerHTML='';btn.disabled=true;
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=espejo_comparar');
+    const j=await res.json();
+    if(!j||!j.ok)throw new Error((j&&j.error)||'no se pudo comparar');
+    est.textContent=j.todoCoincide?'✅ Las dos bases coinciden':'⚠️ Hay diferencias';
+    est.style.color=j.todoCoincide?'#388E3C':'#E65100';
+    const hora=new Date(j.revisadoEn).toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
+    sub.textContent='Revisado a las '+hora+(j.enCache?' (hace menos de 1 minuto)':'')+' · '+j.tablas.length+' tablas';
+    const fila=(nombre,a,b,ok)=>`<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #E0E0E0"><span style="font-size:18px;color:${ok?'#388E3C':'#E53935'}">${ok?'✓':'✗'}</span><span style="flex:1;font-size:16px">${nombre}</span><span style="font-size:14px;color:#757575;text-align:right">${ok?_sbFmt(a):'Cloudflare '+_sbFmt(a)+'<br>Supabase '+_sbFmt(b)}</span></div>`;
+    let h=j.control.map(c=>fila(c.nombre,c.d1,c.supabase,c.coincide)).join('');
+    const malas=j.tablas.filter(t=>!t.coincide);
+    h+=fila('Registros en las '+j.tablas.length+' tablas',j.tablas.reduce((s,t)=>s+t.d1,0),j.tablas.reduce((s,t)=>s+t.supabase,0),!malas.length);
+    if(malas.length)h+='<div style="font-size:14px;color:#E65100;margin-top:12px">Tablas con diferencia: '+malas.map(t=>t.tabla+' ('+_sbFmt(t.d1)+' / '+_sbFmt(t.supabase)+')').join(', ')+'. Si sigue igual en unos minutos, avísale a soporte.</div>';
+    lista.innerHTML=h;
+  }catch(e){
+    est.textContent='No se pudo revisar';est.style.color='#E53935';sub.textContent=String(e.message||e);
+  }finally{btn.disabled=false;}
+}
+function sbAbrir(){document.getElementById('mas-ov').classList.add('hidden');abrirModal('sb-ov');sbRevisar();}
+document.getElementById('mas-q-supabase').onclick=sbAbrir;
+document.getElementById('sb-revisar').onclick=sbRevisar;
+document.getElementById('sb-cerrar').onclick=()=>cerrarModal('sb-ov');
 document.getElementById('vd-cerrar').onclick=()=>cerrarModal('vd-ov');
 (function(){
   const inp=document.getElementById('vd-search');
