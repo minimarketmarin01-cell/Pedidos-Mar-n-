@@ -5691,7 +5691,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-20.9';
+const APP_VERSION='2026-10-20.10';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -11873,13 +11873,17 @@ function etImprimir(){
 (function(){
   const P=window.MarinPOS;
   if(!P)return;
+  // Primero se conectan los botones y recién después se lee la información: si la app Android falla al responder alguna
+  // de esas consultas (p. ej. la versión del motor web), antes los botones quedaban sin conectar y "no hacían nada".
+  const llamar=(f,msg)=>{try{f();}catch(e){showToast(msg||'No se pudo comunicar con la app del POS');}};
   try{
     document.getElementById('mas-pos').classList.remove('hidden');
-    document.getElementById('mas-pos-info').textContent='Versión '+P.versionApp()+' · '+P.nombreLocal()+' · motor web Chrome '+P.motorWeb();
-    document.getElementById('mas-pos-act').onclick=()=>P.buscarActualizacion();
-    document.getElementById('mas-pos-recargar').onclick=()=>P.recargar();
-    document.getElementById('mas-pos-local').onclick=()=>P.cambiarLocal();
+    document.getElementById('mas-pos-act').onclick=()=>llamar(()=>P.buscarActualizacion(),'No se pudo buscar la actualización');
+    document.getElementById('mas-pos-recargar').onclick=()=>llamar(()=>P.recargar(),'No se pudo recargar la pantalla');
+    document.getElementById('mas-pos-local').onclick=()=>llamar(()=>P.cambiarLocal(),'No se pudo abrir el cambio de local');
   }catch(e){}
+  const dato=f=>{try{return f();}catch(e){return '?';}};
+  try{document.getElementById('mas-pos-info').textContent='Versión '+dato(()=>P.versionApp())+' · '+dato(()=>P.nombreLocal())+' · motor web Chrome '+dato(()=>P.motorWeb());}catch(e){}
 })();
 document.getElementById('mas-q-etiquetas').onclick=()=>{document.getElementById('mas-ov').classList.add('hidden');etAbrir();};
 document.getElementById('et-cancelar').onclick=etCerrar;

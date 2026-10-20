@@ -51,6 +51,7 @@ public class MainActivity extends Activity {
   private PermissionRequest permisoPendiente;
   private ValueCallback<Uri[]> selectorArchivos;
   private boolean errorPagina = false;
+  private String motorWebCache = "desconocido";
 
   @Override
   protected void onCreate(Bundle b) {
@@ -69,6 +70,7 @@ public class MainActivity extends Activity {
     cargando.setTextColor(Color.parseColor("#16395F"));
     raiz.addView(cargando, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
     configurarWeb();
+    try { motorWebCache = versionMotorWeb(); } catch (Exception e) { motorWebCache = "desconocido"; }
 
     local = Local.de(prefs.getString("local", ""));
     if (local == null) elegirLocal(true);
@@ -178,7 +180,7 @@ public class MainActivity extends Activity {
   /** Funciones que la app web puede llamar (menú "Más" → App del POS). */
   public class Puente {
     @JavascriptInterface public String versionApp() { return Actualizador.nombreInstalado(MainActivity.this); }
-    @JavascriptInterface public String motorWeb() { return versionMotorWeb(); }
+    @JavascriptInterface public String motorWeb() { return motorWebCache; }   // calculado en el hilo principal: el WebView no se puede tocar desde aquí
     @JavascriptInterface public String nombreLocal() { return local == null ? "" : local.nombre; }
     @JavascriptInterface public void buscarActualizacion() {
       ui.post(() -> {
