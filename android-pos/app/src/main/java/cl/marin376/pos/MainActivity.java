@@ -180,9 +180,22 @@ public class MainActivity extends Activity {
     @JavascriptInterface public String versionApp() { return Actualizador.nombreInstalado(MainActivity.this); }
     @JavascriptInterface public String motorWeb() { return versionMotorWeb(); }
     @JavascriptInterface public String nombreLocal() { return local == null ? "" : local.nombre; }
-    @JavascriptInterface public void buscarActualizacion() { ui.post(() -> new Actualizador(MainActivity.this).revisar(true)); }
+    @JavascriptInterface public void buscarActualizacion() {
+      ui.post(() -> {
+        Toast.makeText(MainActivity.this, "Buscando actualización…", Toast.LENGTH_SHORT).show();   // que se note que respondió
+        new Actualizador(MainActivity.this).revisar(true);
+      });
+    }
     @JavascriptInterface public void cambiarLocal() { ui.post(() -> elegirLocal(false)); }
-    @JavascriptInterface public void recargar() { ui.post(() -> { if (local != null) abrir(); }); }
+    @JavascriptInterface public void recargar() {
+      ui.post(() -> {
+        Toast.makeText(MainActivity.this, "Recargando la pantalla…", Toast.LENGTH_SHORT).show();
+        // Borra la copia de la página que guarda el motor web: si no, "recargar" volvía a mostrar la versión vieja.
+        // (No toca los datos de la app: pedidos pendientes, preferencias, etc. quedan intactos.)
+        web.clearCache(true);
+        if (local != null) abrir();
+      });
+    }
   }
 
   // ---------------------------------------------------------------- ciclo de vida
@@ -193,8 +206,14 @@ public class MainActivity extends Activity {
     else super.onBackPressed();
   }
 
-  @Override protected void onResume() { super.onResume(); web.onResume(); }
-  @Override protected void onPause() { web.onPause(); super.onPause(); }
+  private long pausadoEn = 0;
+  @Override protected void onResume() {
+    super.onResume();
+    web.onResume();
+    // Si el POS estuvo un rato en segundo plano, busca sola una versión nueva de la app (sin tocar nada).
+    if (pausadoEn > 0 && System.currentTimeMillis() - pausadoEn > 10L * 60 * 1000) new Actualizador(this).revisar(false);
+  }
+  @Override protected void onPause() { pausadoEn = System.currentTimeMillis(); web.onPause(); super.onPause(); }
 
   @Override
   public void onRequestPermissionsResult(int code, String[] perms, int[] res) {
