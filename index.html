@@ -5699,7 +5699,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-20.11';
+const APP_VERSION='2026-10-20.12';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -8215,6 +8215,13 @@ async function fpGuardarTodo(){
     // para buscar o escanear el siguiente — antes reabría la misma ficha, obligando a salir
     // a mano cada vez. edAbrir() ya limpia el buscador y enfoca el campo de búsqueda.
     fpLimpiarBorrador();
+    if(_fpVolverA==='ll'){
+      // Vino de Recién llegado: sigue con el siguiente producto sin pasar por la lista
+      render();
+      if(llSiguienteClasificar(sku,!!sector&&!!proveedorId))return;
+      cerrarModal('fp-ov');   // era el último: vuelve a la lista (ver cerrarModal)
+      return;
+    }
     cerrarModal('fp-ov');
     edAbrir();
     render();
@@ -15711,9 +15718,27 @@ function llHtmlSinClasificar(){
   return '<div class="in2-section-title" style="margin:16px 0 8px">Sin proveedor o sector ('+_llSinClasif.length+')</div>'+
     _llSinClasif.map(p=>`<div class="ll-row" data-clasif="${p.sku}" style="cursor:pointer"><div class="nom">${p.nombre}</div><div class="cat">${p.categoria||'Sin categoría'} · <span class="plus" style="color:#E53935">${llFaltaTxt(p)}</span></div><div class="fecharow"><button class="btn-guardar-fecha" type="button" data-clasif-btn="${p.sku}">Clasificar</button></div></div>`).join('');
 }
+let _llCola=[];
+// Tras guardar un producto en la Ficha abierta desde Recién llegado: lo saca de pendientes (si ya quedó con proveedor y sector)
+// y abre directo el siguiente de la cola. Devuelve false cuando no queda ninguno (la Ficha vuelve a la lista).
+function llSiguienteClasificar(skuGuardado,completo){
+  if(completo){
+    _llSinClasif=_llSinClasif.filter(p=>p.sku!==skuGuardado);
+    llUpdateBadge(_llLlegadasN);
+  }
+  _llCola=_llCola.filter(x=>x!==skuGuardado);
+  const sig=_llCola[0];
+  if(!sig)return false;
+  showToast('Guardado · quedan '+_llCola.length);
+  fpAbrir(sig);
+  return true;
+}
 function llCablearSinClasificar(box){
   box.querySelectorAll('[data-clasif]').forEach(el=>el.onclick=()=>{
     const sku=el.dataset.clasif;
+    // Cola: este producto y los que siguen en la lista; al guardar, la Ficha abre el siguiente sin volver a la lista (ver llSiguienteClasificar)
+    const i=_llSinClasif.findIndex(p=>p.sku===sku);
+    _llCola=_llSinClasif.slice(i<0?0:i).map(p=>p.sku);
     document.getElementById('ll-ov').classList.add('hidden');
     _fpVolverA='ll'; // al cerrar la Ficha vuelve a Recién llegado (ver cerrarModal)
     fpAbrir(sku);
