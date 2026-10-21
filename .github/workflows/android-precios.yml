@@ -37,6 +37,8 @@ jobs:
           java -cp cls PruebaEscaner
       - name: Probar calculadora (misma lógica que la de la web)
         run: android-precios/pruebas/comparar_calculadora.sh
+      - name: Probar la lectura de las respuestas del Worker (catálogo por cambios, búsqueda, ficha corta)
+        run: android-precios/pruebas/api/probar_api.sh
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'

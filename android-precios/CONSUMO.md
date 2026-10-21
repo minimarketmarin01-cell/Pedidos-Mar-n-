@@ -23,10 +23,22 @@
   `uso_diario` con `app = 'etiquetas'`, **todas** las respuestas (también las de menos de 50 KB).
 - Ver: `?action=uso_diario` (promedio de 7 días y proyección a 30 días por app).
 
-## Propuesta para bajar el consumo (pendiente de aprobar)
-1. **`catalogo_etiquetas` liviano y por cambios**: solo `[sku, nombre, precio, código, categoría, foto, costo]`
-   (≈ 340 KB el catálogo entero) y, con `&desde=N`, solo lo que cambió, usando el registro de cambios que el
-   Worker ya tiene (`panel_version` / `panel_cambios`). Sin cambios → respuesta de ~100 bytes.
-2. **`ficha_etiqueta`**: lo mismo que usa la app de `ficha_producto` (precio, costo, código, lote), con 2
-   consultas en vez de 10.
-3. La app cae al camino actual si el Worker no tiene las acciones nuevas.
+## Cómo baja ahora (versión 1.18)
+- **Solo se guarda en el equipo lo elegido**: los productos de las categorías de Loyverse marcadas en ☰ → «Elegir
+  categorías» (por local). Sin categorías marcadas = todas.
+- **Se actualiza por cambios**: la app guarda el número del registro de cambios del servidor (`cursor`) y pregunta
+  `catalogo_etiquetas&desde=N&cats=[…]`. Si no cambió nada responde ~80 bytes; si cambió algo, solo esas filas. Se revisa
+  al abrir si pasaron más de 20 min. Solo se baja de nuevo todo cuando se **agrega** una categoría (quitar una solo
+  borra del equipo) o si el servidor no reconoce el número.
+- **Lo que no está guardado se busca a pedido**: lo que se escribe en 🔍 (3 letras o más), un código escaneado o pasado por
+  el lector y no encontrado en el equipo se busca en el servidor (`buscar_etiquetas`: todas las categorías, hasta 40
+  resultados, sin importar acentos).
+- **Ficha corta**: `ficha_etiqueta` (precio, costo, código, lote) con 2 consultas en vez de ~10.
+- Servidor viejo (sin estas acciones): la app lo detecta por la primera clave de la respuesta, no baja el catálogo y usa
+  el camino de antes.
+- Limitación: el registro de cambios del servidor también anota cambios de stock, así que un producto vendido aparece en
+  la respuesta aunque su precio no cambie; la app compara y no cuenta lo que no cambió (nombre, precio, código,
+  categoría, foto o costo).
+
+Pruebas: `migracion/probar_etiquetas.mjs` en los dos Workers y `android-precios/pruebas/api/probar_api.sh` (lectura de
+las respuestas reales del Worker, en el CI).

@@ -10,8 +10,8 @@ android {
         applicationId 'cl.marin376.precios'
         minSdk 26          // Android 8.0 y 8.1
         targetSdk 27
-        versionCode 18
-        versionName '1.17'
+        versionCode 19
+        versionName '1.18'
     }
 
     signingConfigs {

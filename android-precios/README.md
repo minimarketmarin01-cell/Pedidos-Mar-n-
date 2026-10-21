@@ -51,6 +51,11 @@ instalado. Si hay uno nuevo, baja el APK y abre el instalador (`ApkProvider` lo 
 persona solo toca «Instalar». La primera vez Android 8 pide activar «Permitir de esta fuente» para la app.
 **Cada cambio debe subir `versionCode`**, si no la app no se entera.
 
+## Lista guardada solo con las categorías elegidas
+☰ → «Elegir categorías a mostrar»: solo esas categorías de Loyverse se guardan en el equipo y se actualizan por
+cambios (el servidor solo manda lo que cambió). El buscador 🔍, el lector y la cámara siguen encontrando TODOS los
+productos: los que no están guardados se buscan en el servidor al escribir 3 letras o más. Detalle en `CONSUMO.md`.
+
 ## Escanear con la cámara
 Ícono de cámara junto a la lupa. Pide permiso de cámara la primera vez; apunta al código (se lee en
 cualquier orientación) y, si es de un producto, abre su etiqueta; si no, deja el código en el buscador.

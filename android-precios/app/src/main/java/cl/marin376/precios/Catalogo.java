@@ -21,8 +21,14 @@ public final class Catalogo {
   public final Local local;
   public List<Producto> productos = new ArrayList<>();
   public List<String> categorias = new ArrayList<>();
-  public long hora = 0;   // cuándo se bajó (ms)
-  static final int VERSION = 2;   // 2 = con categoría y foto
+  public long hora = 0;   // cuándo se revisó por última vez (ms)
+  /** Número del registro de cambios del servidor hasta donde está al día esta lista (-1 = no se sabe: hay que bajar todo). */
+  public long cursor = -1;
+  /** Categorías que se pidieron al bajar la lista (null = todas). Solo esas están guardadas en el equipo. */
+  public List<String> sel = null;
+  /** Todas las categorías de Loyverse del local (para elegir cuáles guardar); vacía = usar las de los productos guardados. */
+  public List<String> todasCategorias = new ArrayList<>();
+  static final int VERSION = 3;   // 3 = por cambios (cursor + categorías elegidas); 2 = con categoría y foto
   private Map<String, Producto> porCodigo = new HashMap<>();
 
   public Catalogo(Local l) { local = l; }
@@ -50,6 +56,19 @@ public final class Catalogo {
     productos = lista;
     porCodigo = m;
     hora = cuando;
+  }
+
+  /** Categorías para la lista de «Elegir categorías»: todas las del local si se sabe, si no las de lo guardado. */
+  public List<String> categoriasParaElegir() { return todasCategorias.isEmpty() ? categorias : todasCategorias; }
+
+  /** Misma selección de categorías (sin importar el orden ni las mayúsculas); null = todas. */
+  public static boolean mismaSeleccion(List<String> a, List<String> b) {
+    if (a == null || b == null) return a == b;
+    if (a.size() != b.size()) return false;
+    java.util.Set<String> x = new java.util.HashSet<>();
+    for (String c : a) x.add(c.toLowerCase(Locale.ROOT));
+    for (String c : b) if (!x.contains(c.toLowerCase(Locale.ROOT))) return false;
+    return true;
   }
 
   /** Productos de una categoría (null = todos), en orden alfabético. */
@@ -91,14 +110,18 @@ public final class Catalogo {
     File f = archivo(c, l);
     if (!f.exists()) return cat;
     List<Producto> lista = new ArrayList<>();
-    long hora = 0;
+    long hora = 0, cursor = -1;
     int version = 1;
+    List<String> sel = null, todas = new ArrayList<>();
     try (JsonReader r = new JsonReader(new InputStreamReader(new FileInputStream(f), "UTF-8"))) {
       r.beginObject();
       while (r.hasNext()) {
         String k = r.nextName();
         if ("hora".equals(k)) hora = r.nextLong();
         else if ("v".equals(k)) version = r.nextInt();
+        else if ("cursor".equals(k)) cursor = r.nextLong();
+        else if ("sel".equals(k)) { sel = leerLista(r); }
+        else if ("cats".equals(k)) { todas = leerLista(r); }
         else if ("p".equals(k)) {
           r.beginArray();
           while (r.hasNext()) lista.add(Api.fila(r));
@@ -111,14 +134,29 @@ public final class Catalogo {
     }
     // Lista guardada por la versión 1.0 (sin categoría ni foto): se usa mientras tanto, pero con
     // hora 0 para que se vuelva a bajar al abrir la app y aparezcan las categorías.
-    cat.poner(lista, version >= VERSION ? hora : 0);
+    cat.poner(lista, version >= 2 ? hora : 0);
+    // Archivo anterior a la 1.18 (todas las categorías, sin número de cambios): se usa mientras tanto y la primera
+    // actualización baja la lista de nuevo, ya con el sistema por cambios.
+    if (version >= VERSION) { cat.cursor = cursor; cat.sel = sel; cat.todasCategorias = todas; }
     return cat;
+  }
+
+  private static List<String> leerLista(JsonReader r) throws java.io.IOException {
+    List<String> out = new ArrayList<>();
+    r.beginArray();
+    while (r.hasNext()) out.add(r.nextString());
+    r.endArray();
+    return out;
   }
 
   public void guardar(Context c) {
     File f = archivo(c, local), tmp = new File(f.getPath() + ".tmp");
     try (JsonWriter w = new JsonWriter(new OutputStreamWriter(new FileOutputStream(tmp), "UTF-8"))) {
-      w.beginObject().name("v").value(VERSION).name("hora").value(hora).name("p").beginArray();
+      w.beginObject().name("v").value(VERSION).name("hora").value(hora).name("cursor").value(cursor);
+      if (sel != null) { w.name("sel").beginArray(); for (String x : sel) w.value(x); w.endArray(); }
+      w.name("cats").beginArray();
+      for (String x : todasCategorias) w.value(x);
+      w.endArray().name("p").beginArray();
       for (Producto p : productos) w.beginArray().value(p.sku).value(p.nombre).value(p.precio).value(p.barcode).value(p.categoria).value(p.imagen).value(p.costo).endArray();
       w.endArray().endObject();
     } catch (Exception e) {

@@ -34,6 +34,110 @@ public final class Api {
     return p;
   }
 
+  // ---------------------------------------------------------------- catálogo liviano y por cambios
+  // El servidor (acciones catalogo_etiquetas / categorias_etiquetas / buscar_etiquetas / ficha_etiqueta) responde con
+  // "lite" como PRIMERA clave. Un servidor viejo no conoce esas acciones y devuelve el catálogo completo: si la primera
+  // clave no es "lite" se corta la lectura sin bajarlo y se devuelve null (la app usa entonces el camino de antes).
+
+  /** Lo que devuelve catalogo_etiquetas: completo, o solo lo que cambió desde el número guardado. */
+  public static final class Lite {
+    public boolean completo;
+    public long cursor = -1;
+    public List<Producto> productos = new ArrayList<>();
+    public List<String> borrados = new ArrayList<>();
+  }
+
+  private interface LectorLite<T> { T leer(JsonReader r) throws Exception; }
+
+  private static <T> T leerLite(String url, int lecturaMs, LectorLite<T> lector) throws Exception {
+    HttpURLConnection c = abrir(url, lecturaMs);
+    try (JsonReader r = new JsonReader(new InputStreamReader(cuerpo(c), "UTF-8"))) {
+      r.beginObject();
+      if (!r.hasNext() || !"lite".equals(r.nextName())) return null;   // servidor sin las acciones nuevas
+      r.skipValue();
+      return lector.leer(r);
+    } finally {
+      c.disconnect();
+    }
+  }
+
+  /**
+   * Productos de las categorías elegidas (cats = null: todas). Con desde = N solo lo que cambió después de N.
+   * null si el servidor todavía no tiene la acción.
+   */
+  public static Lite catalogoLiviano(Local l, List<String> cats, Long desde) throws Exception {
+    StringBuilder u = new StringBuilder(l.url).append("?action=catalogo_etiquetas");
+    if (desde != null) u.append("&desde=").append(desde);
+    if (cats != null) u.append("&cats=").append(URLEncoder.encode(new JSONArray(cats).toString(), "UTF-8"));
+    return leerLite(u.toString(), 120000, r -> {
+      Lite out = new Lite();
+      boolean ok = true;
+      String error = null;
+      while (r.hasNext()) {
+        String k = r.nextName();
+        if ("completo".equals(k)) out.completo = r.nextBoolean();
+        else if ("cursor".equals(k)) { if (r.peek() == JsonToken.NULL) { r.nextNull(); } else out.cursor = r.nextLong(); }
+        else if ("ok".equals(k)) ok = r.nextBoolean();
+        else if ("error".equals(k)) error = texto(r);
+        else if ("productos".equals(k)) {
+          r.beginArray();
+          while (r.hasNext()) { Producto p = fila(r); if (!p.sku.isEmpty() && !p.nombre.isEmpty()) out.productos.add(p); }
+          r.endArray();
+        } else if ("borrados".equals(k)) {
+          r.beginArray();
+          while (r.hasNext()) out.borrados.add(texto(r));
+          r.endArray();
+        } else r.skipValue();
+      }
+      if (!ok) throw new Exception(error == null || error.isEmpty() ? "El servidor no pudo dar los productos" : error);
+      return out;
+    });
+  }
+
+  /** Nombres de todas las categorías de Loyverse del local (para elegir cuáles guardar). null si el servidor no la tiene. */
+  public static List<String> categorias(Local l) throws Exception {
+    return leerLite(l.url + "?action=categorias_etiquetas", 30000, r -> {
+      List<String> out = new ArrayList<>();
+      while (r.hasNext()) {
+        String k = r.nextName();
+        if ("categorias".equals(k)) {
+          r.beginArray();
+          while (r.hasNext()) {
+            r.beginArray();
+            String n = r.hasNext() ? texto(r) : "";
+            while (r.hasNext()) r.skipValue();
+            r.endArray();
+            if (!n.isEmpty()) out.add(n);
+          }
+          r.endArray();
+        } else r.skipValue();
+      }
+      return out;
+    });
+  }
+
+  /** Busca en TODAS las categorías (nombre sin importar acentos, SKU o código); hasta 40. null si el servidor no la tiene. */
+  public static List<Producto> buscar(Local l, String q) throws Exception {
+    return leerLite(l.url + "?action=buscar_etiquetas&q=" + URLEncoder.encode(q, "UTF-8"), 30000, r -> {
+      List<Producto> out = new ArrayList<>();
+      while (r.hasNext()) {
+        String k = r.nextName();
+        if ("productos".equals(k)) {
+          r.beginArray();
+          while (r.hasNext()) { Producto p = fila(r); if (!p.sku.isEmpty() && !p.nombre.isEmpty()) out.add(p); }
+          r.endArray();
+        } else r.skipValue();
+      }
+      return out;
+    });
+  }
+
+  /** buscar(), y si el servidor es viejo, el catálogo completo filtrado (solo para comprobaciones raras). */
+  public static List<Producto> buscarOCatalogo(Local l, String q) throws Exception {
+    List<Producto> r = buscar(l, q);
+    return r != null ? r : catalogo(l);
+  }
+
   private static HttpURLConnection abrir(String url, int lecturaMs) throws IOException {
     // Marca de la app: el servidor cuenta aparte lo que usa esta app (uso_diario, app "etiquetas").
     url += (url.contains("?") ? "&" : "?") + "app=etiquetas";
@@ -270,15 +374,27 @@ public final class Api {
     public String barcode, vence;   // vence = DD/MM/AAAA o null
   }
 
+  /** Ficha corta (ficha_etiqueta: 2 consultas); si el servidor es viejo, la completa de antes. */
   public static Ficha ficha(Local l, String sku) throws Exception {
-    HttpURLConnection c = abrir(l.url + "?action=ficha_producto&sku=" + URLEncoder.encode(sku, "UTF-8"), 20000);
+    Ficha f = ficha(l, "ficha_etiqueta", sku);
+    return f != null ? f : ficha(l, "ficha_producto", sku);
+  }
+
+  private static Ficha ficha(Local l, String accion, String sku) throws Exception {
+    HttpURLConnection c = abrir(l.url + "?action=" + accion + "&sku=" + URLEncoder.encode(sku, "UTF-8"), 20000);
     String txt;
     try {
       InputStream in = cuerpo(c);
       ByteArrayOutputStream o = new ByteArrayOutputStream();
       byte[] b = new byte[8192];
       int n;
-      while ((n = in.read(b)) > 0) o.write(b, 0, n);
+      // La ficha corta pesa ~1 KB. Si llega mucho más es un servidor viejo que, ante una acción que no conoce, devuelve el
+      // catálogo completo: se corta ahí (sin bajarlo) y la app pide la ficha de siempre.
+      int tope = "ficha_etiqueta".equals(accion) ? 100000 : Integer.MAX_VALUE;
+      while ((n = in.read(b)) > 0) {
+        o.write(b, 0, n);
+        if (o.size() > tope) return null;
+      }
       in.close();
       txt = o.toString("UTF-8");
     } finally {
