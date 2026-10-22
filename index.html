@@ -5705,7 +5705,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-20.15';
+const APP_VERSION='2026-10-20.16';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -7061,14 +7061,6 @@ function fpPaneGeneral(f){
       ):'<div class="cat">Activa "Seguir inventario" para poder recontar.</div>')+
       fpCampo('Stock mínimo (opcional)','<input id="fp-i-stockmin" type="number" inputmode="numeric" value="'+(p.stockMinimo!=null?p.stockMinimo:'')+'" placeholder="Ej: 5" style="width:100%;padding:9px 12px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;font-family:\'JetBrains Mono\';margin-top:10px">')+
     '</div>'+
-    // "¿Está de verdad en Loyverse?" — consulta directa a Loyverse, sin pasar por la copia
-    // local. Nació de un caso real: un producto creado desde acá no aparecía en el buscador de
-    // la caja y no había forma de saber, desde la app, si el problema era que no había llegado
-    // a Loyverse o que había llegado pero sin quedar disponible para la venta.
-    '<div style="margin:-4px 0 14px">'+
-      '<button type="button" id="fp-verif-btn" class="loadbtn" style="width:100%">🔍 Verificar en Loyverse</button>'+
-      '<div id="fp-verif-res" class="hidden" style="margin-top:8px;font-size:14px;line-height:1.45"></div>'+
-    '</div>'+
     // Copiar a Argomedo 455 — empareja por CÓDIGO DE BARRAS (el único dato que puede coincidir
     // entre los dos catálogos de Loyverse, independientes entre sí; el SKU se genera aparte en
     // cada sistema). Sin código de barras no hay forma confiable de saber si ya existe allá, así
@@ -7083,7 +7075,6 @@ function fpPaneGeneral(f){
         :'<div class="cat">Este producto no tiene código de barras — hace falta para saber si ya existe en '+OTRO_LOCAL_NOMBRE+'.</div>')+
       '<div id="fp-copiar-res" class="hidden" style="margin-top:8px;font-size:14px;line-height:1.45"></div>'+
     '</div>';
-  { const vb=document.getElementById('fp-verif-btn'); if(vb)vb.onclick=()=>fpVerificarLoyverse(p.sku); }
   { const bt=document.getElementById('fp-copiar-todo'); if(bt)bt.onclick=()=>fpCopiarAOtroLocal(p,'todo'); }
   { const bc=document.getElementById('fp-copiar-costo-precio'); if(bc)bc.onclick=()=>fpCopiarAOtroLocal(p,'costo_precio'); }
   document.querySelectorAll('#fp-g-nombre,#fp-g-barcode').forEach(el=>el&&el.addEventListener('input',fpGuardarBorrador));
@@ -7256,64 +7247,6 @@ async function fpGuardarRecuento(sku){
   }
 }
 // ==== SECCIÓN 2 — UNIDAD: unidad vs. peso (kg) ====
-// Pregunta a Loyverse, en vivo, qué tiene de ESTE producto — sin mirar la copia local. Un
-// artículo puede estar creado en Loyverse pero marcado como NO disponible para la venta en la
-// tienda: en ese caso existe en el Back Office pero NO aparece en el buscador de la caja, que
-// es un síntoma imposible de distinguir desde la app hasta ahora ("lo creé y no sale").
-async function fpVerificarLoyverse(sku){
-  const box=document.getElementById('fp-verif-res'),btn=document.getElementById('fp-verif-btn');
-  if(!box)return;
-  box.classList.remove('hidden');
-  box.innerHTML='<span class="cat">Consultando a Loyverse…</span>';
-  if(btn)btn.disabled=true;
-  const ctrl=new AbortController();
-  const to=setTimeout(()=>ctrl.abort(),20000);
-  try{
-    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=verificar_producto_loyverse&sku='+encodeURIComponent(sku),{signal:ctrl.signal});
-    const j=await res.json();
-    if(!j||!j.ok){box.innerHTML='<span style="color:var(--rojo)">No se pudo verificar: '+((j&&j.error)||'error desconocido')+'</span>';return;}
-    const v=j.verificacion||{};
-    if(!v.existeEnLoyverse){
-      box.innerHTML='<span style="color:var(--rojo);font-weight:700">❌ No está en Loyverse.</span><br>'+
-        '<span class="cat">'+(v.motivo||'')+' Hay que crearlo de nuevo.</span>';
-      return;
-    }
-    if(!v.enEstaTienda||!v.disponibleParaVenta){
-      const causa=!v.enEstaTienda
-        ? 'Está en Loyverse pero NO asignado a tu tienda.'
-        : 'Está en Loyverse pero marcado como NO disponible para la venta.';
-      box.innerHTML='<span style="color:var(--ambar);font-weight:700">⚠️ '+causa+'</span><br>'+
-        '<span class="cat">Por eso no aparece en el buscador de la caja.</span>'+
-        '<button type="button" id="fp-verif-reparar" class="btn-ok loadbtn" style="width:100%;margin-top:8px">Arreglar ahora</button>';
-      const rb=document.getElementById('fp-verif-reparar');
-      if(rb)rb.onclick=()=>fpRepararLoyverse(sku);
-      return;
-    }
-    box.innerHTML='<span style="color:var(--verde);font-weight:700">✅ Está en Loyverse y disponible para la venta'+
-      (v.precioEnTienda!=null?(' ('+peso(v.precioEnTienda)+')'):'')+'.</span><br>'+
-      '<span class="cat">Si aún no lo ves en la caja, cerrá por completo la app de Loyverse y volvé a abrirla para que baje el catálogo nuevo.</span>';
-  }catch(e){
-    box.innerHTML='<span style="color:var(--rojo)">'+(e.name==='AbortError'?'Loyverse tardó demasiado en responder.':'Error de conexión al verificar.')+'</span>';
-  }finally{clearTimeout(to);if(btn)btn.disabled=false;}
-}
-async function fpRepararLoyverse(sku){
-  const rb=document.getElementById('fp-verif-reparar');
-  if(rb){rb.disabled=true;rb.textContent='Arreglando…';}
-  try{
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'reparar_disponibilidad_loyverse',payload:{sku:sku}})});
-    const j=await res.json();
-    if(j&&j.ok){
-      showToast(j.mensaje||'Listo');
-      fpVerificarLoyverse(sku); // vuelve a preguntar para mostrar el estado real, no el esperado
-    }else{
-      showToast('No se pudo arreglar: '+((j&&j.error)||'error desconocido'));
-      if(rb){rb.disabled=false;rb.textContent='Arreglar ahora';}
-    }
-  }catch(e){
-    showToast('Error de conexión al arreglar');
-    if(rb){rb.disabled=false;rb.textContent='Arreglar ahora';}
-  }
-}
 // "Copiar a otro local" (ver contexto junto a OTRO_LOCAL_URL): llama DIRECTO al Worker del
 // otro local — no pasa por el propio backend — con los datos que este local ya tiene del
 // producto. modo:'todo' copia nombre/categoría/costo/precio/sigue-inventario/vendido-por-peso;
