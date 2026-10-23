@@ -66,7 +66,7 @@ public class MainActivity extends Activity {
   private TextView spCategoria;   // selector de categoría (abre una lista grande)
   private String categoria = null; // null = todos los artículos
   private EditText buscador;
-  private Button btnBuscar;
+  private IconoLoyverse btnBuscar;
   private ListView lista;
   private final Adaptador adaptador = new Adaptador();
   private final Runnable buscarLuego = this::filtrar;
@@ -324,17 +324,13 @@ public class MainActivity extends Activity {
     View sep = linea();
     filtro.addView(sep, new LinearLayout.LayoutParams(dp(1), dp(64)));
     // Escanear con la cámara (el ícono se dibuja a mano: no depende de los emojis del equipo).
-    IconoCamara camara = new IconoCamara(this, PLOMO);
-    camara.setClickable(true);
-    camara.setOnClickListener(v -> escanear());
-    filtro.addView(camara, new LinearLayout.LayoutParams(dp(64), dp(64)));
-    btnBuscar = new Button(this);
-    btnBuscar.setText("🔍");
-    btnBuscar.setTextSize(24);
-    btnBuscar.setTextColor(PLOMO);
-    btnBuscar.setBackground(null);
+    final int gris = Color.parseColor("#616161");
+    IconoLoyverse escaner = new IconoLoyverse(this, IconoLoyverse.ESCANER, gris);
+    escaner.setOnClickListener(v -> escanear());
+    filtro.addView(escaner, new LinearLayout.LayoutParams(dp(64), dp(64)));
+    btnBuscar = new IconoLoyverse(this, IconoLoyverse.LUPA, gris);
     btnBuscar.setOnClickListener(v -> { if (buscando) cerrarBusqueda(); else abrirBusqueda(); });
-    filtro.addView(btnBuscar, new LinearLayout.LayoutParams(dp(72), dp(64)));
+    filtro.addView(btnBuscar, new LinearLayout.LayoutParams(dp(64), dp(64)));
     raiz.addView(filtro, new LinearLayout.LayoutParams(-1, dp(64)));
     raiz.addView(linea(), new LinearLayout.LayoutParams(-1, dp(1)));
 
@@ -417,7 +413,7 @@ public class MainActivity extends Activity {
     buscando = true;
     spCategoria.setVisibility(View.GONE);
     buscador.setVisibility(View.VISIBLE);
-    btnBuscar.setText("✕");
+    btnBuscar.setTipo(IconoLoyverse.CERRAR);
     buscador.requestFocus();
     InputMethodManager im = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
     if (im != null) im.showSoftInput(buscador, InputMethodManager.SHOW_IMPLICIT);
@@ -431,7 +427,7 @@ public class MainActivity extends Activity {
     if (im != null) im.hideSoftInputFromWindow(buscador.getWindowToken(), 0);
     buscador.setVisibility(View.GONE);
     spCategoria.setVisibility(View.VISIBLE);
-    btnBuscar.setText("🔍");
+    btnBuscar.setTipo(IconoLoyverse.LUPA);
     filtrar();
   }
 
