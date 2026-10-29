@@ -5716,7 +5716,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-28.2';
+const APP_VERSION='2026-10-28.3';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -14437,6 +14437,23 @@ async function prCorregirDireccion(id,btn,direccionActual,sku,cantidad,costoUnit
     }
   }catch(e){showToast('Error de conexión al corregir');btn.disabled=false;}
 }
+
+// Enlace desde la notificación de pedido de pan: ?pedido=IDEAL (o PAN CASTAÑO) abre la app directo en Pedidos con ese proveedor.
+// Espera a que carguen los datos (hasta 30 s) y se aplica una sola vez.
+(function(){
+  const m=/[?&]pedido=([^&]+)/.exec(location.search);if(!m)return;
+  const buscado=normTxt(decodeURIComponent(m[1].replace(/\+/g,' ')));let n=0;
+  const t=setInterval(()=>{
+    if(++n>60){clearInterval(t);return;}
+    try{
+      const p=((DB&&DB.provsReal)||[]).find(x=>normTxt(x.prov)===buscado);
+      if(!p)return;
+      clearInterval(t);
+      cerrarOverlays();pickProv(p.prov);
+      const b=document.getElementById('bn-pedidos');if(b)b.click();
+    }catch(e){}
+  },500);
+})();
 
 // ===================== BUSCADOR DE FUNCIONES EN "MÁS" =====================
 // Filtra los botones de todos los grupos de Más mientras se escribe (sin tildes ni mayúsculas, cada palabra debe aparecer).
