@@ -693,18 +693,6 @@ html.carrito-fijo #rc-ov .mm-sections{
 .fp-chip{display:inline-flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:5px 6px 5px 11px;font-size:12px;font-weight:500;color:var(--ink)}
 .fp-chip button{border:none;background:var(--gris-bg,#F3F1EA);color:var(--muted);width:18px;height:18px;border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none}
 .fp-chip-principal{display:inline-flex;align-items:center;gap:5px;background:var(--verde-bg,#E3F3E8);color:var(--exito);border-radius:20px;padding:4px 10px;font-size:12px;font-weight:700;margin-top:6px}
-/* ==== Costeo de producción — calculadora de costo por unidad para productos elaborados en el
-   local (ensaladas, etc.): materia prima + mano de obra + envase + fijos (luz/agua/insumos).
-   Reusa el lenguaje visual de .fp-kpi-grid (grid de números lado a lado) para el desglose. */
-.cf-warn{background:var(--rojo-bg);border:1px solid var(--rojo);border-radius:10px;padding:9px 12px;font-size:12px;color:var(--rojo);font-weight:500;margin-bottom:12px;line-height:1.4}
-.cf-alerta{background:var(--rojo-bg);border:1px solid var(--rojo);border-radius:10px;padding:9px 12px;font-size:12px;color:var(--rojo);font-weight:700;margin-bottom:12px;line-height:1.4}
-.cf-kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:14px 0 10px}
-.cf-kpi{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:9px 8px;text-align:left}
-.cf-kpi-lbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cf-kpi-val{font-family:'JetBrains Mono';font-weight:700;font-size:16px;color:var(--ink)}
-.cf-total{background:var(--verde-bg,#E3F3E8);border:1.5px solid var(--verde);border-radius:12px;padding:11px 13px;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
-.cf-total-lbl{font-size:12px;font-weight:700;color:var(--exito);text-transform:uppercase;letter-spacing:.02em}
-.cf-total-val{font-family:'JetBrains Mono';font-weight:700;font-size:20px;color:var(--ink)}
 /* ==== Calculadora de precio (PcWidget) — componente global único, reutilizado en Ficha de
    producto, Crear producto y Recepción. Fondo diferenciado del resto de la página para que
    quede claro de un vistazo dónde termina "información" y empieza "herramienta de cálculo".
@@ -1549,6 +1537,7 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
 .toast{position:fixed;bottom:92px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:10px;font-weight:500;font-size:14px;box-shadow:0 8px 30px rgba(0,0,0,.25);transition:.3s;z-index:260;opacity:0;max-width:90vw;text-align:center;pointer-events:none}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 /* Con el teclado abierto el aviso de abajo quedaba tapado: mientras se escribe en una casilla, sale arriba (bajo la cabecera). */
+.mas-oculto{display:none!important}
 .toast.ok{background:#2E7D32}
 .toast.error{background:#C62828}
 .toast.aviso{background:#E65100}
@@ -1831,7 +1820,6 @@ html.modo-bliss .row-pedir .fila-nombre::before{content:'● ';color:var(--ambar
 .debug-outline::before{content:'DEBUG: morado=tab-pedido·naranja=.wrap·rojo=.tablecard·azul=.tbl-scroll·verde=#ptable·amarillo=carrito·magenta punteado=td·cian punteado=fila-row·NARANJA SÓLIDO=fila-pedir';position:fixed;top:0;left:0;right:0;z-index:99999;background:#000;color:#fff;font-size:11px;padding:3px 6px;text-align:center}
 #cp-ov.cp-quick #cp-sec-ident,
 #cp-ov.cp-quick #cp-sec-inventario,
-#cp-ov.cp-quick #cp-field-provsector,
 #cp-ov.cp-quick #cp-field-iva,
 #cp-ov.cp-quick #cp-field-activo{display:none}
 
@@ -2880,97 +2868,6 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
         </div>
       </div>
     </div>
-    <div class="mm-ov hidden" id="cf-ov">
-      <div class="mm-card">
-        <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" class="mm-head-ic" fill="currentColor"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>Costeo de producción</h3></div>
-        <div class="mm-topbar"><button class="loadbtn" id="cf-cerrar" style="width:100%">Cerrar</button></div>
-        <div class="mm-body">
-        <div class="cf-warn">Al aplicar, el costo calculado y el precio de venta sugerido se escriben directo en Loyverse (no solo aquí). Revisa el desglose antes de aplicar.</div>
-
-        <div class="mm-field" style="margin-bottom:8px">
-          <label>Producto elaborado</label>
-          <div class="mm-search">
-            <input id="cf-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off" style="padding-right:132px">
-            <button class="mm-x" id="cf-lx" type="button" aria-label="Limpiar" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
-            <button class="mm-mic" id="cf-mic" type="button" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg></button>
-            <button class="mm-scan cam-btn" id="cf-scan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h2v12H4V6m3 0h1v12H7V6m2 0h3v12H9V6m4 0h1v12h-1V6m3 0h2v12h-2V6m3 0h1v12h-1V6M2 4v4H0V4a2 2 0 0 1 2-2h4v2H2m20-2a2 2 0 0 1 2 2v4h-2V4h-4V2h4M2 16v4h4v2H2a2 2 0 0 1-2-2v-4h2m20 4v-4h2v4a2 2 0 0 1-2 2h-4v-2h4z"/></svg></button>
-          </div>
-          <div class="mm-picked" id="cf-picked">
-            <div class="nom" id="cf-nom">—</div>
-            <div class="cat" id="cf-costoventa" style="font-weight:700;color:var(--ink);margin-top:3px">Costo actual: — · Precio de venta: —</div>
-          </div>
-          <div id="cf-results"></div>
-        </div>
-
-        <div class="cf-alerta hidden" id="cf-alerta"></div>
-
-        <div class="mm-field" style="margin-bottom:8px">
-          <label>Costo total de materia prima del lote</label>
-          <input id="cf-materia" inputmode="decimal" placeholder="$0" style="width:100%;height:38px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;font-family:'JetBrains Mono';box-sizing:border-box">
-        </div>
-        <div class="mm-field" style="margin-bottom:8px">
-          <label>Unidades que salieron del lote (bolsas/porciones)</label>
-          <input id="cf-unidades" inputmode="decimal" placeholder="0" style="width:100%;height:38px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;font-family:'JetBrains Mono';box-sizing:border-box">
-        </div>
-        <div class="mm-field" style="margin-bottom:8px">
-          <label>Tiempo de mano de obra invertido en el lote</label>
-          <div style="display:flex;gap:8px">
-            <div style="flex:1">
-              <input id="cf-horas" inputmode="numeric" placeholder="0" aria-label="Horas" style="width:100%;height:38px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;font-family:'JetBrains Mono';box-sizing:border-box">
-              <div class="pc-hint" style="text-align:center">Horas</div>
-            </div>
-            <div style="flex:1">
-              <input id="cf-mins" inputmode="numeric" placeholder="0" aria-label="Minutos" max="59" style="width:100%;height:38px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;font-family:'JetBrains Mono';box-sizing:border-box">
-              <div class="pc-hint" style="text-align:center">Min</div>
-            </div>
-          </div>
-        </div>
-        <div class="mm-field" style="margin-bottom:8px">
-          <label>Sueldo por hora de quien lo preparó</label>
-          <input id="cf-sueldo" inputmode="decimal" placeholder="$0" style="width:100%;height:38px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;font-family:'JetBrains Mono';box-sizing:border-box">
-        </div>
-        <div class="mm-field" style="margin-bottom:8px">
-          <label>Envase/bolsa por unidad</label>
-          <input id="cf-envase" inputmode="decimal" placeholder="$0" style="width:100%;height:38px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;font-family:'JetBrains Mono';box-sizing:border-box">
-        </div>
-        <div class="mm-field" style="margin-bottom:8px">
-          <label>Costo fijo por unidad (luz, agua, guantes, utensilios)</label>
-          <input id="cf-fijo" inputmode="decimal" placeholder="$0" style="width:100%;height:38px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;font-family:'JetBrains Mono';box-sizing:border-box">
-          <div class="pc-hint">Se recuerda entre usos — normalmente se define una vez al mes.</div>
-        </div>
-
-        <div class="cf-kpi-grid">
-          <div class="cf-kpi"><div class="cf-kpi-lbl">Materia prima/u</div><div class="cf-kpi-val" id="cf-d-materia">$0</div></div>
-          <div class="cf-kpi"><div class="cf-kpi-lbl">Mano de obra/u</div><div class="cf-kpi-val" id="cf-d-mano">$0</div></div>
-          <div class="cf-kpi"><div class="cf-kpi-lbl">Envase/u</div><div class="cf-kpi-val" id="cf-d-envase">$0</div></div>
-          <div class="cf-kpi"><div class="cf-kpi-lbl">Fijo/u</div><div class="cf-kpi-val" id="cf-d-fijo">$0</div></div>
-        </div>
-        <div class="cf-total">
-          <div class="cf-total-lbl">Costo final por unidad</div>
-          <div class="cf-total-val" id="cf-total-val">$0</div>
-        </div>
-
-        <div class="mm-field" style="margin-bottom:8px">
-          <label>Margen objetivo (%)</label>
-          <input id="cf-margen" inputmode="decimal" placeholder="65" style="width:100%;height:38px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;font-family:'JetBrains Mono';box-sizing:border-box">
-          <div class="pc-round-row" id="cf-margen-chips" style="margin-top:8px">
-            <button type="button" class="pc-round-chip" data-m="50">50%</button>
-            <button type="button" class="pc-round-chip" data-m="60">60%</button>
-            <button type="button" class="pc-round-chip" data-m="65">65%</button>
-            <button type="button" class="pc-round-chip" data-m="70">70%</button>
-          </div>
-          <div class="pc-hint">Para productos elaborados (con mano de obra) lo típico es apuntar a 60-70%.</div>
-        </div>
-        <div class="cf-total" style="background:var(--gold-bg,#F3F0E2);border-color:var(--gold,#8A7A4E)">
-          <div class="cf-total-lbl" style="color:var(--gold,#8A7A4E)">Precio de venta sugerido</div>
-          <input id="cf-precio-sugerido" inputmode="decimal" aria-label="Precio de venta sugerido" class="cf-total-val" style="border:none;background:transparent;outline:none;text-align:right;width:110px;padding:0">
-        </div>
-        <div class="pc-hint" id="cf-precio-comparacion" style="margin:-4px 0 8px"></div>
-
-        <button class="mm-save" id="cf-aplicar" disabled>Aplicar costo y precio al producto</button>
-        </div>
-      </div>
-    </div>
     <div class="mm-ov hidden" id="rneg-ov">
       <div class="mm-card">
         <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" class="mm-head-ic" fill="currentColor"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9 1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>Recibidos en negativo</h3></div>
@@ -3139,6 +3036,10 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
         <div class="mm-sections">
           <section class="mm-section mm-section--bare">
             <div class="mm-section-head"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1 0-2 .9-2 2v3.01c0 .72.43 1.34 1 1.69V20c0 1.1 1.1 2 2 2h14c.9 0 2-.9 2-2V8.7c.57-.35 1-.97 1-1.69V4c0-1.1-1-2-2-2zm-5 12H9v-2h6v2zm5-7H4V4l16-.02V7z"/></svg>Producto</div>
+            <div class="provday" id="rc-pend-wrap" style="margin-bottom:12px">
+              <div class="pd-mod-hdr" id="rc-pend-hdr" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between"><span class="pd-mod-title">📥 Pedidos por recibir <span id="rc-pend-n" class="cat"></span></span><span class="pd-prov-caret" id="rc-pend-caret">▾</span></div>
+              <div id="rc-pend" style="max-height:42vh;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
+            </div>
             <div class="mm-field" style="margin-bottom:8px">
               <div class="mm-search">
                 <input id="rc-search" placeholder="Buscar por nombre, REF o código…" autocomplete="off" style="padding-right:132px">
@@ -3374,6 +3275,11 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
     <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" class="mm-head-ic" fill="currentColor"><path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>Más</h3></div>
     <div class="mm-topbar"><button class="loadbtn" id="mas-cerrar" style="width:100%">Cerrar</button></div>
     <div class="mm-body">
+      <div class="mas-buscar" style="position:sticky;top:0;z-index:5;background:var(--paper,#fff);padding:2px 0 10px;margin-top:-2px">
+        <div class="mm-search"><input id="mas-buscar" type="search" placeholder="Buscar una función… (ej. merma, fiados, etiquetas)" autocomplete="off" style="padding-right:40px">
+          <button class="mm-x" id="mas-buscar-x" type="button" aria-label="Limpiar" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div>
+        <div id="mas-buscar-vacio" class="cat hidden" style="margin-top:8px;text-align:center">Ninguna función coincide con tu búsqueda.</div>
+      </div>
       <div class="mas-grp hidden" id="mas-pos">
         <div class="mas-grp-head" style="cursor:default"><span class="mas-grp-t"><span class="ic">📲</span> App del POS</span></div>
         <div style="padding:4px 14px 14px">
@@ -3397,7 +3303,6 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
           <div class="mas-quick">
             <button id="mas-q-merma"><svg width="16" height="16" viewBox="0 0 24 24" style="vertical-align:-3px" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg><br>Merma</button>
             <button id="mas-q-sincosto"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2 2-2 3.5"/><circle cx="12" cy="16.8" r="0.2" fill="currentColor" stroke-width="0"/></svg><br>Sin costo</button>
-            <button id="mas-q-costeo"><svg width="16" height="16" viewBox="0 0 24 24" style="vertical-align:-3px" fill="currentColor"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg><br>Costeo de producción</button>
             <button id="mas-q-sinmov"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="10" y1="9" x2="10" y2="15"/><line x1="14" y1="9" x2="14" y2="15"/></svg><br>Sin movimiento</button>
             <button id="mas-q-reconteo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="10" y1="4" x2="8" y2="20"/><line x1="16" y1="4" x2="14" y2="20"/></svg><br>Reconteo stock</button>
             <button id="mas-q-riesgo"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg><br>Riesgo de quiebre<span class="mas-badge" id="riesgo-badge"></span></button>
@@ -4458,8 +4363,34 @@ function motivoVencDe(it){const m=MOTIVOS_POR_SKU[it.ref];return m?m.texto:null;
 // Las unidades vencidas aún sin retirar (vencidoDe) salen de la CANTIDAD ORIGINAL del lote, que no baja con las ventas: si el lote
 // era de 10 y hoy quedan 2 en el estante, no hay 10 para cambiar sino 2. Por eso en productos con control de stock se limita a
 // lo que realmente hay (nunca más que el stock). Antes mostraba "STK -10 / Cambio: -10" con 2 unidades reales.
+// Reposición por fórmula (punto de reposición + stock de seguridad) para TODO el pan de Ideal y de Pan Castaño (sector PANADERÍA;
+// los dulces, tortillas y snacks de esos proveedores siguen con el cálculo general). El cálculo general usa las ventas de los
+// últimos 7 días: un pan agotado vende cero, su tasa cae a cero y el sugerido desaparece justo cuando más falta hace (pasó con el
+// pan blanco de Ideal: agotado el 18/10 y sin sugerencia). Acá la demanda diaria es la mayor entre ventas de 30 y de 90 días, el
+// objetivo cubre plazo de entrega + ciclo entre pedidos y suma un colchón del 95 % (1,65 × raíz de la demanda del período).
+// Ambos proveedores cambian el producto vencido o con moho, así que sobrar cuesta poco al lado de quedarse sin pan.
+// lead = días entre pedir y recibir; ciclo = días entre pedidos. Ideal: se pide el jueves y llega el lunes (4 días), pedido
+// semanal. Pan Castaño: se pide el miércoles y llega el jueves (se usa 2 por seguridad), visita cada ~15 días.
+// No resta "lo ya pedido" (decisión del dueño). Stock negativo cuenta como 0 (analyze ya lo recorta).
+const BASICOS_REPOSICION={'IDEAL':{lead:4,ciclo:7},'PAN CASTAÑO':{lead:2,ciclo:15}};
+const BASICOS_MIN_VENTAS_90=4;     // con menos ventas en 90 días no se aplica la fórmula (productos casi sin rotación generan vencidos)
+const BASICOS_PISO_VENTAS_90=8;    // stock 0 y esta rotación o más: siempre entra al pedido
+function formulaBasico(it){
+  const cfg=BASICOS_REPOSICION[String(it.proveedorNombre||it.prov||'').toUpperCase()];
+  if(!cfg||it.sector!=='PANADERIA'||(it.u90||0)<BASICOS_MIN_VENTAS_90)return null;
+  const d=Math.max((it.u30||0)/30,(it.u90||0)/90);
+  if(!(d>0))return null;
+  const base=d*(cfg.lead+cfg.ciclo),colchon=1.65*Math.sqrt(base);
+  return{d,rop:d*cfg.lead+colchon,target:base+colchon};
+}
 function analyze(it){const rate=rateOf(it),tracked=it.track&&it.stock!=null,esCambio=esCategoriaCambio(it.prov),vencidoResta=esCambio?(tracked?Math.min(vencidoDe(it),Math.max(0,it.stock)):vencidoDe(it)):0,paraCambioTotal=esCambio?(vencidoResta+retiradoDe(it)):0,stock=tracked?Math.max(0,it.stock-vencidoResta):it.stock,lead=state.lead,cover=state.cover;const target=rate*(lead+cover);let cov=null,status,sug=0;const M=multOf(it);
+  const bas=tracked?formulaBasico(it):null;
   if(!tracked){status='sinstock';sug=rate>0?roundPack(target,M):0;}
+  else if(bas){cov=stock/bas.d;
+    if(stock<=bas.rop){status='urgente';sug=roundPack(Math.max(0,bas.target-stock),M);}
+    else if(stock<bas.target){status='pedir';sug=roundPack(Math.max(0,bas.target-stock),M);}
+    else if(stock>bas.target*2.5){status='sobre';sug=0;}else{status='ok';sug=0;}
+    if(stock<=0&&(it.u90||0)>=BASICOS_PISO_VENTAS_90){status='urgente';sug=Math.max(sug,roundPack(1,M));}}   // piso: nunca se queda fuera del pedido
   else{cov=rate>0?stock/rate:(stock>0?Infinity:0);
     if(rate<=0){status=stock>0?'sobre':'ok';sug=0;}
     else if(stock<=0||cov<lead){status='urgente';sug=roundPack(Math.max(0,target-stock),M);}
@@ -5785,7 +5716,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-10-28.1';
+const APP_VERSION='2026-10-28.2';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -14507,262 +14438,46 @@ async function prCorregirDireccion(id,btn,direccionActual,sku,cantidad,costoUnit
   }catch(e){showToast('Error de conexión al corregir');btn.disabled=false;}
 }
 
-// ===================== CALCULADORA DE COSTEO DE PRODUCCIÓN =====================
-// Producción propia en el local (ensaladas, etc.): calcula el costo por unidad de un lote
-// (materia prima + mano de obra + envase + fijo), sugiere un precio de venta según el margen
-// objetivo, y aplica ambos directo al producto en Loyverse reutilizando action:'editar_precio'
-// (mismo endpoint que "Sin costo"/Ficha/Recepción, sin duplicar sincronización). Prefijo cf =
-// "costo de fabricación".
-let cfState={item:null,total:0};
-function cfFijoDefaultGet(){try{return Number(localStorage.getItem('marin_cf_fijo_default'))||0;}catch(e){return 0;}}
-function cfFijoDefaultSet(v){try{localStorage.setItem('marin_cf_fijo_default',String(v||0));}catch(e){}}
-// Guarda el "costo fijo por unidad" en el servidor (tabla config_costeo) para que se
-// sincronice entre dispositivos — se llama solo al aplicar un costo (no en cada tecleo, para
-// no bombardear el servidor). "Mejor esfuerzo": si falla, el valor sigue funcionando igual
-// desde localStorage en este dispositivo, simplemente no viaja a los demás hasta el próximo
-// intento. El consumo de la máquina exhibidora NO se cuenta acá — ya está incluido en el
-// "costo fijo por unidad" (luz/agua/guantes/utensilios).
-function cfFijoGuardarServidor(v){
-  fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'guardar_costeo_fijo_default',payload:{costoFijoDefault:v}})}).catch(()=>{});
-}
-// Guarda los datos del lote (materia/unidades/minutos/sueldo/envase) PARA ESE PRODUCTO en el
-// servidor (tabla config_costeo_producto) — mismo "mejor esfuerzo" que cfFijoGuardarServidor,
-// y también actualiza DB.costeoProducto localmente para que quede disponible al toque, sin
-// esperar el próximo sync, si se vuelve a elegir el mismo producto en esta sesión.
-function cfProductoGuardarServidor(sku,datos){
-  DB.costeoProducto=DB.costeoProducto||{};
-  DB.costeoProducto[sku]=datos;
-  fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'guardar_costeo_producto',payload:Object.assign({sku:sku},datos)})}).catch(()=>{});
-}
-function cfAbrir(){
-  document.getElementById('mas-ov').classList.add('hidden');
-  cfState={item:null,total:0};
-  document.getElementById('cf-search').value='';
-  document.getElementById('cf-results').innerHTML='';
-  document.getElementById('cf-picked').classList.remove('on');
-  document.getElementById('cf-alerta').classList.add('hidden');
-  ['cf-materia','cf-unidades','cf-horas','cf-mins','cf-sueldo','cf-envase'].forEach(id=>{document.getElementById(id).value='';});
-  const fijoDefault=cfFijoDefaultGet();
-  document.getElementById('cf-fijo').value=fijoDefault>0?fijoDefault:'';
-  document.getElementById('cf-margen').value=cfMargenDefaultGet();
-  abrirModal('cf-ov');
-  cfCalcular();
-  setTimeout(()=>document.getElementById('cf-search').focus(),150);
-}
-// Al elegir un producto, precarga los valores del último lote calculado PARA ESE producto
-// (DB.costeoProducto, sincronizado desde el servidor — ver cfProductoGuardarServidor) — así no
-// hay que volver a tipear materia prima/unidades/tiempo/sueldo/envase cada vez que se recalcula
-// el mismo producto. Si el producto nunca se calculó antes, deja los campos como estén (vacíos,
-// recién limpiados por cfAbrir).
-function cfPick(ref){
-  const it=(DB.items||[]).find(i=>i.ref===ref);
-  if(!it)return;
-  cfState.item=it;
-  document.getElementById('cf-search').value=it.nombre;
-  document.getElementById('cf-results').innerHTML='';
-  document.getElementById('cf-picked').classList.add('on');
-  document.getElementById('cf-nom').textContent=it.nombre;
-  document.getElementById('cf-costoventa').textContent=
-    'Costo actual: '+(it.coste>0?peso(it.coste):'—')+' · Precio de venta: '+(it.precio!=null?peso(it.precio):'—');
-  const guardado=DB.costeoProducto&&DB.costeoProducto[ref];
-  if(guardado){
-    document.getElementById('cf-materia').value=guardado.materia||'';
-    document.getElementById('cf-unidades').value=guardado.unidades||'';
-    document.getElementById('cf-horas').value=guardado.minutos?Math.floor(guardado.minutos/60)||'':'';
-    document.getElementById('cf-mins').value=guardado.minutos?(guardado.minutos%60)||'':'';
-    document.getElementById('cf-sueldo').value=guardado.sueldo||'';
-    document.getElementById('cf-envase').value=guardado.envase||'';
-    cfCalcular();
-  }else{
-    cfActualizarAlerta();
-    cfActualizarPrecioSugerido();
-    cfValidar();
-  }
-}
-function cfActualizarAlerta(){
-  const box=document.getElementById('cf-alerta');
-  const it=cfState.item;
-  if(it&&it.precio!=null&&cfState.total>it.precio){
-    box.textContent='⚠️ El costo calculado ('+peso(cfState.total)+') supera el precio de venta actual ('+peso(it.precio)+'). Se venderá a pérdida si no ajustas el precio.';
-    box.classList.remove('hidden');
-  }else{
-    box.classList.add('hidden');
-  }
-}
-// "Margen objetivo" recordado entre usos (localStorage, no servidor — a diferencia del fijo,
-// esto es más una preferencia personal de cómo pensar el precio que un costo real, no hace
-// falta sincronizarlo entre dispositivos). Reusa PriceCalc.precioDesdeMargen/margenDesdePrecio
-// — las mismas fórmulas que ya usa PcWidget en Ficha/Recepción/Crear producto, en vez de
-// inventar el cálculo de nuevo acá.
-function cfMargenDefaultGet(){try{return Number(localStorage.getItem('marin_cf_margen_default'))||65;}catch(e){return 65;}}
-function cfMargenDefaultSet(v){try{localStorage.setItem('marin_cf_margen_default',String(v||65));}catch(e){}}
-function cfMarcarChipActivo(margen){
-  document.querySelectorAll('#cf-margen-chips [data-m]').forEach(btn=>{
-    btn.classList.toggle('active',Number(btn.dataset.m)===margen);
-  });
-}
-function cfActualizarComparacion(){
-  const it=cfState.item;
-  const cmp=document.getElementById('cf-precio-comparacion');
-  if(it&&it.precio!=null){
-    const margenActual=PriceCalc.margenDesdePrecio(it.precio,cfState.total);
-    cmp.textContent='Precio actual: '+peso(it.precio)+' · margen con el costo de arriba: '+(margenActual!=null&&isFinite(margenActual)?margenActual.toFixed(1)+'%':'—');
-  }else{
-    cmp.textContent='';
-  }
-}
-// Margen → precio sugerido (se llama al tocar el margen, un chip, o cualquier campo del lote —
-// el margen manda y el precio se recalcula).
-function cfActualizarPrecioSugerido(){
-  const margen=Number(document.getElementById('cf-margen').value)||0;
-  const sugerido=PriceCalc.precioDesdeMargen(cfState.total,margen);
-  document.getElementById('cf-precio-sugerido').value=sugerido!=null&&isFinite(sugerido)?Math.round(sugerido):'';
-  cfMarcarChipActivo(margen);
-  cfActualizarComparacion();
-  cfMargenDefaultSet(margen);
-}
-// Precio sugerido → margen (se llama al editar directamente el precio de venta sugerido — acá
-// el precio manda y el margen se recalcula al revés, con PriceCalc.margenDesdePrecio).
-function cfPrecioSugeridoEditado(){
-  const precio=Number(document.getElementById('cf-precio-sugerido').value)||0;
-  if(precio>0&&cfState.total>0){
-    const margen=PriceCalc.margenDesdePrecio(precio,cfState.total);
-    const margenRedondeado=margen!=null&&isFinite(margen)?Math.round(margen*10)/10:0;
-    document.getElementById('cf-margen').value=margenRedondeado||'';
-    cfMarcarChipActivo(margenRedondeado);
-    cfMargenDefaultSet(margenRedondeado);
-  }
-  cfActualizarComparacion();
-}
-function cfCalcular(){
-  const materia=Number(document.getElementById('cf-materia').value)||0;
-  const unidades=Number(document.getElementById('cf-unidades').value)||0;
-  const horas=Number(document.getElementById('cf-horas').value)||0;
-  const mins=Number(document.getElementById('cf-mins').value)||0;
-  const minutos=horas*60+mins;
-  const sueldo=Number(document.getElementById('cf-sueldo').value)||0;
-  const envase=Number(document.getElementById('cf-envase').value)||0;
-  const fijo=Number(document.getElementById('cf-fijo').value)||0;
-  const materiaU=unidades>0?materia/unidades:0;
-  const manoU=unidades>0?(minutos/60*sueldo)/unidades:0;
-  const total=materiaU+manoU+envase+fijo;
-  document.getElementById('cf-d-materia').textContent=peso(materiaU);
-  document.getElementById('cf-d-mano').textContent=peso(manoU);
-  document.getElementById('cf-d-envase').textContent=peso(envase);
-  document.getElementById('cf-d-fijo').textContent=peso(fijo);
-  document.getElementById('cf-total-val').textContent=peso(total);
-  cfState.total=total;
-  cfFijoDefaultSet(fijo);
-  cfActualizarAlerta();
-  cfActualizarPrecioSugerido();
-  cfValidar();
-}
-function cfValidar(){
-  const unidades=Number(document.getElementById('cf-unidades').value)||0;
-  const ok=!!cfState.item&&unidades>0&&cfState.total>0;
-  document.getElementById('cf-aplicar').disabled=!ok;
-}
-document.getElementById('cf-cerrar').onclick=()=>cerrarModal('cf-ov');
-document.getElementById('mas-q-costeo').onclick=cfAbrir;
-['cf-materia','cf-unidades','cf-horas','cf-mins','cf-sueldo','cf-envase','cf-fijo'].forEach(id=>{
-  document.getElementById(id).addEventListener('input',cfCalcular);
-});
-document.getElementById('cf-margen').addEventListener('input',cfActualizarPrecioSugerido);
-document.getElementById('cf-precio-sugerido').addEventListener('input',cfPrecioSugeridoEditado);
-document.querySelectorAll('#cf-margen-chips [data-m]').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.getElementById('cf-margen').value=btn.dataset.m;
-    cfActualizarPrecioSugerido();
-  });
-});
-document.getElementById('cf-search').addEventListener('input',ev=>{
-  const q=ev.target.value;
-  document.getElementById('cf-lx').style.display=q?'block':'none';
-  const list=q.trim()?mmFindItems(q):[];
-  if(list.length){
-    document.getElementById('cf-results').innerHTML=list.map(it=>lvFilaBusqueda(it)).join('');
-    document.querySelectorAll('#cf-results [data-ref]').forEach(el=>el.onclick=()=>cfPick(el.dataset.ref));
-  }else{
-    document.getElementById('cf-results').innerHTML='';
-  }
-});
-document.getElementById('cf-lx').onclick=()=>{
-  document.getElementById('cf-search').value='';
-  document.getElementById('cf-lx').style.display='none';
-  document.getElementById('cf-results').innerHTML='';
-  document.getElementById('cf-picked').classList.remove('on');
-  cfState.item=null;
-  cfActualizarAlerta();
-  cfValidar();
-  document.getElementById('cf-search').focus();
-};
-document.getElementById('cf-mic').onclick=()=>voiceSearch(document.getElementById('cf-mic'),text=>{
-  document.getElementById('cf-search').value=text;
-  document.getElementById('cf-search').dispatchEvent(new Event('input',{bubbles:true}));
-});
-document.getElementById('cf-scan').onclick=()=>{
-  const reopen=()=>{document.getElementById('cf-ov').classList.remove('hidden');};
-  cerrarModal('cf-ov');
-  openScanner(code=>{
-    const codeNorm=String(code||'').trim();
-    const exacto=(DB.items||[]).filter(i=>barcodesCoinciden(i.barcode,codeNorm));
-    reopen();
-    if(exacto.length===1){cfPick(exacto[0].ref);return;}
-    document.getElementById('cf-search').value=codeNorm;
-    document.getElementById('cf-search').dispatchEvent(new Event('input',{bubbles:true}));
-    if(exacto.length===0)showToast('No se encontró ningún producto con ese código');
-  },reopen);
-};
-document.getElementById('cf-aplicar').onclick=async()=>{
-  const it=cfState.item;
-  if(!it)return;
-  const btn=document.getElementById('cf-aplicar');
-  const costoNuevo=Math.round(cfState.total);
-  const precioNuevo=Math.round(Number(document.getElementById('cf-precio-sugerido').value)||0);
-  btn.disabled=true;btn.textContent='Aplicando…';
-  const ctrl=new AbortController();
-  const to=setTimeout(()=>ctrl.abort(),25000);
-  try{
-    const payload={sku:it.ref,costo:costoNuevo};
-    if(precioNuevo>0)payload.precio=precioNuevo;
-    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_precio',payload:payload}),signal:ctrl.signal});
-    const j=await res.json();
-    if(j&&j.ok){
-      if(j.sinCambios){
-        showToast('Sin cambios para aplicar (el costo y el precio ya eran esos)');
-      }else{
-        const itLocal=(DB.items||[]).find(x=>x.ref===it.ref);
-        if(itLocal){
-          if(j.costo!=null)itLocal.coste=j.costo;
-          if(j.precio!=null)itLocal.precio=j.precio;
-          persist();
-        }
-        let msg='Aplicado: '+it.nombre+' → costo '+peso(j.costo)+(j.precio!=null?' · precio '+peso(j.precio):'');
-        if(j.advertencia)msg+=' · '+j.advertencia;
-        sonidoGuardado();
-        showToast(msg);
-        render();
+// ===================== BUSCADOR DE FUNCIONES EN "MÁS" =====================
+// Filtra los botones de todos los grupos de Más mientras se escribe (sin tildes ni mayúsculas, cada palabra debe aparecer).
+// Con texto, los grupos se abren solos y se esconden los vacíos; al borrar, cada grupo vuelve a como estaba.
+(function(){
+  const inp=document.getElementById('mas-buscar'),x=document.getElementById('mas-buscar-x'),vacio=document.getElementById('mas-buscar-vacio'),ov=document.getElementById('mas-ov');
+  if(!inp||!ov)return;
+  const guardado=new Map();   // cuerpo de grupo -> estaba plegado antes de buscar
+  function filtrar(){
+    const palabras=normTxt(inp.value||'').split(/\s+/).filter(Boolean);
+    x.style.display=palabras.length?'block':'none';
+    const grupos=ov.querySelectorAll('.mas-grp');
+    let total=0;
+    grupos.forEach(g=>{
+      const cuerpo=g.querySelector('.mas-grp-body');
+      const botones=cuerpo?cuerpo.querySelectorAll('button'):[];
+      if(!palabras.length){
+        botones.forEach(b=>b.classList.remove('mas-oculto'));
+        g.classList.remove('mas-oculto');
+        if(cuerpo&&guardado.has(cuerpo)){cuerpo.classList.toggle('collapsed',guardado.get(cuerpo));guardado.delete(cuerpo);}
+        return;
       }
-      cfFijoGuardarServidor(Number(document.getElementById('cf-fijo').value)||0);
-      cfProductoGuardarServidor(it.ref,{
-        materia:Number(document.getElementById('cf-materia').value)||0,
-        unidades:Number(document.getElementById('cf-unidades').value)||0,
-        minutos:(Number(document.getElementById('cf-horas').value)||0)*60+(Number(document.getElementById('cf-mins').value)||0),
-        sueldo:Number(document.getElementById('cf-sueldo').value)||0,
-        envase:Number(document.getElementById('cf-envase').value)||0
+      if(!cuerpo){g.classList.add('mas-oculto');return;}   // grupos sin botones de función (p. ej. info del POS): se esconden al buscar
+      if(!guardado.has(cuerpo))guardado.set(cuerpo,cuerpo.classList.contains('collapsed'));
+      let n=0;
+      botones.forEach(b=>{
+        const ok=palabras.every(p=>normTxt(b.textContent+' '+(b.title||'')).includes(p));
+        b.classList.toggle('mas-oculto',!ok);if(ok)n++;
       });
-      cerrarModal('cf-ov');
-    }else{
-      showToast('Error: '+((j&&j.error)||'no se pudo aplicar el costo y precio'));
-    }
-  }catch(e){
-    showToast(e&&e.name==='AbortError'?'El servidor tardó demasiado (timeout). Verifica antes de repetir — el costo y precio pudieron haberse guardado.':'Error de conexión al aplicar el costo y precio');
-  }finally{
-    clearTimeout(to);
-    btn.disabled=false;btn.textContent='Aplicar costo y precio al producto';
-    try{cfValidar();}catch(_){}
+      g.classList.toggle('mas-oculto',!n);
+      if(n)cuerpo.classList.remove('collapsed');
+      total+=n;
+    });
+    vacio.classList.toggle('hidden',!palabras.length||total>0);
   }
-};
+  inp.addEventListener('input',filtrar);
+  x.onclick=()=>{inp.value='';filtrar();inp.focus();};
+  // Al abrir Más, el buscador arranca vacío
+  new MutationObserver(()=>{if(!ov.classList.contains('hidden')&&inp.value){inp.value='';filtrar();}}).observe(ov,{attributes:true,attributeFilter:['class']});
+})();
+
 // ===================== RECIBIR MERCADERÍA =====================
 const rcState={item:null,costoOriginal:0,precioOriginal:0,costoBaseline:0,precioBaseline:0,precioTocado:false,margenTocado:false,modo:'unidad',ivaModo:'con',precioPreview:null,redondeo:'none'};
 // true mientras rc-guardar (cualquiera de sus 2 ramas) tiene un POST en vuelo — evita que
@@ -15293,6 +15008,7 @@ document.getElementById('rc-ajustar-guardar').onclick=rcAjustarGuardar;
 // atrás); si no hay nada guardado, se comporta exactamente igual que antes (formulario limpio).
 function openRecibir(){
   try{rcReset();}catch(e){}
+  try{renderRecepcionarHoy('rc-pend');}catch(e){}
   abrirModal('rc-ov');
   try{const d=rcCargarBorrador();if(d)rcAplicarBorrador(d);}catch(e){}
 }
@@ -15302,6 +15018,10 @@ function openRecibir(){
 // Ya no hay ningún botón "Cancelar" que llame a esto (se quitó del pie: se tocaba de
 // casualidad junto a Guardar y descartaba la recepción a medio cargar). Queda solo para el
 // escáner, que cierra y reabre la pantalla alrededor de la cámara.
+document.getElementById('rc-pend-hdr').onclick=()=>{
+  const l=document.getElementById('rc-pend'),c=document.getElementById('rc-pend-caret');
+  const oculto=l.classList.toggle('hidden');c.textContent=oculto?'▸':'▾';
+};
 function closeRecibir(){
   rcReset();
   rcLimpiarBorrador();
@@ -17523,7 +17243,8 @@ const CAL_PROV=[
   {n:'Comercial Boom',     r:[2]},
   {n:'Promerco',           r:[3]},
   {n:'Oreo',               r:[3]},
-  {n:'Dinac',              r:[3], nota:'cada 15 días'}
+  {n:'Dinac',              r:[3], nota:'cada 15 días'},
+  {n:'Pan Castaño',        r:[3], nota:'cada 15 días · se pide el miércoles, llega el jueves'}
 ];
 // Calendario EFECTIVO de proveedores: CAL_PROV de arriba son los valores de fábrica; el local
 // (localStorage, un solo dispositivo — no hay tabla nueva en el backend) guarda solo lo que el
@@ -17842,9 +17563,13 @@ function itemsPendientesPorProveedorHastaHoy(proveedor){
     .filter(p=>p&&_proveedorRealDePendiente(p)===proveedor&&p.estado!=='recibido'&&p.estado!=='incompleto'&&p.fecha_llegada_estimada&&p.fecha_llegada_estimada<=hoyISO)
     .sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||''),'es'));
 }
-function renderRecepcionarHoy(){
-  const el=document.getElementById('provday-recep'); if(!el)return;
+function renderRecepcionarHoy(elId){
+  // Se dibuja en dos lugares con el mismo contenido: Inicio ('provday-recep') y arriba de Recepción ('rc-pend', con TODOS los pedidos
+  // pendientes: de hoy y atrasados). En Recepción, tocar un producto lo deja cargado en el formulario de Recibir (no hay que abrir nada).
+  const el=document.getElementById(elId||'provday-recep'); if(!el)return;
+  const enRecepcion=el.id==='rc-pend';
   const filas=calcularRecepcionarHoy();
+  if(enRecepcion){const n=document.getElementById('rc-pend-n');if(n)n.textContent=filas.length?'('+filas.length+')':'';}
   if(!filas.length){
     el.innerHTML='<div class="pd-empty-row">Nada pendiente de recepcionar por ahora</div>';
     return;
@@ -17870,8 +17595,12 @@ function renderRecepcionarHoy(){
       detalle.innerHTML=btnIncompleto+(items.map(it=>`<div class="pd-prod-row"><span class="pd-prod-nom">${it.nombre||it.sku}</span><span class="pd-prod-cant">${fmt.format(it.cantidad||0)} u · ${peso(it.costo_total||0)} <button class="pd-recep-btn" data-sku="${it.sku}" style="margin-left:6px;font-size:12px;font-weight:700;color:var(--cielo-d,#1a73e8);background:none;border:none;cursor:pointer">Recibir</button></span></div>`).join('')
         ||'<div class="pd-empty-row">Sin detalle disponible</div>');
       detalle.querySelectorAll('.pd-recep-btn').forEach(b=>{
-        b.onclick=(ev)=>{ev.stopPropagation();cerrarOverlays();openRecibir();try{rcPick(b.dataset.sku);}catch(e){}};
+        b.onclick=(ev)=>{
+          ev.stopPropagation();
+          if(enRecepcion){try{rcPick(b.dataset.sku);}catch(e){} const bs=document.getElementById('rc-search');if(bs&&bs.scrollIntoView)bs.scrollIntoView({block:'center'});return;}
+          cerrarOverlays();openRecibir();try{rcPick(b.dataset.sku);}catch(e){}};
       });
+      if(enRecepcion)detalle.querySelectorAll('.pd-prod-row').forEach(r=>{const b=r.querySelector('.pd-recep-btn');if(b){r.style.cursor='pointer';r.onclick=()=>b.click();}});
       const btnInc=detalle.querySelector('.pd-incompleto-btn');
       if(btnInc)btnInc.onclick=async(ev)=>{
         ev.stopPropagation();
@@ -17892,6 +17621,7 @@ function renderRecepcionarHoy(){
 function refrescarProveedoresHoy(){
   try{renderProvDay();}catch(e){}
   try{renderRecepcionarHoy();}catch(e){}
+  try{renderRecepcionarHoy('rc-pend');}catch(e){}
 }
 {
   const provdayFecha=document.getElementById('provday-fecha');
