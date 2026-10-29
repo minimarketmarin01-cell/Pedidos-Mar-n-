@@ -4463,9 +4463,11 @@ function motivoVencDe(it){const m=MOTIVOS_POR_SKU[it.ref];return m?m.texto:null;
 // tasa cae a cero y el sugerido desaparece justo cuando más falta hace (pasó con el pan blanco de Ideal:
 // agotado el 18/10 y sin sugerencia). Acá la demanda diaria es la mayor entre ventas de 30 y de 90 días,
 // el objetivo cubre plazo de entrega + ciclo entre pedidos y suma un colchón del 95 % (1,65 × raíz de la
-// demanda del período). Ambos proveedores cambian el producto vencido, así que pedir de más cuesta poco.
-// lead = días entre pedir y recibir; ciclo = días entre pedidos.
-const BASICOS_REPOSICION={'IDEAL':{lead:4,ciclo:14},'PAN CASTAÑO':{lead:3,ciclo:14}};
+// demanda del período). Ambos proveedores cambian el producto vencido o con moho, así que sobrar cuesta
+// poco al lado de quedarse sin pan.
+// lead = días entre pedir y recibir; ciclo = días entre pedidos. Ideal: se pide el jueves y llega el
+// lunes (4 días), pedido semanal. Pan Castaño: llega a los 2 días de pedir y visita cada 15 días.
+const BASICOS_REPOSICION={'IDEAL':{lead:4,ciclo:7},'PAN CASTAÑO':{lead:2,ciclo:15}};
 function formulaBasico(it){
   const cfg=BASICOS_REPOSICION[String(it.proveedorNombre||it.prov||'').toUpperCase()];
   if(!cfg||!/(^|[^a-z0-9])blanco([^a-z0-9]|$)/.test(normTxt(it.nombre||'')))return null;
