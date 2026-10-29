@@ -4458,8 +4458,29 @@ function motivoVencDe(it){const m=MOTIVOS_POR_SKU[it.ref];return m?m.texto:null;
 // Las unidades vencidas aún sin retirar (vencidoDe) salen de la CANTIDAD ORIGINAL del lote, que no baja con las ventas: si el lote
 // era de 10 y hoy quedan 2 en el estante, no hay 10 para cambiar sino 2. Por eso en productos con control de stock se limita a
 // lo que realmente hay (nunca más que el stock). Antes mostraba "STK -10 / Cambio: -10" con 2 unidades reales.
+// Reposición por fórmula (punto de reposición + stock de seguridad) para el pan blanco de Ideal y de
+// Pan Castaño. El cálculo general usa las ventas de los últimos 7 días: un pan agotado vende cero, su
+// tasa cae a cero y el sugerido desaparece justo cuando más falta hace (pasó con el pan blanco de Ideal:
+// agotado el 18/10 y sin sugerencia). Acá la demanda diaria es la mayor entre ventas de 30 y de 90 días,
+// el objetivo cubre plazo de entrega + ciclo entre pedidos y suma un colchón del 95 % (1,65 × raíz de la
+// demanda del período). Ambos proveedores cambian el producto vencido, así que pedir de más cuesta poco.
+// lead = días entre pedir y recibir; ciclo = días entre pedidos.
+const BASICOS_REPOSICION={'IDEAL':{lead:4,ciclo:14},'PAN CASTAÑO':{lead:3,ciclo:14}};
+function formulaBasico(it){
+  const cfg=BASICOS_REPOSICION[String(it.proveedorNombre||it.prov||'').toUpperCase()];
+  if(!cfg||!/(^|[^a-z0-9])blanco([^a-z0-9]|$)/.test(normTxt(it.nombre||'')))return null;
+  const d=Math.max((it.u30||0)/30,(it.u90||0)/90);
+  if(!(d>0))return null;
+  const base=d*(cfg.lead+cfg.ciclo),colchon=1.65*Math.sqrt(base);
+  return{d,rop:d*cfg.lead+colchon,target:base+colchon};
+}
 function analyze(it){const rate=rateOf(it),tracked=it.track&&it.stock!=null,esCambio=esCategoriaCambio(it.prov),vencidoResta=esCambio?(tracked?Math.min(vencidoDe(it),Math.max(0,it.stock)):vencidoDe(it)):0,paraCambioTotal=esCambio?(vencidoResta+retiradoDe(it)):0,stock=tracked?Math.max(0,it.stock-vencidoResta):it.stock,lead=state.lead,cover=state.cover;const target=rate*(lead+cover);let cov=null,status,sug=0;const M=multOf(it);
+  const bas=tracked?formulaBasico(it):null;
   if(!tracked){status='sinstock';sug=rate>0?roundPack(target,M):0;}
+  else if(bas){cov=stock/bas.d;
+    if(stock<=bas.rop){status='urgente';sug=roundPack(Math.max(0,bas.target-stock),M);}
+    else if(stock<bas.target){status='pedir';sug=roundPack(Math.max(0,bas.target-stock),M);}
+    else if(stock>bas.target*2.5){status='sobre';sug=0;}else{status='ok';sug=0;}}
   else{cov=rate>0?stock/rate:(stock>0?Infinity:0);
     if(rate<=0){status=stock>0?'sobre':'ok';sug=0;}
     else if(stock<=0||cov<lead){status='urgente';sug=roundPack(Math.max(0,target-stock),M);}
