@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#FAFAF6">
+<meta name="theme-color" content="#4CAF50">
   <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -11,7 +11,7 @@
 <title>Marín Pedidos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{
   /* ===== PALETA PASTEL — verdes salvia/oliva + lavanda =====
@@ -66,10 +66,20 @@
   --ciruela:#7A6490;--ciruela-hi:#8E76A4;--ciruela-tint:#EEE6F6;
   --oliva:#8FA67B;--oliva-hi:#AFC5A1;--oliva-tint:#E9F1E5;
   --magenta:#7A6490;--focus-ring:0 0 0 3px rgba(143,166,123,.30);
+
+  /* ===== SISTEMA DE DISEÑO — tema Marín (verde). El encabezado y la barra inferior NO cambian. =====
+     Solo el verde de TEXTO y de RELLENO de botón se oscurece para pasar contraste (blanco/#2E7D32 = 5,13:1;
+     antes #4CAF50 = 2,78:1). Cada local define sus propios 5 valores; el resto del sistema es común. */
+  --header:#4CAF50;--nav:#212121;
+  --action:#2E7D32;--action-pressed:#1B5E20;--action-tint:#E8F5E9;--focus:#2E7D32;
+  --text-sec:#616161;--border-control:#757575;--danger:#C62828;
+  /* Escalas (referencia para componentes nuevos): espaciado base 4 px, radios 4/8/999, mínimo táctil 44 px */
+  --sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:24px;--sp-6:32px;
+  --r-sm:4px;--r-md:8px;--r-pill:999px;--touch-min:44px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%;width:100%;overflow-x:hidden}
-body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--text);font-size:14px;line-height:1.4;-webkit-tap-highlight-color:transparent;width:100%;max-width:100%;padding-bottom:calc(78px + env(safe-area-inset-bottom))}
+body{font-family:'Roboto',system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--paper);color:var(--text);font-size:14px;line-height:1.4;-webkit-tap-highlight-color:transparent;width:100%;max-width:100%;padding-bottom:calc(78px + env(safe-area-inset-bottom))}
 .mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
 h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
 .top{background:linear-gradient(135deg,#FBFBF7 0%,#F7F6F0 55%,#F4F2EA 100%);color:var(--ink);width:100%;padding:9px 16px;padding-top:max(9px,env(safe-area-inset-top));padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;position:relative}
@@ -389,7 +399,7 @@ html.carrito-fijo #rc-ov .mm-sections{
 .mm-qty{display:flex;align-items:center;gap:10px}
 .fecha-wrap{position:relative;display:flex;gap:8px}
 .fecha-txt{flex:1;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:16px;font-family:'JetBrains Mono';letter-spacing:.02em}
-.fecha-txt::placeholder{font-family:'Inter';letter-spacing:0;color:var(--muted);font-size:14px}
+.fecha-txt::placeholder{font-family:inherit;letter-spacing:0;color:var(--muted);font-size:14px}
 .fecha-cal-btn{flex:none;width:46px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);font-size:20px;cursor:pointer}
 .fecha-seg{flex:none;padding:11px 2px;border:1.5px solid var(--line);border-radius:10px;font-size:16px;font-family:'JetBrains Mono';font-weight:700;text-align:center;width:46px}
 .fecha-seg:focus{border-color:var(--wa);outline:none}
@@ -1937,7 +1947,7 @@ html.carrito-fijo .cart-resizer:hover .grip::before,html.carrito-fijo .cart-resi
    separadas por una franja gris, títulos de sección en verde, botones rectangulares.
    TODO escopado a esos ids: no cambia ids, textos ni lógica, y el resto de la app queda igual. */
 #rc-ov,#cp-ov,#ed-ov,#fp-ov{
-  --lv:#4CAF50;--lv-d:#388E3C;--lv-txt:#212121;--lv-sub:#757575;--lv-line:#BDBDBD;--lv-gris:#F2F2F2;
+  --lv:#4CAF50;--lv-d:#2E7D32;--lv-txt:#212121;--lv-sub:#616161;--lv-line:#BDBDBD;--lv-gris:#F2F2F2;
   padding:0;align-items:stretch;background:#fff;font-family:Roboto,'Segoe UI',system-ui,sans-serif;color:var(--lv-txt)
 }
 #rc-ov .mm-card,#cp-ov .mm-card,#ed-ov .mm-card,#fp-ov .mm-card,
@@ -1990,7 +2000,7 @@ html.carrito-fijo #cp-ov .mm-card,html.carrito-fijo #ed-ov .mm-card{
 }
 /* botones */
 :is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .mm-save{
-  background:var(--lv);border-radius:2px;box-shadow:0 2px 4px rgba(0,0,0,.3);font-family:inherit;font-weight:500;
+  background:var(--action);border-radius:2px;box-shadow:0 2px 4px rgba(0,0,0,.3);font-family:inherit;font-weight:500;
   font-size:14px;letter-spacing:.06em;text-transform:uppercase;padding:14px
 }
 :is(#rc-ov,#cp-ov,#ed-ov,#fp-ov) .loadbtn:not(.mm-topbar .loadbtn){
@@ -2025,7 +2035,7 @@ html.carrito-fijo #cp-ov .mm-card,html.carrito-fijo #ed-ov .mm-card{
 :is(#rc-ov,#ed-ov) #ed-results > *,:is(#rc-ov,#ed-ov) #rc-results > *{color:#212121}
 
 /* Ficha: botones de abajo (Cancelar / Eliminar / Guardar cambios) como botones Material */
-#fp-ov .fp-btn-guardar{background:var(--lv);color:#fff;border:none;border-radius:2px;box-shadow:0 2px 4px rgba(0,0,0,.3);
+#fp-ov .fp-btn-guardar{background:var(--action);color:#fff;border:none;border-radius:2px;box-shadow:0 2px 4px rgba(0,0,0,.3);
   font-family:inherit;font-weight:500;font-size:14px;letter-spacing:.06em;text-transform:uppercase}
 #fp-ov .fp-btn-cancelar,#fp-ov #fp-cancelar-btn{background:transparent;border:none;color:var(--lv-sub);border-radius:2px;font-family:inherit;
   font-weight:500;font-size:14px;letter-spacing:.06em;text-transform:uppercase;box-shadow:none}
@@ -2043,9 +2053,9 @@ html.carrito-fijo #cp-ov .mm-card,html.carrito-fijo #ed-ov .mm-card{
    TODO escopado a esos ids: no cambia ids, textos ni lógica, y el resto de la app queda igual. */
 /* Los diálogos chicos (precio, nombre, Corregir stock) no entran en el estilo Loyverse de arriba, pero sus botones usan las mismas variables
    --lv: sin definirlas, el fondo del botón quedaba sin color y 'Guardar stock' se veía como una caja blanca vacía (texto blanco sobre blanco). */
-#pv-ov,#rn-ov,#stk-ov{--lv:#4CAF50;--lv-d:#388E3C;--lv-txt:#212121;--lv-sub:#757575;--lv-line:#BDBDBD;--lv-gris:#F2F2F2}
+#pv-ov,#rn-ov,#stk-ov{--lv:#4CAF50;--lv-d:#2E7D32;--lv-txt:#212121;--lv-sub:#616161;--lv-line:#BDBDBD;--lv-gris:#F2F2F2}
 :is(.mm-ov:not(#pv-ov):not(#rn-ov):not(#stk-ov),#__lv){
-  --lv:#4CAF50;--lv-d:#388E3C;--lv-txt:#212121;--lv-sub:#757575;--lv-line:#BDBDBD;--lv-gris:#F2F2F2;
+  --lv:#4CAF50;--lv-d:#2E7D32;--lv-txt:#212121;--lv-sub:#616161;--lv-line:#BDBDBD;--lv-gris:#F2F2F2;
   padding:0;align-items:stretch;background:#fff;font-family:Roboto,'Segoe UI',system-ui,sans-serif;color:var(--lv-txt)
 }
 :is(.mm-ov:not(#pv-ov):not(#rn-ov):not(#stk-ov),#__lv) .mm-card,html.carrito-fijo :is(.mm-ov:not(#pv-ov):not(#rn-ov):not(#stk-ov),#__lv) .mm-card{
@@ -2097,7 +2107,7 @@ html.carrito-fijo #cp-ov .mm-card,html.carrito-fijo #ed-ov .mm-card{
 }
 /* botones */
 :is(.mm-ov,#__lv) .mm-save{
-  background:var(--lv);border-radius:2px;box-shadow:0 2px 4px rgba(0,0,0,.3);font-family:inherit;font-weight:500;
+  background:var(--action);border-radius:2px;box-shadow:0 2px 4px rgba(0,0,0,.3);font-family:inherit;font-weight:500;
   font-size:14px;letter-spacing:.06em;text-transform:uppercase;padding:14px
 }
 :is(.mm-ov,#__lv) .loadbtn:not(.mm-topbar .loadbtn){
@@ -2132,7 +2142,7 @@ html.carrito-fijo #cp-ov .mm-card,html.carrito-fijo #ed-ov .mm-card{
 :is(.mm-ov,#__lv) #ed-results > *,:is(.mm-ov,#__lv) #rc-results > *{color:#212121}
 
 /* Ficha: botones de abajo (Cancelar / Eliminar / Guardar cambios) como botones Material */
-#fp-ov .fp-btn-guardar{background:var(--lv);color:#fff;border:none;border-radius:2px;box-shadow:0 2px 4px rgba(0,0,0,.3);
+#fp-ov .fp-btn-guardar{background:var(--action);color:#fff;border:none;border-radius:2px;box-shadow:0 2px 4px rgba(0,0,0,.3);
   font-family:inherit;font-weight:500;font-size:14px;letter-spacing:.06em;text-transform:uppercase}
 #fp-ov .fp-btn-cancelar,#fp-ov #fp-cancelar-btn{background:transparent;border:none;color:var(--lv-sub);border-radius:2px;font-family:inherit;
   font-weight:500;font-size:14px;letter-spacing:.06em;text-transform:uppercase;box-shadow:none}
@@ -2148,7 +2158,7 @@ html.carrito-fijo #cp-ov .mm-card,html.carrito-fijo #ed-ov .mm-card{
 #mas-ov .mas-grp{border:none !important;border-bottom:1px solid #E0E0E0 !important;border-radius:0 !important;margin:0 !important;background:#fff}
 #mas-ov .mas-grp-head{background:#fff !important;padding:16px !important;min-height:56px;box-sizing:border-box}
 #mas-ov .mas-grp-t{font-size:16px !important;font-weight:400 !important;color:#212121 !important;gap:16px !important}
-#mas-ov .mas-grp-head .accordion-chev{color:#757575 !important;width:24px;height:24px}
+#mas-ov .mas-grp-head .accordion-chev{color:#616161 !important;width:24px;height:24px}
 #mas-ov .mas-grp-body:not(.collapsed){background:#FAFAFA;padding:8px 16px 16px !important}
 #mas-ov .mas-quick{gap:8px}
 #mas-ov .mas-quick button{background:#fff !important;border:1px solid #E0E0E0 !important;border-radius:2px !important;font-size:14px !important;font-weight:400 !important;color:#212121 !important}
@@ -2167,20 +2177,20 @@ html.carrito-fijo #cp-ov .mm-card,html.carrito-fijo #ed-ov .mm-card{
 :is(.mm-ov,#__lv) .prov-combo .prov-icon{left:4px}
 #mas-ov .method{background:#fff !important;border:none !important;border-bottom:1px solid #E0E0E0 !important;border-radius:0 !important;padding:0 16px 8px !important;margin:0 !important;box-shadow:none !important}
 #mas-ov #ayuda-head{margin:0 -16px !important;padding:16px !important}
-#mas-ov #ayuda-head .accordion-chev{color:#757575 !important}
+#mas-ov #ayuda-head .accordion-chev{color:#616161 !important}
 :is(.mm-ov,#__lv) .mm-motivo:not(.lv-fila),:is(.mm-ov,#__lv) .mm-resp > *,:is(.mm-ov,#__lv) .vc-mini,:is(.mm-ov,#__lv) .mm-total{border-radius:2px !important}
 :is(.mm-ov,#__lv) .mm-motivo.active,:is(.mm-ov,#__lv) .mm-motivo.on,:is(.mm-ov,#__lv) .mm-resp > .active{border-color:#4CAF50 !important;color:#388E3C !important;background:#E8F5E9 !important}
 #ll-ov .ll-row{background:#fff !important;border:none !important;border-bottom:1px solid #E0E0E0 !important;border-radius:0 !important;padding:12px 0 !important;margin:0 !important}
 #ll-ov .ll-row .nom{font-size:16px !important;font-weight:400 !important;color:#212121}
-#ll-ov .ll-row .cat{font-size:14px !important;color:#757575}
+#ll-ov .ll-row .cat{font-size:14px !important;color:#616161}
 #ll-ov .btn-guardar-fecha,#ll-ov .btn-ignorar{border-radius:2px !important;text-transform:uppercase;letter-spacing:.05em;font-size:14px !important;font-weight:500 !important}
-#ll-ov .btn-guardar-fecha{background:#4CAF50 !important;color:#fff !important;box-shadow:0 2px 4px rgba(0,0,0,.25)}
+#ll-ov .btn-guardar-fecha{background:var(--action) !important;color:#fff !important;box-shadow:0 2px 4px rgba(0,0,0,.25)}
 /* ============ Estilo Loyverse (Material) en Pedidos (vista de tarjetas / celular) ============
    Barra de búsqueda verde con texto blanco y lista de artículos plana: miniatura cuadrada, nombre,
    línea de stock con color (rojo = agotado/urgente, naranja = pedir) y divisor fino, como la lista
    de artículos de Loyverse. Solo cambia el aspecto: mismos datos, ids y comportamiento. No toca la
    vista de filas de pantallas grandes (html.vista-filas). */
-#prov-anchor{--lv:#4CAF50;--lv-d:#388E3C}
+#prov-anchor{--lv:#4CAF50;--lv-d:#2E7D32}
 #prov-anchor .shc-row.shc-wrap{background:var(--lv);margin:0 -12px;padding:8px 12px;box-shadow:0 2px 4px rgba(0,0,0,.25);border-radius:0;gap:8px}
 #prov-anchor .fav-toggle-btn{background:transparent;border:none;color:#fff;box-shadow:none}
 #prov-anchor .prov-combo{background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.7);border-radius:0;box-shadow:none}
@@ -2198,10 +2208,10 @@ html:not(.vista-filas) .card-cell{
   padding:12px 16px !important;font-family:Roboto,'Segoe UI',system-ui,sans-serif
 }
 html:not(.vista-filas) .card-cell .prod-name{font-family:inherit;font-weight:500;font-size:16px;color:#212121;letter-spacing:0}
-html:not(.vista-filas) .card-cell .prod-meta{font-family:inherit;font-size:14px;font-weight:400;color:#757575}
+html:not(.vista-filas) .card-cell .prod-meta{font-family:inherit;font-size:14px;font-weight:400;color:#616161}
 html:not(.vista-filas) .card-cell .card-thumb-wrap{flex:0 0 52px;width:52px;height:52px;position:relative}
 html:not(.vista-filas) .card-cell .card-thumb-wrap > *{border-radius:2px}
-html:not(.vista-filas) .card-cell .card-stats{font-family:inherit;font-size:14px;font-weight:400;color:#757575;gap:12px}
+html:not(.vista-filas) .card-cell .card-stats{font-family:inherit;font-size:14px;font-weight:400;color:#616161;gap:12px}
 html:not(.vista-filas) .card-cell .card-stats .cstat-stock,html:not(.vista-filas) .card-cell .card-stats .stk-val{font-weight:500}
 html:not(.vista-filas) .card-cell.row-urgent .cstat-stock .stk-val{color:#D32F2F}
 html:not(.vista-filas) .card-cell.row-pedir .cstat-stock .stk-val{color:#F57C00}
@@ -2236,7 +2246,7 @@ body{font-variant-numeric:tabular-nums}
 .lv-fila-img.lv-pedir::after{background:#F57C00}
 .lv-fila-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
 .lv-fila-nom{font-size:16px;font-weight:400;color:#212121;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.lv-fila-sub{font-size:16px;color:#757575}
+.lv-fila-sub{font-size:16px;color:#616161}
 .lv-fila-sub.lv-agotado{color:#E53935}
 .lv-fila-sub.lv-pedir{color:#F57C00}
 .lv-fila-precio{flex:none;font-size:16px;color:#212121}
@@ -2246,7 +2256,7 @@ body{font-variant-numeric:tabular-nums}
 /* ============ Carrito al estilo Loyverse (como el ticket de Loyverse) ============
    Encabezado verde plano, líneas con divisor fino, cantidades con borde gris, papelera gris,
    pie blanco con el total grande y CONFIRMAR verde rectangular. Solo aspecto: mismos ids y acciones. */
-#tab-carrito{--lv:#4CAF50;--lv-d:#388E3C}
+#tab-carrito{--lv:#4CAF50;--lv-d:#2E7D32}
 #tab-carrito .order{border:1px solid #E0E0E0;border-radius:2px;box-shadow:none;background:#fff}
 #tab-carrito .order-head{background:var(--lv);padding:14px 16px;box-shadow:0 2px 4px rgba(0,0,0,.2);position:relative;z-index:1}
 #tab-carrito .order-head .t{font-weight:500;font-size:20px;color:#fff;gap:10px}
@@ -2256,20 +2266,20 @@ body{font-variant-numeric:tabular-nums}
 #tab-carrito .oline{border-bottom:1px solid #E0E0E0;padding:12px 0;gap:12px}
 #tab-carrito .oline:last-child{border-bottom:1px solid #E0E0E0}
 #tab-carrito .oline .on{font-size:16px;font-weight:400;color:#212121}
-#tab-carrito .oline .oline-sub{font-size:14px;color:#757575;margin-top:3px}
+#tab-carrito .oline .oline-sub{font-size:14px;color:#616161;margin-top:3px}
 #tab-carrito .oline .qstep{border:1px solid #BDBDBD;border-radius:2px;background:#fff;box-shadow:none}
 #tab-carrito .oline .qstep.has{border-color:var(--lv)}
 #tab-carrito .oline .qbtn{background:transparent;color:var(--lv-d);border:none;border-radius:0;font-weight:500}
 #tab-carrito .oline .qty-in{border:none;border-left:1px solid #E0E0E0;border-right:1px solid #E0E0E0;border-radius:0;background:#fff;color:#212121;font-weight:500}
-#tab-carrito .odel{background:transparent;color:#757575;border-radius:2px}
+#tab-carrito .odel{background:transparent;color:#616161;border-radius:2px}
 #tab-carrito .odel:active{background:#F5F5F5}
 #tab-carrito .order-foot{background:#fff;border-top:1px solid #E0E0E0;padding:12px 16px}
-#tab-carrito .tot-compact .l{font-size:12px;font-weight:500;color:#757575;letter-spacing:.04em}
+#tab-carrito .tot-compact .l{font-size:12px;font-weight:500;color:#616161;letter-spacing:.04em}
 #tab-carrito .tot-compact .v{font-size:20px;font-weight:500;color:#212121}
-#tab-carrito .oact-btn{border:none;border-radius:2px;background:transparent;color:#757575;box-shadow:none}
+#tab-carrito .oact-btn{border:none;border-radius:2px;background:transparent;color:#616161;box-shadow:none}
 #tab-carrito .oact-btn:active{background:#F5F5F5}
 #tab-carrito .oact-btn.oact-danger{color:#E53935}
-#tab-carrito .btn-wa-compact{background:var(--lv);border:none;border-radius:2px;box-shadow:0 2px 4px rgba(0,0,0,.3);color:#fff}
+#tab-carrito .btn-wa-compact{background:var(--action);border:none;border-radius:2px;box-shadow:0 2px 4px rgba(0,0,0,.3);color:#fff}
 #tab-carrito .btn-wa-compact .oact-lbl{text-transform:uppercase;letter-spacing:.05em;font-weight:500}
 #tab-carrito .btn-wa-compact .wa-ico{background:transparent}
 #tab-carrito .scalecard{border:1px solid #E0E0E0;border-radius:2px;box-shadow:none;background:#fff}
@@ -2314,7 +2324,7 @@ html.carrito-fijo #tab-carrito .oact-btn{width:44px}
 #tab-carrito .order-head{background:#fff !important;box-shadow:0 1px 4px rgba(0,0,0,.18)}
 #tab-carrito .order-head .t{color:#212121}
 #tab-carrito .order-head .t .wa-ico{background:#4CAF50;color:#fff}
-#tab-carrito .order-head .s{color:#757575}
+#tab-carrito .order-head .s{color:#616161}
 #prov-anchor .prov-menu{border-radius:2px !important;box-shadow:0 2px 6px rgba(0,0,0,.25)}
 
 /* ============ Escala tipográfica de Loyverse (Material) en toda la app ============
@@ -2322,7 +2332,7 @@ html.carrito-fijo #tab-carrito .oact-btn{width:44px}
    principal y nombres de producto) y 20 (títulos). Grosor normal (400) o medio (500); negrita solo
    para cifras destacadas. Las etiquetas impresas no se tocan. */
 .prod-name,.fila-nombre{font-size:16px !important;font-weight:500 !important;letter-spacing:0 !important}
-.prod-meta,.fila-prov{font-size:14px !important;font-weight:400 !important;color:#757575 !important}
+.prod-meta,.fila-prov{font-size:14px !important;font-weight:400 !important;color:#616161 !important}
 .fila-venta,.price-line .pv{font-size:14px !important;font-weight:500 !important;color:#212121}
 .fila-costo,.fila-margen{font-size:14px !important;font-weight:400 !important}
 .fila-col,.card-stats{font-size:16px !important;font-weight:400 !important}
@@ -2355,17 +2365,17 @@ html.carrito-fijo #tab-carrito .oact-btn{width:44px}
 #tab-inicio .in2-venc-mini{border-radius:2px !important;border:1px solid #E0E0E0 !important;background:#fff !important;font-size:14px !important;font-weight:500 !important;padding:6px 10px !important}
 /* Proveedores que llegan / A quién pedir */
 #tab-inicio .provday{background:#fff;border:1px solid #E0E0E0;border-radius:2px;padding:4px 16px}
-#tab-inicio .provday .pd-date-row{font-size:14px;font-weight:400;color:#757575;margin:8px 0 4px}
+#tab-inicio .provday .pd-date-row{font-size:14px;font-weight:400;color:#616161;margin:8px 0 4px}
 #tab-inicio .provday .pd-prov-row{background:#fff !important;border:none !important;border-bottom:1px solid #E0E0E0 !important;border-radius:0 !important;padding:12px 0 !important;margin:0 !important}
 #tab-inicio .provday .pd-prov-row:last-of-type{border-bottom:none !important}
 #tab-inicio .provday .pd-prov-nom{font-size:16px;font-weight:500;color:#212121}
-#tab-inicio .provday .pd-prov-sub{font-size:14px;color:#757575;margin-top:2px}
+#tab-inicio .provday .pd-prov-sub{font-size:14px;color:#616161;margin-top:2px}
 #tab-inicio .provday .pd-prov-detalle{background:#FAFAFA;border:none;border-radius:0}
 #tab-inicio .provday .pd-prod-row{font-size:14px;border-bottom:1px solid #EEEEEE}
 #tab-inicio .provday .pd-empty-row{font-size:14px;padding:12px 0}
 #tab-inicio .pd-datechip-nav,#tab-inicio .pd-datechip-row input,#tab-inicio .pd-datechip-row > *{border-radius:2px !important}
 #tab-inicio .provday .pd-prov-nom{font-size:16px !important;font-weight:500 !important;color:#212121 !important}
-#tab-inicio .provday .pd-prov-sub{font-size:14px !important;color:#757575 !important}
+#tab-inicio .provday .pd-prov-sub{font-size:14px !important;color:#616161 !important}
 #tab-inicio .pd-datechip{border-radius:2px !important;background:#fff !important;border-color:#E0E0E0 !important}
 #tab-inicio .pd-datechip input[type="date"]{font-size:14px !important;font-weight:500 !important}
 #tab-inicio .pd-note{font-size:12px}
@@ -2410,6 +2420,22 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
 /* Encabezado del carrito sin el cuadro verde con la "W": solo el título, más limpio */
 #tab-carrito .order-head .t .wa-ico{display:none !important}
 #tab-carrito .order-head .t{gap:0 !important}
+
+/* ============ Sistema de diseño — fase 1 (tema Marín) ============
+   Foco visible, zonas táctiles de 44 px y estado "presionado" de los botones principales. No cambia el dibujo de nada. */
+:where(button,[role=button],a[href],summary,select,textarea,input:not([type=hidden])):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+:is(.mm-head,.shc-row,.order-head) :where(button,a[href]):focus-visible,.bottom-nav :where(button,a):focus-visible{outline-color:#fff}
+:is(.mm-save,.fp-btn-guardar,.btn-guardar-fecha,.btn-wa-compact):active{background:var(--action-pressed) !important}
+/* Zonas de toque de 44 px. Íconos aislados: un hijo invisible agranda el área que responde al dedo (el dibujo no cambia).
+   Botones contiguos (fila de íconos, fechas anterior/siguiente): tamaño real de 44 px, para que las zonas no se pisen. */
+:is(.mm-search .mm-mic,.mm-search .mm-scan,.mm-x,#scan-close,.in-cart-row .x){position:relative}
+:is(.mm-search .mm-mic,.mm-search .mm-scan){position:absolute !important}
+:is(.mm-mic,.mm-scan,.mm-x,#scan-close,.in-cart-row .x)::after{content:'';position:absolute;inset:-10px -9px}
+#tab-inicio .in2-hdr :is(.in2-icon-btn,.in2-notif-btn){width:44px;height:44px;border-radius:50%}
+#tab-inicio .in2-hdr-right{gap:0}
+.in2-venc-mini,[id$="-fecha-prev"],[id$="-fecha-next"],[id$="-fecha-cal-prev"],[id$="-fecha-cal-next"],[id$="-cfg-btn"]{min-width:44px;min-height:44px}
+.mm-head button,.mm-motivo,.mm-search input,.mm-search .prov-all{min-height:44px}
+[id$="-menos"],[id$="-mas"],[id$="-cerrar"],[id$="-cancelar"],#provday-fecha,#provday-fecha-cal,[id^="et-fecha"],#et-cantidad,#et-ancho,#et-alto,#stk-nuevo,.rk-hcol{min-height:44px;min-width:44px}
 </style>
 </head>
 <body>
@@ -3281,11 +3307,11 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
     <div class="mm-topbar"><button class="loadbtn" id="sb-cerrar" style="width:100%">Cerrar</button></div>
     <div class="mm-body">
       <div id="sb-estado" style="font-size:20px;font-weight:500;margin:8px 0 4px">Revisando…</div>
-      <div id="sb-sub" style="font-size:14px;color:#757575;margin-bottom:16px">Comparando Cloudflare (principal) con Supabase (copia)…</div>
+      <div id="sb-sub" style="font-size:14px;color:#616161;margin-bottom:16px">Comparando Cloudflare (principal) con Supabase (copia)…</div>
       <div id="sb-lista"></div>
       <div id="sb-uso" style="margin-top:20px"></div>
       <button class="mm-save" id="sb-revisar" style="margin-top:16px">Volver a revisar</button>
-      <div style="font-size:12px;color:#757575;margin-top:12px">Cada vez que la app guarda algo en Cloudflare, se copia solo a Supabase en segundo plano. Esta pantalla compara las dos bases: cantidad de registros de cada tabla y las sumas más importantes.</div>
+      <div style="font-size:12px;color:#616161;margin-top:12px">Cada vez que la app guarda algo en Cloudflare, se copia solo a Supabase en segundo plano. Esta pantalla compara las dos bases: cantidad de registros de cada tabla y las sumas más importantes.</div>
     </div>
   </div>
 </div>
@@ -5743,7 +5769,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-11-01.2';
+const APP_VERSION='2026-11-01.3';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -16456,16 +16482,16 @@ async function sbUso(){
     if(!j||!j.ok)throw new Error((j&&j.error)||'sin datos');
     const apps=Object.entries(j.apps||{});
     const tit='<div style="font-size:16px;font-weight:600;margin-bottom:4px">Uso de datos (descargas pesadas)</div>';
-    if(!apps.length){cont.innerHTML=tit+'<div style="font-size:14px;color:#757575">Todavía sin datos: se llena con el uso de la app.</div>';return;}
+    if(!apps.length){cont.innerHTML=tit+'<div style="font-size:14px;color:#616161">Todavía sin datos: se llena con el uso de la app.</div>';return;}
     const gb=j.total.proyeccionMesGB,pct=gb/j.limiteGB;
     const color=pct<0.5?'#388E3C':pct<0.8?'#E65100':'#E53935';
-    let h=tit+'<div style="font-size:14px;color:#757575;margin-bottom:8px">Promedio de los últimos '+Math.min(7,j.diasConDatos)+' día(s) con datos</div>';
-    h+=apps.map(([k,a])=>'<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #E0E0E0;font-size:15px"><span>'+(_sbNombreApp[k]||k)+' · hoy</span><span style="color:#757575;text-align:right">'+a.hoyN+' descargas · '+_sbMB(a.hoyBytes)+'</span></div>').join('');
-    h+='<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #E0E0E0;font-size:15px"><span>Promedio por día</span><span style="color:#757575">'+_sbMB(j.total.promedioDiaBytes)+'</span></div>';
+    let h=tit+'<div style="font-size:14px;color:#616161;margin-bottom:8px">Promedio de los últimos '+Math.min(7,j.diasConDatos)+' día(s) con datos</div>';
+    h+=apps.map(([k,a])=>'<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #E0E0E0;font-size:15px"><span>'+(_sbNombreApp[k]||k)+' · hoy</span><span style="color:#616161;text-align:right">'+a.hoyN+' descargas · '+_sbMB(a.hoyBytes)+'</span></div>').join('');
+    h+='<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #E0E0E0;font-size:15px"><span>Promedio por día</span><span style="color:#616161">'+_sbMB(j.total.promedioDiaBytes)+'</span></div>';
     h+='<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;font-size:15px"><span>Proyección a 30 días</span><span style="color:'+color+';font-weight:600">'+gb.toLocaleString('es-CL',{maximumFractionDigits:2})+' GB de '+j.limiteGB+' GB gratis</span></div>';
-    h+='<div style="font-size:12px;color:#757575;margin-top:6px">Cuenta las respuestas del servidor de más de 50 KB (el resto casi no pesa). El límite de 5 GB es para todas las apps y locales juntos: suma el de cada local.</div>';
+    h+='<div style="font-size:12px;color:#616161;margin-top:6px">Cuenta las respuestas del servidor de más de 50 KB (el resto casi no pesa). El límite de 5 GB es para todas las apps y locales juntos: suma el de cada local.</div>';
     cont.innerHTML=h;
-  }catch(e){cont.innerHTML='<div style="font-size:14px;color:#757575">Uso de datos: no se pudo leer ('+String(e.message||e)+')</div>';}
+  }catch(e){cont.innerHTML='<div style="font-size:14px;color:#616161">Uso de datos: no se pudo leer ('+String(e.message||e)+')</div>';}
 }
 async function sbRevisar(){
   const est=document.getElementById('sb-estado'),sub=document.getElementById('sb-sub'),lista=document.getElementById('sb-lista'),btn=document.getElementById('sb-revisar');
@@ -16478,7 +16504,7 @@ async function sbRevisar(){
     est.style.color=j.todoCoincide?'#388E3C':'#E65100';
     const hora=new Date(j.revisadoEn).toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
     sub.textContent='Revisado a las '+hora+(j.enCache?' (hace menos de 1 minuto)':'')+' · '+j.tablas.length+' tablas';
-    const fila=(nombre,a,b,ok)=>`<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #E0E0E0"><span style="font-size:18px;color:${ok?'#388E3C':'#E53935'}">${ok?'✓':'✗'}</span><span style="flex:1;font-size:16px">${nombre}</span><span style="font-size:14px;color:#757575;text-align:right">${ok?_sbFmt(a):'Cloudflare '+_sbFmt(a)+'<br>Supabase '+_sbFmt(b)}</span></div>`;
+    const fila=(nombre,a,b,ok)=>`<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #E0E0E0"><span style="font-size:18px;color:${ok?'#388E3C':'#E53935'}">${ok?'✓':'✗'}</span><span style="flex:1;font-size:16px">${nombre}</span><span style="font-size:14px;color:#616161;text-align:right">${ok?_sbFmt(a):'Cloudflare '+_sbFmt(a)+'<br>Supabase '+_sbFmt(b)}</span></div>`;
     let h=j.control.map(c=>fila(c.nombre,c.d1,c.supabase,c.coincide)).join('');
     const malas=j.tablas.filter(t=>!t.coincide);
     h+=fila('Registros en las '+j.tablas.length+' tablas',j.tablas.reduce((s,t)=>s+t.d1,0),j.tablas.reduce((s,t)=>s+t.supabase,0),!malas.length);
