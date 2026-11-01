@@ -2482,6 +2482,27 @@ input:disabled,select:disabled,textarea:disabled{background:#F2F2F2;color:var(--
 /* Botón ocupado: círculo girando delante del texto (acciones que guardan en el servidor) */
 .mm-save.saving::before,.loadbtn.saving::before,.fp-btn-guardar.saving::before{content:'';display:inline-block;width:14px;height:14px;margin-right:8px;vertical-align:-2px;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
 @media (prefers-reduced-motion:reduce){.mm-save.saving::before,.loadbtn.saving::before,.fp-btn-guardar.saving::before{animation:none}}
+
+/* ============ Sistema de diseño — fase 5: listas y tablas ============
+   Cifras siempre a la derecha y con ancho fijo (tabular), encabezados de tabla alineados con sus columnas, filas de al menos 48 px y
+   filas de lista planas con separador (no una tarjeta por cada renglón). */
+/* La tabla de resumen tiene 8 columnas: en pantallas angostas se desplaza de lado en vez de encimar las cifras y cortar los títulos */
+.tbl-scroll>table{min-width:760px}
+thead th{text-align:right;font-size:12px}
+thead th.l,thead th:first-child{text-align:left}
+tbody tr{height:48px}
+.fila-lista{display:flex;align-items:center;gap:12px;min-height:48px;padding:8px 0;border-bottom:1px solid var(--line2)}
+.fila-lista:last-child{border-bottom:none}
+.fila-num{margin-left:auto;text-align:right;white-space:nowrap;font-size:14px;font-weight:500;font-variant-numeric:tabular-nums}
+.fila-total{display:flex;justify-content:space-between;align-items:center;min-height:48px;padding:8px 0;border-top:2px solid var(--border-control);font-weight:700}
+/* Sin movimiento: renglones planos con separador, importe del mismo tamaño que en Historial de mermas */
+#sm-ov .sm-row{border:none;border-bottom:1px solid var(--line2);border-radius:0;margin-bottom:0;padding:12px 0;background:transparent;align-items:center;min-height:48px}
+#sm-ov .sm-row:last-child{border-bottom:none}
+#sm-ov .sm-row .val{font-size:14px}
+.hm-row .costo{font-variant-numeric:tabular-nums}
+.hm-row{min-height:48px}
+/* Tarjetas con campos o botones (producto sin costo, recién llegado): se conservan, con el radio común */
+.sc-row,.ll-row{border-radius:var(--r-md)}
 </style>
 </head>
 <body>
@@ -5842,7 +5863,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-11-01.6';
+const APP_VERSION='2026-11-01.7';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
