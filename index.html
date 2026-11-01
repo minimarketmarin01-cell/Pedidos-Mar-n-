@@ -2447,6 +2447,25 @@ input:disabled,select:disabled,textarea:disabled{background:#F2F2F2;color:var(--
 .campo-ayuda{display:block;margin-top:4px;font-size:12px;line-height:1.3;color:var(--text-sec)}
 .campo-req::after{content:' *';color:var(--danger)}
 :where(.search,select,input[type=number],input[type=text],input[type=tel],input[type=search],.pc-input,.da-input,.cat-combo-input):not(.qty-in){min-height:44px}
+
+/* ============ Sistema de diseño — fase 3: encabezado de módulo y diálogos ============ */
+.mm-head .mm-head-cerrar{margin-left:auto;width:auto !important;flex:0 0 auto}
+/* Diálogo propio (dlgConfirm / dlgPrompt): botones en fila, principal a la derecha, 44 px; peligro en rojo */
+#dlg-ov .dlg-botones{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
+#dlg-ov .dlg-botones button{width:auto !important;min-width:96px;min-height:44px;margin:0 !important;padding:0 16px}
+#dlg-ov .dlg-botones .mm-save.dlg-peligro{background:var(--danger) !important}
+#dlg-ov .dlg-botones .mm-save.dlg-peligro:active{background:#8E1B1B !important}
+#dlg-ov .dlg-botones .mm-save.dlg-peligro:focus-visible{outline-color:var(--danger)}
+#dlg-in{border:1px solid var(--border-control) !important;border-radius:var(--r-sm) !important;min-height:44px}
+/* Los diálogos propios (#dlg-ov, #confirm-ov) caían en la regla de pantalla completa de las pantallas Loyverse: se veían como una página
+   blanca con el texto arriba. Vuelven a ser una tarjeta centrada sobre fondo atenuado. */
+#dlg-ov,#confirm-ov{padding:16px !important;align-items:center !important;justify-content:center !important;background:rgba(0,0,0,.5) !important}
+/* Mismos botones que el diálogo propio: en fila, "Cancelar" a la izquierda y la acción principal a la derecha, 44 px. */
+#confirm-ov .mm-body{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;align-items:center}
+#confirm-ov #confirm-mensaje{flex:1 0 100%;margin-bottom:8px !important}
+#confirm-ov #confirm-btn-cancel,#confirm-ov #confirm-btn-ok{width:auto !important;min-width:96px;min-height:44px;margin:0 !important;padding:0 16px}
+#confirm-ov #confirm-btn-cancel{order:1}#confirm-ov #confirm-btn-ok{order:2}
+#dlg-ov .mm-card,#confirm-ov .mm-card{max-width:340px !important;width:100% !important;height:auto !important;max-height:90vh !important;border-radius:var(--r-md) !important;box-shadow:var(--sh-float) !important;background:#fff}
 </style>
 </head>
 <body>
@@ -5799,7 +5818,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-11-01.4';
+const APP_VERSION='2026-11-01.5';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -17160,11 +17179,12 @@ function _dlgModal(){
   if(m)return m;
   m=document.createElement('div');
   m.className='mm-ov hidden';m.id='dlg-ov';m.style.zIndex='99999';
+  m.setAttribute('role','dialog');m.setAttribute('aria-modal','true');m.setAttribute('aria-labelledby','dlg-msg');
   m.innerHTML='<div class="mm-card" style="max-width:340px"><div class="mm-body">'+
     '<p id="dlg-msg" style="font-size:14px;line-height:1.5;color:var(--ink);margin:6px 0 14px;white-space:pre-line"></p>'+
-    '<input id="dlg-in" class="hidden" autocomplete="off" style="width:100%;box-sizing:border-box;padding:12px;border:2px solid var(--verde);border-radius:12px;font-size:16px;margin-bottom:12px">'+
-    '<button class="mm-save" id="dlg-ok" type="button" style="width:100%">Aceptar</button>'+
-    '<button class="loadbtn" id="dlg-cancel" type="button" style="width:100%;margin-top:8px">Cancelar</button>'+
+    '<input id="dlg-in" class="hidden" autocomplete="off" style="width:100%;box-sizing:border-box;padding:12px;font-size:16px;margin-bottom:12px">'+
+    '<div class="dlg-botones"><button class="loadbtn" id="dlg-cancel" type="button">Cancelar</button>'+
+    '<button class="mm-save" id="dlg-ok" type="button">Aceptar</button></div>'+
     '</div></div>';
   document.body.appendChild(m);
   return m;
@@ -17175,8 +17195,15 @@ function _dlgAbrir(msg,conInput,valor){
     const ok=document.getElementById('dlg-ok'),no=document.getElementById('dlg-cancel');
     document.getElementById('dlg-msg').textContent=String(msg);
     inp.classList.toggle('hidden',!conInput);inp.value=conInput&&valor!=null?String(valor):'';
+    // Acción destructiva ("¿Eliminar…?", "¿Descartar…?", "¿Excluir…?"): el botón principal va en rojo y nombra la acción.
+    const peligro=!conInput&&/^¿?(Eliminar|Descartar|Borrar|Excluir)/i.test(String(msg).trim());
+    ok.classList.toggle('dlg-peligro',peligro);
+    ok.textContent=peligro?String(msg).trim().replace(/^¿/,'').split(/\s/)[0]:'Aceptar';
+    const volver=document.activeElement;
     let hecho=false;
-    const fin=v=>{if(hecho)return;hecho=true;_dlgCancel=null;m.classList.add('hidden');try{_sincronizarNav();}catch(e){}res(v);};
+    const tecla=e=>{if(e.key==='Escape'){e.preventDefault();_dlgCancel&&_dlgCancel();}};
+    document.addEventListener('keydown',tecla);
+    const fin=v=>{if(hecho)return;hecho=true;_dlgCancel=null;document.removeEventListener('keydown',tecla);m.classList.add('hidden');try{_sincronizarNav();}catch(e){}try{if(volver&&volver.focus)volver.focus();}catch(e){}res(v);};
     _dlgCancel=()=>fin(conInput?null:false);
     ok.onclick=()=>fin(conInput?inp.value:true);
     no.onclick=()=>fin(conInput?null:false);
@@ -18216,6 +18243,21 @@ window.addEventListener('pagehide',persistUI);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')persistUI();});
 // Auto-sincroniza al abrir si los datos tienen más de 1 hora (o no hay datos)
 autoSyncIfStale();
+
+// Encabezado de módulo único: en las pantallas de consulta, "Cerrar" estaba solo en una barra debajo del título; ahora vive en la
+// barra del encabezado (a la derecha), como "Cancelar" en Merma, Corregir stock o Crear producto. Es el mismo botón (mismo id y
+// mismos eventos): solo se cambia de lugar. Si la barra tiene más botones (ej. "Nuevo lote"), se deja como está.
+(function(){
+  document.querySelectorAll('[id$="-ov"]').forEach(function(ov){
+    var head=ov.querySelector('.mm-head'),tb=ov.querySelector('.mm-topbar');
+    if(!head||!tb||head.querySelector('button'))return;
+    var bs=tb.querySelectorAll('button');
+    if(bs.length!==1||!/-cerrar$/.test(bs[0].id))return;
+    bs[0].classList.add('mm-head-cerrar');
+    head.appendChild(bs[0]);
+    if(!tb.children.length||!tb.textContent.trim())tb.style.display='none';
+  });
+})();
 </script>
 </body>
 </html>
