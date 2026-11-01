@@ -129,7 +129,7 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
    sutil fácil de pasar por alto. */
 .fav-toggle-btn[aria-pressed="true"]{background:var(--gold-bg);border-color:var(--gold);border-width:2px;color:var(--gold)}
 .fav-toggle-btn[aria-pressed="true"] svg{fill:currentColor}
-.shc-mini input{width:23px;height:24px;padding:0 1px;border:1.5px solid var(--line);border-radius:6px;font-family:'JetBrains Mono';font-size:12px;text-align:center;box-sizing:border-box}
+.shc-mini input{width:23px;height:24px;padding:0 1px;border:1px solid var(--border-control);border-radius:6px;font-family:'JetBrains Mono';font-size:12px;text-align:center;box-sizing:border-box}
 .seg.sm{flex-shrink:0;height:36px}
 .seg.sm button{padding:0 10px;font-size:12px;height:100%;box-sizing:border-box}
 .legend.sm{gap:8px;margin-top:5px;font-size:12px}
@@ -225,7 +225,7 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 .tab.active{color:#fff;border-bottom-color:var(--wa)}
 .controls{background:var(--azul-bg);width:100%;border-bottom:2px solid var(--azul);padding:12px max(16px,env(safe-area-inset-right)) 12px max(16px,env(safe-area-inset-left))}
 .searchwrap{position:relative;margin-bottom:11px}
-.search{width:100%;padding:11px 14px 11px 38px;border:1.5px solid var(--line);border-radius:10px;font-size:16px;font-family:'Inter';background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236A707B' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E") no-repeat 13px center}
+.search{width:100%;padding:11px 14px 11px 38px;border:1px solid var(--border-control);border-radius:var(--r-sm);font-size:16px;font-family:'Inter';background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236A707B' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E") no-repeat 13px center}
 .search:focus{outline:none;border-color:var(--ink)}
 .searchx{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--gris-bg);border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;color:var(--muted);font-size:14px;display:none}
 .scanbtn{position:absolute;right:42px;top:50%;transform:translateY(-50%);background:var(--gris-bg);border:none;border-radius:8px;width:30px;height:26px;cursor:pointer;font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0}
@@ -349,7 +349,7 @@ html.carrito-fijo #rc-ov .mm-sections{
   max-width:520px;margin:0 auto
 }
 .mm-search{position:relative}
-.mm-search input,.prov-all{border:1.5px solid var(--line);border-radius:10px;font-size:16px;padding-top:11px;padding-bottom:11px;background:#fff;color:var(--text);font-family:'Inter'}
+.mm-search input,.prov-all{border:1px solid var(--border-control);border-radius:var(--r-sm);font-size:16px;padding-top:11px;padding-bottom:11px;background:#fff;color:var(--text);font-family:'Inter'}
 /* Ajuste header de filtros de Pedidos: el buscador (44px de alto real por el padding de
    arriba) no coincidía con la altura de los chips 7d/14d/30d/90d (~26px). Se define una
    altura común de 36px para los tres tipos de control de la fila — ni tan chico como los
@@ -398,10 +398,10 @@ html.carrito-fijo #rc-ov .mm-sections{
 .mm-picked .cat{font-size:12px;color:var(--muted);margin-top:2px}
 .mm-qty{display:flex;align-items:center;gap:10px}
 .fecha-wrap{position:relative;display:flex;gap:8px}
-.fecha-txt{flex:1;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:16px;font-family:'JetBrains Mono';letter-spacing:.02em}
+.fecha-txt{flex:1;padding:11px 14px;border:1px solid var(--border-control);border-radius:var(--r-sm);font-size:16px;font-family:'JetBrains Mono';letter-spacing:.02em}
 .fecha-txt::placeholder{font-family:inherit;letter-spacing:0;color:var(--muted);font-size:14px}
 .fecha-cal-btn{flex:none;width:46px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);font-size:20px;cursor:pointer}
-.fecha-seg{flex:none;padding:11px 2px;border:1.5px solid var(--line);border-radius:10px;font-size:16px;font-family:'JetBrains Mono';font-weight:700;text-align:center;width:46px}
+.fecha-seg{flex:none;padding:11px 2px;border:1px solid var(--border-control);border-radius:var(--r-sm);font-size:16px;font-family:'JetBrains Mono';font-weight:700;text-align:center;width:46px}
 .fecha-seg:focus{border-color:var(--wa);outline:none}
 .fecha-sep{align-self:center;color:var(--muted);font-weight:700;font-size:16px}
 .fecha-cal-btn:active{background:var(--line)}
@@ -418,7 +418,7 @@ html.carrito-fijo #rc-ov .mm-sections{
    el problema nunca estuvo ahí, sino en que el input se negaba a encogerse). Confirmado con el
    caso reportado: con min-width:auto (por defecto) los botones medían 30px pese a pedirles
    48px; con min-width:0 en el input, miden los 48px pedidos. */
-.mm-qty input{flex:1;min-width:0;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:16px;font-family:'JetBrains Mono';text-align:center}
+.mm-qty input{flex:1;min-width:0;padding:11px 14px;border:1px solid var(--border-control);border-radius:var(--r-sm);font-size:16px;font-family:'JetBrains Mono';text-align:center}
 #rc-cantidad-field .mm-qty input{padding:9px 12px;font-size:16px}
 /* Botones +/- de "Cantidad recibida" en Recepción: el tamaño base de .qbtn (30x40, pensado
    para filas densas de lista) quedaba chico para un botón que se toca a repetición mientras se
@@ -447,7 +447,7 @@ html.carrito-fijo #rc-ov .mm-sections{
    función de render que arma el HTML que se manda a imprimir — así no hay sorpresas entre lo
    que se ve acá y lo que sale impreso. */
 .et-size-lbl{font-size:12px;color:var(--muted);font-weight:700;margin-bottom:2px}
-.et-size-input{width:100%;height:34px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;font-family:'JetBrains Mono';box-sizing:border-box}
+.et-size-input{width:100%;height:34px;padding:0 10px;border:1px solid var(--border-control);border-radius:var(--r-sm);font-size:14px;font-family:'JetBrains Mono';box-sizing:border-box}
 .et-preview-box{display:flex;justify-content:center;align-items:center;padding:14px;background:var(--paper);border-radius:10px;overflow:auto}
 /* .et-bc con flex:1;min-height:0 se queda con TODO el alto que sobra después de las filas de
    arriba/abajo (que son flex:none, tamaño fijo) — así el código de barras siempre ocupa el
@@ -525,7 +525,7 @@ html.carrito-fijo #rc-ov .mm-sections{
 .cp-toggle input[type=checkbox]{width:22px;height:22px;flex:0 0 auto}
 #cp-cat-nuevabox:not(.hidden){display:flex}
 .gon-top{display:flex;gap:8px;margin:0 0 10px}
-.gon-top input,.gon-top select{flex:1;min-width:0;padding:9px 11px;border:1.5px solid var(--line);border-radius:10px;font-size:14px}
+.gon-top input,.gon-top select{flex:1;min-width:0;padding:9px 11px;border:1px solid var(--border-control);border-radius:var(--r-sm);font-size:14px}
 .gon-progress{display:flex;align-items:center;gap:10px;margin:0 0 12px}
 .gon-bar{flex:1;height:8px;background:var(--gris-bg);border-radius:99px;overflow:hidden}
 .gon-bar>div{height:100%;background:var(--verde);width:0;transition:width .25s}
@@ -627,7 +627,7 @@ html.carrito-fijo #rc-ov .mm-sections{
 /* Descuentos activos — fila de gestión (vendido/merma parcial + registrar), compacta como el
    resto de .vc-mini; reutiliza .vc-row/.nom/.cat/.vc-precio-linea, no duplica esos estilos. */
 .da-gestion-row{display:flex;gap:6px;margin-top:8px;align-items:center}
-.da-input{flex:1;min-width:0;padding:7px 8px;border:1.5px solid var(--line);border-radius:8px;font-size:12px;font-family:'JetBrains Mono'}
+.da-input{flex:1;min-width:0;padding:7px 8px;border:1px solid var(--border-control);border-radius:var(--r-sm);font-size:12px;font-family:'JetBrains Mono'}
 .da-gestion-row .vc-mini{flex:none;min-width:64px}
 .vc-empty{padding:20px;text-align:center;color:var(--muted);font-size:14px}
 .vc-toprow{display:flex;gap:8px;margin-bottom:12px}
@@ -638,7 +638,7 @@ html.carrito-fijo #rc-ov .mm-sections{
 .sc-row .inrow{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
 .sc-row .inrow input{flex:1 1 100%}
 .sc-row .inrow button{flex:1}
-.sc-row input{flex:1;padding:9px 12px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;font-family:'JetBrains Mono'}
+.sc-row input{flex:1;padding:9px 12px;border:1px solid var(--border-control);border-radius:var(--r-sm);font-size:14px;font-family:'JetBrains Mono'}
 .sc-row button{border:none;background:var(--rojo);color:#fff;border-radius:9px;padding:9px 14px;font-size:12px;font-weight:700;cursor:pointer}
 .sc-row button:disabled{opacity:.4;cursor:not-allowed}
 .sc-row.done{opacity:.5}
@@ -747,7 +747,7 @@ html.carrito-fijo #rc-ov .mm-sections{
 .ck-f{color:#12a88a;font-size:30px}
 .ck-eq{background:#12a88a;color:#fff;font-weight:500}
 .ck-eq:active{filter:brightness(.9)}
-.pc-input{width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'JetBrains Mono';box-sizing:border-box;background:#fff}
+.pc-input{width:100%;padding:11px 14px;border:1px solid var(--border-control);border-radius:var(--r-sm);font-size:14px;font-family:'JetBrains Mono';box-sizing:border-box;background:#fff}
 .pc-input-lg{font-size:16px;font-weight:700}
 .pc-hint{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.3;min-height:13px}
 .pc-row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start}
@@ -809,7 +809,7 @@ html.carrito-fijo #rc-ov .mm-sections{
 .ll-row .cat{font-size:12px;color:var(--muted);margin-top:2px}
 .ll-row .plus{color:var(--verde);font-weight:700}
 .ll-row .fecharow{display:flex;gap:8px;margin-top:8px}
-.ll-row .fecharow input{flex:1;padding:9px 12px;border:1.5px solid var(--line);border-radius:9px;font-size:14px}
+.ll-row .fecharow input{flex:1;padding:9px 12px;border:1px solid var(--border-control);border-radius:var(--r-sm);font-size:14px}
 .ll-row .fecharow button{border:none;border-radius:9px;padding:9px 12px;font-size:12px;font-weight:700;cursor:pointer}
 .ll-row .btn-guardar-fecha{background:var(--verde);color:#fff}
 .ll-row .btn-ignorar{background:var(--gris-bg);color:var(--ink)}
@@ -855,7 +855,7 @@ html.modo-bliss .fila-row,html.modo-bliss .row-urgent .fila-row,html.modo-bliss 
 .in-cart-row .cat{font-size:12px;color:var(--muted)}
 .in-cart-row .x{background:none;border:none;color:var(--rojo);font-size:16px;cursor:pointer;padding:0 2px;line-height:1}
 .in-cart-row .qtyrow{display:flex;align-items:center;gap:8px;margin-top:7px}
-.in-cart-row .qtyrow input{width:70px;padding:6px 8px;border:1.5px solid var(--line);border-radius:8px;font-size:14px;font-family:'JetBrains Mono';text-align:center}
+.in-cart-row .qtyrow input{width:70px;padding:6px 8px;border:1px solid var(--border-control);border-radius:var(--r-sm);font-size:14px;font-family:'JetBrains Mono';text-align:center}
 .in-cart-row .unidad{font-size:12px;color:var(--muted)}
 .in-cart-row .costo-warn{width:100%;margin-top:6px;padding:7px 9px;border:1.5px solid var(--rojo);border-radius:8px;font-size:12px;font-family:'JetBrains Mono'}
 .mm-ticket{background:#fff;border:1.5px dashed var(--line);border-radius:10px;padding:2px 10px}
@@ -879,7 +879,7 @@ html.modo-bliss .fila-row,html.modo-bliss .row-urgent .fila-row,html.modo-bliss 
 .chip{border:1.5px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;font-size:14px;font-weight:500;cursor:pointer;font-family:'Manrope';color:var(--text)}
 .chip.active{background:var(--ink);color:#fff;border-color:var(--ink)}
 .chip .n{color:var(--muted);font-weight:500;margin-left:5px;font-size:12px}.chip.active .n{color:#b9c0ca}
-select,input[type=number]{font-family:'Inter';font-size:14px;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;background:#fff;color:var(--text)}
+select,input[type=number]{font-family:'Inter';font-size:14px;padding:8px 10px;border:1px solid var(--border-control);border-radius:var(--r-sm);background:#fff;color:var(--text)}
 input[type=number]{width:64px;font-family:'JetBrains Mono';font-weight:500}
 .prov-combo{position:relative;flex:1;min-width:160px}
 /* left:42px, no 0 — deja lugar a .fav-toggle-btn (36px + 6px de gap de .shc-row), que ahora va
@@ -1358,7 +1358,7 @@ html.modo-bliss #prov-all{font-size:16px}
    más largo que "Cambio: -N", así que a diferencia del resto de .cambio-badge sí puede envolver. */
 .cambio-badge .motivo-venc{display:block;white-space:normal;max-width:140px;margin-top:2px}
 .cat-combo{position:relative;flex:1;min-width:0}
-.cat-combo-input{width:100%;padding:11px 34px 11px 10px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;background:#fff;color:var(--text);cursor:pointer}
+.cat-combo-input{width:100%;padding:11px 34px 11px 10px;border:1px solid var(--border-control);border-radius:var(--r-sm);font-size:14px;background:#fff;color:var(--text);cursor:pointer}
 .cat-combo-input:focus{outline:none;border-color:var(--wa)}
 .cat-combo-chev{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--muted);pointer-events:none}
 .cat-combo-menu{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.16);max-height:260px;overflow-y:auto;-webkit-overflow-scrolling:touch;z-index:400}
@@ -1376,7 +1376,7 @@ html.modo-bliss #prov-all{font-size:16px}
 .fc-ps-line .loadbtn[id$="-limpiar"]{padding:0 11px;flex:none;color:var(--muted)}
 .fc-ps-line .loadbtn[id$="-renombrar"]{padding:0 11px;flex:none;color:var(--wa-d)}
 .fc-ps-nuevabox{display:flex;gap:6px;margin-top:6px}
-.fc-ps-nuevabox input{flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12px}
+.fc-ps-nuevabox input{flex:1;min-width:0;padding:9px 10px;border:1px solid var(--border-control);border-radius:var(--r-sm);font-size:12px}
 .fc-ps-nuevabox.hidden{display:none}
 .fc-ps-todos{width:100%;margin-bottom:10px;font-size:12px}
 .mc-detalle{border-top:1px dashed var(--line);padding-top:10px;margin-top:2px}
@@ -1761,7 +1761,7 @@ html.carrito-fijo.ocultar-contenido-pedido #tab-pedido{grid-template-columns:min
 .calprov-sin-dias{font-size:12px;color:var(--muted);font-style:italic}
 .calprov-agregar-dia{margin-top:7px;background:none;border:1px dashed var(--line);border-radius:8px;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;padding:5px 8px;width:100%}
 .calprov-nuevo{display:flex;gap:6px;margin-top:4px}
-.calprov-nuevo input{flex:1;min-width:0;padding:8px;border-radius:9px;border:1px solid var(--line);font-size:12px;font-family:inherit}
+.calprov-nuevo input{flex:1;min-width:0;padding:8px;border-radius:var(--r-sm);border:1px solid var(--line);font-size:12px;font-family:inherit}
 .calprov-nuevo button{flex:none;padding:8px 12px;border-radius:9px;border:none;background:var(--wa-d);color:#fff;font-size:12px;font-weight:700;cursor:pointer}
 .in2-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .in2-action-btn{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;font-size:12px;font-weight:700;color:var(--ink);text-align:center}
@@ -2436,6 +2436,17 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
 .in2-venc-mini,[id$="-fecha-prev"],[id$="-fecha-next"],[id$="-fecha-cal-prev"],[id$="-fecha-cal-next"],[id$="-cfg-btn"]{min-width:44px;min-height:44px}
 .mm-head button,.mm-motivo,.mm-search input,.mm-search .prov-all{min-height:44px}
 [id$="-menos"],[id$="-mas"],[id$="-cerrar"],[id$="-cancelar"],#provday-fecha,#provday-fecha-cal,[id^="et-fecha"],#et-cantidad,#et-ancho,#et-alto,#stk-nuevo,.rk-hcol{min-height:44px;min-width:44px}
+
+/* ============ Sistema de diseño — fase 2: campos de formulario ============
+   Un solo comportamiento para todos los campos: borde de control (3:1), foco en color de acción, error en rojo con mensaje debajo,
+   deshabilitado en gris. Los campos de línea inferior de las pantallas Loyverse conservan su dibujo. */
+input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=hidden]):not([type=file]):focus-visible,select:focus-visible,textarea:focus-visible{border-color:var(--action);box-shadow:0 0 0 1px var(--action);outline:none}
+input:disabled,select:disabled,textarea:disabled{background:#F2F2F2;color:var(--text-sec);cursor:not-allowed}
+.campo-error,.campo-error:focus-visible{border-color:var(--danger) !important;box-shadow:0 0 0 1px var(--danger) !important}
+.campo-msg{display:block;margin-top:4px;font-size:12px;line-height:1.3;color:var(--danger);font-weight:500}
+.campo-ayuda{display:block;margin-top:4px;font-size:12px;line-height:1.3;color:var(--text-sec)}
+.campo-req::after{content:' *';color:var(--danger)}
+:where(.search,select,input[type=number],input[type=text],input[type=tel],input[type=search],.pc-input,.da-input,.cat-combo-input):not(.qty-in){min-height:44px}
 </style>
 </head>
 <body>
@@ -3014,7 +3025,7 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
 
         <div class="mm-field hidden" id="pr-costo-field" style="margin-bottom:8px">
           <label>Costo unitario (este producto no tiene costo cargado — se guardará en Loyverse)</label>
-          <input id="pr-costo" inputmode="decimal" placeholder="$0" style="width:100%;height:38px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;font-family:'JetBrains Mono';box-sizing:border-box">
+          <input id="pr-costo" inputmode="decimal" placeholder="$0" style="width:100%;height:38px;padding:0 10px;border:1px solid var(--border-control);border-radius:4px;font-size:14px;font-family:'JetBrains Mono';box-sizing:border-box">
         </div>
 
         <div class="mm-field hidden" id="pr-fecha-field" style="margin-bottom:8px">
@@ -3099,7 +3110,7 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
                 </div>
                 <div class="mm-field hidden" id="rc-nombre-box" style="margin-top:6px">
                   <label>Corregir nombre del producto</label>
-                  <input id="rc-nombre-input" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1.5px solid var(--line);border-radius:8px;font-size:12px" autocomplete="off">
+                  <input id="rc-nombre-input" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid var(--border-control);border-radius:4px;font-size:12px" autocomplete="off">
                 </div>
                 <div class="cat" id="rc-costo-actual" style="margin-top:2px">Costo actual: —</div>
                 <div class="cat" id="rc-precio-actual" style="margin-top:2px">Precio actual: —</div>
@@ -3116,7 +3127,7 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
              corregir un stock mal ingresado no depende de sumar unidades nuevas. -->
         <div class="mm-field hidden" id="rc-ajustar-box" style="margin-bottom:8px">
           <label>Nueva cantidad contada</label>
-          <input id="rc-ajustar-cantidad" type="number" inputmode="decimal" placeholder="Nueva cantidad contada" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'JetBrains Mono';box-sizing:border-box">
+          <input id="rc-ajustar-cantidad" type="number" inputmode="decimal" placeholder="Nueva cantidad contada" style="width:100%;padding:11px 14px;border:1px solid var(--border-control);border-radius:4px;font-size:14px;font-family:'JetBrains Mono';box-sizing:border-box">
           <button type="button" id="rc-ajustar-guardar" style="width:100%;margin-top:8px;padding:10px;border-radius:10px;border:1.5px solid var(--gold);background:var(--gold-bg);color:var(--gold);font-weight:700;font-size:14px;cursor:pointer">Guardar stock</button>
         </div>
 
@@ -3147,13 +3158,13 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
               <div id="rc-caja-campos" class="hidden" style="display:flex;gap:8px;margin-top:6px">
                 <div style="flex:1">
                   <div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:2px">UNIDADES POR CAJA</div>
-                  <input id="rc-unidades-caja" inputmode="numeric" placeholder="Ej: 24" style="width:100%;height:34px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;font-family:'JetBrains Mono';box-sizing:border-box">
+                  <input id="rc-unidades-caja" inputmode="numeric" placeholder="Ej: 24" style="width:100%;height:34px;padding:0 10px;border:1px solid var(--border-control);border-radius:4px;font-size:14px;font-family:'JetBrains Mono';box-sizing:border-box">
                 </div>
               </div>
               <div class="cat" id="rc-stock-total-hint" style="margin-top:5px"></div>
               <div id="rc-danadas-box" class="hidden" style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px 10px;border:1.5px solid var(--rojo,#C62828);border-radius:9px;background:var(--rojo-bg,#FBEDED)">
                 <label for="rc-danadas" style="font-size:13px;font-weight:700;color:var(--rojo,#C62828);flex:1">⚠️ ¿Cuántas llegaron dañadas?<span style="display:block;font-weight:400;font-size:11px;color:var(--muted)">Van directo a Pendientes para cambio</span></label>
-                <input id="rc-danadas" inputmode="numeric" placeholder="0" autocomplete="off" style="width:64px;height:38px;text-align:center;font-size:16px;border:1.5px solid var(--line);border-radius:9px;background:#fff">
+                <input id="rc-danadas" inputmode="numeric" placeholder="0" autocomplete="off" style="width:64px;height:38px;text-align:center;font-size:16px;border:1px solid var(--border-control);border-radius:4px;background:#fff">
               </div>
             </div>
           </section>
@@ -3178,7 +3189,7 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
             <div class="mm-section-head"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 9V7c0-1.1-.9-2-2-2h-3c0-1.66-1.34-3-3-3S9 3.34 9 5H6c-1.1 0-2 .9-2 2v2c-1.66 0-3 1.34-3 3s1.34 3 3 3v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c1.66 0 3-1.34 3-3s-1.34-3-3-3zM7.5 11.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5S9.83 13 9 13s-1.5-.67-1.5-1.5zM16 17H8v-2h8v2zm-1-4c-.83 0-1.5-.67-1.5-1.5S14.17 10 15 10s1.5.67 1.5 1.5S15.83 13 15 13z"/></svg>Proveedor</div>
             <div class="cat" id="rc-proveedores" style="font-weight:700;color:var(--ink)">Proveedor(es): —</div>
             <div style="display:flex;gap:6px;margin-top:6px">
-              <select id="rc-provid-select" style="flex:1;min-width:0;padding:7px 9px;border:1.5px solid var(--line);border-radius:8px;font-size:12px"><option value="">Agregar proveedor…</option></select>
+              <select id="rc-provid-select" style="flex:1;min-width:0;padding:7px 9px;border:1px solid var(--border-control);border-radius:4px;font-size:12px"><option value="">Agregar proveedor…</option></select>
               <button class="loadbtn" id="rc-provid-add" type="button" style="white-space:nowrap;padding:7px 10px;font-size:12px"><svg width="12" height="12" viewBox="0 0 24 24" style="vertical-align:-2px" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Agregar</button>
             </div>
           </section>
@@ -3464,10 +3475,10 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
         <button class="mm-scan cam-btn" id="rz-scan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h2v12H4V6m3 0h1v12H7V6m2 0h3v12H9V6m4 0h1v12h-1V6m3 0h2v12h-2V6m3 0h1v12h-1V6M2 4v4H0V4a2 2 0 0 1 2-2h4v2H2m20-2a2 2 0 0 1 2 2v4h-2V4h-4V2h4M2 16v4h4v2H2a2 2 0 0 1-2-2v-4h2m20 4v-4h2v4a2 2 0 0 1-2 2h-4v-2h4z"/></svg></button>
       </div>
       <div class="sm-filters" style="display:flex;gap:6px;margin-bottom:6px">
-        <select id="rz-prov" style="flex:1;min-width:0;padding:8px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:12px">
+        <select id="rz-prov" style="flex:1;min-width:0;padding:8px;border-radius:4px;border:1px solid var(--borde);background:#fff;font-size:12px">
           <option value=""><svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:-2px" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg> Todos los proveedores</option>
         </select>
-        <select id="rz-clase" style="width:110px;padding:8px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:12px">
+        <select id="rz-clase" style="width:110px;padding:8px;border-radius:4px;border:1px solid var(--borde);background:#fff;font-size:12px">
           <option value="A" selected>Solo clase A</option>
           <option value="AB">Clase A y B</option>
         </select>
@@ -3502,10 +3513,10 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
         <button class="mm-x" id="vd-x" type="button" aria-label="Limpiar" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
       </div>
       <div class="sm-filters" style="display:flex;gap:6px;margin-bottom:8px">
-        <select id="vd-sector" style="flex:1;min-width:0;padding:8px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:12px">
+        <select id="vd-sector" style="flex:1;min-width:0;padding:8px;border-radius:4px;border:1px solid var(--borde);background:#fff;font-size:12px">
           <option value="">Todos los sectores</option>
         </select>
-        <select id="vd-proveedor" style="flex:1;min-width:0;padding:8px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:12px">
+        <select id="vd-proveedor" style="flex:1;min-width:0;padding:8px;border-radius:4px;border:1px solid var(--borde);background:#fff;font-size:12px">
           <option value="">Todos los proveedores</option>
         </select>
       </div>
@@ -3526,7 +3537,7 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
       <!-- Elegir mes (pedido explícito: "cuántos se vendieron en el mes") — solo visible en
            modo "mes". Arranca en el mes actual si hay datos de ese mes, si no en el más reciente
            disponible (ver vdPoblarSelects). -->
-      <select id="vd-mes" class="hidden" style="width:100%;margin-bottom:8px;padding:8px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:12.5px"></select>
+      <select id="vd-mes" class="hidden" style="width:100%;margin-bottom:8px;padding:8px;border-radius:4px;border:1px solid var(--borde);background:#fff;font-size:12.5px"></select>
       <div class="hm-summary"><span class="lbl" id="vd-lbl">—</span></div>
       <div class="catchart" id="vd-chart"></div>
       <div class="cat" style="margin:10px 0 6px;font-weight:700">Por producto</div>
@@ -3544,14 +3555,14 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
         <input id="mmc-search" placeholder="Buscar producto…" autocomplete="off">
         <button class="mm-x" id="mmc-x" type="button" aria-label="Limpiar" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
       </div>
-      <select id="mmc-mes" style="width:100%;margin-bottom:6px;padding:8px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:12px">
+      <select id="mmc-mes" style="width:100%;margin-bottom:6px;padding:8px;border-radius:4px;border:1px solid var(--borde);background:#fff;font-size:12px">
         <option value="">Todo el rango</option>
       </select>
       <div class="sm-filters" style="display:flex;gap:6px;margin-bottom:8px">
-        <select id="mmc-categoria" style="flex:1;min-width:0;padding:8px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:12px">
+        <select id="mmc-categoria" style="flex:1;min-width:0;padding:8px;border-radius:4px;border:1px solid var(--borde);background:#fff;font-size:12px">
           <option value="">Todas las categorías</option>
         </select>
-        <select id="mmc-motivo" style="flex:1;min-width:0;padding:8px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:12px">
+        <select id="mmc-motivo" style="flex:1;min-width:0;padding:8px;border-radius:4px;border:1px solid var(--borde);background:#fff;font-size:12px">
           <option value="">Todos los motivos</option>
           <option value="liquidado">Liquidado</option>
           <option value="vencido">Vencido</option>
@@ -3591,17 +3602,17 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
     <div class="mm-body">
       <div class="hm-summary"><span class="lbl" id="sm-lbl">—</span><span class="val" id="sm-val"></span></div>
       <div class="sm-filters" style="display:flex;gap:6px;margin-bottom:6px">
-        <select id="sm-cat" style="flex:1;min-width:0;padding:8px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:12px">
+        <select id="sm-cat" style="flex:1;min-width:0;padding:8px;border-radius:4px;border:1px solid var(--borde);background:#fff;font-size:12px">
           <option value=""><svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:-2px" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg> Todas las categorías</option>
         </select>
-        <select id="sm-stock" style="width:132px;padding:8px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:12px">
+        <select id="sm-stock" style="width:132px;padding:8px;border-radius:4px;border:1px solid var(--borde);background:#fff;font-size:12px">
           <option value="">Todo el stock</option>
           <option value="sin">Sin stock (0)</option>
           <option value="con">Con stock</option>
         </select>
       </div>
       <div class="sm-filters" style="display:flex;gap:6px;margin-bottom:8px">
-        <select id="sm-antig" style="flex:1;min-width:0;padding:8px;border-radius:10px;border:1px solid var(--borde);background:#fff;font-size:12px">
+        <select id="sm-antig" style="flex:1;min-width:0;padding:8px;border-radius:4px;border:1px solid var(--borde);background:#fff;font-size:12px">
           <option value=""><svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:-2px" fill="currentColor"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg> Cualquier antigüedad</option>
           <option value="30">Ingresado hace +30 días</option>
           <option value="60">Ingresado hace +60 días</option>
@@ -3769,7 +3780,7 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
               <button class="loadbtn" id="cp-cat-nueva" type="button" style="white-space:nowrap"><svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:-2px" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Nueva</button>
             </div>
             <div id="cp-cat-nuevabox" class="hidden" style="gap:8px;margin-top:8px">
-              <input id="cp-cat-nuevanom" placeholder="Nombre de la categoría nueva" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+              <input id="cp-cat-nuevanom" placeholder="Nombre de la categoría nueva" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1px solid var(--border-control);border-radius:4px;font-size:14px">
               <button class="btn-ok loadbtn" id="cp-cat-crear" type="button" style="white-space:nowrap">Crear</button>
             </div>
           </div>
@@ -3801,7 +3812,7 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
             <div id="cp-caja-campos" class="hidden" style="display:flex;gap:8px;margin-top:6px">
               <div style="flex:1">
                 <div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:2px">UNIDADES POR CAJA</div>
-                <input id="cp-unidades-caja" inputmode="numeric" placeholder="Ej: 24" style="width:100%;height:34px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;font-family:'JetBrains Mono';box-sizing:border-box">
+                <input id="cp-unidades-caja" inputmode="numeric" placeholder="Ej: 24" style="width:100%;height:34px;padding:0 10px;border:1px solid var(--border-control);border-radius:4px;font-size:14px;font-family:'JetBrains Mono';box-sizing:border-box">
               </div>
             </div>
             <div class="cat" id="cp-stock-total-hint" style="margin-top:5px"></div>
@@ -3852,7 +3863,7 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
               <button class="loadbtn" id="cp-prov-nueva" type="button" style="white-space:nowrap"><svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:-2px" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Nuevo</button>
             </div>
             <div id="cp-prov-nuevabox" class="hidden" style="gap:8px;margin-top:8px">
-              <input id="cp-prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+              <input id="cp-prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1px solid var(--border-control);border-radius:4px;font-size:14px">
               <button class="btn-ok loadbtn" id="cp-prov-crear" type="button" style="white-space:nowrap">Crear</button>
             </div>
             <div style="display:flex;gap:8px;margin-top:8px">
@@ -3865,7 +3876,7 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
               <button class="loadbtn" id="cp-sector-nueva" type="button" style="white-space:nowrap"><svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:-2px" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Nuevo</button>
             </div>
             <div id="cp-sector-nuevabox" class="hidden" style="gap:8px;margin-top:8px">
-              <input id="cp-sector-nuevonom" placeholder="Nombre del sector nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">
+              <input id="cp-sector-nuevonom" placeholder="Nombre del sector nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1px solid var(--border-control);border-radius:4px;font-size:14px">
               <button class="btn-ok loadbtn" id="cp-sector-crear" type="button" style="white-space:nowrap">Crear</button>
             </div>
           </div>
@@ -3944,7 +3955,7 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
         <div id="gp-lista"><div class="vc-empty">Cargando…</div></div>
         <div id="gp-reasignar-box" class="hidden" style="margin-top:12px;padding:12px;border:1.5px solid var(--ambar);border-radius:10px;background:var(--ambar-bg)">
           <div id="gp-reasignar-msg" style="font-size:14px;font-weight:700;margin-bottom:10px"></div>
-          <select id="gp-reasignar-select" style="width:100%;padding:10px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;background:#fff;margin-bottom:10px"></select>
+          <select id="gp-reasignar-select" style="width:100%;padding:10px;border:1px solid var(--border-control);border-radius:4px;font-size:14px;background:#fff;margin-bottom:10px"></select>
           <div style="display:flex;gap:8px">
             <button class="loadbtn" id="gp-reasignar-ir" style="flex:1">Reasignar a este proveedor</button>
             <button class="loadbtn" id="gp-reasignar-null" style="flex:1">Dejar sin proveedor</button>
@@ -4030,11 +4041,11 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
         </div>
       </div>
       <div class="mc-prov-nuevabox hidden" id="mcg-prov-nuevabox" style="display:flex;gap:8px;margin-bottom:8px">
-        <input id="mcg-prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12px">
+        <input id="mcg-prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:9px 10px;border:1px solid var(--border-control);border-radius:4px;font-size:12px">
         <button class="btn-ok loadbtn" id="mcg-prov-crear" type="button" style="white-space:nowrap;padding:8px 10px">Crear</button>
       </div>
       <div class="mc-sector-nuevabox hidden" id="mcg-sect-nuevabox" style="display:flex;gap:8px;margin-bottom:8px">
-        <input id="mcg-sect-nuevonom" placeholder="Nombre del sector nuevo" autocomplete="off" style="flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12px">
+        <input id="mcg-sect-nuevonom" placeholder="Nombre del sector nuevo" autocomplete="off" style="flex:1;min-width:0;padding:9px 10px;border:1px solid var(--border-control);border-radius:4px;font-size:12px">
         <button class="btn-ok loadbtn" id="mcg-sect-crear" type="button" style="white-space:nowrap;padding:8px 10px">Crear</button>
       </div>
       <button class="btn-ok loadbtn" id="mcg-aplicar-seleccion" type="button" style="width:100%;padding:9px;font-size:14px">Aplicar a seleccionados (0)</button>
@@ -4044,7 +4055,7 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
            categoría, con contador de pendientes; tocar uno cambia qué ve la lista de abajo. -->
       <div id="mc-chips" style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:10px 0 2px"></div>
       <div style="display:flex;gap:6px;margin-top:6px">
-        <input id="mc-detalle-buscar" placeholder="Filtrar dentro de la categoría…" autocomplete="off" style="flex:1;min-width:0;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12px">
+        <input id="mc-detalle-buscar" placeholder="Filtrar dentro de la categoría…" autocomplete="off" style="flex:1;min-width:0;padding:8px 10px;border:1px solid var(--border-control);border-radius:4px;font-size:12px">
         <button class="loadbtn cam-btn" id="mc-scan" type="button" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h2v12H4V6m3 0h1v12H7V6m2 0h3v12H9V6m4 0h1v12h-1V6m3 0h2v12h-2V6m3 0h1v12h-1V6M2 4v4H0V4a2 2 0 0 1 2-2h4v2H2m20-2a2 2 0 0 1 2 2v4h-2V4h-4V2h4M2 16v4h4v2H2a2 2 0 0 1-2-2v-4h2m20 4v-4h2v4a2 2 0 0 1-2 2h-4v-2h4z"/></svg></button>
         <button class="loadbtn" id="mc-marcar-todos" type="button" style="white-space:nowrap;font-size:12px;padding:0 10px">Todos</button>
         <button class="loadbtn" id="mc-desmarcar-todos" type="button" style="white-space:nowrap;font-size:12px;padding:0 10px">Ninguno</button>
@@ -4068,7 +4079,7 @@ html.carrito-fijo #tab-carrito .order-foot{container-type:inline-size}
       <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Nombre actual: <b id="rn-actual" style="color:var(--ink)"></b></div>
       <div class="fc-ps-field">
         <label>Nuevo nombre</label>
-        <input id="rn-nuevo" placeholder="Nuevo nombre" autocomplete="off" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;box-sizing:border-box">
+        <input id="rn-nuevo" placeholder="Nuevo nombre" autocomplete="off" style="width:100%;padding:11px 14px;border:1px solid var(--border-control);border-radius:4px;font-size:14px;box-sizing:border-box">
       </div>
       <div id="rn-error" class="hidden" style="color:var(--rojo);font-size:12px;margin-top:6px"></div>
       <button class="mm-save" id="rn-guardar" style="width:100%;margin-top:12px">Guardar</button>
@@ -5744,6 +5755,25 @@ function sonidoError(){
     });
   }catch(e){}
 }
+// Marca un campo con error: borde rojo + mensaje debajo (aria-invalid/role=alert) y lo enfoca. Se limpia al volver a escribir.
+function campoError(inp,msg){
+  if(typeof inp==='string')inp=document.getElementById(inp);
+  if(!inp)return;
+  inp.classList.add('campo-error');inp.setAttribute('aria-invalid','true');
+  let m=inp.parentNode.querySelector(':scope > .campo-msg[data-de="'+(inp.id||'')+'"]');
+  if(!m){m=document.createElement('span');m.className='campo-msg';m.setAttribute('role','alert');m.dataset.de=inp.id||'';inp.insertAdjacentElement('afterend',m);}
+  m.textContent=msg||'';
+  try{inp.focus();}catch(e){}
+  const limpiar=()=>{campoOk(inp);inp.removeEventListener('input',limpiar);};
+  inp.addEventListener('input',limpiar);
+}
+function campoOk(inp){
+  if(typeof inp==='string')inp=document.getElementById(inp);
+  if(!inp)return;
+  inp.classList.remove('campo-error');inp.removeAttribute('aria-invalid');
+  const m=inp.parentNode&&inp.parentNode.querySelector(':scope > .campo-msg[data-de="'+(inp.id||'')+'"]');
+  if(m)m.remove();
+}
 function sonidoGuardado(){
   window._tgOk=Date.now();   // el aviso que sale junto a este sonido va en verde (ver showToast)
   try{
@@ -5769,7 +5799,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-11-01.3';
+const APP_VERSION='2026-11-01.4';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -7132,10 +7162,10 @@ function fpPaneGeneral(f){
         '</div>'+
       '</div>'+
       (p.trackStock?(
-        '<input id="fp-i-recuento" type="number" inputmode="decimal" placeholder="Nueva cantidad contada" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:\'JetBrains Mono\'">'+
+        '<input id="fp-i-recuento" type="number" inputmode="decimal" placeholder="Nueva cantidad contada" style="width:100%;padding:11px 14px;border:1px solid var(--border-control);border-radius:4px;font-size:14px;font-family:\'JetBrains Mono\'">'+
         '<button type="button" id="fp-i-recuento-guardar" style="width:100%;margin-top:8px;padding:10px;border-radius:10px;border:1.5px solid var(--gold);background:var(--gold-bg);color:var(--gold);font-weight:700;font-size:14px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:-2px" fill="currentColor"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Guardar stock</button>'
       ):'<div class="cat">Activa "Seguir inventario" para poder recontar.</div>')+
-      fpCampo('Stock mínimo (opcional)','<input id="fp-i-stockmin" type="number" inputmode="numeric" value="'+(p.stockMinimo!=null?p.stockMinimo:'')+'" placeholder="Ej: 5" style="width:100%;padding:9px 12px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;font-family:\'JetBrains Mono\';margin-top:10px">')+
+      fpCampo('Stock mínimo (opcional)','<input id="fp-i-stockmin" type="number" inputmode="numeric" value="'+(p.stockMinimo!=null?p.stockMinimo:'')+'" placeholder="Ej: 5" style="width:100%;padding:9px 12px;border:1px solid var(--border-control);border-radius:4px;font-size:14px;font-family:\'JetBrains Mono\';margin-top:10px">')+
     '</div>'+
     // Copiar a Argomedo 455 — empareja por CÓDIGO DE BARRAS (el único dato que puede coincidir
     // entre los dos catálogos de Loyverse, independientes entre sí; el SKU se genera aparte en
@@ -7290,7 +7320,7 @@ function fpPaneGeneral(f){
 async function fpGuardarRecuento(sku){
   const inp=document.getElementById('fp-i-recuento');
   const val=inp.value.trim();
-  if(val===''){showToast('Escribe la cantidad contada primero');return;}
+  if(val===''){showToast('Escribe la cantidad contada primero');campoError(inp,'Escribe la cantidad contada primero');return;}
   const nuevo=Number(val);
   if(isNaN(nuevo)||nuevo<0){showToast('Cantidad inválida');return;}
   const btn=document.getElementById('fp-i-recuento-guardar');
@@ -7338,7 +7368,7 @@ function fpCopiarSinCodigoHtml(){
       '<button type="button" id="fp-asignar-otro" class="loadbtn" style="flex:1">Asignar a uno existente</button>'+
       '<button type="button" id="fp-crear-otro" class="loadbtn" style="flex:1">Crear en '+OTRO_LOCAL_NOMBRE+'</button>'+
     '</div>'+
-    '<div id="fp-asignar-box" class="hidden" style="margin-top:8px"><input id="fp-asignar-q" placeholder="Buscar en '+OTRO_LOCAL_NOMBRE+' por nombre o código…" autocomplete="off" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px"><div id="fp-asignar-res" style="margin-top:6px"></div></div>';
+    '<div id="fp-asignar-box" class="hidden" style="margin-top:8px"><input id="fp-asignar-q" placeholder="Buscar en '+OTRO_LOCAL_NOMBRE+' por nombre o código…" autocomplete="off" style="width:100%;padding:11px 14px;border:1px solid var(--border-control);border-radius:4px;font-size:14px"><div id="fp-asignar-res" style="margin-top:6px"></div></div>';
 }
 function fpCablearCopiar(p){
   const bt=document.getElementById('fp-copiar-todo'); if(bt)bt.onclick=()=>fpCopiarAOtroLocal(p,'todo');
@@ -7897,7 +7927,7 @@ function fpPaneProveedores(f){
       '</div>'+
       (p.proveedorId?'<span class="fp-chip-principal"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" style="vertical-align:-1px"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"/></svg> Principal</span>':'')+
       '<div id="fp-pv-prov-nuevabox" class="hidden" style="display:flex;gap:8px;margin-top:8px">'+
-        '<input id="fp-pv-prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">'+
+        '<input id="fp-pv-prov-nuevonom" placeholder="Nombre del proveedor nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1px solid var(--border-control);border-radius:4px;font-size:14px">'+
         '<button class="btn-ok loadbtn" id="fp-pv-prov-crear" type="button" style="white-space:nowrap">Crear</button>'+
       '</div>')+
     '<div style="margin-top:12px">'+
@@ -7908,7 +7938,7 @@ function fpPaneProveedores(f){
           :'')+
       '</div>'+
       '<div style="display:flex;gap:8px;margin-top:8px">'+
-        '<select id="fp-provid-select" style="flex:1;padding:9px 10px;border:1.5px solid var(--line);border-radius:9px;font-size:14px"><option value="">Agregar proveedor…</option></select>'+
+        '<select id="fp-provid-select" style="flex:1;padding:9px 10px;border:1px solid var(--border-control);border-radius:4px;font-size:14px"><option value="">Agregar proveedor…</option></select>'+
         '<button class="loadbtn" id="fp-provid-add" type="button" style="white-space:nowrap"><svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:-2px" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></button>'+
       '</div>'+
     '</div>';
@@ -8026,7 +8056,7 @@ function fpPaneSector(f){
         '<button class="loadbtn" id="fp-s-sector-nueva" type="button" style="white-space:nowrap"><svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:-2px" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Nuevo</button>'+
       '</div>'+
       '<div id="fp-s-sector-nuevabox" class="hidden" style="gap:8px;margin-top:8px">'+
-        '<input id="fp-s-sector-nuevonom" placeholder="Nombre del sector nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px">'+
+        '<input id="fp-s-sector-nuevonom" placeholder="Nombre del sector nuevo" autocomplete="off" style="flex:1;min-width:0;padding:10px 12px;border:1px solid var(--border-control);border-radius:4px;font-size:14px">'+
         '<button class="btn-ok loadbtn" id="fp-s-sector-crear" type="button" style="white-space:nowrap">Crear</button>'+
       '</div>'+
     '</div>';
@@ -8310,7 +8340,7 @@ async function fpGuardarTodo(){
   const sku=p.sku;
   const btn=document.getElementById('fp-guardar-btn');
   const nombre=(document.getElementById('fp-g-nombre').value||'').trim();
-  if(!nombre){showToast('El nombre no puede quedar vacío');document.getElementById('fp-scroll').scrollTop=0;document.getElementById('fp-g-nombre').focus();return;}
+  if(!nombre){showToast('El nombre no puede quedar vacío');document.getElementById('fp-scroll').scrollTop=0;campoError('fp-g-nombre','El nombre no puede quedar vacío');return;}
   const categoria=document.getElementById('fp-pv-cat')?document.getElementById('fp-pv-cat').value:p.categoria;
   // Observaciones se quitó del formulario — se manda undefined (el backend interpreta eso
   // como "no tocar la descripción existente", ver payload.descripcion != null en el Worker).
@@ -8489,7 +8519,7 @@ function stkPaso(d){
 async function stkCorregirGuardar(){
   const inp=document.getElementById('stk-nuevo');
   const val=inp.value.trim();
-  if(val===''){showToast('Escribe el stock real primero');return;}
+  if(val===''){showToast('Escribe el stock real primero');campoError(inp,'Escribe el stock real primero');return;}
   const nuevo=Number(val.replace(',','.'));
   if(isNaN(nuevo)||nuevo<0){showToast('Cantidad inválida');return;}
   const btn=document.getElementById('stk-guardar');
@@ -8644,7 +8674,7 @@ function rkRender(){
       ? `<button class="rk-activar" data-rk-activar="${p.ref}" style="padding:8px 10px;border-radius:8px;border:1.5px solid var(--azul);background:var(--azul-bg);color:var(--azul);font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 7.5-2"/></svg> Activar inventario</button>`
       : `<input type="number" step="any" inputmode="decimal" placeholder="${p.stock==null?'—':fmt1(p.stock)}"
           data-rk-input="${p.ref}"
-          style="width:76px;padding:8px;border-radius:8px;border:1px solid var(--borde);text-align:center;font-size:16px">`;
+          style="width:76px;padding:8px;border-radius:4px;border:1px solid var(--borde);text-align:center;font-size:16px">`;
     return `<div class="sm-row" data-rk-ref="${p.ref}">
       <div class="sm-info">
         <div class="nom">${p.nombre}${_rkContados.has(p.ref)?' <span style="font-size:12px;font-weight:700;color:var(--verde);background:#E3F0DD;border-radius:10px;padding:2px 8px;white-space:nowrap">✓ Contado</span>':''}</div>
@@ -8823,7 +8853,7 @@ function plRender(){
         <span style="font-size:14px;color:var(--muted)">$</span>
         <input type="text" data-pesos="1" inputmode="decimal" value="${p.precio!=null?p.precio:''}"
           data-pl-input="${p.ref}"
-          style="width:90px;padding:8px;border-radius:8px;border:1px solid var(--borde);text-align:center;font-size:16px">
+          style="width:90px;padding:8px;border-radius:4px;border:1px solid var(--borde);text-align:center;font-size:16px">
       </div>
     </div>`).join('');
   box.querySelectorAll('input[data-pl-input]').forEach(inp=>{
@@ -11499,7 +11529,7 @@ function mmSelectorLote(c){
   const ls=Array.isArray(mmLotes[c.ref])?mmLotes[c.ref]:null;
   if(!ls)return '<div class="cat" style="margin-top:4px">Buscando lotes…</div>';
   if(ls.length<2)return ls.length?'<div class="cat" style="margin-top:4px">Se descuenta del lote que vence '+(ls[0].fechaVencimiento||'sin fecha')+'</div>':'';
-  return '<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:3px">¿De qué lote salen?</div><select data-lote="'+c.ref+'" style="width:100%;padding:9px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;background:#fff">'+
+  return '<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:3px">¿De qué lote salen?</div><select data-lote="'+c.ref+'" style="width:100%;padding:9px;border:1px solid var(--border-control);border-radius:4px;font-size:14px;background:#fff">'+
     ls.map(l=>'<option value="'+l.filaIndex+'"'+(String(l.filaIndex)===String(c.loteId)?' selected':'')+'>Vence '+(l.fechaVencimiento||'sin fecha')+' · '+l.cantidad+' u</option>').join('')+
     '<option value=""'+(c.loteId===''?' selected':'')+'>No sé / otro</option></select></div>';
 }
@@ -13119,7 +13149,7 @@ function vcWireFilas(box){
     b.onclick=()=>{
       const cantInp=document.getElementById('vc-cc-cant-'+fi);
       const val=cantInp.value.trim();
-      if(val===''){showToast('Escribe cuántas unidades trajo el proveedor');return;}
+      if(val===''){showToast('Escribe cuántas unidades trajo el proveedor');campoError(cantInp,'Escribe cuántas unidades trajo el proveedor');return;}
       const num=Number(val.replace(',','.'));
       if(isNaN(num)||num<=0){showToast('Cantidad inválida');return;}
       if(num>Number(cantTotal)){showToast('No puede ser más de las '+cantTotal+' pendientes');return;}
@@ -13209,7 +13239,7 @@ async function vcAjustarStockLote(filaIndex,sku){
   const inp=document.getElementById('vc-es-'+filaIndex);
   if(!inp)return;
   const val=inp.value.trim();
-  if(val===''){showToast('Escribe la cantidad contada primero');return;}
+  if(val===''){showToast('Escribe la cantidad contada primero');campoError(inp,'Escribe la cantidad contada primero');return;}
   const nuevo=Number(val);
   if(isNaN(nuevo)||nuevo<0){showToast('Cantidad inválida');return;}
   const btn=document.querySelector(`[data-savestock="${filaIndex}"]`);
@@ -13246,7 +13276,7 @@ async function vcRetirarLote(filaIndex,sku,cantidadTotal){
   const inp=document.getElementById('vc-rt-'+filaIndex);
   if(!inp)return;
   const val=inp.value.trim();
-  if(val===''){showToast('Escribe cuántas unidades se retiran');return;}
+  if(val===''){showToast('Escribe cuántas unidades se retiran');campoError(inp,'Escribe cuántas unidades se retiran');return;}
   const cantidad=Number(val);
   if(isNaN(cantidad)||cantidad<=0){showToast('Cantidad inválida');return;}
   if(cantidad>Number(cantidadTotal)){showToast('No puede ser más que el total del lote ('+cantidadTotal+')');return;}
@@ -14038,7 +14068,7 @@ async function scGuardar(ref){
   const inp=document.getElementById('sc-in-'+ref);
   const btn=document.querySelector('#sc-row-'+ref+' button:not(.sc-skip)');
   const costo=Number(inp.value);
-  if(!costo||costo<=0){showToast('Escribe un costo válido');return;}
+  if(!costo||costo<=0){showToast('Escribe un costo válido');campoError(inp,'Escribe un costo válido');return;}
   btn.disabled=true;btn.textContent='Guardando…';
   try{
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'editar_precio',payload:{sku:ref,costo:costo}})});
@@ -15181,7 +15211,7 @@ async function rcAjustarGuardar(){
   const it=rcState.item;if(!it)return;
   const inp=document.getElementById('rc-ajustar-cantidad');
   const val=inp.value.trim();
-  if(val===''){showToast('Escribe la cantidad contada primero');return;}
+  if(val===''){showToast('Escribe la cantidad contada primero');campoError(inp,'Escribe la cantidad contada primero');return;}
   const nuevo=Number(val);
   if(isNaN(nuevo)||nuevo<0){showToast('Cantidad inválida');return;}
   const btn=document.getElementById('rc-ajustar-guardar');
@@ -16081,7 +16111,7 @@ function rzRender(){
         <span style="display:flex;gap:6px;align-items:center;flex-shrink:0">${_rzRevisados.has(it.ref)?'<span style="font-size:12px;font-weight:700;color:var(--verde);background:#E3F0DD;border-radius:10px;padding:2px 8px">✓ Revisado</span>':''}<span class="abc-badge abc-${clase.toLowerCase()}">${clase}</span></span>
       </div>
       <div style="display:flex;gap:6px">
-        <input id="${rid}-stock" type="number" inputmode="decimal" placeholder="Corregir stock" value="${it.track&&it.stock!=null?it.stock:''}" style="flex:1;min-width:0;padding:8px 10px;border:1.5px solid var(--line);border-radius:9px;font-size:12px;font-family:'JetBrains Mono'">
+        <input id="${rid}-stock" type="number" inputmode="decimal" placeholder="Corregir stock" value="${it.track&&it.stock!=null?it.stock:''}" style="flex:1;min-width:0;padding:8px 10px;border:1px solid var(--border-control);border-radius:4px;font-size:12px;font-family:'JetBrains Mono'">
         <button type="button" class="loadbtn rz-guardar-stock" data-sku="${it.ref}" data-rid="${rid}" style="white-space:nowrap;padding:8px 12px;font-size:12px"><svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:-2px" fill="currentColor"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Guardar stock</button>
       </div>
       <button type="button" class="rz-excluir" data-sku="${it.ref}" data-nombre="${it.nombre.replace(/"/g,'&quot;')}" style="width:100%;padding:7px;font-size:12px;border-radius:9px;border:1px dashed var(--line);background:transparent;color:var(--muted);font-weight:500;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:-2px" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9A7.9 7.9 0 0 1 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1A7.9 7.9 0 0 1 20 12c0 4.42-3.58 8-8 8z"/></svg> Excluir de esta lista</button>
@@ -16150,7 +16180,7 @@ async function rzIncluir(sku){
 async function rzGuardarStock(sku,rid){
   const inp=document.getElementById(rid+'-stock');
   const val=inp.value.trim();
-  if(val===''){sonidoError();showToast('Escribe el stock corregido primero');return;}
+  if(val===''){sonidoError();showToast('Escribe el stock corregido primero');campoError(inp,'Escribe el stock corregido primero');return;}
   const nuevo=Number(val);
   if(isNaN(nuevo)){sonidoError();showToast('Cantidad inválida');return;}
   const btn=document.querySelector(`.rz-guardar-stock[data-rid="${rid}"]`);
