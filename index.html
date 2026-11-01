@@ -2466,6 +2466,22 @@ input:disabled,select:disabled,textarea:disabled{background:#F2F2F2;color:var(--
 #confirm-ov #confirm-btn-cancel,#confirm-ov #confirm-btn-ok{width:auto !important;min-width:96px;min-height:44px;margin:0 !important;padding:0 16px}
 #confirm-ov #confirm-btn-cancel{order:1}#confirm-ov #confirm-btn-ok{order:2}
 #dlg-ov .mm-card,#confirm-ov .mm-card{max-width:340px !important;width:100% !important;height:auto !important;max-height:90vh !important;border-radius:var(--r-md) !important;box-shadow:var(--sh-float) !important;background:#fff}
+
+/* ============ Sistema de diseño — fase 4: estados de pantalla (cargando / vacío / error) ============
+   Un solo patrón: cargando = círculo girando + texto; vacío = texto apagado; error = rojo con aviso y "Reintentar"; esqueleto para listas largas. */
+.estado-cargando,.estado-error,.estado-vacio{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px 16px;text-align:center;font-size:14px;line-height:1.4}
+.estado-cargando{color:var(--text-sec)}
+.estado-cargando::before{content:'';width:24px;height:24px;border:3px solid #E0E0E0;border-top-color:var(--action);border-radius:50%;animation:spin .8s linear infinite}
+.estado-error{color:var(--danger);font-weight:500}
+.estado-error::before{content:'!';display:flex;align-items:center;justify-content:center;width:24px;height:24px;border:2px solid var(--danger);border-radius:50%;font-size:14px;font-weight:700;line-height:1}
+.estado-vacio{color:var(--text-sec)}
+.estado-reintentar{width:auto !important;min-width:120px;min-height:44px;margin:0 !important}
+.esqueleto{display:block;height:64px;margin:0 0 8px;border-radius:var(--r-md);background:#ECECEC;animation:esqueleto-pulso 1.2s ease-in-out infinite}
+@keyframes esqueleto-pulso{50%{opacity:.5}}
+@media (prefers-reduced-motion:reduce){.estado-cargando::before,.esqueleto{animation:none}}
+/* Botón ocupado: círculo girando delante del texto (acciones que guardan en el servidor) */
+.mm-save.saving::before,.loadbtn.saving::before,.fp-btn-guardar.saving::before{content:'';display:inline-block;width:14px;height:14px;margin-right:8px;vertical-align:-2px;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@media (prefers-reduced-motion:reduce){.mm-save.saving::before,.loadbtn.saving::before,.fp-btn-guardar.saving::before{animation:none}}
 </style>
 </head>
 <body>
@@ -2836,7 +2852,7 @@ input:disabled,select:disabled,textarea:disabled{background:#F2F2F2;color:var(--
             <div class="gon-bar"><div id="vc-prog-fill"></div></div>
           </div>
           </div>
-          <div id="vc-list"><div class="vc-empty">Cargando…</div></div>
+          <div id="vc-list"><div class="vc-empty estado-cargando" role="status">Cargando…</div></div>
           </div>
           <div id="vc-view-pendientes" class="hidden">
             <div class="prov-combo vc-sticky-h" id="vc-pend-combo" style="margin-bottom:10px">
@@ -2865,7 +2881,7 @@ input:disabled,select:disabled,textarea:disabled{background:#F2F2F2;color:var(--
               <div id="da-pendientes-list"></div>
             </div>
             <div class="vc-empty" id="da-intro" style="text-align:left;color:var(--muted);font-size:12px;margin-bottom:8px">Productos con descuento ya aplicado y sincronizado con Loyverse. Anota lo vendido y lo que se va a merma — al completarse la cantidad total, el lote pasa solo a Historial. Si llega la fecha de vencimiento sin agotarse, el precio normal se restaura solo.</div>
-            <div id="da-list"><div class="vc-empty">Cargando…</div></div>
+            <div id="da-list"><div class="vc-empty estado-cargando" role="status">Cargando…</div></div>
           </div>
           </div>
         </div>
@@ -3087,7 +3103,7 @@ input:disabled,select:disabled,textarea:disabled{background:#F2F2F2;color:var(--
             <label style="margin:0">Pendientes de devolución</label>
             <span class="cat" id="pr-pend-resumen">—</span>
           </div>
-          <div id="pr-pend-list"><div class="vc-empty">Cargando…</div></div>
+          <div id="pr-pend-list"><div class="vc-empty estado-cargando" role="status">Cargando…</div></div>
         </div>
 
         </div>
@@ -3310,7 +3326,7 @@ input:disabled,select:disabled,textarea:disabled{background:#F2F2F2;color:var(--
       <div class="section-head" style="margin-top:4px"><h2>Venta semanal por categoría <span style="font-weight:500;color:var(--muted);font-size:12px">· estimada (u7 × precio)</span></h2></div>
       <div class="tablecard"><div id="catchart" class="catchart"></div></div>
       <div class="section-head" style="margin-top:14px"><h2>Consumo interno por categoría <span style="font-weight:500;color:var(--muted);font-size:12px">· últimos 30 días</span></h2></div>
-      <div class="tablecard"><div id="inchart" class="catchart"><div class="cc-empty">Cargando…</div></div></div>
+      <div class="tablecard"><div id="inchart" class="catchart"><div class="cc-empty estado-cargando" role="status">Cargando…</div></div></div>
       <div class="section-head" style="margin-top:14px"><h2>Proveedores que necesitan pedido</h2></div>
       <div class="tablecard"><div class="tbl-scroll"><table>
         <thead><tr><th class="l">Proveedor</th><th>SKUs</th><th>Rot/día 30d</th><th>Día pico</th><th>En quiebre</th><th>Por pedir</th><th>Costo pedido</th><th>Margen 30d</th></tr></thead>
@@ -3971,7 +3987,7 @@ input:disabled,select:disabled,textarea:disabled{background:#F2F2F2;color:var(--
           <button class="mm-x" id="gp-x" type="button" aria-label="Limpiar" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
           <button class="btn-ok loadbtn" id="gp-crear" type="button" style="display:none;position:absolute;top:50%;right:6px;transform:translateY(-50%);padding:6px 10px;font-size:12px;white-space:nowrap;z-index:2"><svg width="12" height="12" viewBox="0 0 24 24" style="vertical-align:-2px" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Crear</button>
         </div>
-        <div id="gp-lista"><div class="vc-empty">Cargando…</div></div>
+        <div id="gp-lista"><div class="vc-empty estado-cargando" role="status">Cargando…</div></div>
         <div id="gp-reasignar-box" class="hidden" style="margin-top:12px;padding:12px;border:1.5px solid var(--ambar);border-radius:10px;background:var(--ambar-bg)">
           <div id="gp-reasignar-msg" style="font-size:14px;font-weight:700;margin-bottom:10px"></div>
           <select id="gp-reasignar-select" style="width:100%;padding:10px;border:1px solid var(--border-control);border-radius:4px;font-size:14px;background:#fff;margin-bottom:10px"></select>
@@ -4082,7 +4098,7 @@ input:disabled,select:disabled,textarea:disabled{background:#F2F2F2;color:var(--
     </div>
 
     <!-- LISTA: scroll propio, independiente del header sticky de arriba. -->
-    <div id="mc-lista" style="flex:1;min-height:0;overflow-y:auto;padding:8px 16px"><div class="vc-empty">Cargando…</div></div>
+    <div id="mc-lista" style="flex:1;min-height:0;overflow-y:auto;padding:8px 16px"><div class="vc-empty estado-cargando" role="status">Cargando…</div></div>
 
     <div class="mm-body" style="padding-top:8px;flex:none">
       <button class="loadbtn hidden" id="mc-cargar-mas" style="width:100%;margin-bottom:8px"></button>
@@ -5793,6 +5809,14 @@ function campoOk(inp){
   const m=inp.parentNode&&inp.parentNode.querySelector(':scope > .campo-msg[data-de="'+(inp.id||'')+'"]');
   if(m)m.remove();
 }
+// Estados de pantalla (HTML listo para innerHTML). estadoError agrega "Reintentar" si se indica la función (sin argumentos) que vuelve a cargar.
+function estadoCargandoHtml(txt){return '<div class="vc-empty estado-cargando" role="status">'+(txt||'Cargando…')+'</div>';}
+function estadoVacioHtml(txt){return '<div class="vc-empty estado-vacio">'+(txt||'Sin resultados.')+'</div>';}
+function estadoErrorHtml(txt,reintentar){
+  return '<div class="vc-empty estado-error" role="alert"><span>'+(txt||'No se pudo cargar.')+'</span>'+
+    (reintentar?'<button type="button" class="loadbtn estado-reintentar" onclick="'+reintentar+'()">Reintentar</button>':'')+'</div>';
+}
+function esqueletoHtml(n){return '<div role="status" aria-label="Cargando">'+new Array((n||3)+1).join('<span class="esqueleto"></span>')+'</div>';}
 function sonidoGuardado(){
   window._tgOk=Date.now();   // el aviso que sale junto a este sonido va en verde (ver showToast)
   try{
@@ -5818,7 +5842,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-11-01.5';
+const APP_VERSION='2026-11-01.6';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -7890,7 +7914,7 @@ function fpPanePrecios(f){
     '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">'+
       '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px">Historial de cambios</div>'+
       (hist.length?hist.map(h=>`<div class="fp-row"><span class="k">${h.fecha}</span><span class="v" style="text-align:right;font-weight:500">${peso(h.precioAntes)} → ${peso(h.precioDespues)} · costo ${peso(h.costoAntes)} → ${peso(h.costoDespues)}${h.responsable?' · '+h.responsable:''}</span></div>`).join('')
-        :'<div class="vc-empty">Sin cambios de precio registrados todavía.</div>')+
+        :'<div class="vc-empty estado-vacio">Sin cambios de precio registrados todavía.</div>')+
     '</div>';
   PcWidget.wire({
     prefix:'fp-pr',state:fpPState,mostrarUnidadCaja:true,mostrarBotonAplicar:true,
@@ -8116,7 +8140,7 @@ function fpHtmlLotesCerrados(f){
 function fpPaneLotes(f){
   const paneLotes=document.getElementById('fp-pane-lotes');
   if(!f.lotes||!f.lotes.length){
-    paneLotes.innerHTML='<div class="vc-empty">Este producto no tiene lotes de vencimiento activos.</div>'+fpHtmlLotesCerrados(f);
+    paneLotes.innerHTML='<div class="vc-empty estado-vacio">Este producto no tiene lotes de vencimiento activos.</div>'+fpHtmlLotesCerrados(f);
     return;
   }
   // Acciones "Editar fecha"/"Eliminar lote" por lote — para corregir un vencimiento mal
@@ -8262,7 +8286,7 @@ function fpMovimientosCombinados(f){
 function fpPaneMovimientos(movs){
   const pane=document.getElementById('fp-pane-mov');
   if(!movs.length){
-    pane.innerHTML='<div class="vc-empty">Sin movimientos registrados para este producto.</div>';
+    pane.innerHTML='<div class="vc-empty estado-vacio">Sin movimientos registrados para este producto.</div>';
     return;
   }
   pane.innerHTML='<div class="cat" style="margin-bottom:8px;line-height:1.4">Recepciones, reconteos, mermas, ediciones y lo vendido cada día. Las ventas van agregadas por día (no venta por venta).</div>'+
@@ -8682,7 +8706,7 @@ function rkRender(){
     box.innerHTML='<div class="vc-empty">Elige una categoría o escribe/escanea para buscar — son '+lista.length+' productos en total, muy largo para listar todos a la vez.</div>';
     return;
   }
-  if(!lista.length){box.innerHTML='<div class="vc-empty">Sin coincidencias.</div>';return;}
+  if(!lista.length){box.innerHTML='<div class="vc-empty estado-vacio">Sin coincidencias.</div>';return;}
   const truncado=lista.length>RK_LIMITE;
   const visibles=lista.slice(0,RK_LIMITE);
   box.innerHTML=(truncado?'<div class="vc-empty" style="padding:8px 0">Mostrando los primeros '+RK_LIMITE+' de '+lista.length+' — afina la búsqueda para ver el resto.</div>':'')+
@@ -8859,7 +8883,7 @@ function plRender(){
     box.innerHTML='<div class="vc-empty">Elige una categoría o escribe/escanea para buscar — son '+lista.length+' productos en total, muy largo para listar todos a la vez.</div>';
     return;
   }
-  if(!lista.length){box.innerHTML='<div class="vc-empty">Sin coincidencias.</div>';return;}
+  if(!lista.length){box.innerHTML='<div class="vc-empty estado-vacio">Sin coincidencias.</div>';return;}
   const truncado=lista.length>PL_LIMITE;
   const visibles=lista.slice(0,PL_LIMITE);
   box.innerHTML=(truncado?'<div class="vc-empty" style="padding:8px 0">Mostrando los primeros '+PL_LIMITE+' de '+lista.length+' — afina la búsqueda para ver el resto.</div>':'')+
@@ -9353,7 +9377,7 @@ function _gpMostrarNivel(nivel){
   if(nivel==='proveedores'&&!_gpCargado)gpCargar();
 }
 async function gpCargar(){
-  document.getElementById('gp-lista').innerHTML='<div class="vc-empty">Cargando…</div>';
+  document.getElementById('gp-lista').innerHTML='<div class="vc-empty estado-cargando" role="status">Cargando…</div>';
   try{
     // Timeout explícito: sin esto, si la red falla de forma silenciosa (fetch nunca resuelve
     // ni rechaza), la pantalla se queda en "Cargando…" para siempre sin que el catch de abajo
@@ -9376,16 +9400,16 @@ async function gpCargar(){
     _gpFiltrarProveedores();
   }catch(e){
     _gpCargado=false;
-    document.getElementById('gp-lista').innerHTML='<div class="vc-empty">Error al cargar proveedores</div><button class="loadbtn" id="gp-reintentar" type="button" style="width:100%;margin-top:8px">Reintentar</button>';
+    document.getElementById('gp-lista').innerHTML='<div class="vc-empty estado-error" role="alert">Error al cargar proveedores</div><button class="loadbtn" id="gp-reintentar" type="button" style="width:100%;margin-top:8px">Reintentar</button>';
     const btn=document.getElementById('gp-reintentar');
     if(btn)btn.onclick=gpCargar;
   }
 }
 function gpRender(lista){
   const cont=document.getElementById('gp-lista');
-  if(!_gpLista.length){cont.innerHTML='<div class="vc-empty">Todavía no hay proveedores creados.</div>';return;}
+  if(!_gpLista.length){cont.innerHTML='<div class="vc-empty estado-vacio">Todavía no hay proveedores creados.</div>';return;}
   const listaAMostrar=lista||_gpLista;
-  if(!listaAMostrar.length){cont.innerHTML='<div class="vc-empty">Sin coincidencias.</div>';return;}
+  if(!listaAMostrar.length){cont.innerHTML='<div class="vc-empty estado-vacio">Sin coincidencias.</div>';return;}
   // En modo Configuración no tiene sentido renombrar/eliminar proveedores desde acá (son
   // acciones de la pestaña Proveedores) — la fila queda simple, solo para elegir y pasar a
   // configurar sus productos.
@@ -9463,9 +9487,9 @@ function _gpSectoresConConteo(){
 function gpRenderSectores(lista){
   const cont=document.getElementById('gp-lista');
   const todos=_gpSectoresConConteo();
-  if(!todos.length){cont.innerHTML='<div class="vc-empty">Todavía no hay sectores creados.</div>';return;}
+  if(!todos.length){cont.innerHTML='<div class="vc-empty estado-vacio">Todavía no hay sectores creados.</div>';return;}
   const listaAMostrar=lista||todos;
-  if(!listaAMostrar.length){cont.innerHTML='<div class="vc-empty">Sin coincidencias.</div>';return;}
+  if(!listaAMostrar.length){cont.innerHTML='<div class="vc-empty estado-vacio">Sin coincidencias.</div>';return;}
   cont.innerHTML=listaAMostrar.map(s=>`
     <div class="fp-row" data-gp-sector="${String(s.nombre).replace(/"/g,'&quot;')}" style="cursor:pointer">
       <span class="k">${s.nombre}</span>
@@ -9531,7 +9555,7 @@ function gpAbrirProductos(prov){
 }
 function gpRenderProductos(lista){
   const cont=document.getElementById('gp-prod-lista');
-  if(!lista.length){cont.innerHTML='<div class="vc-empty">Este proveedor todavía no tiene productos asociados.</div>';return;}
+  if(!lista.length){cont.innerHTML='<div class="vc-empty estado-vacio">Este proveedor todavía no tiene productos asociados.</div>';return;}
   if(_gpModo==='config'){cont.innerHTML=lista.map(it=>_gpFilaConfig(it)).join('');return;}
   cont.innerHTML=lista.map(it=>`
     <div class="fp-row" data-gp-prod-ref="${it.ref}" style="cursor:pointer">
@@ -10089,7 +10113,7 @@ function mcAbrir(){
   psWireNuevoSector('mcg-sect-nueva','mcg-sect-nuevabox','mcg-sect-nuevonom','mcg-sect-crear','mcg-prov','mcg-sect');
 }
 async function mcCargarCategorias(){
-  document.getElementById('mc-lista').innerHTML='<div class="vc-empty">Cargando…</div>';
+  document.getElementById('mc-lista').innerHTML='<div class="vc-empty estado-cargando" role="status">Cargando…</div>';
   document.getElementById('mc-chips').innerHTML='';
   try{
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=categorias_resumen');
@@ -10100,7 +10124,7 @@ async function mcCargarCategorias(){
     mcRenderChips();
     if(_mcCategorias.length)mcSeleccionarCategoria(_mcCategorias[0].categoria);
   }catch(e){
-    document.getElementById('mc-lista').innerHTML='<div class="vc-empty">Error al cargar: '+e.message+'</div>';
+    document.getElementById('mc-lista').innerHTML=estadoErrorHtml('Error al cargar: '+e.message,'mcCargarCategorias');
   }
 }
 function mcPintarDesglose(d){
@@ -10131,7 +10155,7 @@ async function mcSeleccionarCategoria(categoria){
   mcRenderChips();
   document.getElementById('mcg-aplicar-categoria').textContent='Aplicar a TODA la categoría actual';
   const cont=document.getElementById('mc-lista');
-  cont.innerHTML='<div class="vc-empty">Cargando productos…</div>';
+  cont.innerHTML='<div class="vc-empty estado-cargando" role="status">Cargando productos…</div>';
   try{
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=categoria_productos&categoria='+encodeURIComponent(categoria));
     const j=await res.json();
@@ -10139,7 +10163,7 @@ async function mcSeleccionarCategoria(categoria){
     _mcProductos=j.productos||[];
     mcRenderLista(document.getElementById('mc-detalle-buscar').value);
   }catch(e){
-    cont.innerHTML='<div class="vc-empty">'+e.message+'</div>';
+    cont.innerHTML='<div class="vc-empty estado-error" role="alert">'+e.message+'</div>';
   }
   _mcCargando=false;
 }
@@ -10149,7 +10173,7 @@ function mcRenderLista(filtro){
   const cont=document.getElementById('mc-lista');
   const nf=normTxt(filtro||'');
   const visibles=nf?_mcProductos.filter(p=>normTxt(p.nombre).indexOf(nf)>-1):_mcProductos;
-  if(!visibles.length){cont.innerHTML='<div class="vc-empty">Sin resultados.</div>';return;}
+  if(!visibles.length){cont.innerHTML='<div class="vc-empty estado-vacio">Sin resultados.</div>';return;}
   cont.innerHTML=visibles.map(p=>{
     const tieneProv=!!p.proveedor_nombre,tieneSect=!!p.sector;
     let estadoCls='mc-dr-vacio';
@@ -12534,7 +12558,7 @@ function vcBuscarCatalogo(q,provFiltro){
   });
   if(provFiltro)prods=prods.filter(it=>it.prov===provFiltro); // it.prov = categoría/proveedor propio de la WebApp, igual campo que l.categoria en los lotes
   prods=prods.slice(0,80);
-  if(!prods.length){box.innerHTML='<div class="vc-empty">Sin coincidencias en el catálogo.</div>';return;}
+  if(!prods.length){box.innerHTML='<div class="vc-empty estado-vacio">Sin coincidencias en el catálogo.</div>';return;}
   // FIX: mismo criterio que vcAplicarFiltro — un lote Retirado vive en Pendientes, no en la
   // búsqueda de Lista.
   const lotesPorSku={};_vcTodos.filter(l=>l.estado!=='Retirado').forEach(l=>{(lotesPorSku[l.sku]=lotesPorSku[l.sku]||[]).push(l);});
@@ -12727,7 +12751,7 @@ wireFechaSegmentada('cp-fecha-dd','cp-fecha-mm','cp-fecha-aaaa','cp-fecha','cp-f
 wireFechaSegmentada('pr-fecha-dd','pr-fecha-mm','pr-fecha-aaaa','pr-fecha','pr-fecha-cal');
 async function vcLoad(){
   const box=document.getElementById('vc-list');
-  box.innerHTML='<div class="vc-empty">Cargando…</div>';
+  box.innerHTML=esqueletoHtml(4);
   // Al abrir/recargar, la vista arranca en "Lista" (el modo Góndola se eliminó — su
   // funcionamiento quedó fusionado dentro de esta misma vista, ver vcRender)
   document.querySelectorAll('#vc-viewseg button').forEach(b=>b.classList.toggle('active',b.dataset.view==='lista'));
@@ -12748,7 +12772,7 @@ async function vcLoad(){
     vcRecalcularProgTotal();   // punto de partida de la barra de progreso para esta sesión del módulo
     vcAplicarFiltro();   // pinta ya filtrado por lo que haya escrito en el buscador y/o el proveedor elegido
     vcUpdatePendBadge(_vcTodos.filter(l=>l.estado==='Retirado'&&esCategoriaCambio(l.categoria)).length);
-  }catch(e){box.innerHTML='<div class="vc-empty">Error al cargar. Intenta de nuevo.</div>';}
+  }catch(e){box.innerHTML=estadoErrorHtml('Error al cargar.','vcLoad');}
   // Carga el badge de "Descuentos" en paralelo, sin esperar a que el usuario entre a esa
   // pestaña — así el número ya está visible desde que se abre el módulo, igual que "Pendientes".
   daCargarBadgeSolo();
@@ -13406,7 +13430,7 @@ async function vcAplicarPrecio(btn){
 let _daLotes=[],_daPendientesRestaurar=[],_daInicializado=false,_daPendientesInicializado=false;
 async function daCargar(){
   const box=document.getElementById('da-list');
-  box.innerHTML='<div class="vc-empty">Cargando…</div>';
+  box.innerHTML='<div class="vc-empty estado-cargando" role="status">Cargando…</div>';
   try{
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=descuentos_activos');
     const j=await res.json();
@@ -13414,7 +13438,7 @@ async function daCargar(){
     _daInicializado=true;
   }catch(e){
     _daLotes=[];
-    box.innerHTML='<div class="vc-empty">No se pudo cargar Descuentos activos. Revisa tu conexión.</div>';
+    box.innerHTML=estadoErrorHtml('No se pudo cargar Descuentos activos. Revisa tu conexión.','daCargar');
     return;
   }
   daRender();
@@ -14603,7 +14627,7 @@ async function prCargarPendientes(){
   try{
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=historial_prestamos');
     const j=await res.json();
-    if(!j||!j.ok){box.innerHTML='<div class="vc-empty">No se pudo cargar</div>';return;}
+    if(!j||!j.ok){box.innerHTML=estadoErrorHtml('No se pudo cargar.','prCargarPendientes');return;}
     const pend=(j.prestamos||[]).filter(p=>p.estado==='pendiente');
     document.getElementById('pr-pend-resumen').textContent=pend.length?pend.length+' pendiente'+(pend.length===1?'':'s'):'sin pendientes';
     const pb=document.getElementById('prestamos-badge');
@@ -14627,7 +14651,7 @@ async function prCargarPendientes(){
     }).join('');
     document.querySelectorAll('.pr-devolver-btn').forEach(b=>b.onclick=()=>prDevolver(Number(b.dataset.id),b));
     document.querySelectorAll('.pr-corregir-btn').forEach(b=>b.onclick=()=>prCorregirDireccion(Number(b.dataset.id),b,b.dataset.dir,b.dataset.sku,Number(b.dataset.cant),Number(b.dataset.costo),b.dataset.resp));
-  }catch(e){box.innerHTML='<div class="vc-empty">Error de conexión</div>';}
+  }catch(e){box.innerHTML=estadoErrorHtml('Error de conexión.','prCargarPendientes');}
 }
 async function prDevolver(id,btn){
   if(!await dlgConfirm('¿Confirmas que este préstamo ya fue devuelto?\n\nEsto ajustará el stock en Loyverse de vuelta.'))return;
@@ -14926,7 +14950,7 @@ async function rcRenderMovimientos(it){
   const box=document.getElementById('rc-movs');
   if(!box)return;
   box.classList.remove('hidden');
-  box.innerHTML='<div class="vc-empty">Cargando movimientos…</div>';
+  box.innerHTML='<div class="vc-empty estado-cargando" role="status">Cargando movimientos…</div>';
   const fallo=msg=>{
     box.innerHTML='<div class="vc-empty">'+msg+' <button type="button" class="loadbtn" id="rc-movs-reintentar" style="margin-left:6px">Reintentar</button></div>';
     const b=document.getElementById('rc-movs-reintentar');
@@ -15968,7 +15992,7 @@ async function llLoad(){
     llUpdateBadge(lst.length);
     if(!lst.length){
       lbl.textContent='';
-      box.innerHTML=_llSinClasif.length?'<div class="vc-empty" style="padding:8px 0">Sin llegadas pendientes por fechar</div>'+llHtmlSinClasificar():'<div class="vc-empty">Sin llegadas pendientes por fechar</div>';
+      box.innerHTML=_llSinClasif.length?'<div class="vc-empty" style="padding:8px 0">Sin llegadas pendientes por fechar</div>'+llHtmlSinClasificar():'<div class="vc-empty estado-vacio">Sin llegadas pendientes por fechar</div>';
       llCablearSinClasificar(box);
       return;
     }
@@ -16259,7 +16283,7 @@ async function rdCargar(){
   const fecha=inp?inp.value:isoLocalDate(new Date());
   const box=document.getElementById('rd-list');
   const lbl=document.getElementById('rd-lbl');
-  box.innerHTML='<div class="vc-empty">Cargando…</div>';
+  box.innerHTML='<div class="vc-empty estado-cargando" role="status">Cargando…</div>';
   try{
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=reporte_dia&fecha='+encodeURIComponent(fecha));
     const j=await res.json();
@@ -16289,7 +16313,7 @@ async function rdCargar(){
         ${legacySinFecha?`<button type="button" class="rd-fecha-btn loadbtn" data-sku="${String(it.sku||'').replace(/"/g,'&quot;')}" style="align-self:flex-start;margin-top:4px;padding:6px 10px;font-size:12px">📅 Agregar fecha</button>`:''}
       </div>`;
     }).join('');
-  }catch(e){box.innerHTML='<div class="vc-empty">Error al cargar. Intenta de nuevo.</div>';}
+  }catch(e){box.innerHTML=estadoErrorHtml('Error al cargar.','rdCargar');}
 }
 document.getElementById('mas-q-reportedia').onclick=rdAbrir;
 document.getElementById('rd-cerrar').onclick=()=>cerrarModal('rd-ov');
@@ -16386,7 +16410,7 @@ function vdAbrir(){
   else vdCargar();
 }
 async function vdCargar(){
-  document.getElementById('vd-chart').innerHTML='<div class="cc-empty">Cargando…</div>';
+  document.getElementById('vd-chart').innerHTML='<div class="cc-empty estado-cargando" role="status">Cargando…</div>';
   document.getElementById('vd-list').innerHTML='';
   try{
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=ventas_series&dias=180');
@@ -16655,7 +16679,7 @@ function mmcAbrir(){
   else mmcCargar();
 }
 async function mmcCargar(){
-  document.getElementById('mmc-chart').innerHTML='<div class="cc-empty">Cargando…</div>';
+  document.getElementById('mmc-chart').innerHTML='<div class="cc-empty estado-cargando" role="status">Cargando…</div>';
   document.getElementById('mmc-list').innerHTML='';
   try{
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=mermas_series&dias=180');
