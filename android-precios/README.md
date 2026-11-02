@@ -76,6 +76,16 @@ Loyverse) o un costo nuevo para que sugiera el precio. «Guardar en Loyverse» u
 (igual que la Ficha de producto de la web: queda en el historial de precios); el costo solo se
 cambia si se escribió uno nuevo. La etiqueta queda al tiro con el precio nuevo.
 
+## Precio solo para esta etiqueta (Marín y Argomedo)
+Para piezas de peso o precio variable (sandía, zapallo…): en «Imprimir etiqueta», botón «＄ Precio solo para esta
+etiqueta». Se escribe el precio de esa pieza, o el peso en kg y el precio por kg (queda recordado por producto):
+kg × $/kg, subido a la decena. **No cambia nada en Loyverse**: el precio solo sale en la etiqueta, y al imprimir se
+cierra la ventana (la siguiente pieza vuelve a pedir su precio).
+
+Para que la caja pida el precio al escanear, el producto debe tener el **precio vacío en Loyverse** (precio variable);
+con precio fijo la caja cobraría ese precio y no el de la etiqueta. No usar «Cambiar precio» con estos productos:
+ese botón vuelve a dejar un precio fijo.
+
 ## Verdura rápida (solo Marín 376)
 Botón «＋ Verdura» en la barra verde (o ☰ → «Verdura rápida»). Igual que «Verdura rápida» de la app web:
 `crear_producto` en la categoría «VERDURAS y ENSALADAS» (id leído con `catalogo_crear`), IVA, inventario activo
