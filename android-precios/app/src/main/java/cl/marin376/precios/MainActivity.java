@@ -49,7 +49,7 @@ public class MainActivity extends Activity {
   private static final int VERDE_BARRA = Color.parseColor("#4CAF50"), VERDE = Color.parseColor("#43A047"),
       VERDE_BOTON = Color.parseColor("#7CB342"), GRIS = Color.parseColor("#E6E6E6"), GRIS_FOTO = Color.parseColor("#E0E0E0"),
       LINEA = Color.parseColor("#DDDDDD"), ROJO = Color.parseColor("#B3261E"), NEGRO = Color.parseColor("#212121"),
-      PLOMO = Color.parseColor("#616161"), AVISO = Color.parseColor("#FFF8E1");
+      PLOMO = Color.parseColor("#616161"), AVISO = Color.parseColor("#FFF8E1"), AZUL_PROPIO = Color.parseColor("#1565C0");
   // Se revisa sola si la última revisión tiene más de 20 min. Es barato: el servidor contesta ~100 bytes si no cambió nada.
   private static final long VIEJO_MS = 20L * 60 * 1000;
   private static final String TODOS = "Todos los artículos";
@@ -846,12 +846,14 @@ public class MainActivity extends Activity {
     boolean creando = false;
     String vence = "", elab = "";
     boolean venceManual = false;
+    /** Precio solo para esta etiqueta (0 = el del producto). No se guarda en Loyverse. */
+    int precioPropio = 0;
     AlertDialog dlg;
     TextView txtPrecio, txtCodigo, txtCant, txtAviso, txtEstado, txtVenceInfo;
     ImageView vista;
     TextView txtNombre;
     Button btnNombre;
-    Button btnImprimir, btnVence, btnSinVence, btnCodigo, btnPrecio, btnSinElab, btnElabHoy, btnElab;
+    Button btnImprimir, btnVence, btnSinVence, btnCodigo, btnPrecio, btnPropio, btnSinElab, btnElabHoy, btnElab;
   }
 
   private Ventana ven;
@@ -888,6 +890,11 @@ public class MainActivity extends Activity {
     w.btnPrecio.setVisibility(Local.MARIN.id.equals(aj.local) ? View.VISIBLE : View.GONE);
     filaPrecio.addView(w.btnPrecio, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(52)));
     c.addView(filaPrecio, lp(-1, -2, 2));
+    // Precio solo para esta etiqueta (productos de peso o precio variable, como la sandía): no toca Loyverse.
+    w.btnPropio = boton("", Color.WHITE, AZUL_PROPIO);
+    w.btnPropio.setTextSize(16);
+    w.btnPropio.setOnClickListener(v -> { if (w.confirmando == 0 && !w.creando && !imprimiendo) abrirPrecioPropio(w); });
+    c.addView(w.btnPropio, lp(-1, dp(52), 4));
     w.txtCodigo = texto("", 15, false, PLOMO);
     c.addView(w.txtCodigo, lp(-1, -2, 2));
     w.btnCodigo = boton("", VERDE, Color.WHITE);
@@ -971,10 +978,93 @@ public class MainActivity extends Activity {
     confirmarConServidor(w);
   }
 
+  // ---------------------------------------------------------------- precio solo para esta etiqueta
+  /**
+   * Para piezas de peso o precio variable (sandía, zapallo…): el precio sale solo en la etiqueta y no se guarda en Loyverse.
+   * Se puede escribir directo o calcular con el peso y el precio por kg (que queda recordado por producto).
+   */
+  private void abrirPrecioPropio(final Ventana w) {
+    final SharedPreferences sp = getSharedPreferences("precios", Context.MODE_PRIVATE);
+    final String claveKg = "ppkg_" + aj.local + "_" + w.p.sku;
+    LinearLayout c = new LinearLayout(this);
+    c.setOrientation(LinearLayout.VERTICAL);
+    c.setPadding(dp(18), dp(14), dp(18), dp(6));
+    c.addView(texto(w.p.nombre, 20, true, NEGRO));
+    c.addView(texto("El precio sale solo en esta etiqueta. No cambia nada en Loyverse.", 14, false, PLOMO), lp(-1, -2, 2));
+    c.addView(texto("Precio de esta pieza ($)", 17, true, NEGRO), lp(-1, -2, 12));
+    final EditText precio = new EditText(this);
+    precio.setTextSize(30);
+    precio.setSingleLine(true);
+    precio.setInputType(InputType.TYPE_CLASS_NUMBER);
+    if (w.precioPropio > 0) { precio.setText(String.valueOf(w.precioPropio)); precio.selectAll(); }
+    c.addView(precio);
+    c.addView(texto("¿Pesaste la pieza? Calcúlalo", 16, true, NEGRO), lp(-1, -2, 12));
+    LinearLayout filaKg = fila();
+    final EditText kg = new EditText(this), porKg = new EditText(this);
+    kg.setTextSize(22);
+    kg.setSingleLine(true);
+    kg.setHint("Peso (kg)");
+    kg.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+    porKg.setTextSize(22);
+    porKg.setSingleLine(true);
+    porKg.setHint("$ por kg");
+    porKg.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+    porKg.setText(sp.getString(claveKg, ""));
+    filaKg.addView(kg, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+    filaKg.addView(porKg, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+    c.addView(filaKg);
+    final TextView calculo = texto("", 15, false, PLOMO);
+    c.addView(calculo, lp(-1, -2, 2));
+    TextWatcher alCambiar = new TextWatcher() {
+      @Override public void beforeTextChanged(CharSequence s, int a, int b, int d) {}
+      @Override public void onTextChanged(CharSequence s, int a, int b, int d) {}
+      @Override public void afterTextChanged(Editable e) {
+        double pesoKg = pesoDe(kg.getText().toString()), valorKg = numero(porKg.getText().toString());
+        int r = Precio.porPeso(pesoKg, valorKg);
+        if (r > 0) {
+          precio.setText(String.valueOf(r));
+          calculo.setText(String.format(Locale.ROOT, "%s kg × %s por kg = %s (subido a la decena)", quitaCeros(pesoKg), precioTxt((int) Math.round(valorKg)), precioTxt(r)));
+        } else {
+          calculo.setText(pesoKg > 0 && valorKg <= 0 ? "Escribe también el precio por kg (queda guardado para la próxima)." : "");
+        }
+      }
+    };
+    kg.addTextChangedListener(alCambiar);
+    porKg.addTextChangedListener(alCambiar);
+
+    AlertDialog.Builder b = new AlertDialog.Builder(this).setView(c)
+        .setPositiveButton("Listo", null).setNegativeButton("Cancelar", null);
+    if (w.precioPropio > 0) b.setNeutralButton("Volver al precio normal", (d, i) -> { w.precioPropio = 0; pintarVentana(w); });
+    final AlertDialog dlg = b.create();
+    dlg.getWindow().setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+    dlg.show();
+    (porKg.getText().length() > 0 ? kg : precio).requestFocus();
+    dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+      String t = precio.getText().toString().replaceAll("[^0-9]", "");
+      int pv = t.isEmpty() || t.length() > 7 ? 0 : Integer.parseInt(t);
+      if (pv <= 0) { Toast.makeText(this, "Escribe el precio de esta pieza.", Toast.LENGTH_SHORT).show(); return; }
+      if (numero(porKg.getText().toString()) > 0) sp.edit().putString(claveKg, porKg.getText().toString().trim()).apply();
+      w.precioPropio = pv;
+      pintarVentana(w);
+      dlg.dismiss();
+    });
+  }
+
+  /** Peso en kg: la coma o el punto son decimales ("5,5" y "5.5" = 5,5 kg; no es un punto de miles). 0 si no es un número. */
+  private static double pesoDe(String s) {
+    try { return Double.parseDouble(s.trim().replace(',', '.')); } catch (Exception e) { return 0; }
+  }
+
+  private static String quitaCeros(double v) {
+    String s = String.format(Locale.ROOT, "%.3f", v);
+    s = s.replaceAll("0+$", "").replaceAll("\\.$", "");
+    return s.replace('.', ',');
+  }
+
   private EtiquetaPrecio etiquetaDe(Ventana w) {
     EtiquetaPrecio e = new EtiquetaPrecio();
     e.nombre = w.p.nombre;
-    e.precio = precioTxt(w.p.precio);
+    e.precio = precioTxt(w.precioPropio > 0 ? w.precioPropio : w.p.precio);
     e.codigo = w.p.codigo();
     e.vence = w.vence;
     e.elab = w.elab;
@@ -986,8 +1076,11 @@ public class MainActivity extends Activity {
   }
 
   private void pintarVentana(Ventana w) {
-    w.txtPrecio.setText(w.p.precio > 0 ? precioTxt(w.p.precio) : "Sin precio");
-    w.txtPrecio.setTextColor(w.p.precio > 0 ? NEGRO : ROJO);
+    boolean propio = w.precioPropio > 0;
+    w.txtPrecio.setText(propio ? precioTxt(w.precioPropio) : (w.p.precio > 0 ? precioTxt(w.p.precio) : "Sin precio"));
+    w.txtPrecio.setTextColor(propio ? AZUL_PROPIO : (w.p.precio > 0 ? NEGRO : ROJO));
+    w.btnPropio.setText(propio ? "Precio de esta etiqueta: " + precioTxt(w.precioPropio) + " (cambiar)" : "＄ Precio solo para esta etiqueta");
+    colorear(w.btnPropio, propio ? AZUL_PROPIO : Color.WHITE, propio ? Color.WHITE : AZUL_PROPIO);
     w.txtCodigo.setText("Código: " + w.p.codigo() + (w.p.barcode.isEmpty() ? " (SKU, sin código de barras)" : "")
         + (w.confirmando > 0 ? "\nConfirmando precio con el servidor…" : ""));
     boolean sinCodigo = w.p.barcode.isEmpty();
@@ -1006,6 +1099,8 @@ public class MainActivity extends Activity {
     w.btnNombre.setAlpha(puedeCodigo ? 1f : 0.45f);
     w.btnPrecio.setEnabled(puedeCodigo);
     w.btnPrecio.setAlpha(puedeCodigo ? 1f : 0.45f);
+    w.btnPropio.setEnabled(puedeCodigo);
+    w.btnPropio.setAlpha(puedeCodigo ? 1f : 0.45f);
     w.txtCant.setText(String.valueOf(w.cantidad));
     String hoy = fmt(Calendar.getInstance());
     boolean elabHoy = w.elab.equals(hoy), elabOtra = !w.elab.isEmpty() && !elabHoy;
@@ -1021,7 +1116,9 @@ public class MainActivity extends Activity {
     w.vista.setImageBitmap(r.vista);
     String aviso = r.aviso;
     if (sinCodigo) aviso = "Este producto no tiene código de barras: la etiqueta sale con la SKU. Toca «Crear código de barras» para que la caja lo lea.";
-    if (w.p.precio <= 0) aviso = "Ojo: este producto no tiene precio en el sistema.";
+    if (w.p.precio <= 0 && !propio) aviso = "Ojo: este producto no tiene precio en el sistema.";
+    if (propio) aviso = "Este precio es solo de la etiqueta: Loyverse no cambia" + (w.p.precio > 0 ? " (sigue en " + precioTxt(w.p.precio) + ")" : "")
+        + ". Para que la caja pida el precio al escanear, el producto debe tener el precio vacío en Loyverse.";
     if (aj.mac.isEmpty()) aviso = "Falta elegir la impresora: al tocar Imprimir te la pido.";
     w.txtAviso.setText(aviso);
     w.txtAviso.setVisibility(aviso.isEmpty() ? View.GONE : View.VISIBLE);

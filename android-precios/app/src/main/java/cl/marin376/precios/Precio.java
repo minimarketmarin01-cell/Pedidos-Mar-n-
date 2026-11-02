@@ -70,6 +70,18 @@ public final class Precio {
     return ((precio + 9) / 10) * 10;
   }
 
+  /**
+   * Precio de una pieza de peso variable (sandía, zapallo…): kg × precio por kg, subido a la decena
+   * ($5,82 kg × $1.000 = $5.820). 0 si falta el peso o el precio por kg, o si el resultado es absurdo.
+   */
+  public static int porPeso(double kg, double precioPorKg) {
+    if (!(kg > 0) || !(precioPorKg > 0)) return 0;
+    if (kg > 60) return 0;   // ninguna pieza pesa tanto: casi seguro se escribió mal ("5500" en vez de "5,5")
+    double p = kg * precioPorKg;
+    if (p > 9_999_990) return 0;
+    return aDecena((int) Math.round(p));
+  }
+
   /** Precio psicológico de Marín 376: sube a la siguiente terminación en 90 ($1.437 → $1.490). */
   public static int sugerido(int precio) {
     if (precio <= 0) return 0;
