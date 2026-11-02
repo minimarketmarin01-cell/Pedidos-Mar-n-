@@ -5899,7 +5899,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-11-01.12';
+const APP_VERSION='2026-11-02.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -6292,7 +6292,7 @@ async function cloudSync(silent,live,full,origen){
       if(esPollDeFondo&&editando)return true;
       _ultimoPayloadFirma=firma;
 
-      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras,j.costeoProducto);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(j.costeoFijoDefault!=null)cfFijoDefaultSet(j.costeoFijoDefault);if(Array.isArray(j.carritosGuardados)){CARRITOS_GUARDADOS=j.carritosGuardados;if(typeof cgRenderLista==='function')cgRenderLista();if(typeof cgMigrarLocalesAntiguos==='function')cgMigrarLocalesAntiguos();}
+      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras,j.costeoProducto);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(Array.isArray(j.carritosGuardados)){CARRITOS_GUARDADOS=j.carritosGuardados;if(typeof cgRenderLista==='function')cgRenderLista();if(typeof cgMigrarLocalesAntiguos==='function')cgMigrarLocalesAntiguos();}
       INVMAP=invMapFromItems(DB.items);
       SRC='nube · '+new Date().toLocaleString('es-CL');
       // FIX: antes esto era "state.edits={}" incondicional, así que CUALQUIER sync
@@ -6497,7 +6497,7 @@ function aplicarPanelDeFondo(j){
     if(firma===_ultimoPayloadFirma)return; // nada cambió, no hay nada que repintar
     _ultimoPayloadFirma=firma;
 
-    DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras,j.costeoProducto);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(j.costeoFijoDefault!=null)cfFijoDefaultSet(j.costeoFijoDefault);if(Array.isArray(j.carritosGuardados)){CARRITOS_GUARDADOS=j.carritosGuardados;if(typeof cgRenderLista==='function')cgRenderLista();if(typeof cgMigrarLocalesAntiguos==='function')cgMigrarLocalesAntiguos();}
+    DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras,j.costeoProducto);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(Array.isArray(j.carritosGuardados)){CARRITOS_GUARDADOS=j.carritosGuardados;if(typeof cgRenderLista==='function')cgRenderLista();if(typeof cgMigrarLocalesAntiguos==='function')cgMigrarLocalesAntiguos();}
     INVMAP=invMapFromItems(DB.items);
     SRC='nube · '+new Date().toLocaleString('es-CL');
     setLastSync(Date.now());
@@ -11426,7 +11426,7 @@ async function recargarHistorial(){
     const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=recargar_historial');
     const j=await res.json();
     if(j&&j.ok){
-      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras,j.costeoProducto);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(j.costeoFijoDefault!=null)cfFijoDefaultSet(j.costeoFijoDefault);if(Array.isArray(j.carritosGuardados)){CARRITOS_GUARDADOS=j.carritosGuardados;if(typeof cgRenderLista==='function')cgRenderLista();if(typeof cgMigrarLocalesAntiguos==='function')cgMigrarLocalesAntiguos();}
+      DB=buildDBfromCloud(j.items,j.ventas,j.pendientes,j.provsExtra,j.provsIdsExtra,j.provsNombresExtra,j.multiplos,j.empaques,j.palabras,j.costeoProducto);if(Array.isArray(j.riesgoExcluidos))RIESGO_EXCLUIDOS=new Set(j.riesgoExcluidos);if(Array.isArray(j.favoritos))FAVORITOS=new Set(j.favoritos);if(Array.isArray(j.carritosGuardados)){CARRITOS_GUARDADOS=j.carritosGuardados;if(typeof cgRenderLista==='function')cgRenderLista();if(typeof cgMigrarLocalesAntiguos==='function')cgMigrarLocalesAntiguos();}
       INVMAP=invMapFromItems(DB.items);
       state.edits={};
       persist();render();
