@@ -5912,7 +5912,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-11-02.4';
+const APP_VERSION='2026-11-04.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -15873,10 +15873,12 @@ document.getElementById('rc-guardar').onclick=async()=>{
   // realmente va a sumar stock (cantidad>0) — guardar solo precio/costo (cantidad=0, rama de
   // abajo) no toca stock y no tiene ese riesgo.
   if(cantidad>0&&!await dlgConfirm('¿Confirmar recepción en '+LOCAL_NOMBRE+' de '+fmt1(cantidad)+' '+(it.peso?'kg':'u')+' de "'+it.nombre+'"?'+(danadas>0?'\n\n⚠️ '+fmt1(danadas)+' llegaron dañadas: se reciben y pasan a Pendientes para cambio.':'')+'\n\nEl stock quedará en '+fmt1(Math.max(0,Number(it.stock)||0)+cantidad-danadas)+'.'))return;
-  await rcGuardarNombreSiCambio(it);
   // Cantidad=0: no hay nada que recibir — si costo/precio cambiaron, se guardan solos, sin
   // crear ningún lote de vencimiento ni tocar stock (ver rcGuardarSoloPrecio).
-  if(cantidad===0){await rcGuardarSoloPrecio(it);return;}
+  if(cantidad===0){await rcGuardarNombreSiCambio(it);await rcGuardarSoloPrecio(it);return;}
+  // Con cantidad>0 el nombre nuevo viaja dentro del mismo guardado (una sola llamada, más rápido).
+  const nombreEnviado=(document.getElementById('rc-nombre-input').value||'').trim();
+  const enviaNombre=!!nombreEnviado&&nombreEnviado!==it.nombre;
   // Lo que se guarda en Loyverse es el costo BRUTO (Loyverse usa costo con IVA) — el mismo
   // valor que sirvió de base para calcular el precio de venta arriba. rcCostoNeto() es alias
   // de rcCostoBruto(); si la compra fue por caja, ya viene dividido por las unidades.
@@ -15895,9 +15897,15 @@ document.getElementById('rc-guardar').onclick=async()=>{
       snap:{id:it.id,vid:it.vid,nombre:it.nombre,prov:it.prov,peso:it.peso,precio:it.precio,costo:it.coste,stock:it.stock,track:it.track,barcode:it.barcode}};
     if(costoCambio)payload.costo=nuevoCosto;
     if(precioCambio)payload.precio=nuevoPrecio;
+    if(enviaNombre)payload.nombre=nombreEnviado;
     const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'lote_nuevo',payload:payload}),signal:ctrl.signal});
     const j=await res.json();
     if(j&&j.ok){
+      // Nombre: si el servidor lo aplicó, se refleja acá; si es una versión anterior del servidor (no lo conoce), se guarda con la llamada de siempre.
+      if(enviaNombre){
+        if(j.fila&&j.fila.nombreAplicado===nombreEnviado){it.nombre=nombreEnviado;persist();}
+        else if(!(j.fila&&j.fila.avisoStock&&/nombre/i.test(j.fila.avisoStock))){await rcGuardarNombreSiCambio(it);}
+      }
       // Actualiza la copia local del producto AL INSTANTE (sin esperar a sincronizar),
       // para que si vuelves a abrir el mismo producto ya se vea al día.
       const itLocal=(DB.items||[]).find(x=>x.ref===it.ref);
