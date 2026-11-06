@@ -2541,6 +2541,8 @@ html.modo-bliss.carrito-fijo.vista-filas #prov-anchor .shc-row.shc-wrap{flex-wra
 /* X de borrar automática en los cuadros de texto que no la tenían (ver cxInstalar). */
 .cx-x{position:absolute;top:50%;transform:translateY(-50%);width:32px;height:32px;border:none;background:transparent;border-radius:50%;color:var(--text-sec,#616161);cursor:pointer;display:none;align-items:center;justify-content:center;padding:0;z-index:3;-webkit-tap-highlight-color:transparent}
 .cx-x:active{background:rgba(0,0,0,.08)}
+/* Vencimientos: fecha y stock siempre en filas separadas (antes el stock se quedaba al lado de la fecha cuando cabía y bajaba cuando no, y las tarjetas se veían distintas). */
+#vc-ov .vc-meta{flex-direction:column;align-items:flex-start;flex-wrap:nowrap;gap:4px}
 </style>
 </head>
 <body>
@@ -5918,7 +5920,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-11-06.2';
+const APP_VERSION='2026-11-06.3';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
