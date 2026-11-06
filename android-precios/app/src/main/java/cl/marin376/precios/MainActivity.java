@@ -49,8 +49,9 @@ public class MainActivity extends Activity {
   private static final int VERDE_BARRA = Color.parseColor("#4CAF50"), VERDE = Color.parseColor("#43A047"),
       VERDE_BOTON = Color.parseColor("#7CB342"), GRIS = Color.parseColor("#E6E6E6"), GRIS_FOTO = Color.parseColor("#E0E0E0"),
       LINEA = Color.parseColor("#DDDDDD"), ROJO = Color.parseColor("#B3261E"), NEGRO = Color.parseColor("#212121"),
-      PLOMO = Color.parseColor("#616161"), AVISO = Color.parseColor("#FFF8E1");
-  private static final long VIEJO_MS = 6L * 3600 * 1000;   // se actualiza sola si la lista tiene más de 6 h
+      PLOMO = Color.parseColor("#616161"), AVISO = Color.parseColor("#FFF8E1"), AZUL_PROPIO = Color.parseColor("#1565C0");
+  // Se revisa sola si la última revisión tiene más de 20 min. Es barato: el servidor contesta ~100 bytes si no cambió nada.
+  private static final long VIEJO_MS = 20L * 60 * 1000;
   private static final String TODOS = "Todos los artículos";
 
   private final Handler ui = new Handler(Looper.getMainLooper());
@@ -65,10 +66,16 @@ public class MainActivity extends Activity {
   private TextView spCategoria;   // selector de categoría (abre una lista grande)
   private String categoria = null; // null = todos los artículos
   private EditText buscador;
-  private Button btnBuscar;
+  private IconoLoyverse btnBuscar;
   private ListView lista;
   private final Adaptador adaptador = new Adaptador();
   private final Runnable buscarLuego = this::filtrar;
+  private final Runnable buscarRemotoLuego = this::buscarRemoto;
+  // Productos de categorías que no están guardadas en el equipo, encontrados en el servidor para lo que se escribió.
+  private List<Producto> remotos = new ArrayList<>();
+  private String remotoQ = "";
+  private boolean buscandoRemoto = false;
+  private final java.util.Map<String, List<Producto>> cacheRemoto = new java.util.HashMap<>();
 
   // ---------------------------------------------------------------- utilidades de vista
   private int dp(float v) { return Math.round(v * getResources().getDisplayMetrics().density); }
@@ -235,7 +242,7 @@ public class MainActivity extends Activity {
         cargandoLista = false;
         pintarCategorias();
         filtrar();
-        if (c.productos.isEmpty() || System.currentTimeMillis() - c.hora > VIEJO_MS) actualizarProductos();
+        if (c.productos.isEmpty() || System.currentTimeMillis() - c.hora > VIEJO_MS) actualizarProductos(false, false);
       });
     }).start();
   }
@@ -292,6 +299,8 @@ public class MainActivity extends Activity {
       public void afterTextChanged(Editable e) {
         ui.removeCallbacks(buscarLuego);
         ui.postDelayed(buscarLuego, 150);
+        ui.removeCallbacks(buscarRemotoLuego);
+        ui.postDelayed(buscarRemotoLuego, 600);
       }
     });
     // Lector de códigos (escribe el código + Enter): si es exacto, abre directo la etiqueta.
@@ -302,24 +311,26 @@ public class MainActivity extends Activity {
       String q = buscador.getText().toString().trim();
       Producto p = cat.exacto(q);
       if (p == null) { List<Producto> r = cat.buscar(q, 2); if (r.size() == 1) p = r.get(0); }
-      if (p != null) { buscador.setText(""); abrirEtiqueta(p); } else filtrar();
+      if (p != null) { buscador.setText(""); abrirEtiqueta(p); }
+      else {
+        filtrar();
+        // Código de un producto de otra categoría (no guardada en el equipo): se busca en el servidor.
+        if (categoriasMarcadas() != null && q.matches("[0-9A-Za-z\\-]{4,}"))
+          buscarCodigoRemoto(q, pr -> { if (buscando && buscador.getText().toString().trim().equals(q)) { buscador.setText(""); abrirEtiqueta(pr); } }, null);
+      }
       return true;
     });
     filtro.addView(buscador, new LinearLayout.LayoutParams(0, dp(64), 1));
     View sep = linea();
     filtro.addView(sep, new LinearLayout.LayoutParams(dp(1), dp(64)));
     // Escanear con la cámara (el ícono se dibuja a mano: no depende de los emojis del equipo).
-    IconoCamara camara = new IconoCamara(this, PLOMO);
-    camara.setClickable(true);
-    camara.setOnClickListener(v -> escanear());
-    filtro.addView(camara, new LinearLayout.LayoutParams(dp(64), dp(64)));
-    btnBuscar = new Button(this);
-    btnBuscar.setText("🔍");
-    btnBuscar.setTextSize(24);
-    btnBuscar.setTextColor(PLOMO);
-    btnBuscar.setBackground(null);
+    final int gris = Color.parseColor("#616161");
+    IconoLoyverse escaner = new IconoLoyverse(this, IconoLoyverse.ESCANER, gris);
+    escaner.setOnClickListener(v -> escanear());
+    filtro.addView(escaner, new LinearLayout.LayoutParams(dp(64), dp(64)));
+    btnBuscar = new IconoLoyverse(this, IconoLoyverse.LUPA, gris);
     btnBuscar.setOnClickListener(v -> { if (buscando) cerrarBusqueda(); else abrirBusqueda(); });
-    filtro.addView(btnBuscar, new LinearLayout.LayoutParams(dp(72), dp(64)));
+    filtro.addView(btnBuscar, new LinearLayout.LayoutParams(dp(64), dp(64)));
     raiz.addView(filtro, new LinearLayout.LayoutParams(-1, dp(64)));
     raiz.addView(linea(), new LinearLayout.LayoutParams(-1, dp(1)));
 
@@ -382,9 +393,15 @@ public class MainActivity extends Activity {
       abrirEtiqueta(p);
       return;
     }
-    if (!buscando) abrirBusqueda();
-    buscador.setText(codigo);
-    mensaje("No encontré el código " + codigo + " en " + local().nombre + ". Si es un producto nuevo, créalo en Loyverse.");
+    final Runnable noEncontrado = () -> {
+      if (!buscando) abrirBusqueda();
+      buscador.setText(codigo);
+      mensaje("No encontré el código " + codigo + " en " + local().nombre + ". Si es un producto nuevo, créalo en Loyverse.");
+    };
+    if (categoriasMarcadas() == null) { noEncontrado.run(); return; }
+    // Hay categorías elegidas: el producto puede ser de otra categoría (no guardada en el equipo). Se busca en el servidor.
+    mensaje("Buscando el código " + codigo + "…");
+    buscarCodigoRemoto(codigo, pr -> { if (buscando) cerrarBusqueda(); mensaje(""); abrirEtiqueta(pr); }, noEncontrado);
   }
 
   private void mensaje(String t) {
@@ -396,7 +413,7 @@ public class MainActivity extends Activity {
     buscando = true;
     spCategoria.setVisibility(View.GONE);
     buscador.setVisibility(View.VISIBLE);
-    btnBuscar.setText("✕");
+    btnBuscar.setTipo(IconoLoyverse.CERRAR);
     buscador.requestFocus();
     InputMethodManager im = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
     if (im != null) im.showSoftInput(buscador, InputMethodManager.SHOW_IMPLICIT);
@@ -410,7 +427,7 @@ public class MainActivity extends Activity {
     if (im != null) im.hideSoftInputFromWindow(buscador.getWindowToken(), 0);
     buscador.setVisibility(View.GONE);
     spCategoria.setVisibility(View.VISIBLE);
-    btnBuscar.setText("🔍");
+    btnBuscar.setTipo(IconoLoyverse.LUPA);
     filtrar();
   }
 
@@ -428,7 +445,7 @@ public class MainActivity extends Activity {
           .setMessage(cat.productos.isEmpty() || bajando
               ? "Todavía se están bajando los productos. Espera un momento y vuelve a tocar."
               : "La lista guardada no trae categorías. Toca «Actualizar productos» para bajarlas.")
-          .setPositiveButton("Actualizar productos", (d, i) -> actualizarProductos())
+          .setPositiveButton("Actualizar productos", (d, i) -> actualizarProductos(true, false))
           .setNegativeButton("Cerrar", null).show();
       return;
     }
@@ -490,8 +507,8 @@ public class MainActivity extends Activity {
   }
 
   private void elegirCategoriasVisibles() {
-    if (cat.categorias.isEmpty()) { elegirCategoria(); return; }   // explica que faltan categorías
-    final String[] cats = cat.categorias.toArray(new String[0]);
+    if (cat.categoriasParaElegir().isEmpty()) { elegirCategoria(); return; }   // explica que faltan categorías
+    final String[] cats = cat.categoriasParaElegir().toArray(new String[0]);
     final boolean[] marc = new boolean[cats.length];
     java.util.Set<String> m = categoriasMarcadas();
     for (int i = 0; i < cats.length; i++) marc[i] = m == null || m.contains(cats[i].toLowerCase(Locale.ROOT));
@@ -519,24 +536,104 @@ public class MainActivity extends Activity {
         int n = 0;
         for (int i = 0; i < cats.length; i++) if (marc[i]) { a.put(cats[i]); n++; }
         if (n == 0) { Toast.makeText(this, "Marca al menos una categoría.", Toast.LENGTH_LONG).show(); return; }
+        final List<String> antes = categoriasMarcadasNombres();   // null = todas
         if (n == cats.length) prefs.edit().remove("cats_visibles_" + aj.local).apply();   // todas = sin filtro (incluye nuevas)
         else prefs.edit().putString("cats_visibles_" + aj.local, a.toString()).apply();
         d.dismiss();
-        pintarCategorias();
-        filtrar();
-        Toast.makeText(this, n == cats.length ? "Se muestran todas las categorías." : "Se muestran " + n + " categorías. El buscador 🔍 sigue buscando en todos los productos.", Toast.LENGTH_LONG).show();
+        final List<String> ahora = categoriasMarcadasNombres();
+        // Solo se guardan en el equipo las categorías marcadas. Si se agregó alguna hay que bajarla; si solo se
+        // quitaron, basta con borrar lo que sobra del equipo (no se baja nada).
+        boolean agrega = false;
+        if (ahora == null) agrega = antes != null;
+        else if (antes != null) {
+          java.util.Set<String> prev = new java.util.HashSet<>();
+          for (String c0 : antes) prev.add(c0.toLowerCase(Locale.ROOT));
+          for (String c0 : ahora) if (!prev.contains(c0.toLowerCase(Locale.ROOT))) agrega = true;
+        }
+        if (agrega || cat.productos.isEmpty()) {
+          pintarCategorias();
+          filtrar();
+          actualizarProductos(true, true);
+        } else if (ahora != null) {
+          java.util.Set<String> m2 = categoriasMarcadas();
+          List<Producto> quedan = new ArrayList<>();
+          for (Producto p : cat.productos) if (m2.contains(p.categoria.toLowerCase(Locale.ROOT))) quedan.add(p);
+          cat.poner(quedan, cat.hora);
+          cat.sel = ahora;
+          final Catalogo cg = cat;
+          new Thread(() -> cg.guardar(getApplicationContext())).start();
+          pintarCategorias();
+          filtrar();
+        } else { pintarCategorias(); filtrar(); }
+        Toast.makeText(this, n == cats.length ? "Se muestran todas las categorías." : "Se guardan " + n + " categorías en el equipo. El buscador 🔍 sigue encontrando todos los productos.", Toast.LENGTH_LONG).show();
       });
     });
     d.show();
+  }
+
+  /** Lo escrito en el buscador también se busca en el servidor: ahí están TODAS las categorías (en el equipo solo las elegidas). */
+  private void buscarRemoto() {
+    if (!buscando || categoriasMarcadas() == null) return;   // sin categorías elegidas, el equipo ya tiene todo
+    final String q = buscador.getText().toString().trim();
+    if (q.length() < 3) { remotos = new ArrayList<>(); remotoQ = ""; return; }
+    final Local l = local();
+    List<Producto> guardado = cacheRemoto.get(l.id + "|" + q);
+    if (guardado != null) { remotos = guardado; remotoQ = q; filtrar(); return; }
+    buscandoRemoto = true;
+    filtrar();
+    new Thread(() -> {
+      List<Producto> r = null;
+      try { r = Api.buscar(l, q); } catch (Exception ignore) {}
+      final List<Producto> fr = r;
+      ui.post(() -> {
+        buscandoRemoto = false;
+        if (!l.id.equals(aj.local) || !buscando || !buscador.getText().toString().trim().equals(q)) return;
+        if (fr != null) { cacheRemoto.put(l.id + "|" + q, fr); remotos = fr; remotoQ = q; }
+        filtrar();
+      });
+    }).start();
+  }
+
+  private interface AlEncontrar { void producto(Producto p); }
+
+  /** Busca un código (o SKU) exacto en el servidor, para productos de categorías que no están guardadas en el equipo. */
+  private void buscarCodigoRemoto(final String codigo, final AlEncontrar si, final Runnable no) {
+    final Local l = local();
+    new Thread(() -> {
+      Producto hallado = null;
+      try {
+        List<String> intentos = new ArrayList<>();
+        intentos.add(codigo);
+        if (codigo.length() == 13 && codigo.startsWith("0")) intentos.add(codigo.substring(1));   // EAN-13 con 0 = UPC-A
+        if (codigo.length() == 12) intentos.add("0" + codigo);
+        for (String c0 : intentos) {
+          List<Producto> r = Api.buscar(l, c0);
+          if (r == null) break;
+          for (Producto p : r) if (p.barcode.equals(c0) || p.sku.equals(c0)) { hallado = p; break; }
+          if (hallado != null) break;
+        }
+      } catch (Exception ignore) {}
+      final Producto fh = hallado;
+      ui.post(() -> {
+        if (!l.id.equals(aj.local)) return;
+        if (fh != null) si.producto(fh); else if (no != null) no.run();
+      });
+    }).start();
   }
 
   private void filtrar() {
     if (buscando) {
       String q = buscador.getText().toString().trim();
       visibles = q.isEmpty() ? new ArrayList<>() : cat.buscar(q, 200);
+      if (!q.isEmpty() && q.equals(remotoQ)) for (Producto p : remotos) if (cat.exacto(p.sku) == null) visibles.add(p);
       // Código escaneado completo: abre directo (el lector escribe todo de golpe).
       Producto ex = cat.exacto(q);
       if (ex != null && q.length() >= 8 && q.matches("[0-9]+")) { buscador.setText(""); abrirEtiqueta(ex); }
+      else if (ex == null && q.length() >= 8 && q.matches("[0-9]+") && categoriasMarcadas() != null && !q.equals(codigoRemotoPedido)) {
+        final String codigo = q;
+        codigoRemotoPedido = q;
+        buscarCodigoRemoto(codigo, p -> { if (buscando && buscador.getText().toString().trim().equals(codigo)) { buscador.setText(""); abrirEtiqueta(p); } }, null);
+      }
     } else {
       visibles = productosVisibles(categoriaElegida());
     }
@@ -547,6 +644,7 @@ public class MainActivity extends Activity {
     else if (visibles.isEmpty()) vacio = buscando
         ? (buscador.getText().toString().trim().isEmpty() ? "Escribe el nombre, pasa el lector o toca la cámara para escanear." : "No encontré «" + buscador.getText().toString().trim() + "».")
         : "Esta categoría no tiene productos.";
+    if (buscando && visibles.isEmpty() && buscandoRemoto) vacio = "Buscando en todos los productos…";
     txtVacio.setText(vacio);
     txtVacio.setVisibility(vacio.isEmpty() ? View.GONE : View.VISIBLE);
   }
@@ -621,7 +719,7 @@ public class MainActivity extends Activity {
         case 2: Calculadora.abrir(this, null, null); break;
         case 3: elegirImpresora(null); break;
         case 4: imprimirPrueba(); break;
-        case 5: actualizarProductos(); break;
+        case 5: actualizarProductos(true, false); break;
         case 6: abrirAjustes(); break;
         case 7: elegirCategoriasVisibles(); break;
         default: new Actualizador(this).revisar(true); break;
@@ -646,24 +744,85 @@ public class MainActivity extends Activity {
   }
 
   // ---------------------------------------------------------------- catálogo
-  private void actualizarProductos() {
-    if (bajando) return;
+  /** Categorías marcadas con su nombre original (null = todas). */
+  private List<String> categoriasMarcadasNombres() {
+    String raw = prefs.getString("cats_visibles_" + aj.local, null);
+    if (raw == null) return null;
+    List<String> out = new ArrayList<>();
+    try {
+      org.json.JSONArray a = new org.json.JSONArray(raw);
+      for (int i = 0; i < a.length(); i++) out.add(a.optString(i));
+    } catch (Exception e) { return null; }
+    return out.isEmpty() ? null : out;
+  }
+
+  private static boolean mismasPropiedades(Producto a, Producto b) {
+    return a.nombre.equals(b.nombre) && a.precio == b.precio && a.barcode.equals(b.barcode)
+        && a.categoria.equals(b.categoria) && a.imagen.equals(b.imagen) && a.costo == b.costo;
+  }
+
+  /**
+   * Pone al día la lista guardada. Solo se guardan en el equipo los productos de las categorías elegidas, y se pregunta al
+   * servidor únicamente por lo que cambió desde la última vez (si no cambió nada contesta ~100 bytes). «completo» baja de
+   * nuevo todas las categorías elegidas (al agregar una categoría, o cuando el servidor lo pide).
+   */
+  private boolean pendienteCompleto = false;   // se pidió bajar de nuevo (cambio de categorías) mientras ya se estaba actualizando
+  private String codigoRemotoPedido = "";
+
+  private void actualizarProductos(final boolean manual, final boolean completo) {
+    if (bajando) { if (completo) pendienteCompleto = true; return; }
     bajando = true;
     final Local l = local();
-    mensaje("Actualizando productos de " + l.nombre + "…");
+    final List<String> sel = categoriasMarcadasNombres();
+    final Catalogo actual = cat;
+    if (manual) mensaje("Actualizando productos de " + l.nombre + "…");
     filtrar();
     new Thread(() -> {
       try {
-        List<Producto> nuevos = Api.catalogo(l);
+        final long ahora = System.currentTimeMillis();
         final Catalogo c = new Catalogo(l);
-        c.poner(nuevos, System.currentTimeMillis());
+        int cambios = 0;
+        Long desde = !completo && actual.cursor >= 0 && !actual.productos.isEmpty() && Catalogo.mismaSeleccion(actual.sel, sel) ? actual.cursor : null;
+        Api.Lite r = Api.catalogoLiviano(l, sel, desde);
+        if (r == null) {
+          // Servidor sin las acciones nuevas: camino de antes (catálogo completo, se filtra al mostrar).
+          List<Producto> todos = Api.catalogo(l);
+          c.poner(todos, ahora);
+          cambios = todos.size();
+        } else if (r.completo || desde == null) {
+          c.poner(r.productos, ahora);
+          c.cursor = r.cursor;
+          c.sel = sel;
+          cambios = r.productos.size();
+        } else {
+          // Por cambios: se aplica sobre lo guardado.
+          java.util.LinkedHashMap<String, Producto> m = new java.util.LinkedHashMap<>();
+          for (Producto p : actual.productos) m.put(p.sku, p);
+          for (String s : r.borrados) if (m.remove(s) != null) cambios++;
+          for (Producto p : r.productos) {
+            Producto viejo = m.get(p.sku);
+            if (viejo == null || !mismasPropiedades(viejo, p)) cambios++;   // el stock no cuenta: la etiqueta no lo usa
+            m.put(p.sku, p);
+          }
+          c.poner(new ArrayList<>(m.values()), ahora);
+          c.cursor = r.cursor;
+          c.sel = sel;
+        }
+        c.todasCategorias = actual.todasCategorias;
+        if (r != null && (r.completo || desde == null || c.todasCategorias.isEmpty())) {
+          try { List<String> cs = Api.categorias(l); if (cs != null && !cs.isEmpty()) c.todasCategorias = cs; } catch (Exception ignore) {}
+        }
         c.guardar(getApplicationContext());
+        final int n = cambios;
+        final boolean porCambios = r != null && desde != null && !r.completo;
         ui.post(() -> {
           bajando = false;
           if (!l.id.equals(aj.local)) return;
           cat = c;
           mensaje("");
-          Toast.makeText(this, "Productos actualizados (" + miles(c.productos.size()) + ").", Toast.LENGTH_SHORT).show();
+          if (pendienteCompleto) { pendienteCompleto = false; pintarCategorias(); filtrar(); actualizarProductos(true, true); return; }
+          if (manual) Toast.makeText(this, n == 0 && porCambios ? "Todo al día." : "Productos actualizados (" + miles(c.productos.size()) + ").", Toast.LENGTH_SHORT).show();
+          else if (n > 0 && porCambios) Toast.makeText(this, n == 1 ? "Se actualizó 1 producto." : "Se actualizaron " + n + " productos.", Toast.LENGTH_SHORT).show();
           pintarCategorias();
           filtrar();
         });
@@ -687,12 +846,14 @@ public class MainActivity extends Activity {
     boolean creando = false;
     String vence = "", elab = "";
     boolean venceManual = false;
+    /** Precio solo para esta etiqueta (0 = el del producto). No se guarda en Loyverse. */
+    int precioPropio = 0;
     AlertDialog dlg;
     TextView txtPrecio, txtCodigo, txtCant, txtAviso, txtEstado, txtVenceInfo;
     ImageView vista;
     TextView txtNombre;
     Button btnNombre;
-    Button btnImprimir, btnVence, btnSinVence, btnCodigo, btnPrecio, btnSinElab, btnElabHoy, btnElab;
+    Button btnImprimir, btnVence, btnSinVence, btnCodigo, btnPrecio, btnPropio, btnSinElab, btnElabHoy, btnElab;
   }
 
   private Ventana ven;
@@ -729,6 +890,11 @@ public class MainActivity extends Activity {
     w.btnPrecio.setVisibility(Local.MARIN.id.equals(aj.local) ? View.VISIBLE : View.GONE);
     filaPrecio.addView(w.btnPrecio, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(52)));
     c.addView(filaPrecio, lp(-1, -2, 2));
+    // Precio solo para esta etiqueta (productos de peso o precio variable, como la sandía): no toca Loyverse.
+    w.btnPropio = boton("", Color.WHITE, AZUL_PROPIO);
+    w.btnPropio.setTextSize(16);
+    w.btnPropio.setOnClickListener(v -> { if (w.confirmando == 0 && !w.creando && !imprimiendo) abrirPrecioPropio(w); });
+    c.addView(w.btnPropio, lp(-1, dp(52), 4));
     w.txtCodigo = texto("", 15, false, PLOMO);
     c.addView(w.txtCodigo, lp(-1, -2, 2));
     w.btnCodigo = boton("", VERDE, Color.WHITE);
@@ -812,10 +978,93 @@ public class MainActivity extends Activity {
     confirmarConServidor(w);
   }
 
+  // ---------------------------------------------------------------- precio solo para esta etiqueta
+  /**
+   * Para piezas de peso o precio variable (sandía, zapallo…): el precio sale solo en la etiqueta y no se guarda en Loyverse.
+   * Se puede escribir directo o calcular con el peso y el precio por kg (que queda recordado por producto).
+   */
+  private void abrirPrecioPropio(final Ventana w) {
+    final SharedPreferences sp = getSharedPreferences("precios", Context.MODE_PRIVATE);
+    final String claveKg = "ppkg_" + aj.local + "_" + w.p.sku;
+    LinearLayout c = new LinearLayout(this);
+    c.setOrientation(LinearLayout.VERTICAL);
+    c.setPadding(dp(18), dp(14), dp(18), dp(6));
+    c.addView(texto(w.p.nombre, 20, true, NEGRO));
+    c.addView(texto("El precio sale solo en esta etiqueta. No cambia nada en Loyverse.", 14, false, PLOMO), lp(-1, -2, 2));
+    c.addView(texto("Precio de esta pieza ($)", 17, true, NEGRO), lp(-1, -2, 12));
+    final EditText precio = new EditText(this);
+    precio.setTextSize(30);
+    precio.setSingleLine(true);
+    precio.setInputType(InputType.TYPE_CLASS_NUMBER);
+    if (w.precioPropio > 0) { precio.setText(String.valueOf(w.precioPropio)); precio.selectAll(); }
+    c.addView(precio);
+    c.addView(texto("¿Pesaste la pieza? Calcúlalo", 16, true, NEGRO), lp(-1, -2, 12));
+    LinearLayout filaKg = fila();
+    final EditText kg = new EditText(this), porKg = new EditText(this);
+    kg.setTextSize(22);
+    kg.setSingleLine(true);
+    kg.setHint("Peso (kg)");
+    kg.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+    porKg.setTextSize(22);
+    porKg.setSingleLine(true);
+    porKg.setHint("$ por kg");
+    porKg.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+    porKg.setText(sp.getString(claveKg, ""));
+    filaKg.addView(kg, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+    filaKg.addView(porKg, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+    c.addView(filaKg);
+    final TextView calculo = texto("", 15, false, PLOMO);
+    c.addView(calculo, lp(-1, -2, 2));
+    TextWatcher alCambiar = new TextWatcher() {
+      @Override public void beforeTextChanged(CharSequence s, int a, int b, int d) {}
+      @Override public void onTextChanged(CharSequence s, int a, int b, int d) {}
+      @Override public void afterTextChanged(Editable e) {
+        double pesoKg = pesoDe(kg.getText().toString()), valorKg = numero(porKg.getText().toString());
+        int r = Precio.porPeso(pesoKg, valorKg);
+        if (r > 0) {
+          precio.setText(String.valueOf(r));
+          calculo.setText(String.format(Locale.ROOT, "%s kg × %s por kg = %s (subido a la decena)", quitaCeros(pesoKg), precioTxt((int) Math.round(valorKg)), precioTxt(r)));
+        } else {
+          calculo.setText(pesoKg > 0 && valorKg <= 0 ? "Escribe también el precio por kg (queda guardado para la próxima)." : "");
+        }
+      }
+    };
+    kg.addTextChangedListener(alCambiar);
+    porKg.addTextChangedListener(alCambiar);
+
+    AlertDialog.Builder b = new AlertDialog.Builder(this).setView(c)
+        .setPositiveButton("Listo", null).setNegativeButton("Cancelar", null);
+    if (w.precioPropio > 0) b.setNeutralButton("Volver al precio normal", (d, i) -> { w.precioPropio = 0; pintarVentana(w); });
+    final AlertDialog dlg = b.create();
+    dlg.getWindow().setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+    dlg.show();
+    (porKg.getText().length() > 0 ? kg : precio).requestFocus();
+    dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+      String t = precio.getText().toString().replaceAll("[^0-9]", "");
+      int pv = t.isEmpty() || t.length() > 7 ? 0 : Integer.parseInt(t);
+      if (pv <= 0) { Toast.makeText(this, "Escribe el precio de esta pieza.", Toast.LENGTH_SHORT).show(); return; }
+      if (numero(porKg.getText().toString()) > 0) sp.edit().putString(claveKg, porKg.getText().toString().trim()).apply();
+      w.precioPropio = pv;
+      pintarVentana(w);
+      dlg.dismiss();
+    });
+  }
+
+  /** Peso en kg: la coma o el punto son decimales ("5,5" y "5.5" = 5,5 kg; no es un punto de miles). 0 si no es un número. */
+  private static double pesoDe(String s) {
+    try { return Double.parseDouble(s.trim().replace(',', '.')); } catch (Exception e) { return 0; }
+  }
+
+  private static String quitaCeros(double v) {
+    String s = String.format(Locale.ROOT, "%.3f", v);
+    s = s.replaceAll("0+$", "").replaceAll("\\.$", "");
+    return s.replace('.', ',');
+  }
+
   private EtiquetaPrecio etiquetaDe(Ventana w) {
     EtiquetaPrecio e = new EtiquetaPrecio();
     e.nombre = w.p.nombre;
-    e.precio = precioTxt(w.p.precio);
+    e.precio = precioTxt(w.precioPropio > 0 ? w.precioPropio : w.p.precio);
     e.codigo = w.p.codigo();
     e.vence = w.vence;
     e.elab = w.elab;
@@ -827,8 +1076,11 @@ public class MainActivity extends Activity {
   }
 
   private void pintarVentana(Ventana w) {
-    w.txtPrecio.setText(w.p.precio > 0 ? precioTxt(w.p.precio) : "Sin precio");
-    w.txtPrecio.setTextColor(w.p.precio > 0 ? NEGRO : ROJO);
+    boolean propio = w.precioPropio > 0;
+    w.txtPrecio.setText(propio ? precioTxt(w.precioPropio) : (w.p.precio > 0 ? precioTxt(w.p.precio) : "Sin precio"));
+    w.txtPrecio.setTextColor(propio ? AZUL_PROPIO : (w.p.precio > 0 ? NEGRO : ROJO));
+    w.btnPropio.setText(propio ? "Precio de esta etiqueta: " + precioTxt(w.precioPropio) + " (cambiar)" : "＄ Precio solo para esta etiqueta");
+    colorear(w.btnPropio, propio ? AZUL_PROPIO : Color.WHITE, propio ? Color.WHITE : AZUL_PROPIO);
     w.txtCodigo.setText("Código: " + w.p.codigo() + (w.p.barcode.isEmpty() ? " (SKU, sin código de barras)" : "")
         + (w.confirmando > 0 ? "\nConfirmando precio con el servidor…" : ""));
     boolean sinCodigo = w.p.barcode.isEmpty();
@@ -847,6 +1099,8 @@ public class MainActivity extends Activity {
     w.btnNombre.setAlpha(puedeCodigo ? 1f : 0.45f);
     w.btnPrecio.setEnabled(puedeCodigo);
     w.btnPrecio.setAlpha(puedeCodigo ? 1f : 0.45f);
+    w.btnPropio.setEnabled(puedeCodigo);
+    w.btnPropio.setAlpha(puedeCodigo ? 1f : 0.45f);
     w.txtCant.setText(String.valueOf(w.cantidad));
     String hoy = fmt(Calendar.getInstance());
     boolean elabHoy = w.elab.equals(hoy), elabOtra = !w.elab.isEmpty() && !elabHoy;
@@ -862,7 +1116,9 @@ public class MainActivity extends Activity {
     w.vista.setImageBitmap(r.vista);
     String aviso = r.aviso;
     if (sinCodigo) aviso = "Este producto no tiene código de barras: la etiqueta sale con la SKU. Toca «Crear código de barras» para que la caja lo lea.";
-    if (w.p.precio <= 0) aviso = "Ojo: este producto no tiene precio en el sistema.";
+    if (w.p.precio <= 0 && !propio) aviso = "Ojo: este producto no tiene precio en el sistema.";
+    if (propio) aviso = "Este precio es solo de la etiqueta: Loyverse no cambia" + (w.p.precio > 0 ? " (sigue en " + precioTxt(w.p.precio) + ")" : "")
+        + ". Para que la caja pida el precio al escanear, el producto debe tener el precio vacío en Loyverse.";
     if (aj.mac.isEmpty()) aviso = "Falta elegir la impresora: al tocar Imprimir te la pido.";
     w.txtAviso.setText(aviso);
     w.txtAviso.setVisibility(aviso.isEmpty() ? View.GONE : View.VISIBLE);
@@ -1310,7 +1566,7 @@ public class MainActivity extends Activity {
             try {
               Thread.sleep(2500);
               boolean ok = false;
-              for (Producto q : Api.catalogo(l)) if (q.sku.equals(p.sku)) { ok = q.nombre.equals(nuevo); break; }
+              for (Producto q : Api.buscarOCatalogo(l, p.sku)) if (q.sku.equals(p.sku)) { ok = q.nombre.equals(nuevo); break; }
               if (!ok) err = "Loyverse se demoró y NO guardó el nombre. Toca «Guardar nombre» otra vez.";
             } catch (Exception e2) {
               err = "Loyverse se demoró y no pude comprobar si se guardó. Actualiza productos para ver el nombre actual.";
@@ -1562,6 +1818,8 @@ public class MainActivity extends Activity {
         String err = null;
         org.json.JSONObject res = null;
         Producto hallado = null;
+        // Los que ya existen con ese nombre en el servidor (también de categorías que no están guardadas en el equipo).
+        try { List<Producto> pre = Api.buscar(l, nom); if (pre != null) for (Producto q : pre) skusAntes.add(q.sku); } catch (Exception ignore) {}
         String categoria = CAT_VERDURAS, codigo = "";
         try {
           if (catalogoLoyverse == null) catalogoLoyverse = Api.catalogoCrear(l);
@@ -1601,7 +1859,7 @@ public class MainActivity extends Activity {
             try {
               Thread.sleep(3000);
               String nn = Catalogo.norm(nom);
-              for (Producto q : Api.catalogo(l))
+              for (Producto q : Api.buscarOCatalogo(l, nom))
                 if (!skusAntes.contains(q.sku) && Catalogo.norm(q.nombre).equals(nn)) { hallado = q; break; }
               if (hallado == null) err = "Loyverse se demoró y NO creó «" + nom + "». Toca «Crear en Loyverse» otra vez.";
             } catch (Exception e2) {

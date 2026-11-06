@@ -51,6 +51,11 @@ instalado. Si hay uno nuevo, baja el APK y abre el instalador (`ApkProvider` lo 
 persona solo toca «Instalar». La primera vez Android 8 pide activar «Permitir de esta fuente» para la app.
 **Cada cambio debe subir `versionCode`**, si no la app no se entera.
 
+## Lista guardada solo con las categorías elegidas
+☰ → «Elegir categorías a mostrar»: solo esas categorías de Loyverse se guardan en el equipo y se actualizan por
+cambios (el servidor solo manda lo que cambió). El buscador 🔍, el lector y la cámara siguen encontrando TODOS los
+productos: los que no están guardados se buscan en el servidor al escribir 3 letras o más. Detalle en `CONSUMO.md`.
+
 ## Escanear con la cámara
 Ícono de cámara junto a la lupa. Pide permiso de cámara la primera vez; apunta al código (se lee en
 cualquier orientación) y, si es de un producto, abre su etiqueta; si no, deja el código en el buscador.
@@ -70,6 +75,16 @@ con aviso bajo 30 %). Se puede escribir el precio directo (el margen se calcula 
 Loyverse) o un costo nuevo para que sugiera el precio. «Guardar en Loyverse» usa `editar_precio`
 (igual que la Ficha de producto de la web: queda en el historial de precios); el costo solo se
 cambia si se escribió uno nuevo. La etiqueta queda al tiro con el precio nuevo.
+
+## Precio solo para esta etiqueta (Marín y Argomedo)
+Para piezas de peso o precio variable (sandía, zapallo…): en «Imprimir etiqueta», botón «＄ Precio solo para esta
+etiqueta». Se escribe el precio de esa pieza, o el peso en kg y el precio por kg (queda recordado por producto):
+kg × $/kg, subido a la decena. **No cambia nada en Loyverse**: el precio solo sale en la etiqueta, y al imprimir se
+cierra la ventana (la siguiente pieza vuelve a pedir su precio).
+
+Para que la caja pida el precio al escanear, el producto debe tener el **precio vacío en Loyverse** (precio variable);
+con precio fijo la caja cobraría ese precio y no el de la etiqueta. No usar «Cambiar precio» con estos productos:
+ese botón vuelve a dejar un precio fijo.
 
 ## Verdura rápida (solo Marín 376)
 Botón «＋ Verdura» en la barra verde (o ☰ → «Verdura rápida»). Igual que «Verdura rápida» de la app web:

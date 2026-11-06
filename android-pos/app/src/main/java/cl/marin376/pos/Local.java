@@ -6,7 +6,7 @@ public final class Local {
   private Local(String id, String nombre, String url) { this.id = id; this.nombre = nombre; this.url = url; }
 
   public static final Local MARIN = new Local("marin", "Marín 376", "https://minimarketmarin01-cell.github.io/Pedidos-Mar-n-/index.html");
-  public static final Local ARGOMEDO = new Local("argomedo", "Argomedo 455", "https://minimarketmarin01-cell.github.io/argomedo455/index.html");
+  public static final Local ARGOMEDO = new Local("argomedo", "Argomedo 455", "https://minimarketmarin01-cell.github.io/Argomedo455/index.html");
   public static final Local[] TODOS = {MARIN, ARGOMEDO};
 
   public static Local de(String id) {
