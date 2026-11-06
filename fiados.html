@@ -199,6 +199,9 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
          uno general arriba) — otra capa de la misma idea: ni siquiera alguien mirando por
          encima del hombro cuando el encargado SÍ abrió la lista debería ver montos sin querer. -->
     <button type="button" class="loadbtn" id="fd-mostrar-todos" style="width:100%">Ver clientes con fiado abierto</button>
+    <!-- Cobros recientes de todos los clientes (también los que ya saldaron todo y no aparecen en
+         la lista de arriba) — para que el otro trabajador vea quién pagó. Solo bajo demanda. -->
+    <button type="button" class="loadbtn" id="fd-pagos-recientes" style="width:100%;margin-top:8px">Pagos recientes</button>
   </section>
 
   <!-- ============ VISTA B: detalle de cliente + formulario de cobro ============ -->
@@ -219,6 +222,7 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
   <section id="fd-view-comprobante" class="body hidden">
     <div style="display:flex;gap:8px;margin-bottom:16px">
       <button class="loadbtn acc" id="fd-comp-imprimir" style="flex:1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M6 9V3h12v6"/><path d="M6 18H4a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-2"/><rect x="6" y="14" width="12" height="7"/></svg> Imprimir</button>
+      <button class="loadbtn" id="fd-comp-historial" style="flex:1">Historial</button>
       <button class="loadbtn" id="fd-comp-listo" style="flex:1">Listo</button>
     </div>
     <div id="fd-comp-body"></div>
@@ -242,6 +246,17 @@ h1,h2,h3{font-family:'Manrope',system-ui,sans-serif}
     </div>
   </div>
 
+  <!-- Modal de pagos recientes (todos los clientes) — se llena solo al tocar "Pagos recientes".
+       Va antes que el modal de historial en el DOM para que el historial de un cliente se abra
+       por encima y "atrás" vuelva acá. -->
+  <div id="fd-pagos-ov" class="hidden" style="position:fixed;inset:0;background:rgba(21,25,31,.55);z-index:250;display:flex;align-items:center;justify-content:center;padding:20px">
+    <div style="background:var(--card);border-radius:16px;padding:20px;width:100%;max-width:420px;max-height:80vh;display:flex;flex-direction:column">
+      <h3 style="font-size:18px;margin-bottom:2px">Pagos recientes</h3>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px">Últimos 14 días · toca uno para ver el historial del cliente</div>
+      <div id="fd-pagos-lista" style="overflow-y:auto;flex:1"></div>
+      <button class="loadbtn" id="fd-pagos-cerrar" style="width:100%;margin-top:14px">Cerrar</button>
+    </div>
+  </div>
   <!-- Modal de historial de fiados/abonos por cliente — se llena solo bajo demanda (botón
        "Historial" en la Vista B), nunca al cargar la lista de tickets abiertos. -->
   <div id="fd-historial-ov" class="hidden" style="position:fixed;inset:0;background:rgba(21,25,31,.55);z-index:250;display:flex;align-items:center;justify-content:center;padding:20px">
@@ -404,6 +419,7 @@ function fdEstadoActual(){
     vista: !document.getElementById('fd-view-comprobante').classList.contains('hidden') ? 'comprobante'
       : !document.getElementById('fd-view-detalle').classList.contains('hidden') ? 'detalle' : 'lista',
     historial: !document.getElementById('fd-historial-ov').classList.contains('hidden'),
+    pagos: !document.getElementById('fd-pagos-ov').classList.contains('hidden'),
     recon: !document.getElementById('fd-recon-ov').classList.contains('hidden')
   };
 }
@@ -413,6 +429,7 @@ function fdAplicarEstado(st){
   else if(st.vista==='detalle')fdShowDetalle();
   else fdShowLista();
   document.getElementById('fd-historial-ov').classList.toggle('hidden',!st.historial);
+  document.getElementById('fd-pagos-ov').classList.toggle('hidden',!st.pagos);
   document.getElementById('fd-recon-ov').classList.toggle('hidden',!st.recon);
 }
 // Abre una pantalla/modal nueva: agrega una entrada al historial del navegador (no cambia la
@@ -638,7 +655,9 @@ function fdRenderDetalle(j,nombre){
   // eliminar la última línea/el último fiado abierto (ver fdConfirmarEliminarLinea) — la Vista A
   // (fiados_resumen) nunca lista un cliente sin fiado abierto.
   if(!fiados.length){
-    body.innerHTML=`<div class="vc-empty">Este cliente no tiene fiados abiertos</div>`;
+    body.innerHTML=`<div class="vc-empty">Este cliente no tiene fiados abiertos</div>
+      <button type="button" class="loadbtn" id="fd-ver-historial" style="width:100%;margin-top:8px">Ver historial de pagos</button>`;
+    document.getElementById('fd-ver-historial').onclick=fdAbrirHistorial;
     fdLimpiarClienteAbierto(); // ya no queda nada "abierto para cobrar" acá — no tiene sentido restaurarlo en un refresco futuro
     return;
   }
@@ -1166,6 +1185,40 @@ async function fdConfirmarDeshacerCobro(btn){
   }
 }
 document.getElementById('fd-historial-cerrar').onclick=()=>history.back();
+document.getElementById('fd-comp-historial').onclick=fdAbrirHistorial;
+
+// ---- Pagos recientes de todos los clientes (modal fd-pagos-ov) ----
+// Cubre el caso "el cliente pagó todo y ya no está en la lista de fiados abiertos": el otro
+// trabajador igual ve que pagó y, al tocar la fila, abre su historial completo.
+async function fdAbrirPagosRecientes(){
+  const box=document.getElementById('fd-pagos-lista');
+  box.innerHTML='<div class="vc-empty">Cargando…</div>';
+  fdPush({pagos:true});
+  try{
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=fiados_pagos_recientes&dias=14');
+    const j=await res.json();
+    if(!j||!j.ok){box.innerHTML='<div class="vc-empty">No se pudo cargar: '+((j&&j.error)||'error del servidor')+'</div>';return;}
+    fdRenderPagosRecientes(j.pagos||[]);
+  }catch(e){box.innerHTML='<div class="vc-empty">Error de conexión</div>';}
+}
+function fdRenderPagosRecientes(pagos){
+  const box=document.getElementById('fd-pagos-lista');
+  if(!pagos.length){box.innerHTML='<div class="vc-empty">Sin pagos en los últimos 14 días</div>';return;}
+  box.innerHTML=pagos.map(p=>`<div class="fd-pago-fila" data-id="${p.clienteId||''}" data-nombre="${(p.nombre||'').replace(/"/g,'&quot;')}" style="border-bottom:1px solid var(--line);padding:10px 0;cursor:pointer">
+    <div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted)"><span>${fechaChileLegible(p.fechaHora)}</span><span>${p.metodo}</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px">
+      <span style="font-size:15px;font-weight:700;color:var(--ink)">${p.nombre||'(sin nombre)'}</span>
+      <span style="font-size:16px;font-weight:800;color:var(--verde)">${peso(p.monto)}</span>
+    </div>
+  </div>`).join('');
+  box.querySelectorAll('.fd-pago-fila').forEach(el=>el.onclick=()=>{
+    if(!el.dataset.id)return;
+    fdState.clienteId=el.dataset.id;fdState.clienteNombre=el.dataset.nombre;
+    fdAbrirHistorial();
+  });
+}
+document.getElementById('fd-pagos-recientes').onclick=fdAbrirPagosRecientes;
+document.getElementById('fd-pagos-cerrar').onclick=()=>history.back();
 
 // ---- Arranque ----
 // Por defecto: Vista A, vacía por privacidad (sin lista automática de quién debe). EXCEPCIÓN:
