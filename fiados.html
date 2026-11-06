@@ -532,7 +532,7 @@ async function fdCargarListaFiados(){
       btn.disabled=false;btn.textContent='Ver clientes con fiado abierto';return;
     }
     fdListaFiados=j.clientes||[];
-    fdListaFiadosCargada=true;
+    fdListaFiadosCargada=true;fdSilencioPausaHasta=0;
     fdMontosRevelados.clear();fdTotalRevelado=false;fdSeleccionadosFusion.clear();
     fdRenderListaFiados();
   }catch(e){showToast('Error de conexión al listar clientes con fiado');}
@@ -544,20 +544,31 @@ document.getElementById('fd-mostrar-todos').onclick=fdCargarListaFiados;
 // clientes, lo sigue viendo igual después de refrescar) y no muestra "Cargando…"/toast de error
 // (es de fondo, no debe interrumpir). Reportado: un ticket cobrado por OTROS en Loyverse podía
 // tardar en verse acá porque, una vez cargada, la lista nunca se volvía a pedir sola.
-async function fdCargarListaFiadosSilencioso(){
+// automatico=true es el refresco de cada 30 s: no corre con la app en segundo plano o la
+// pantalla apagada, pide ?rapido=1 (el servidor no consulta a Loyverse, el webhook ya trae los
+// fiados nuevos) y, si el servidor responde con error (ej. límite diario de la base), espera
+// 5 min antes de volver a intentar. Al volver a la app (automatico=false) sí hace la
+// sincronización completa, para que un cobro recién cerrado en Loyverse aparezca al tiro.
+let fdSilencioPausaHasta=0;
+async function fdCargarListaFiadosSilencioso(automatico){
   if(!fdListaFiadosCargada)return;
   if(document.getElementById('fd-view-lista').classList.contains('hidden'))return;
+  if(automatico===true){
+    if(document.visibilityState!=='visible')return;
+    if(Date.now()<fdSilencioPausaHasta)return;
+  }
   try{
-    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=fiados_resumen');
+    const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=fiados_resumen'+(automatico===true?'&rapido=1':''));
     const j=await res.json();
-    if(j&&j.ok){fdListaFiados=j.clientes||[];fdRenderListaFiados();}
+    if(j&&j.ok){fdSilencioPausaHasta=0;fdListaFiados=j.clientes||[];fdRenderListaFiados();}
+    else if(automatico===true)fdSilencioPausaHasta=Date.now()+300000;
   }catch(e){/* de fondo — un fallo acá no debe interrumpir con un toast */}
 }
 // Cada 30s mientras la Vista A esté visible (la pantalla se dejó abierta todo el día en el
 // mesón), y también apenas la pestaña/app vuelve a primer plano (el cajero cambió a Loyverse
 // para cerrar la venta y volvió acá) — cubre los dos escenarios reales de uso.
-setInterval(fdCargarListaFiadosSilencioso,30000);
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')fdCargarListaFiadosSilencioso();});
+setInterval(()=>fdCargarListaFiadosSilencioso(true),30000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')fdCargarListaFiadosSilencioso(false);});
 function fdRenderListaFiados(){
   const box=document.getElementById('fd-buscar-results');
   fdActualizarBannerFusion();
