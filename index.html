@@ -285,7 +285,7 @@ html.carrito-fijo.overlay-open #tab-pedido{grid-template-columns:minmax(0,1fr) 0
 html.carrito-fijo #mm-ov .mm-card,html.carrito-fijo #abc-ov .mm-card,html.carrito-fijo #sc-ov .mm-card,
 html.carrito-fijo #rneg-ov .mm-card,html.carrito-fijo #hm-ov .mm-card,html.carrito-fijo #in-ov .mm-card,
 html.carrito-fijo #pr-ov .mm-card,html.carrito-fijo #ll-ov .mm-card,html.carrito-fijo #abcr-ov .mm-card,
-html.carrito-fijo #rz-ov .mm-card,html.carrito-fijo #rd-ov .mm-card,html.carrito-fijo #vd-ov .mm-card,html.carrito-fijo #bn-ov .mm-card,
+html.carrito-fijo #rz-ov .mm-card,html.carrito-fijo #rv-ov .mm-card,html.carrito-fijo #rd-ov .mm-card,html.carrito-fijo #vd-ov .mm-card,html.carrito-fijo #bn-ov .mm-card,
 html.carrito-fijo #mmc-ov .mm-card,html.carrito-fijo #calprov-ov .mm-card,html.carrito-fijo #sm-ov .mm-card,
 html.carrito-fijo #rk-ov .mm-card,html.carrito-fijo #cp-ov .mm-card,html.carrito-fijo #gp-ov .mm-card,
 html.carrito-fijo #ed-ov .mm-card,html.carrito-fijo #mc-ov .mm-card{
@@ -2880,6 +2880,7 @@ html.modo-bliss.carrito-fijo.vista-filas #prov-anchor .shc-row.shc-wrap{flex-wra
 
         <div id="vc-list-view">
           <div class="mm-topbar"><div class="vc-toprow"><button class="loadbtn acc" id="vc-add-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Nuevo lote</button><button class="loadbtn" id="vc-cerrar"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>Cerrar</button></div></div>
+          <button class="loadbtn" id="vc-rv-btn" type="button" style="width:100%;margin:6px 0 0">Revisión de vencidos (escanear)</button>
           <div class="mm-body">
           <div class="seg" id="vc-viewseg" style="display:flex;width:100%;margin:0 0 10px">
             <button type="button" data-view="lista" class="active" style="flex:1"><svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:-2px" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg> Lista</button>
@@ -3610,6 +3611,37 @@ html.modo-bliss.carrito-fijo.vista-filas #prov-anchor .shc-row.shc-wrap{flex-wra
       <div id="bn-prov"></div>
       <h4 style="margin:16px 0 6px;font-size:14px">Detalle</h4>
       <div id="bn-det"></div>
+    </div>
+  </div>
+</div>
+
+<div class="mm-ov hidden" id="rv-ov">
+  <div class="mm-card">
+    <div class="mm-head"><h3><svg width="18" height="18" viewBox="0 0 24 24" class="mm-head-ic" fill="currentColor"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg>Revisión de vencidos</h3></div>
+    <div class="mm-topbar"><button class="loadbtn" id="rv-cerrar" style="width:100%">Cerrar</button></div>
+    <div class="mm-body">
+      <div id="rv-v-escaneo">
+        <div class="cat" style="margin-bottom:8px;line-height:1.4">Escanea cada producto vencido que retiraste (una vez por unidad). La app los reparte sola entre Pendientes, merma y vendidos según el proveedor, y tú confirmas todo con un toque al final.</div>
+        <div class="mm-search" style="margin:0 0 8px">
+          <input id="rv-search" placeholder="Buscar producto o escanear…" autocomplete="off">
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px;cursor:pointer"><input type="checkbox" id="rv-continuo" checked style="width:20px;height:20px;accent-color:var(--action,#2E7D32)"> Escaneo continuo (vuelve a abrir la cámara después de cada producto)</label>
+        <div id="rv-results"></div>
+        <h4 style="margin:14px 0 6px;font-size:14px">Retirados: <span id="rv-n">0</span> unidades</h4>
+        <div id="rv-lista"></div>
+        <button class="mm-save" id="rv-terminar" disabled style="margin-top:12px">Terminar revisión</button>
+      </div>
+      <div id="rv-v-resumen" class="hidden">
+        <div id="rv-res-cont"></div>
+        <div class="cat" style="margin:12px 0 4px;font-weight:700">¿Quién hace la revisión?</div>
+        <div class="mm-resp" id="rv-resp"><button data-r="Dueña">Dueña</button><button data-r="Rossy">Rossy</button><button data-r="Edwin">Edwin</button></div>
+        <button class="mm-save" id="rv-confirmar" disabled style="margin-top:12px">Confirmar todo</button>
+        <button class="loadbtn" id="rv-volver" style="width:100%;margin-top:8px">Volver a escanear</button>
+      </div>
+      <div id="rv-v-final" class="hidden">
+        <div id="rv-fin-cont"></div>
+        <button class="mm-save" id="rv-fin-cerrar" style="margin-top:12px">Listo</button>
+      </div>
     </div>
   </div>
 </div>
@@ -4475,7 +4507,7 @@ async function cargarVencidosPendientes(forzar){
     if(dia)j={ok:true,lotes:dia.lotes};
     else{const res=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=vencimientos');j=await res.json();if(j&&j.ok)vencDiaGuardar(j.lotes||[]);}
     if(j&&j.ok){
-      const mapVenc={}, mapRet={}, mapMotivo={};
+      const mapVenc={}, mapRet={}, mapMotivo={}, sjAviso=[];
       (j.lotes||[]).forEach(l=>{
         // Motivo de "sugerencia por vencimiento" (San Jorge/panes dentro de su ventana especial,
         // ver vcEntroVentanaAlerta) — independiente de CATEGORIAS_CAMBIO, se calcula antes del
@@ -4483,13 +4515,15 @@ async function cargarVencidosPendientes(forzar){
         // urgente (menos días restantes).
         if(l.estado!=='Revisado'&&vcEntroVentanaAlerta(l)){
           const dias=_diasVenc(l.fechaVencimiento);
+          const cat0=(l.categoria||'').trim().toUpperCase();
           const anterior=mapMotivo[l.sku];
           if(!anterior||anterior.dias==null||(dias!=null&&dias<anterior.dias)){
             const cat=(l.categoria||'').trim().toUpperCase();
             const label=cat==='SAN JORGE'?'San Jorge':(cat==='IDEAL'?'Pan Ideal':'Pan Castaño');
             const cuando=dias==null?'':(dias<0?('venció hace '+Math.abs(dias)+' día'+(Math.abs(dias)===1?'':'s')):dias===0?'vence hoy':dias===1?'vence mañana':('vence en '+dias+' días'));
-            mapMotivo[l.sku]={dias,texto:'⚠️ '+label+' — '+cuando+' — gestionar'};
+            mapMotivo[l.sku]={dias,texto:(cat==='SAN JORGE'&&l.informadoVendedor)?('✓ San Jorge — informado al vendedor el '+_isoCorto(l.informadoVendedor)+' — '+cuando):('⚠️ '+label+' — '+cuando+' — gestionar')};
           }
+          if(cat0==='SAN JORGE'&&dias!=null&&dias>=0&&l.estado!=='Retirado')sjAviso.push({filaIndex:l.filaIndex,sku:l.sku,nombre:l.nombre,cantidad:l.cantidad,fechaVencimiento:l.fechaVencimiento,dias:dias,informado:l.informadoVendedor||null});
         }
         if(CATEGORIAS_CAMBIO.indexOf(l.categoria)<0)return;
         // 'Vencido' = todavía no se ha descontado del stock real (se resta acá, en el cálculo)
@@ -4498,6 +4532,7 @@ async function cargarVencidosPendientes(forzar){
         if(l.estado==='Retirado')mapRet[l.sku]=(mapRet[l.sku]||0)+(Number(l.cantidad)||0);
       });
       VENCIDOS_POR_SKU=mapVenc;
+      LOTES_SJ_AVISO=sjAviso;
       RETIRADOS_POR_SKU=mapRet;
       MOTIVOS_POR_SKU=mapMotivo;
       _vencPendTs=Date.now();
@@ -4526,6 +4561,9 @@ function rcExigeVencimiento(it){
   return VENC_OBLIGATORIO.some(k=>new RegExp('(^|[^a-z0-9])'+k+'($|[^a-z0-9])').test(txt));
 }
 function vencidoDe(it){return VENCIDOS_POR_SKU[it.ref]||0;}
+// Lotes de San Jorge dentro de su ventana de 7 días (para informar al vendedor al armar el pedido).
+let LOTES_SJ_AVISO=[];
+function _isoCorto(iso){const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso||''));return m?m[3]+'/'+m[2]:'';}
 function retiradoDe(it){return RETIRADOS_POR_SKU[it.ref]||0;}
 // Ventanas de alerta especiales (mismo criterio que el backend, aplicarReglaUltimoLoteIdealCastano
 // / config_vida_util): San Jorge entra a gestión 7 días antes de vencer; los panes de Ideal y Pan
@@ -5948,7 +5986,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-11-07.3';
+const APP_VERSION='2026-11-08.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -13150,6 +13188,7 @@ function vcFilaHtml(l){
     <div class="vc-row" data-fi-row="${l.filaIndex}">
       <div class="nom">${l.prioridad||''} ${l.nombre}</div>
       ${metaLinea}
+      ${l.informadoVendedor?`<div class="cat" style="margin-top:4px;font-weight:700;color:var(--verde)">✓ Informado al vendedor el ${_isoCorto(l.informadoVendedor)}</div>`:''}
       ${estadoLinea}
       ${notaExtra}
       <button type="button" class="vc-lotes-link" data-lotes="${l.filaIndex}" data-sku="${l.sku}">Ver lotes de este producto</button>
@@ -16731,6 +16770,163 @@ document.getElementById('mas-q-bonif').onclick=bnAbrir;
 document.getElementById('bn-cerrar').onclick=()=>cerrarModal('bn-ov');
 document.getElementById('bn-dias').onchange=bnCargar;
 
+// ===================== REVISIÓN DE VENCIDOS (escaneo) =====================
+// Escaneas lo retirado; el servidor reparte cada producto entre su lote vencido (del más viejo al más nuevo),
+// Pendientes (Ideal/Castaño y San Jorge informado a tiempo) o merma (el resto) y marca el resto del lote como vendido.
+const RV_KEY='marin_rv_draft';
+let rvLista=[],rvPlan=null,rvResp=null,rvOcupado=false;
+function rvGuardarBorrador(){try{localStorage.setItem(RV_KEY,JSON.stringify(rvLista));}catch(e){}}
+function rvCargarBorrador(){try{const r=JSON.parse(localStorage.getItem(RV_KEY)||'[]');rvLista=Array.isArray(r)?r.filter(x=>x&&x.ref&&x.cantidad>0):[];}catch(e){rvLista=[];}}
+function rvVista(v){['escaneo','resumen','final'].forEach(n=>document.getElementById('rv-v-'+n).classList.toggle('hidden',n!==v));}
+function rvAbrir(){
+  rvCargarBorrador();rvVista('escaneo');rvRender();
+  abrirModal('rv-ov');
+}
+function rvAgregar(ref,delta){
+  const it=(DB.items||[]).find(i=>i.ref===ref);if(!it)return;
+  const ex=rvLista.find(x=>x.ref===ref);
+  if(ex)ex.cantidad+=(delta||1);else rvLista.push({ref:ref,nombre:it.nombre,prov:it.prov||'',cantidad:delta||1});
+  rvLista=rvLista.filter(x=>x.cantidad>0);
+  rvGuardarBorrador();rvRender();
+}
+function rvRender(){
+  const tot=rvLista.reduce((s,x)=>s+x.cantidad,0);
+  document.getElementById('rv-n').textContent=String(tot);
+  document.getElementById('rv-terminar').disabled=!rvLista.length;
+  const esc=t=>String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  document.getElementById('rv-lista').innerHTML=rvLista.length?rvLista.map(x=>
+    '<div class="vc-row" style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><div style="flex:1;min-width:0"><div class="nom">'+esc(x.nombre)+'</div><div class="cat">'+esc(x.prov)+'</div></div>'+
+    '<button type="button" class="loadbtn" data-rvd="-1" data-ref="'+esc(x.ref)+'" style="width:40px;padding:8px 0">−</button>'+
+    '<b style="min-width:26px;text-align:center">'+x.cantidad+'</b>'+
+    '<button type="button" class="loadbtn" data-rvd="1" data-ref="'+esc(x.ref)+'" style="width:40px;padding:8px 0">+</button></div>').join('')
+    :'<div class="cc-empty">Todavía no escaneaste nada.</div>';
+}
+function rvBuscar(txt){
+  const box=document.getElementById('rv-results');
+  const list=txt&&txt.trim()?mmFindItems(txt):[];
+  box.innerHTML=list.map(it=>lvFilaBusqueda(it)).join('');
+  box.querySelectorAll('[data-ref]').forEach(el=>el.onclick=()=>{rvAgregar(el.dataset.ref,1);document.getElementById('rv-search').value='';box.innerHTML='';});
+}
+function rvEscanear(){
+  const ov=document.getElementById('rv-ov');
+  ov.classList.add('hidden');
+  const reabrir=()=>{ov.classList.remove('hidden');try{_sincronizarNav();}catch(e){}};
+  openScanner(code=>{
+    reabrir();
+    const lista=mmFindItems(code);
+    if(lista.length===1){
+      rvAgregar(lista[0].ref,1);showToast(lista[0].nombre+' · +1');
+      if(document.getElementById('rv-continuo').checked)setTimeout(rvEscanear,1000);
+    }else if(lista.length>1){document.getElementById('rv-search').value=code;rvBuscar(code);}
+    else showToast('No se encontró ningún producto con ese código');
+  },reabrir);
+}
+async function rvPost(action,payload){
+  const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:action,payload:payload})});
+  return res.json();
+}
+const rvDestTxt=d=>d==='pendientes'?'Pendientes':'Merma';
+async function rvTerminar(){
+  if(rvOcupado||!rvLista.length)return;
+  rvOcupado=true;
+  const b=document.getElementById('rv-terminar');b.disabled=true;b.textContent='Calculando…';
+  try{
+    const j=await rvPost('revision_vencidos_plan',{items:rvLista.map(x=>({sku:x.ref,cantidad:x.cantidad}))});
+    if(!j||!j.ok)throw new Error((j&&j.error)||'sin respuesta');
+    rvPlan=j;rvRenderResumen();rvVista('resumen');
+  }catch(e){showToast('No se pudo calcular el reparto: '+e.message,'error');}
+  finally{rvOcupado=false;b.textContent='Terminar revisión';rvRender();}
+}
+function rvRenderResumen(){
+  const esc=t=>String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  const p=rvPlan;let h='';
+  const tot={pendientes:0,merma:0,vendidas:0};
+  p.lineas.forEach(l=>{tot[l.destino]+=l.retiradas;tot.vendidas+=l.vendidas;});
+  p.sinLote.forEach(l=>{tot[l.destino]+=l.cantidad;});
+  h+='<div class="hm-summary" style="margin-bottom:8px"><span class="lbl">'+tot.pendientes+' a Pendientes · '+tot.merma+' a merma · '+tot.vendidas+' dadas por vendidas</span></div>';
+  if(p.lineas.length){
+    h+='<h4 style="margin:10px 0 6px;font-size:14px">Por lote</h4>';
+    h+=p.lineas.map(l=>'<div class="vc-row" style="margin-bottom:6px"><div class="nom">'+esc(l.producto)+'</div>'+
+      '<div class="cat">Lote vence '+esc(l.fechaVencimiento)+' · llegaron '+l.cantidadLote+(l.informadoVendedor?' · informado '+esc(_isoCorto(l.informadoVendedor)):'')+'</div>'+
+      '<div class="cat" style="margin-top:3px"><b>'+l.retiradas+'</b> retiradas → <b>'+rvDestTxt(l.destino)+'</b> · <b>'+l.vendidas+'</b> vendidas</div>'+
+      '<div class="cat" style="font-size:11px;opacity:.8">'+esc(l.regla)+'</div></div>').join('');
+  }
+  if(p.sinLote.length){
+    h+='<h4 style="margin:10px 0 6px;font-size:14px">Sin lote vencido registrado</h4>';
+    h+=p.sinLote.map(l=>'<div class="vc-row" style="margin-bottom:6px"><div class="nom">'+esc(l.producto)+'</div><div class="cat"><b>'+l.cantidad+'</b> → <b>'+rvDestTxt(l.destino)+'</b> · '+esc(l.regla)+'</div></div>').join('');
+  }
+  if(p.sinEscaneo.length){
+    h+='<label style="display:flex;align-items:flex-start;gap:8px;margin:12px 0 4px;font-size:13px;cursor:pointer"><input type="checkbox" id="rv-cerrar-sin" style="width:20px;height:20px;margin-top:1px;accent-color:var(--action,#2E7D32)"> <span><b>'+p.sinEscaneo.length+' lote(s) vencido(s) sin unidades escaneadas</b>: marcarlos también como vendidos (solo si revisaste todo y no quedó nada).</span></label>'+
+      '<div class="cat" style="font-size:12px">'+p.sinEscaneo.slice(0,12).map(l=>esc(l.producto)+' ('+l.cantidadLote+', '+esc(l.fechaVencimiento)+')').join(' · ')+(p.sinEscaneo.length>12?' · …':'')+'</div>';
+  }
+  document.getElementById('rv-res-cont').innerHTML=h;
+  rvResp=null;document.querySelectorAll('#rv-resp button').forEach(x=>x.classList.remove('sel'));
+  document.getElementById('rv-confirmar').disabled=true;
+}
+async function rvConfirmar(){
+  if(rvOcupado||!rvPlan||!rvResp)return;
+  rvOcupado=true;
+  const b=document.getElementById('rv-confirmar');b.disabled=true;
+  const cerrarIds=(document.getElementById('rv-cerrar-sin')&&document.getElementById('rv-cerrar-sin').checked)?rvPlan.sinEscaneo.map(l=>l.filaIndex):[];
+  const skus=rvLista.map(x=>x.ref);
+  const resultados=[];let cerrados=0,fallos=[];
+  try{
+    for(let i=0;i<skus.length;i++){
+      b.textContent='Procesando '+(i+1)+' de '+skus.length+'…';
+      const x=rvLista.find(z=>z.ref===skus[i]);
+      try{
+        const j=await rvPost('revision_vencidos_aplicar',{items:[{sku:x.ref,cantidad:x.cantidad}],responsable:rvResp});
+        if(j&&j.ok){(j.resultados||[]).forEach(r=>resultados.push(r));}
+        else fallos.push(x.nombre+': '+((j&&j.error)||'error'));
+      }catch(e){fallos.push(x.nombre+': sin conexión');}
+    }
+    if(cerrarIds.length){
+      try{const j=await rvPost('revision_vencidos_aplicar',{cerrarIds:cerrarIds,responsable:rvResp});if(j&&j.ok)cerrados=j.cerrados||0;else fallos.push('Cierre de lotes sin escanear: '+((j&&j.error)||'error'));}
+      catch(e){fallos.push('Cierre de lotes sin escanear: sin conexión');}
+    }
+  }finally{rvOcupado=false;b.textContent='Confirmar todo';}
+  // Los productos que salieron bien se quitan de la lista; los que fallaron quedan para reintentar.
+  const malos=new Set(resultados.filter(r=>!r.ok).map(r=>r.sku));
+  rvLista=rvLista.filter(x=>malos.has(x.ref)||fallos.some(f=>f.startsWith(x.nombre+':')));
+  rvGuardarBorrador();
+  const ok=resultados.filter(r=>r.ok);
+  const sum=k=>ok.filter(r=>r.destino===k).reduce((s,r)=>s+r.retiradas,0);
+  const vend=ok.reduce((s,r)=>s+(r.vendidas||0),0);
+  const esc=t=>String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  let h='<div class="hm-summary" style="margin-bottom:8px"><span class="lbl">Revisión guardada</span></div>'+
+    '<div class="cat" style="line-height:1.6">'+sum('pendientes')+' unidades a Pendientes<br>'+sum('merma')+' unidades a merma<br>'+vend+' unidades dadas por vendidas'+(cerrados?'<br>'+cerrados+' lote(s) sin escanear marcados como vendidos':'')+'</div>';
+  const avisos=ok.filter(r=>r.aviso).map(r=>esc(r.producto)+': '+esc(r.aviso));
+  const errs=resultados.filter(r=>!r.ok).map(r=>esc(r.producto)+': '+esc(r.error)).concat(fallos.map(esc));
+  if(avisos.length)h+='<div class="cat" style="margin-top:10px;color:var(--rojo)">⚠️ '+avisos.join('<br>')+'</div>';
+  if(errs.length)h+='<div class="cat" style="margin-top:10px;color:var(--rojo)"><b>No se pudieron guardar</b> (quedan en la lista para reintentar):<br>'+errs.join('<br>')+'</div>';
+  document.getElementById('rv-fin-cont').innerHTML=h;
+  rvVista('final');
+  sonidoGuardado();
+  try{cargarVencidosPendientes();}catch(e){}
+  try{vcRefreshCurrentView();}catch(e){}
+}
+{
+  const molde=['ed-mic','ed-scan'].map(i=>document.getElementById(i));
+  const caja=document.getElementById('rv-search').closest('.mm-search');
+  if(molde[0]&&molde[1]&&caja){
+    const mic=molde[0].cloneNode(true);mic.id='rv-mic';caja.appendChild(mic);
+    const scan=molde[1].cloneNode(true);scan.id='rv-scan';caja.appendChild(scan);
+    mic.onclick=()=>voiceSearch(mic,t=>{document.getElementById('rv-search').value=t;rvBuscar(t);});
+    scan.onclick=rvEscanear;
+  }
+  document.getElementById('rv-search').addEventListener('input',e=>rvBuscar(e.target.value));
+  document.getElementById('rv-lista').addEventListener('click',e=>{const b=e.target.closest('[data-rvd]');if(b)rvAgregar(b.dataset.ref,Number(b.dataset.rvd));});
+  document.getElementById('rv-terminar').onclick=rvTerminar;
+  document.getElementById('rv-volver').onclick=()=>{rvVista('escaneo');rvRender();};
+  document.getElementById('rv-confirmar').onclick=rvConfirmar;
+  document.getElementById('rv-fin-cerrar').onclick=()=>{cerrarModal('rv-ov');};
+  document.getElementById('rv-cerrar').onclick=()=>cerrarModal('rv-ov');
+  document.querySelectorAll('#rv-resp button').forEach(b=>b.onclick=()=>{
+    document.querySelectorAll('#rv-resp button').forEach(x=>x.classList.remove('sel'));
+    b.classList.add('sel');rvResp=b.dataset.r;document.getElementById('rv-confirmar').disabled=!rvPlan;
+  });
+  const bt=document.getElementById('vc-rv-btn');if(bt)bt.onclick=rvAbrir;
+}
 document.getElementById('mas-q-ventasdia').onclick=vdAbrir;
 
 // ===================== RESPALDO EN SUPABASE (estado del espejo) =====================
@@ -17513,7 +17709,7 @@ function cp2MostrarCalendario(inp,alElegir){
   };
   pintar();
 }
-function abrirConfirmarPedido({provNombre,lines,fechaSugerida,notaExtra,onConfirm}){
+function abrirConfirmarPedido({provNombre,lines,fechaSugerida,notaExtra,onConfirm,sjLotes}){
   let modal=document.getElementById('cp2-ov');
   if(!modal){
     modal=document.createElement('div');
@@ -17534,6 +17730,14 @@ function abrirConfirmarPedido({provNombre,lines,fechaSugerida,notaExtra,onConfir
   }
   const totalCosto=lines.reduce((s,l)=>s+l.cost,0);
   document.getElementById('cp2-resumen').textContent='Vas a confirmar el pedido a '+provNombre+': '+lines.length+' producto'+(lines.length===1?'':'s')+' · '+peso(totalCosto)+'. Esto evita que el pedido se duplique si vuelves a mirar estos productos.'+(notaExtra?(' '+notaExtra):'');
+  {
+    let sj=document.getElementById('cp2-sj');
+    if(!sj){sj=document.createElement('div');sj.id='cp2-sj';const f=document.getElementById('cp2-fecha');f.parentNode.insertBefore(sj,f.previousElementSibling||f);}
+    if(sjLotes&&sjLotes.length){
+      sj.innerHTML='<label style="display:flex;align-items:flex-start;gap:8px;margin:0 0 12px;padding:9px 10px;border:1.5px solid var(--border-control);border-radius:8px;font-size:13px;line-height:1.4;cursor:pointer"><input type="checkbox" id="cp2-sj-chk" checked style="width:22px;height:22px;flex:none;margin-top:1px;accent-color:var(--action,#2E7D32)"><span><b>Avisar a San Jorge '+sjLotes.length+' producto'+(sjLotes.length===1?'':'s')+' por vencer</b> (nota de crédito): se agregan al mensaje y quedan marcados como informados.<br><span style="opacity:.8">'+sjLotes.slice(0,6).map(x=>String(x.nombre).replace(/</g,'&lt;')+' ('+x.cantidad+', vence '+x.fechaVencimiento+')').join(' · ')+(sjLotes.length>6?' · …':'')+'</span></span></label>';
+      sj.style.display='';
+    }else{sj.innerHTML='';sj.style.display='none';}
+  }
   const fechaInp=document.getElementById('cp2-fecha');
   fechaInp.value=fechaSugerida||isoLocalDate(estimarFechaLlegada(provNombre));
 
@@ -17640,11 +17844,19 @@ document.getElementById('btn-clear').onclick=()=>{
 // flujo (uno con el modal de fecha, el otro sin) — de ahí que "parecieran lo mismo" pero con
 // detalles distintos (uno pedía fecha, el otro no). Ahora hay una sola implementación; lo que
 // cambia por botón es el ícono, el canal, y si copia al portapapeles.
+async function rvMarcarInformados(ids){
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',body:JSON.stringify({action:'marcar_informado',payload:{filaIndexes:ids,informadoPor:''}})});
+    const j=await res.json();
+    if(j&&j.ok){showToast('San Jorge: '+j.informados+' lote'+(j.informados===1?'':'s')+' marcado'+(j.informados===1?'':'s')+' como informado'+(j.informados===1?'':'s'));try{cargarVencidosPendientes();}catch(e){}}
+    else showToast('No se pudo marcar como informado: '+((j&&j.error)||'error'),'error');
+  }catch(e){showToast('No se pudo marcar como informado (sin conexión)','error');}
+}
 function confirmarPedidoConCanal(canal){
   const soloEsteProv=soloEsteProveedor();
   const lines=currentOrderVisible();
   const provNombre=soloEsteProv?state.prov:(canal==='whatsapp'?'(varios)':'el proveedor');
-  let txt=null;
+  let txt=null,txtSJ=null,sjPend=[];
   if(canal==='whatsapp'){
     const cambiosMap={};
     currentCambios().forEach(c=>{cambiosMap[c.it.ref]=c.cambio;});
@@ -17672,6 +17884,13 @@ function confirmarPedidoConCanal(canal){
       soloCambio.forEach(c=>{txt+=`• ${c.nombre}\n  🔄 Cambio: ${cambiosMap[c.it.ref]} unidades\n`;});
     }
     if(state.prov==='CCU'&&soloEsteProv){const p=ccuMixedPacks();if(p>0)txt+=`\n(Retornables 2.5L: ${p} packs → -${SCALES.ccu_ret.dtoG[ccuTierIdx(p)]}%)`;}
+    // San Jorge: sección para avisar de lo que vence pronto (nota de crédito) — se incluye si el usuario lo deja marcado al confirmar.
+    if(soloEsteProv&&String(state.prov||'').trim().toUpperCase()==='SAN JORGE'){
+      sjPend=(LOTES_SJ_AVISO||[]).filter(x=>!x.informado);
+      if(sjPend.length){
+        txtSJ=txt+`\n*Productos por vencer (para nota de crédito):*\n`+sjPend.map(x=>`• ${x.nombre} — ${x.cantidad} u — vence ${x.fechaVencimiento}`).join('\n')+`\nSeguiremos vendiendo hasta la fecha; lo que quede se lo entregamos para la nota de crédito.\n`;
+      }
+    }
   }else if(!lines.length){
     showToast('No hay productos en el pedido de este proveedor');return; // edge case
   }
@@ -17681,7 +17900,11 @@ function confirmarPedidoConCanal(canal){
     lines,
     fechaSugerida:_fechaPedidoConfirmadoCargado,
     notaExtra:canal==='whatsapp'?'Además se copiará el mensaje para pegarlo en WhatsApp.':null,
+    sjLotes:sjPend,
     onConfirm:async(fecha)=>{
+      const chkSJ=document.getElementById('cp2-sj-chk');
+      const usarSJ=!!(txtSJ&&sjPend.length&&chkSJ&&chkSJ.checked);
+      const textoFinal=usarSJ?txtSJ:txt;
       const btn=document.getElementById(btnId);
       if(btn)btn.disabled=true;
       // Los productos que se sacaron de un pedido confirmado que se estaba editando (ver
@@ -17700,8 +17923,9 @@ function confirmarPedidoConCanal(canal){
       render();persistUI();
       if(canal==='whatsapp'){
         const copiado=()=>{showToast('Pedido copiado ✓ Pégalo en WhatsApp'+(lines.length?' · carrito vaciado':''));btn.classList.add('copied');setTimeout(()=>btn.classList.remove('copied'),1400);};
-        if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(copiado,()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();copiado();});
-        else{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();copiado();}
+        if(usarSJ){rvMarcarInformados(sjPend.map(x=>x.filaIndex));}
+        if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(textoFinal).then(copiado,()=>{const ta=document.createElement('textarea');ta.value=textoFinal;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();copiado();});
+        else{const ta=document.createElement('textarea');ta.value=textoFinal;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();copiado();}
       }else{
         showToast('Pedido marcado como realizado ('+lines.length+' producto'+(lines.length===1?'':'s')+') · carrito vaciado');
       }
