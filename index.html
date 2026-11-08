@@ -16,7 +16,7 @@
 :root{
   /* ===== PALETA PASTEL — verdes salvia/oliva + lavanda =====
      Neutros: fondo cálido, tarjetas blancas, bordes casi invisibles. */
-  --ink:#2F3133;--ink2:#3A3D40;--paper:#FAFAF6;--card:#FFFFFF;
+  --ink:#2F3133;--ink2:#3A3D40;--paper:#F5F5F5;--card:#FFFFFF;
   --line:#E7E7E2;--line2:#F0F0EB;
   --muted:#6F7578;--text:#2F3133;
 
@@ -55,7 +55,7 @@
   --sh-float:0 4px 14px rgba(47,49,51,.12);
   --shadow-brand:0 2px 10px rgba(143,166,123,.28);
 
-  --radius-card:2px;--radius-btn:2px;
+  --radius-card:4px;--radius-btn:4px;
   /* Escala de radios ya en uso consistente en la práctica (campos de formulario 8-10px,
      chips/badges tipo píldora 20px, tarjetas grandes 18px) — se documentan acá como
      referencia para futuros componentes; los ~200 usos ya existentes en el archivo siguen
@@ -73,10 +73,10 @@
   --header:#4CAF50;--nav:#212121;
   --action:#2E7D32;--action-pressed:#1B5E20;--action-tint:#E8F5E9;--focus:#2E7D32;
   --text-sec:#616161;--border-control:#757575;--danger:#C62828;
-  --text-strong:#212121;--border-light:#E0E0E0;--bg-gris:#F2F2F2;
+  --text-strong:#212121;--border-light:#E0E0E0;--bg-gris:#F5F5F5;
   /* Escalas (referencia para componentes nuevos): espaciado base 4 px, radios 4/8/999, mínimo táctil 44 px */
   --sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:24px;--sp-6:32px;
-  --r-sm:2px;--r-md:2px;--r-pill:999px;--touch-min:44px;
+  --r-sm:2px;--r-md:4px;--r-pill:999px;--touch-min:44px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%;width:100%;overflow-x:hidden}
@@ -470,7 +470,7 @@ html.carrito-fijo #rc-ov .mm-sections{
    varios campos de distintos módulos (Vencimientos, Crear producto, Renombrar, Ficha de
    producto); centralizado acá para que un cambio de diseño futuro no requiera editar cada
    campo por separado. */
-.mm-input{width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:var(--radius-field,2px);font-size:14px}
+.mm-input{width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:var(--radius-field,4px);font-size:14px}
 /* Botón de confirmación secundaria (usar/confirmar foto o fondo procesado) — antes repetido
    con el mismo style="..." inline en 4 botones distintos (Crear producto y Ficha de
    producto); centralizado acá para que un cambio de diseño futuro se aplique a los cuatro
@@ -2566,6 +2566,31 @@ html:not(.vista-filas) .tbl-scroll{padding-bottom:88px}
 #mas-ov #ayuda-head .accordion-chev{width:24px;height:24px}
 /* Estilo Loyverse: esquinas casi rectas (2px) en tarjetas, botones, campos y diálogos; solo siguen redondos los círculos (botón flotante, fotos) y las insignias de conteo */
 .prov-acc-badge,.cart-badge,#vc-pend-badge,#vc-desc-badge,.bn-badge,.mas-badge,.in2-notif-badge,.in2-card .badge{border-radius:999px!important}
+/* ===== Estilo Loyverse, medido en capturas reales (auditoría 2026-11-08) ===== */
+/* 1) Esquinas: botones y miniaturas 4px, menús y paneles 2px, avisos (toast) en píldora */
+.toast{border-radius:24px}
+.card-thumb,.card-thumb-empty,.card-thumb-wrap{border-radius:4px!important}
+/* 2) Lista de Pedidos (celular): divisor fino #E0E0E0 que empieza donde empieza el texto, no bajo la foto */
+html:not(.vista-filas) .card-cell{border-bottom:none!important;position:relative}
+html:not(.vista-filas) .card-cell::after{content:'';position:absolute;left:66px;right:0;bottom:0;height:1px;background:#E0E0E0;pointer-events:none}
+/* 3) Casillas, radios e interruptores Material en el verde claro de Loyverse (#7CB342) */
+input[type=checkbox],input[type=radio]{accent-color:#7CB342}
+.cp-toggle input[type=checkbox]{-webkit-appearance:none;appearance:none;width:38px;height:16px;border-radius:8px;background:#BDBDBD;position:relative;cursor:pointer;transition:background .2s;flex:0 0 auto;margin:0 4px}
+.cp-toggle input[type=checkbox]::after{content:'';position:absolute;top:-3px;left:-2px;width:22px;height:22px;border-radius:50%;background:#FAFAFA;box-shadow:0 1px 4px rgba(0,0,0,.4);transition:transform .2s,background .2s}
+.cp-toggle input[type=checkbox]:checked{background:#C5E1A5}
+.cp-toggle input[type=checkbox]:checked::after{background:#7CB342;transform:translateX(20px)}
+.cart-fab{background:#7CB342;color:#fff;border:none;box-shadow:0 3px 6px rgba(0,0,0,.3)}
+.cart-fab:active{background:#689F38}
+/* 4) Carrito: abajo, dos mitades GUARDAR | CONFIRMAR pegadas, como GUARDAR | COBRAR de Loyverse; arriba total + Sugerir + Vaciar */
+#tab-carrito .order-row-main{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 0;align-items:center}
+#tab-carrito .tot-compact{grid-column:1 / 3;grid-row:1}
+#tab-carrito #btn-resugerir{grid-column:3;grid-row:1;justify-self:center}
+#tab-carrito #btn-clear{grid-column:4;grid-row:1;justify-self:center}
+#tab-carrito #btn-guardar-carrito,#tab-carrito #btn-copy{grid-row:2;width:100%;height:52px;margin:0;flex-direction:row;gap:8px;background:var(--action);color:#fff;border:none;box-shadow:none;text-transform:uppercase;letter-spacing:.05em;padding:0 8px}
+#tab-carrito #btn-guardar-carrito{grid-column:1 / 3;border-radius:4px 0 0 4px;border-right:1px solid rgba(0,0,0,.25)}
+#tab-carrito #btn-copy{grid-column:3 / 5;border-radius:0 4px 4px 0}
+#tab-carrito #btn-guardar-carrito .oact-lbl,#tab-carrito #btn-copy .oact-lbl{color:#fff!important;font-size:14px;font-weight:500}
+#tab-carrito #btn-guardar-carrito:active,#tab-carrito #btn-copy:active{background:var(--action-pressed)}
 /* Recepción: título y pestañas sin cortes */
 #rc-ov .mm-head h3{font-size:17px}
 #rc-modo-seg button{white-space:nowrap;font-size:12px;padding-left:4px;padding-right:4px}
@@ -14761,7 +14786,7 @@ function prPintarLista(){
   if(!box||!lst)return;
   box.classList.toggle('hidden',!prLista.length);
   document.getElementById('pr-lista-n').textContent=prLista.length;
-  lst.innerHTML=prLista.map((p,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:2px;padding:8px 10px;margin-bottom:6px">
+  lst.innerHTML=prLista.map((p,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:var(--r-md);padding:8px 10px;margin-bottom:6px">
     <div style="min-width:0"><div style="font-size:13px;font-weight:700;color:var(--ink)">${p.nombre}</div>
     <div style="font-size:12px;color:var(--muted);margin-top:1px">${p.dir==='salida'?'Le prestamos':'Nos prestaron'} · ${p.cantidad}${p.unidad||''}${p.fechaVencimiento?' · vence '+p.fechaVencimiento:''}</div></div>
     <button type="button" data-pr-quitar="${i}" aria-label="Quitar de la lista" style="flex:none;border:none;background:none;color:var(--rojo,#E53935);font-size:20px;padding:4px 8px;cursor:pointer">✕</button></div>`).join('');
@@ -14824,14 +14849,14 @@ async function prCargarPendientes(){
       const costoTxt=p.costoTotal?(' · '+peso(p.costoTotal)):'';
       const costoU=p.costoUnitario||0;
       const resp=(p.responsable||'').replace(/"/g,'&quot;');
-      return `<div class="pr-pend-row" data-id="${p.id}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:2px;padding:9px 11px;margin-bottom:6px">
+      return `<div class="pr-pend-row" data-id="${p.id}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:var(--r-md);padding:9px 11px;margin-bottom:6px">
         <div style="min-width:0">
           <div style="font-size:12px;font-weight:700;color:var(--ink)">${p.producto||p.sku}</div>
           <div style="font-size:12px;color:var(--muted);margin-top:1px">${dirTxt} · ${p.cantidad}${p.unidad||''}${costoTxt} · ${p.fecha}</div>
         </div>
         <div style="display:flex;gap:6px;flex:none;align-items:center">
-          <button type="button" class="pr-corregir-btn" data-id="${p.id}" data-dir="${p.direccion}" data-sku="${p.sku}" data-cant="${p.cantidad}" data-costo="${costoU}" data-resp="${resp}" title="Me equivoqué de dirección — corregirla" style="flex:none;width:30px;height:30px;border-radius:2px;border:1.5px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg></button>
-          <button type="button" class="pr-devolver-btn" data-id="${p.id}" style="flex:none;padding:7px 11px;border-radius:2px;border:none;background:var(--verde,#3a9d5c);color:#fff;font-weight:700;font-size:12px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:-2px" fill="currentColor"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Devuelto</button>
+          <button type="button" class="pr-corregir-btn" data-id="${p.id}" data-dir="${p.direccion}" data-sku="${p.sku}" data-cant="${p.cantidad}" data-costo="${costoU}" data-resp="${resp}" title="Me equivoqué de dirección — corregirla" style="flex:none;width:30px;height:30px;border-radius:var(--r-md);border:1.5px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg></button>
+          <button type="button" class="pr-devolver-btn" data-id="${p.id}" style="flex:none;padding:7px 11px;border-radius:var(--r-md);border:none;background:var(--verde,#3a9d5c);color:#fff;font-weight:700;font-size:12px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:-2px" fill="currentColor"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Devuelto</button>
         </div>
       </div>`;
     }).join('');
@@ -16378,10 +16403,10 @@ function rzRender(){
         <span style="display:flex;gap:6px;align-items:center;flex-shrink:0">${_rzRevisados.has(it.ref)?'<span style="font-size:12px;font-weight:700;color:var(--verde);background:#E3F0DD;border-radius:10px;padding:2px 8px">✓ Revisado</span>':''}<span class="abc-badge abc-${clase.toLowerCase()}">${clase}</span></span>
       </div>
       <div style="display:flex;gap:6px">
-        <input id="${rid}-stock" type="number" inputmode="decimal" placeholder="Corregir stock" value="${it.track&&it.stock!=null?it.stock:''}" style="flex:1;min-width:0;padding:8px 10px;border:1px solid var(--border-control);border-radius:2px;font-size:12px;font-family:'JetBrains Mono'">
+        <input id="${rid}-stock" type="number" inputmode="decimal" placeholder="Corregir stock" value="${it.track&&it.stock!=null?it.stock:''}" style="flex:1;min-width:0;padding:8px 10px;border:1px solid var(--border-control);border-radius:var(--r-md);font-size:12px;font-family:'JetBrains Mono'">
         <button type="button" class="loadbtn rz-guardar-stock" data-sku="${it.ref}" data-rid="${rid}" style="white-space:nowrap;padding:8px 12px;font-size:12px"><svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:-2px" fill="currentColor"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Guardar stock</button>
       </div>
-      <button type="button" class="rz-excluir" data-sku="${it.ref}" data-nombre="${it.nombre.replace(/"/g,'&quot;')}" style="width:100%;padding:7px;font-size:12px;border-radius:2px;border:1px dashed var(--line);background:transparent;color:var(--muted);font-weight:500;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:-2px" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9A7.9 7.9 0 0 1 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1A7.9 7.9 0 0 1 20 12c0 4.42-3.58 8-8 8z"/></svg> Excluir de esta lista</button>
+      <button type="button" class="rz-excluir" data-sku="${it.ref}" data-nombre="${it.nombre.replace(/"/g,'&quot;')}" style="width:100%;padding:7px;font-size:12px;border-radius:var(--r-md);border:1px dashed var(--line);background:transparent;color:var(--muted);font-weight:500;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:-2px" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9A7.9 7.9 0 0 1 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1A7.9 7.9 0 0 1 20 12c0 4.42-3.58 8-8 8z"/></svg> Excluir de esta lista</button>
     </div>`;
   }).join('');
   box.querySelectorAll('.rz-guardar-stock').forEach(b=>b.onclick=()=>rzGuardarStock(b.dataset.sku,b.dataset.rid));
@@ -16415,9 +16440,9 @@ function rzMostrarExcluidos(){
   box.innerHTML=skus.map(sku=>{
     const it=(DB.items||[]).find(i=>i.ref===sku);
     const nombre=it?it.nombre:sku;
-    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:2px;padding:8px 10px;margin-bottom:6px">
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:var(--r-md);padding:8px 10px;margin-bottom:6px">
       <span style="font-size:12px;font-weight:500;color:var(--ink);min-width:0">${nombre}</span>
-      <button type="button" class="rz-incluir" data-sku="${sku}" style="flex:none;padding:6px 10px;border-radius:2px;border:none;background:var(--verde,#3a9d5c);color:#fff;font-weight:700;font-size:12px;cursor:pointer">↩ Reincluir</button>
+      <button type="button" class="rz-incluir" data-sku="${sku}" style="flex:none;padding:6px 10px;border-radius:var(--r-md);border:none;background:var(--verde,#3a9d5c);color:#fff;font-weight:700;font-size:12px;cursor:pointer">↩ Reincluir</button>
     </div>`;
   }).join('');
   box.querySelectorAll('.rz-incluir').forEach(b=>b.onclick=()=>rzIncluir(b.dataset.sku));
@@ -17802,7 +17827,7 @@ function abrirConfirmarPedido({provNombre,lines,fechaSugerida,notaExtra,onConfir
     let sj=document.getElementById('cp2-sj');
     if(!sj){sj=document.createElement('div');sj.id='cp2-sj';const f=document.getElementById('cp2-fecha');f.parentNode.insertBefore(sj,f.previousElementSibling||f);}
     if(sjLotes&&sjLotes.length){
-      sj.innerHTML='<label style="display:flex;align-items:flex-start;gap:8px;margin:0 0 12px;padding:9px 10px;border:1.5px solid var(--border-control);border-radius:2px;font-size:13px;line-height:1.4;cursor:pointer"><input type="checkbox" id="cp2-sj-chk" checked style="width:22px;height:22px;flex:none;margin-top:1px;accent-color:var(--action,#2E7D32)"><span><b>Avisar a San Jorge '+sjLotes.length+' producto'+(sjLotes.length===1?'':'s')+' por vencer</b> (nota de crédito): se agregan al mensaje y quedan marcados como informados.<br><span style="opacity:.8">'+sjLotes.slice(0,6).map(x=>String(x.nombre).replace(/</g,'&lt;')+' ('+x.cantidad+', vence '+x.fechaVencimiento+')').join(' · ')+(sjLotes.length>6?' · …':'')+'</span></span></label>';
+      sj.innerHTML='<label style="display:flex;align-items:flex-start;gap:8px;margin:0 0 12px;padding:9px 10px;border:1.5px solid var(--border-control);border-radius:var(--r-md);font-size:13px;line-height:1.4;cursor:pointer"><input type="checkbox" id="cp2-sj-chk" checked style="width:22px;height:22px;flex:none;margin-top:1px;accent-color:var(--action,#2E7D32)"><span><b>Avisar a San Jorge '+sjLotes.length+' producto'+(sjLotes.length===1?'':'s')+' por vencer</b> (nota de crédito): se agregan al mensaje y quedan marcados como informados.<br><span style="opacity:.8">'+sjLotes.slice(0,6).map(x=>String(x.nombre).replace(/</g,'&lt;')+' ('+x.cantidad+', vence '+x.fechaVencimiento+')').join(' · ')+(sjLotes.length>6?' · …':'')+'</span></span></label>';
       sj.style.display='';
     }else{sj.innerHTML='';sj.style.display='none';}
   }
@@ -18313,7 +18338,7 @@ function renderProvHoyReal(){
       // Solo los artículos aún sin recepción ('confirmado') pueden cerrarse como incompleto —
       // los 'recibido' ya no aplican, ver accionFinalizarPedidoIncompleto.
       const pendientesSinRecibir=items.filter(it=>it.estado==='confirmado').map(it=>it.sku);
-      const btnIncompleto=pendientesSinRecibir.length?`<button class="pd-incompleto-btn" style="display:block;width:100%;margin-bottom:8px;padding:8px;font-size:12px;font-weight:700;color:var(--rojo,#c0392b);background:none;border:1px dashed var(--rojo,#c0392b);border-radius:2px;cursor:pointer">Finalizar como incompleto</button>`:'';
+      const btnIncompleto=pendientesSinRecibir.length?`<button class="pd-incompleto-btn" style="display:block;width:100%;margin-bottom:8px;padding:8px;font-size:12px;font-weight:700;color:var(--rojo,#c0392b);background:none;border:1px dashed var(--rojo,#c0392b);border-radius:var(--r-md);cursor:pointer">Finalizar como incompleto</button>`:'';
       detalle.innerHTML=btnIncompleto+(items.map(it=>`<div class="pd-prod-row"><span class="pd-prod-nom">${it.nombre||it.sku}${it.estado==='recibido'?' <span style="color:var(--verde,#2e7d32);font-weight:700">· recibido</span>':(it.estado==='incompleto'?' <span style="color:var(--rojo,#c0392b);font-weight:700">· incompleto</span>':'')}</span><span class="pd-prod-cant">${fmt.format(it.cantidad||0)} u · ${peso(it.costo_total||0)}</span></div>`).join('')
         ||'<div class="pd-empty-row">Sin detalle disponible</div>');
       const btnInc=detalle.querySelector('.pd-incompleto-btn');
@@ -18393,7 +18418,7 @@ function renderRecepcionarHoy(elId){
       // Botón a nivel de PEDIDO (no por artículo): cierra como Incompleto todo lo que siga
       // sin recepción en este proveedor+fecha. Los artículos ya recibidos (no listados acá,
       // ver itemsPendientesPorProveedorHastaHoy) no se tocan.
-      const btnIncompleto=items.length?`<button class="pd-incompleto-btn" data-prov="${String(row.dataset.prov).replace(/"/g,'&quot;')}" style="display:block;width:100%;margin-bottom:8px;padding:8px;font-size:12px;font-weight:700;color:var(--rojo,#c0392b);background:none;border:1px dashed var(--rojo,#c0392b);border-radius:2px;cursor:pointer">Finalizar como incompleto</button>`:'';
+      const btnIncompleto=items.length?`<button class="pd-incompleto-btn" data-prov="${String(row.dataset.prov).replace(/"/g,'&quot;')}" style="display:block;width:100%;margin-bottom:8px;padding:8px;font-size:12px;font-weight:700;color:var(--rojo,#c0392b);background:none;border:1px dashed var(--rojo,#c0392b);border-radius:var(--r-md);cursor:pointer">Finalizar como incompleto</button>`:'';
       detalle.innerHTML=btnIncompleto+(items.map(it=>`<div class="pd-prod-row"><span class="pd-prod-nom">${it.nombre||it.sku}</span><span class="pd-prod-cant">${fmt.format(it.cantidad||0)} u · ${peso(it.costo_total||0)} <button class="pd-recep-btn" data-sku="${it.sku}" style="margin-left:6px;font-size:12px;font-weight:700;color:var(--cielo-d,#1a73e8);background:none;border:none;cursor:pointer">Recibir</button></span></div>`).join('')
         ||'<div class="pd-empty-row">Sin detalle disponible</div>');
       detalle.querySelectorAll('.pd-recep-btn').forEach(b=>{
