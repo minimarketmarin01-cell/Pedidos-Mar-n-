@@ -2591,6 +2591,11 @@ input[type=checkbox],input[type=radio]{accent-color:#7CB342}
 #tab-carrito #btn-copy{grid-column:3 / 5;border-radius:0 4px 4px 0}
 #tab-carrito #btn-guardar-carrito .oact-lbl,#tab-carrito #btn-copy .oact-lbl{color:#fff!important;font-size:14px;font-weight:500}
 #tab-carrito #btn-guardar-carrito:active,#tab-carrito #btn-copy:active{background:var(--action-pressed)}
+/* Carrito: sale del flotante (tapaba el botón "Sugerido") y pasa a la barra verde de Pedidos, con su contador */
+html:not(.carrito-fijo) #cart-fab{top:0!important;right:0!important;bottom:auto!important;width:52px!important;height:52px!important;background:#4CAF50!important;color:#fff!important;border:none!important;box-shadow:-6px 0 6px -3px rgba(0,0,0,.18)!important;border-radius:0!important;z-index:400}
+html:not(.carrito-fijo) #cart-fab:active{background:#43A047!important;transform:none}
+html:not(.carrito-fijo) #cart-fab .cart-badge{top:6px;right:5px;border:1.5px solid #fff}
+html:not(.carrito-fijo) #prov-anchor .shc-row.shc-wrap{padding-right:60px}
 /* Recepción: título y pestañas sin cortes */
 #rc-ov .mm-head h3{font-size:17px}
 #rc-modo-seg button{white-space:nowrap;font-size:12px;padding-left:4px;padding-right:4px}
@@ -6048,7 +6053,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-11-08.4';
+const APP_VERSION='2026-11-08.6';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -6100,10 +6105,6 @@ if(MODO_SUPABASE){
     document.body.appendChild(b);
   });
 }
-// Respaldo temporal: funciones que TODAVÍA no están en el Worker nuevo
-// (crear/eliminar productos, categorías, costo, consumo interno) siguen
-// en Apps Script hasta que se migren en una próxima sesión.
-const SYNC_URL_LEGACY='https://script.google.com/macros/s/AKfycbx9UGhWEOSfHHLDriwr5qEoQBQl9__kFZNwQU5QfWE0WweEoOVm1-qsipmVRn4Pb1s3bw/exec';
 const SYNC_MAX_AGE=3600000; // 1 hora en ms
 // "Copiar a otro local" (Ficha de producto) — Marín 376 y Argomedo 455 son dos locales
 // independientes, cada uno con su propia cuenta de Loyverse y su propio Worker/D1. Se copia
