@@ -698,6 +698,8 @@ html.carrito-fijo #rc-ov .mm-sections{
 .fp-kpi .fp-kpi-val{font-weight:700;font-size:16px;color:var(--ink)}
 .fp-kpi.destacado{background:var(--verde-bg,#E3F3E8);border-color:var(--verde)}
 .fp-kpi.destacado .fp-kpi-val{color:var(--exito)}
+.fp-kpi.destacado.sin{background:var(--rojo-bg,#FBEDED);border-color:var(--rojo,#A84A4A)}
+.fp-kpi.destacado.sin .fp-kpi-val{color:var(--rojo,#A84A4A)}
 /* Chip de proveedor "También pedir a" — mismo lenguaje visual que los badges de estado, en
    formato tag con su ✕ para quitar sin abandonar la tarjeta. */
 .fp-chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
@@ -7369,7 +7371,7 @@ function fpPaneGeneral(f){
     // Stock actual destacado + resumen de lotes (si el producto tiene vencimientos) +
     // recontar — mismo contenido que antes vivía en la pestaña "Inventario" separada.
     '<div class="fp-kpi-grid" style="grid-template-columns:1fr auto">'+
-      '<div class="fp-kpi destacado"><div class="fp-kpi-lbl">Stock actual</div><div class="fp-kpi-val">'+(p.trackStock&&p.stock!=null?fmt1(p.stock)+' unidades':'s/c')+'</div><div style="margin-top:4px">'+fpBadgeStock(p)+'</div></div>'+
+      '<div class="fp-kpi destacado'+(p.trackStock&&(p.stock==null||p.stock<=0)?' sin':'')+'"><div class="fp-kpi-lbl">Stock actual</div><div class="fp-kpi-val">'+(p.trackStock&&p.stock!=null?fmt1(p.stock)+' unidades':'s/c')+'</div><div style="margin-top:4px">'+fpBadgeStock(p)+'</div></div>'+
       '<button type="button" id="fp-i-recontar-toggle" style="align-self:stretch;padding:0 14px;border-radius:10px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap"><svg width="13" height="13" viewBox="0 0 24 24" style="vertical-align:-2px" fill="currentColor"><path d="M17.65 6.35A7.96 7.96 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg> Recontar stock</button>'+
     '</div>'+
     (hayLotes?('<div style="display:flex;gap:14px;font-size:12px;color:var(--muted);margin:-6px 0 12px;flex-wrap:wrap">'+
