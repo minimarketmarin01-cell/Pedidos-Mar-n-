@@ -2549,6 +2549,15 @@ html.modo-bliss.carrito-fijo.vista-filas #prov-anchor .shc-row.shc-wrap{flex-wra
 .rv-sw-fg{position:relative;touch-action:pan-y;margin-bottom:0 !important;transition:transform .18s}
 
 /* ===== Pulido visual (auditoría 2026-11-08): solo estilos, sin tocar lógica ===== */
+/* Pedidos (tarjetas): STK / VTA / COB en una sola línea aunque el botón "Sugerido" ocupe espacio */
+html:not(.vista-filas) .card-stats{gap:6px;font-size:13px}
+html:not(.vista-filas) .card-stats .cstat{gap:2px}
+html:not(.vista-filas) .card-stats .cstat-label{font-size:11px;letter-spacing:.02em}
+/* Pedidos: la columna por la que está ordenada la lista se nota (antes solo cambiaba un gris tenue) */
+.ptable-head>*.sorted{color:var(--wa-d,#2E7D32);font-weight:700;box-shadow:inset 0 -2px 0 currentColor}
+/* Pedidos: botón "i" más fácil de tocar y el carrito flotante ya no tapa la última tarjeta */
+html:not(.vista-filas) .card-main .fila-info{width:36px;height:36px;margin:-5px -6px 0 0}
+html:not(.vista-filas) .tbl-scroll{padding-bottom:88px}
 /* Recepción: título y pestañas sin cortes */
 #rc-ov .mm-head h3{font-size:17px}
 #rc-modo-seg button{white-space:nowrap;font-size:12px;padding-left:4px;padding-right:4px}
