@@ -6053,7 +6053,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-11-08.5';
+const APP_VERSION='2026-11-08.6';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -6105,10 +6105,6 @@ if(MODO_SUPABASE){
     document.body.appendChild(b);
   });
 }
-// Respaldo temporal: funciones que TODAVÍA no están en el Worker nuevo
-// (crear/eliminar productos, categorías, costo, consumo interno) siguen
-// en Apps Script hasta que se migren en una próxima sesión.
-const SYNC_URL_LEGACY='https://script.google.com/macros/s/AKfycbx9UGhWEOSfHHLDriwr5qEoQBQl9__kFZNwQU5QfWE0WweEoOVm1-qsipmVRn4Pb1s3bw/exec';
 const SYNC_MAX_AGE=3600000; // 1 hora en ms
 // "Copiar a otro local" (Ficha de producto) — Marín 376 y Argomedo 455 son dos locales
 // independientes, cada uno con su propia cuenta de Loyverse y su propio Worker/D1. Se copia
