@@ -7001,6 +7001,19 @@ function _actualizarVisibilidadFab(){
   // botón "Confirmar") con el carrito ya abierto, reportado en captura de pantalla.
   fab.classList.toggle('fab-oculto',!enPedidos||hayModal||_carritoAbierto);
 }
+// Hay ventanas que se vuelven a mostrar quitando 'hidden' a mano (al volver del escáner o del micrófono en
+// Recepción, Ventas por día, etc.) sin pasar por abrirModal: el carrito flotante quedaba encima. Se vigila el
+// cambio de clase de cualquier ventana (.mm-ov/.scan-ov) y se recalcula solo — sin importar quién la abrió.
+(function(){
+  let pendiente=false;
+  const mo=new MutationObserver(function(muts){
+    if(pendiente)return;
+    if(!muts.some(function(m){return m.target&&m.target.matches&&m.target.matches('.mm-ov, .scan-ov');}))return;
+    pendiente=true;
+    requestAnimationFrame(function(){pendiente=false;try{_actualizarVisibilidadFab();}catch(e){}});
+  });
+  mo.observe(document.body,{subtree:true,attributes:true,attributeFilter:['class']});
+})();
 // Botón físico "Atrás" de Android: cierra SOLO la ventana abierta; si no hay
 // ninguna y estás en el carrito, vuelve a Pedidos; y solo sale de la app cuando
 // ya estás en Pedidos (con doble toque de confirmación, para no salir sin querer).
