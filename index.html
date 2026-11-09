@@ -2596,6 +2596,26 @@ html:not(.carrito-fijo) #cart-fab{top:0!important;right:0!important;bottom:auto!
 html:not(.carrito-fijo) #cart-fab:active{background:#43A047!important;transform:none}
 html:not(.carrito-fijo) #cart-fab .cart-badge{top:6px;right:5px;border:1.5px solid #fff}
 html:not(.carrito-fijo) #prov-anchor .shc-row.shc-wrap{padding-right:60px}
+/* Período y ajustes: botón en la barra + ventana "Seleccionar período" (como Loyverse) */
+.per-btn{flex:none;height:36px;padding:0 10px;border:1px solid rgba(255,255,255,.75);border-radius:4px;background:transparent;color:#fff;font:500 14px Roboto,system-ui,sans-serif;white-space:nowrap;cursor:pointer}
+.per-btn:active{background:rgba(255,255,255,.2)}
+html.carrito-fijo .per-btn{display:none}
+html:not(.carrito-fijo) #prov-anchor .shc-row .prov-combo{position:relative;left:auto;flex:1 1 0;width:auto;min-width:0}
+.per-ov{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px}
+.per-ov.hidden{display:none}
+.per-card{background:#fff;border-radius:4px;width:min(100%,340px);padding:20px 0 8px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.per-card h3{margin:0;padding:0 24px;font:500 20px Roboto,system-ui,sans-serif;color:#212121}
+.per-sub{padding:4px 24px 8px;font-size:13px;color:#757575}
+#per-seg-slot .seg{display:block;height:auto;border:none;border-radius:0;overflow:visible}
+#per-seg-slot .seg button{display:flex;align-items:center;gap:16px;width:100%;height:48px;padding:0 24px;border:none;border-radius:0;background:#fff;color:#212121;font:400 16px Roboto,system-ui,sans-serif;text-align:left}
+#per-seg-slot .seg button.active{background:#fff;color:#212121;font-weight:500}
+#per-seg-slot .seg button::before{content:'';flex:none;width:20px;height:20px;border-radius:50%;border:2px solid #757575;box-sizing:border-box}
+#per-seg-slot .seg button.active::before{border-color:#2E7D32;background:radial-gradient(circle,#2E7D32 0 4px,transparent 5px)}
+#per-mini-slot{border-top:1px solid #E0E0E0;margin-top:8px;padding-top:4px}
+#per-mini-slot .shc-mini{height:auto;padding:6px 24px;justify-content:space-between;font-size:16px;font-weight:400;color:#212121}
+#per-mini-slot .shc-mini label{color:#212121!important}
+#per-mini-slot .shc-mini input{width:64px;height:40px;padding:0 6px;font-size:16px;border:none;border-bottom:2px solid #BDBDBD;border-radius:0;background:#fff;color:#212121;text-align:center}
+.per-ok{display:block;margin:8px 8px 0 auto;padding:10px 16px;border:none;background:transparent;color:#2E7D32;font:500 14px Roboto,system-ui,sans-serif;letter-spacing:.05em;text-transform:uppercase;cursor:pointer}
 /* Recepción: título y pestañas sin cortes */
 #rc-ov .mm-head h3{font-size:17px}
 #rc-modo-seg button{white-space:nowrap;font-size:12px;padding-left:4px;padding-right:4px}
@@ -2637,6 +2657,13 @@ html:not(.carrito-fijo) #prov-anchor .shc-row.shc-wrap{padding-right:60px}
     <span class="upd" id="updlabel"></span>
   </div>
 </div>
+<div class="per-ov hidden" id="per-ov"><div class="per-card" role="dialog" aria-modal="true" aria-labelledby="per-t">
+  <h3 id="per-t">Seleccionar período</h3>
+  <div class="per-sub">Días de venta que se usan para sugerir el pedido</div>
+  <div id="per-seg-slot"></div>
+  <div id="per-mini-slot"></div>
+  <button type="button" class="per-ok" id="per-ok">Listo</button>
+</div></div>
 <button class="cart-fab" id="cart-fab" aria-label="Ver carrito"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0 0 20 4H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg><span class="cart-badge" id="cart-badge"></span></button>
 <div id="tab-inicio" class="hidden">
   <div class="in2-hdr">
@@ -2689,6 +2716,7 @@ html:not(.carrito-fijo) #prov-anchor .shc-row.shc-wrap{padding-right:60px}
     <div class="shc-row shc-wrap">
       <button type="button" class="fav-toggle-btn" id="fav-toggle" title="Mostrar solo favoritos" aria-pressed="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
       <div class="prov-combo" id="prov-combo"><span class="prov-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg></span><input class="prov-all" id="prov-all" placeholder="Proveedor o producto… escribe o toca" autocomplete="off" inputmode="text"><button class="prov-mic" id="prov-mic" type="button" tabindex="-1" aria-label="Buscar por voz"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg></button><button class="prov-scan cam-btn" id="prov-scan" type="button" tabindex="-1" aria-label="Escanear código"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h2v12H4V6m3 0h1v12H7V6m2 0h3v12H9V6m4 0h1v12h-1V6m3 0h2v12h-2V6m3 0h1v12h-1V6M2 4v4H0V4a2 2 0 0 1 2-2h4v2H2m20-2a2 2 0 0 1 2 2v4h-2V4h-4V2h4M2 16v4h4v2H2a2 2 0 0 1-2-2v-4h2m20 4v-4h2v4a2 2 0 0 1-2 2h-4v-2h4z"/></svg></button><button class="prov-x" id="prov-x" type="button" tabindex="-1" aria-label="Borrar"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div>
+      <button type="button" class="per-btn" id="per-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Período de ventas y ajustes">7d ▾</button>
       <div class="seg sm" id="seg-basis"><button data-b="7" class="active">7d</button><button data-b="14">14d</button><button data-b="30">30d</button><button data-b="90">90d</button></div>
       <div class="shc-mini"><label>Ent.</label><input type="number" id="lead" value="3" min="0" max="30"></div>
       <div class="shc-mini"><label>Cob.</label><input type="number" id="cover" value="10" min="1" max="60"></div>
@@ -6053,7 +6081,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-11-08.6';
+const APP_VERSION='2026-11-09.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -6744,6 +6772,41 @@ document.getElementById('fav-toggle').onclick=()=>{
   render();persistUI();
 };
 document.getElementById('lead').oninput=e=>{state.lead=Math.max(0,+e.target.value||0);render();};
+// ---- Período y ajustes en una ventana (celular): la barra superior no cabe con 7d/14d/30d/90d + Ent. + Cob. ----
+// Los controles originales (mismos ids y mismos manejadores) se MUEVEN a la ventana; en pantalla grande vuelven a la barra.
+(function(){
+  const html=document.documentElement, seg=document.getElementById('seg-basis');
+  const lead=document.getElementById('lead').parentElement, cover=document.getElementById('cover').parentElement;
+  const btn=document.getElementById('per-btn'), ov=document.getElementById('per-ov');
+  const slotSeg=document.getElementById('per-seg-slot'), slotMini=document.getElementById('per-mini-slot');
+  const ph=n=>{const c=document.createComment('per');n.parentNode.insertBefore(c,n);return c;};
+  const phSeg=ph(seg), phLead=ph(lead), phCover=ph(cover);
+  const lblLead=lead.querySelector('label'), lblCover=cover.querySelector('label');
+  function etiquetaBtn(){const a=seg.querySelector('button.active');btn.textContent=(a?a.dataset.b:'7')+'d ▾';}
+  function acomodar(){
+    const grande=html.classList.contains('carrito-fijo');
+    if(grande){
+      if(seg.parentNode!==phSeg.parentNode){phSeg.parentNode.insertBefore(seg,phSeg);phLead.parentNode.insertBefore(lead,phLead);phCover.parentNode.insertBefore(cover,phCover);}
+      seg.querySelectorAll('button').forEach(b=>b.textContent=b.dataset.b+'d');
+      lblLead.textContent='Ent.';lblCover.textContent='Cob.';cerrar();
+    }else{
+      if(seg.parentNode!==slotSeg){slotSeg.appendChild(seg);slotMini.appendChild(lead);slotMini.appendChild(cover);}
+      seg.querySelectorAll('button').forEach(b=>b.textContent='Últimos '+b.dataset.b+' días');
+      lblLead.textContent='Entrega (días)';lblCover.textContent='Cobertura (días)';
+    }
+    etiquetaBtn();
+  }
+  function abrir(){ov.classList.remove('hidden');btn.setAttribute('aria-expanded','true');const a=seg.querySelector('button.active');if(a)a.focus();}
+  function cerrar(){ov.classList.add('hidden');btn.setAttribute('aria-expanded','false');}
+  btn.onclick=abrir;
+  document.getElementById('per-ok').onclick=cerrar;
+  ov.addEventListener('click',e=>{if(e.target===ov)cerrar();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!ov.classList.contains('hidden'))cerrar();});
+  seg.addEventListener('click',e=>{if(e.target.closest('button')&&!html.classList.contains('carrito-fijo'))setTimeout(cerrar,120);});
+  new MutationObserver(etiquetaBtn).observe(seg,{subtree:true,attributes:true,attributeFilter:['class']});
+  new MutationObserver(acomodar).observe(html,{attributes:true,attributeFilter:['class']});
+  acomodar();
+})();
 document.getElementById('cover').oninput=e=>{state.cover=Math.max(1,+e.target.value||1);render();};
 document.querySelectorAll('#ptable .ptable-head [data-s]').forEach(th=>th.onclick=()=>{const s=th.dataset.s;if(state.sort===s)state.dir*=-1;else{state.sort=s;state.dir=1;}renderTable();persistUI();});
 
