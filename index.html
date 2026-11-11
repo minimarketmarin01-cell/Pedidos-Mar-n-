@@ -5397,7 +5397,7 @@ function toggleMinimoPedido(ref){
   if(!panel.classList.contains('hidden')){panel.classList.add('hidden');return;}
   document.querySelectorAll('[data-mp-panel-ref]').forEach(p=>{if(p!==panel)p.classList.add('hidden');});
   const it=(DB.items||[]).find(i=>i.ref===ref);
-  if(it)panel.innerHTML=_gpFilaConfig(it);
+  if(it)panel.innerHTML=_gpFilaConfig(it,true);
   panel.classList.remove('hidden');
 }
 // Fila de resultado de búsqueda al estilo Loyverse: miniatura cuadrada (con "!" rojo/naranja si
@@ -5754,7 +5754,7 @@ function renderOrder(){
       </div>
       ${mpCartGearHTML(l.it.ref)}
       <button class="odel" data-act="del" aria-label="Eliminar"><svg width="16" height="16" viewBox="0 0 24 24" style="vertical-align:-3px" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
-      <div class="oline-mp${_mpCartAbierto===l.it.ref?'':' hidden'}" data-mp-cart-panel="${l.it.ref}">${_mpCartAbierto===l.it.ref?_gpFilaConfig(l.it):''}</div>
+      <div class="oline-mp${_mpCartAbierto===l.it.ref?'':' hidden'}" data-mp-cart-panel="${l.it.ref}">${_mpCartAbierto===l.it.ref?_gpFilaConfig(l.it,true):''}</div>
     </div>`;
   }).join('');
   html+=soloCambio.map(c=>`<div class="oline oline-cambio-only" data-ref="${c.it.ref}">
@@ -5786,7 +5786,7 @@ function renderOrder(){
       if(!it||!panel)return;
       if(_mpCartAbierto===ref){_mpCartAbierto=null;panel.classList.add('hidden');return;}
       document.querySelectorAll('#order-body [data-mp-cart-panel]').forEach(x=>x.classList.add('hidden'));
-      _mpCartAbierto=ref;panel.innerHTML=_gpFilaConfig(it);panel.classList.remove('hidden');
+      _mpCartAbierto=ref;panel.innerHTML=_gpFilaConfig(it,true);panel.classList.remove('hidden');
       return;
     }
     if(ev.target.closest('.oline-mp')){_gpCfgOnClick(ev);return;}
@@ -6081,7 +6081,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-11-11.1';
+const APP_VERSION='2026-11-12.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -9932,7 +9932,8 @@ function gpStockTxt(it){
 // producto ya viene en pack) — así también se puede definir un pack donde no existía ninguno
 // (ej. proveedores sin reglas hardcodeadas como Colun). En modo pack aparece además un campito
 // editable "1 caja = [N] und" para decir cuántas unidades trae, en vez de un texto fijo.
-function _gpFilaConfig(it){
+// conGuardar: en el carrito y en el panel de Armar pedido se agrega un botón "Guardar" que cierra el cuadro (los cambios ya se guardan solos).
+function _gpFilaConfig(it,conGuardar){
   const tienePack=it.fmt>1;
   const modo=tienePack?'pack':'und';
   const val=modo==='pack'?Math.round(it.min/it.fmt):it.min;
@@ -9962,6 +9963,7 @@ function _gpFilaConfig(it){
         <input type="text" inputmode="numeric" pattern="[0-9]*" data-gp-cfg-empaque value="${tienePack?it.fmt:''}" placeholder="?" style="width:40px;padding:4px 2px;text-align:center;border:1px solid var(--line);border-radius:2px;font-family:'JetBrains Mono';font-size:12px">
         <span>und</span>
       </div>
+      ${conGuardar?`<button type="button" class="mm-save" data-gp-cfg-guardar style="width:100%;margin-top:2px;padding:10px 12px;font-size:14px;background:var(--action,#2E7D32) !important;color:#fff !important;opacity:1 !important;animation:none !important">Guardar</button>`:''}
     </div>`;
 }
 // Manejador de los controles [data-gp-cfg-*] (toggle Und/Caja/Display, stepper, reset) —
@@ -9970,6 +9972,13 @@ function _gpFilaConfig(it){
 function _gpCfgOnClick(ev){
   const fila=ev.target.closest('[data-gp-cfg-ref]');
   if(!fila)return;
+  // "Guardar" (solo en el carrito y en Armar pedido): saca el foco del campo para que se guarde lo escrito y esconde el cuadro.
+  if(ev.target.closest('[data-gp-cfg-guardar]')){
+    const act=document.activeElement;if(act&&act!==document.body&&act.blur)act.blur();
+    const pc=fila.closest('[data-mp-cart-panel]');if(pc){pc.classList.add('hidden');_mpCartAbierto=null;}
+    const pp=fila.closest('[data-mp-panel-ref]');if(pp)pp.classList.add('hidden');
+    return;
+  }
   const btnUnidad=ev.target.closest('[data-gp-cfg-unidad]');
   if(btnUnidad){_gpCfgCambiarUnidad(fila,btnUnidad.dataset.gpCfgUnidad);return;}
   const btnD=ev.target.closest('[data-gp-cfg-d]');
@@ -10130,10 +10139,11 @@ async function _gpGuardarMultiplo(ref,fila,valorEnUnidades,empaqueEnUnidades,pal
         const itActualizado=DB.items.find(x=>x.ref===ref);
         const celda=enPanelPedidos.closest('.card-cell');
         if(itActualizado&&celda&&_tbState){
+          const estabaAbierto=!enPanelPedidos.classList.contains('hidden');   // si el usuario ya tocó "Guardar", no se reabre
           celda.outerHTML=rowHTML(itActualizado,analyze(itActualizado),_tbState.f);
           const nuevaCelda=document.querySelector('.card-cell[data-ref="'+CSS.escape(ref)+'"]');
           const nuevoPanel=nuevaCelda&&nuevaCelda.querySelector('[data-mp-panel-ref]');
-          if(nuevoPanel){nuevoPanel.innerHTML=_gpFilaConfig(itActualizado);nuevoPanel.classList.remove('hidden');}
+          if(nuevoPanel&&estabaAbierto){nuevoPanel.innerHTML=_gpFilaConfig(itActualizado,true);nuevoPanel.classList.remove('hidden');}
         }
         // El fmt/min recién guardado puede cambiar cómo se interpreta una cantidad YA puesta en
         // el carrito para este producto (unidades vs. packs) — se refresca el carrito/escala,
