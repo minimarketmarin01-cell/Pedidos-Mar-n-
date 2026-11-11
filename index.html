@@ -5787,6 +5787,8 @@ function renderOrder(){
       if(_mpCartAbierto===ref){_mpCartAbierto=null;panel.classList.add('hidden');return;}
       document.querySelectorAll('#order-body [data-mp-cart-panel]').forEach(x=>x.classList.add('hidden'));
       _mpCartAbierto=ref;panel.innerHTML=_gpFilaConfig(it,true);panel.classList.remove('hidden');
+      // En la última fila el cuadro se abre debajo de lo visible (la lista del carrito tiene su propio scroll): se lleva a la vista.
+      requestAnimationFrame(()=>{try{panel.scrollIntoView({block:'nearest',behavior:'smooth'});}catch(_){panel.scrollIntoView(false);}});
       return;
     }
     if(ev.target.closest('.oline-mp')){_gpCfgOnClick(ev);return;}
@@ -6081,7 +6083,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-11-12.2';
+const APP_VERSION='2026-11-12.3';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
