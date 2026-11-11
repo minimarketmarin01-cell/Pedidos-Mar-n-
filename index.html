@@ -6081,7 +6081,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-11-12.1';
+const APP_VERSION='2026-11-12.2';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -9943,7 +9943,7 @@ function _gpFilaConfig(it,conGuardar){
   const palabra=it.word==='display'?'display':'caja';
   const tieneOverride=!!((DB.multiplosProducto&&DB.multiplosProducto[it.ref])||(DB.empaquesProducto&&DB.empaquesProducto[it.ref]));
   return `
-    <div class="fp-row" data-gp-cfg-ref="${it.ref}" data-gp-cfg-modo="${modo}" data-gp-cfg-palabra="${palabra}" style="flex-direction:column;align-items:stretch;gap:8px">
+    <div class="fp-row" data-gp-cfg-ref="${it.ref}" data-gp-cfg-modo="${modo}" data-gp-cfg-palabra="${palabra}"${conGuardar?' data-gp-cfg-manual="1"':''} style="flex-direction:column;align-items:stretch;gap:8px">
       <span class="k" style="font-weight:500">${it.nombre}</span>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <div class="fc-tabs" style="margin:0;width:auto">
@@ -9975,6 +9975,10 @@ function _gpCfgOnClick(ev){
   // "Guardar" (solo en el carrito y en Armar pedido): saca el foco del campo para que se guarde lo escrito y esconde el cuadro.
   if(ev.target.closest('[data-gp-cfg-guardar]')){
     const act=document.activeElement;if(act&&act!==document.body&&act.blur)act.blur();
+    clearTimeout(fila._gpCfgDebounceTimer);
+    // Se guarda recién ahora (en estas filas nada se guarda solo). "↺ Automático" también espera a este botón.
+    if(fila.dataset.gpCfgResetPendiente==='1')_gpGuardarMultiplo(fila.dataset.gpCfgRef,fila,0,0,null);
+    else _gpCfgGuardarAhora(fila);
     const pc=fila.closest('[data-mp-cart-panel]');if(pc){pc.classList.add('hidden');_mpCartAbierto=null;}
     const pp=fila.closest('[data-mp-panel-ref]');if(pp)pp.classList.add('hidden');
     return;
@@ -9984,7 +9988,15 @@ function _gpCfgOnClick(ev){
   const btnD=ev.target.closest('[data-gp-cfg-d]');
   if(btnD){_gpCfgAjustar(fila,Number(btnD.dataset.gpCfgD));return;}
   const btnReset=ev.target.closest('[data-gp-cfg-reset]');
-  if(btnReset){_gpGuardarMultiplo(btnReset.dataset.gpCfgReset,fila,0,0,null);return;}
+  if(btnReset){
+    if(fila.hasAttribute('data-gp-cfg-manual')){
+      // Pendiente hasta tocar "Guardar": se avisa en el mismo cuadro y no se toca el servidor todavía.
+      fila.dataset.gpCfgResetPendiente='1';
+      btnReset.disabled=true;btnReset.textContent='Volverá a automático al guardar';
+      return;
+    }
+    _gpGuardarMultiplo(btnReset.dataset.gpCfgReset,fila,0,0,null);return;
+  }
 }
 function _gpCfgOnChange(ev){
   const input=ev.target.closest('[data-gp-cfg-num],[data-gp-cfg-empaque]');
@@ -10069,23 +10081,26 @@ function _gpCfgAjustar(fila,delta){
 }
 // Timer por fila (guardado en la propia fila, no en una variable compartida) — así editar dos
 // productos distintos dentro de la ventana de 500ms no cancela el guardado pendiente del otro.
+function _gpCfgGuardarAhora(fila){
+  const ref=fila.dataset.gpCfgRef;
+  const modo=fila.dataset.gpCfgModo;
+  // Si se está viendo/editando en modo pack, el campito "1 caja = N und" manda; si está en
+  // modo Und no se toca ningún empaque ya guardado (se reenvía igual para no borrarlo).
+  const empaqueExistente=(DB.empaquesProducto&&DB.empaquesProducto[ref])||0;
+  const fmtActual=modo==='pack'?_gpCfgFmtActual(fila):(empaqueExistente||1);
+  const empaqueAGuardar=modo==='pack'?fmtActual:empaqueExistente;
+  const palabraExistente=(DB.palabrasProducto&&DB.palabrasProducto[ref])||null;
+  const palabra=modo==='pack'?(fila.dataset.gpCfgPalabra||'caja'):palabraExistente;
+  const input=fila.querySelector('[data-gp-cfg-num]');
+  const valor=Math.max(0,Math.round(Number(input.value))||0);
+  const valorEnUnidades=modo==='pack'?valor*fmtActual:valor;
+  _gpGuardarMultiplo(ref,fila,valorEnUnidades,empaqueAGuardar,palabra);
+}
 function _gpCfgProgramarGuardado(fila){
+  // En el carrito y en Armar pedido (filas con botón Guardar) NO se guarda solo: los cambios quedan en pantalla hasta tocar "Guardar".
+  if(fila.hasAttribute('data-gp-cfg-manual'))return;
   clearTimeout(fila._gpCfgDebounceTimer);
-  fila._gpCfgDebounceTimer=setTimeout(()=>{
-    const ref=fila.dataset.gpCfgRef;
-    const modo=fila.dataset.gpCfgModo;
-    // Si se está viendo/editando en modo pack, el campito "1 caja = N und" manda; si está en
-    // modo Und no se toca ningún empaque ya guardado (se reenvía igual para no borrarlo).
-    const empaqueExistente=(DB.empaquesProducto&&DB.empaquesProducto[ref])||0;
-    const fmtActual=modo==='pack'?_gpCfgFmtActual(fila):(empaqueExistente||1);
-    const empaqueAGuardar=modo==='pack'?fmtActual:empaqueExistente;
-    const palabraExistente=(DB.palabrasProducto&&DB.palabrasProducto[ref])||null;
-    const palabra=modo==='pack'?(fila.dataset.gpCfgPalabra||'caja'):palabraExistente;
-    const input=fila.querySelector('[data-gp-cfg-num]');
-    const valor=Math.max(0,Math.round(Number(input.value))||0);
-    const valorEnUnidades=modo==='pack'?valor*fmtActual:valor;
-    _gpGuardarMultiplo(ref,fila,valorEnUnidades,empaqueAGuardar,palabra);
-  },500);
+  fila._gpCfgDebounceTimer=setTimeout(()=>_gpCfgGuardarAhora(fila),500);
 }
 document.getElementById('gp-prod-lista').addEventListener('change',_gpCfgOnChange);
 // Guarda (o borra si ambos quedan en 0) el mínimo/empaque/palabra manual de un producto.
