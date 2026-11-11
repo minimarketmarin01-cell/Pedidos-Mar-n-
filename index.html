@@ -6081,7 +6081,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-11-09.1';
+const APP_VERSION='2026-11-11.1';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -6455,13 +6455,37 @@ function pendienteDe(it){
 }
 
 let _ultimoPayloadFirma=null;
+// "Failed to fetch" es el mensaje genérico del navegador para cualquier corte (sin internet, servidor caído, error del servidor
+// sin cabeceras CORS, bloqueo). Para saber cuál fue, se prueba la consulta más liviana del servidor (1 fila, sin Loyverse).
+async function _motivoFalloSync(e){
+  const msg=e&&e.message?String(e.message):String(e);
+  if(e&&e.name==='AbortError')return{txt:'El servidor tardó más de 60 s en responder',servidorVivo:null};
+  const esRed=(e&&e.name==='TypeError')||/failed to fetch|networkerror|load failed|network request failed/i.test(msg);
+  if(!esRed)return{txt:msg,servidorVivo:null};
+  if(navigator.onLine===false)return{txt:'Sin conexión a internet (revisa el WiFi o los datos móviles)',servidorVivo:false};
+  try{
+    const c=new AbortController(),t=setTimeout(()=>c.abort(),5000);
+    const r=await fetch(SYNC_URL+(SYNC_URL.indexOf('?')<0?'?':'&')+'action=ultima_actualizacion',{signal:c.signal});
+    clearTimeout(t);
+    if(r.ok)return{txt:'el servidor está en línea pero esta sincronización falló (Loyverse ocupado o error del servidor)',servidorVivo:true};
+    return{txt:'el servidor respondió con error HTTP '+r.status,servidorVivo:true};
+  }catch(e2){return{txt:'no hay conexión con el servidor (red lenta o bloqueada, o servidor caído)',servidorVivo:false};}
+}
+let _syncFallos=0,_syncReintentoT=null;
+function _programarReintentoSync(live,full){
+  if(_syncReintentoT||_syncFallos>4)return;
+  const espera=Math.min(60000,8000*Math.pow(2,_syncFallos-1));   // 8 s, 16 s, 32 s, 60 s
+  _syncReintentoT=setTimeout(()=>{_syncReintentoT=null;cloudSync(true,live,full);},espera);
+}
 async function cloudSync(silent,live,full,origen){
   setSyncSpinning(true,origen);
   try{
     if(!silent)showToast(full?'Actualizando catálogo completo…':(live?'Trayendo ventas en vivo…':'Sincronizando…'));
     const url=SYNC_URL+((full||live)?(SYNC_URL.indexOf('?')<0?'?':'&')+'action='+(full?'full':'sync'):'');
-    const res=await fetch(url,{method:'GET'});
-    if(!res.ok){throw new Error('HTTP '+res.status+' '+res.statusText);}
+    const ctrlSync=new AbortController(),toSync=setTimeout(()=>ctrlSync.abort(),60000);
+    let res;
+    try{res=await fetch(url,{method:'GET',signal:ctrlSync.signal});}finally{clearTimeout(toSync);}
+    if(!res.ok){let det='';try{det=(await res.text()).replace(/\s+/g,' ').slice(0,140);}catch(_){}throw new Error('HTTP '+res.status+(det?' · '+det:''));}
     let j;
     try{j=await res.json();}
     catch(parseErr){throw new Error('Respuesta no es JSON válido (status '+res.status+') — posible corte de conexión');}
@@ -6507,6 +6531,7 @@ async function cloudSync(silent,live,full,origen){
       cargarVencidoParaCambio();
       cargarABC();
       flashUpdated();
+      _syncFallos=0;
       if(!silent){
         if((full||live)&&j.version!=='v2'){showToast('El endpoint sigue en versión vieja. Vuelve a desplegar el Apps Script (Administrar implementaciones → editar → Versión nueva).');}
         else if(j.synced===false){showToast('⏳ Ocupado, intenta de nuevo en unos segundos');}
@@ -6516,7 +6541,17 @@ async function cloudSync(silent,live,full,origen){
       }
       return true;
     }else{if(!silent)showToast('La nube no devolvió datos');return false;}
-  }catch(e){if(!silent)showToast('Error al sincronizar: '+(e&&e.message?e.message:e));return false;}
+  }catch(e){
+    const m=await _motivoFalloSync(e);
+    _syncFallos++;
+    console.warn('[sync] falló:',e,'→',m.txt);
+    if(!silent)showToast('Error al sincronizar: '+m.txt+(m.servidorVivo===false?'':' · se muestran los datos ya guardados'),'error');
+    // Si el servidor sí responde, la lectura rápida (sin Loyverse) deja los datos al día aunque el sync completo haya fallado.
+    if(m.servidorVivo===true){try{await pollFondo();}catch(_){}}
+    // Sin dato nuevo: se reintenta solo, con espera creciente, en vez de quedarse con la copia vieja del teléfono.
+    _programarReintentoSync(live,full);
+    return false;
+  }
   finally{setSyncSpinning(false);}
 }
 // Ícono girando + botones deshabilitados mientras hay una sincronización en curso (evita doble toque)
@@ -10155,6 +10190,7 @@ async function gpEliminar(prov){
     if(j&&j.ok){
       showToast('Proveedor eliminado'+(j.productosAfectados?' · '+j.productosAfectados+' producto(s) quedaron sin proveedor':''));
       gpCargar();
+      try{pollFondo();}catch(e){}
     }else if(j&&j.requiereModo){
       gpAbrirReasignar(prov,j.productosAfectados);
     }else{
@@ -10189,6 +10225,7 @@ async function gpConfirmarEliminacion(modo){
       document.getElementById('gp-reasignar-box').classList.add('hidden');
       _gpEliminarPendiente=null;
       gpCargar();
+      try{pollFondo();}catch(e){}
     }else showToast(''+((j&&j.error)||'No se pudo eliminar'));
   }catch(e){showToast('Error de conexión al eliminar');}
 }
@@ -10206,6 +10243,7 @@ document.getElementById('gp-crear').onclick=async()=>{
     sonidoGuardado();
     showToast((esSector?'Sector creado: ':'Proveedor creado: ')+nombreCreado);
     gpCargar(); // recarga proveedores Y sectores (misma acción action=proveedores) y repinta la pestaña activa
+    try{pollFondo();}catch(e){} // y el panel de Pedidos (sin esperar al próximo aviso de cambios)
   }catch(e){showToast(''+e.message);}
   finally{btn.disabled=false;}
 };
