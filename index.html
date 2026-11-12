@@ -2559,7 +2559,10 @@ html:not(.vista-filas) .card-stats .cstat-label{font-size:11px;letter-spacing:.0
 .ptable-head>*.sorted{color:var(--wa-d,#2E7D32);font-weight:700;box-shadow:inset 0 -2px 0 currentColor}
 /* Pedidos: botón "i" más fácil de tocar y el carrito flotante ya no tapa la última tarjeta */
 html:not(.vista-filas) .card-main .fila-info{width:36px;height:36px;margin:-5px -6px 0 0}
-html:not(.vista-filas) .tbl-scroll{padding-bottom:88px}
+/* La lista llega hasta la barra inferior (sin franja gris ni línea cortando el último producto): se quita el margen de 12px y el espacio que dejaba el carrito flotante, que ahora está arriba */
+html:not(.vista-filas):not(.carrito-fijo) .tbl-scroll{max-height:calc(100vh - var(--hdr-h,130px) - var(--nav-h,78px) + 4px);max-height:calc(100dvh - var(--hdr-h,130px) - var(--nav-h,78px) + 4px);padding-bottom:0}
+html:not(.vista-filas):not(.carrito-fijo) .tbl-scroll.nav-hidden{max-height:calc(100vh - var(--hdr-h,130px));max-height:calc(100dvh - var(--hdr-h,130px))}
+html:not(.vista-filas):not(.carrito-fijo) #tab-pedido .tablecard{margin-bottom:0;border-bottom:none;border-radius:4px 4px 0 0}
 /* Más: la fila "Cómo funciona tu app" con el mismo ícono, separación y flecha que las demás filas */
 #mas-ov #ayuda-head .t{display:flex;align-items:center;gap:10px}
 #mas-ov #ayuda-head .t svg.ico{width:20px;height:20px;flex:none}
@@ -6083,7 +6086,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-11-12.3';
+const APP_VERSION='2026-11-12.4';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
