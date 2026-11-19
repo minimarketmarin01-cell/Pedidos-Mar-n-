@@ -3410,7 +3410,12 @@ html:not(.vista-filas) .tbl-scroll{overflow-x:hidden}
             <div class="mm-section-head"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 9V7c0-1.1-.9-2-2-2h-3c0-1.66-1.34-3-3-3S9 3.34 9 5H6c-1.1 0-2 .9-2 2v2c-1.66 0-3 1.34-3 3s1.34 3 3 3v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c1.66 0 3-1.34 3-3s-1.34-3-3-3zM7.5 11.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5S9.83 13 9 13s-1.5-.67-1.5-1.5zM16 17H8v-2h8v2zm-1-4c-.83 0-1.5-.67-1.5-1.5S14.17 10 15 10s1.5.67 1.5 1.5S15.83 13 15 13z"/></svg>Proveedor</div>
             <div class="cat" id="rc-proveedores" style="font-weight:700;color:var(--ink)">Proveedor(es): —</div>
             <div style="display:flex;gap:6px;margin-top:6px">
-              <select id="rc-provid-select" style="flex:1;min-width:0;padding:7px 9px;border:1px solid var(--border-control);border-radius:2px;font-size:12px"><option value="">Agregar proveedor…</option></select>
+              <div class="cat-combo" id="rc-provid-combo" style="flex:1;min-width:0">
+                <input id="rc-provid-input" class="cat-combo-input" placeholder="Escribe para buscar proveedor…" autocomplete="off" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+                <svg class="cat-combo-chev" viewBox="0 0 24 24" fill="currentColor"><path d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
+                <select id="rc-provid-select" style="display:none"><option value="">Agregar proveedor…</option></select>
+                <div class="cat-combo-menu hidden" id="rc-provid-menu" role="listbox"></div>
+              </div>
               <button class="loadbtn" id="rc-provid-add" type="button" style="white-space:nowrap;padding:7px 10px;font-size:12px"><svg width="12" height="12" viewBox="0 0 24 24" style="vertical-align:-2px" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Agregar</button>
             </div>
             <button class="loadbtn" id="rc-provid-nuevo" type="button" style="width:100%;margin-top:6px;padding:9px 10px;font-size:13px">+ Nuevo proveedor</button>
@@ -6105,7 +6110,7 @@ function sonidoGuardado(){
 // misma cada cierto tiempo contra la copia publicada — si detecta una versión distinta,
 // limpia caché, actualiza el Service Worker (si algún día existe uno) y se recarga sola,
 // sin pedirle nada al usuario. No interrumpe si hay algo abierto (un formulario, etc.).
-const APP_VERSION='2026-11-19.1';
+const APP_VERSION='2026-11-19.2';
 (function(){const v=document.getElementById('mas-version');if(v)v.textContent='v'+APP_VERSION;})();
 (function(){
   async function hayAlgoAbierto(){
@@ -15374,8 +15379,24 @@ function rcRenderProveedores(it){
     const asignados=new Set((it.proveedorIdsTodos||[]).map(Number));
     sel.innerHTML='<option value="">Agregar proveedor…</option>'+
       _psProveedores.filter(p=>!asignados.has(Number(p.id))).map(p=>'<option value="'+p.id+'">'+p.nombre+'</option>').join('');
+    // Combo que filtra mientras se escribe (sin tildes ni mayúsculas) y ofrece "Crear proveedor" si no existe.
+    const inp=document.getElementById('rc-provid-input');
+    if(inp)inp.value='';
+    if(_rcProvCombo){try{_rcProvCombo.destroy();}catch(e){}_rcProvCombo=null;}
+    _rcProvCombo=crearComboBuscable({
+      wrapId:'rc-provid-combo',inputId:'rc-provid-input',menuId:'rc-provid-menu',selectId:'rc-provid-select',
+      getItems:()=>_psProveedores.filter(p=>!asignados.has(Number(p.id))).map(p=>({id:p.id,name:p.nombre})),
+      placeholderNueva:'Crear proveedor',
+      onCreateNueva:async texto=>{
+        const nuevo=await psCrearProveedorInline(texto);
+        if(!asignados.has(Number(nuevo.id)))await rcAgregarProveedorId(nuevo.id);   // se crea y queda asignado a este producto
+        try{pollFondo();}catch(e){}
+        return {};   // el cuadro se limpia solo al repintar (rcRenderProveedores)
+      }
+    });
   });
 }
+let _rcProvCombo=null;
 // Últimos 5 movimientos de stock del producto elegido en Recepción. Solo "recepcion_stock" con
 // cantidad guardada es eliminable (revierte el stock); "reconteo_stock" se muestra para contexto,
 // nunca con botón de borrar (fija el stock a un valor absoluto, sin cantidad que revertir).
