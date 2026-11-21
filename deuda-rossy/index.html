@@ -132,6 +132,11 @@ button.primary:disabled{opacity:.75;cursor:default;}
 </div>
 
 <script>
+// Las funciones de Supabase corren junto a la base de datos (São Paulo). Sin esto, desde algunos lugares la petición cae en una
+// región de EE. UU. y el catálogo tarda 5-10 s en vez de ~1 s. Se agrega a toda llamada hacia Supabase, sin tocar el resto del código.
+(function(){var o=window.fetch;window.fetch=function(u,i){try{if(typeof u==='string'&&u.indexOf('znywepjclzhgkctzrjxb.supabase.co/functions/v1/')>-1&&u.indexOf('forceFunctionRegion')<0)u+=(u.indexOf('?')<0?'?':'&')+'forceFunctionRegion=sa-east-1';}catch(e){}return o.call(this,u,i);};})();
+</script>
+<script>
 const API_ROSSY='https://znywepjclzhgkctzrjxb.supabase.co/functions/v1/rossy-api'; // la API corre en Supabase (Edge Function rossy-api)
 
 const fmt = n => '$' + Math.round(n).toLocaleString('es-CL');
