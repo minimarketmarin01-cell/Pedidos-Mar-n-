@@ -12,7 +12,7 @@ import org.json.JSONObject;
 
 /** Conexión con el servidor de Marín 376 (el mismo que usa la app web). */
 public final class Api {
-  public static final String URL_BASE = "https://marin376-api.minimarketmarin01.workers.dev";
+  public static final String URL_BASE = "https://znywepjclzhgkctzrjxb.supabase.co/functions/v1/marin-api";
   private Api() {}
 
   private static String leer(HttpURLConnection c) throws Exception {
