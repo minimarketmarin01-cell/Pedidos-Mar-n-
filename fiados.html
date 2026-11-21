@@ -273,9 +273,9 @@ h1,h2,h3{font-family:'Roboto',system-ui,sans-serif}
   <div id="toast"></div>
 
 <script>
-// Modo de prueba: abrir la app con ?bd=supabase hace que todo vaya a la copia de Supabase en vez de Cloudflare.
-const MODO_SUPABASE=/[?&]bd=supabase\b/.test(location.search);
-const SYNC_URL='https://marin376-api.minimarketmarin01.workers.dev'+(MODO_SUPABASE?'/?db=supabase':'');
+// El servidor corre en Supabase (Edge Function marin-api). Vuelta de emergencia: abrir la app con ?bd=cloudflare.
+const MODO_SUPABASE=false;
+const SYNC_URL=/[?&]bd=cloudflare\b/.test(location.search)?'https://marin376-api.minimarketmarin01.workers.dev':'https://znywepjclzhgkctzrjxb.supabase.co/functions/v1/marin-api';
 const fmt=new Intl.NumberFormat('es-CL');
 const peso=n=>'$'+fmt.format(Math.round(n||0));
 // Lee el valor NUMÉRICO real de un input de monto, sin importar si ya está formateado como
