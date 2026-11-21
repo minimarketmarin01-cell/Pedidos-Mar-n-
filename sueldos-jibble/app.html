@@ -522,6 +522,8 @@
     els.refreshIcon.classList.add("spin");
 
     var url = (config.workerUrl || "").trim();
+    // El servidor de horas corre en Supabase: sin URL guardada, o con la del Worker viejo de Cloudflare, se usa esa.
+    if(!url || /jibble-horas[^/]*\.workers\.dev/.test(url)) url = "https://znywepjclzhgkctzrjxb.supabase.co/functions/v1/jibble-api";
     if(!url){
       setBanner("example",
         "<div><strong>Datos de ejemplo.</strong> Configura la URL del Worker en <button class=\"link\" onclick=\"document.getElementById('settingsPanel').open=true; document.getElementById('cfgWorkerUrl').focus();\">Configuración</button> para ver las horas reales desde Jibble.</div>"
