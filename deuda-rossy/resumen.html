@@ -115,11 +115,51 @@ async function load(){
   return res.json();
 }
 
-function computePorAnio(state){
+// Desde este mes Rossy recibe su sueldo completo aparte (por banco, via finanzas), sin atraso.
+// Esta app de aqui en adelante solo recibe abonos a la deuda vieja (tipo PAGO DEUDA / SUELDO DEUDA
+// de finanzas) -- nunca el sueldo corriente -- asi que la deuda ya no debe seguir sumando sueldo
+// minimo mes a mes: se congela en este mes y de ahi solo se resta lo abonado.
+const FREEZE_YM = '2026-01';
+
+// Calcula la deuda vieja (congelada a fin de FREEZE_YM) y cuanto se ha abonado desde entonces.
+// "hasta" es la fecha de corte para contar los abonos posteriores al congelamiento (hoy, o el fin
+// de un año especifico para el grafico de deuda acumulada).
+function computeDeudaVieja(state, hasta){
+  const startVal = state.settings.fecha_inicio || '2023-05-01';
+  const start = new Date(startVal+'T00:00:00');
+  const tramos = state.tramos;
+  const checkedIds = new Set(state.categories.filter(c=>c.checked).map(c=>c.id));
+  const [fy, fm] = FREEZE_YM.split('-').map(Number);
+  const freezeMonth = new Date(fy, fm-1, 1);
+  const freezeEnd = new Date(fy, fm, 0);
+  const cutoff = hasta || new Date();
+
+  let cursor = monthStart(start);
+  let devengadoHastaFreeze = 0;
+  while(cursor <= freezeMonth){
+    devengadoHastaFreeze += rateForMonth(tramos, cursor);
+    cursor = new Date(cursor.getFullYear(), cursor.getMonth()+1, 1);
+  }
+
+  let abonadoHastaFreeze = 0, abonadoDespues = 0;
+  state.payments.forEach(p=>{
+    if(!checkedIds.has(p.category_id)) return;
+    const f = new Date(p.fecha+'T00:00:00');
+    if(f > cutoff) return;
+    if(f <= freezeEnd) abonadoHastaFreeze += p.monto; else abonadoDespues += p.monto;
+  });
+
+  const deudaViejaOriginal = devengadoHastaFreeze - abonadoHastaFreeze;
+  const continuousStart = new Date(fy, fm, 1); // mes siguiente al congelamiento
+  return { continuousStart, deudaViejaOriginal, abonadoDespues, deuda: Math.max(deudaViejaOriginal - abonadoDespues, 0) };
+}
+
+function computePorAnio(state, deudaVieja){
   const startVal = state.settings.fecha_inicio || '2023-05-01';
   const start = new Date(startVal+'T00:00:00');
   const cutoff = new Date();
   const tramos = state.tramos;
+  const freezeYear = Number(FREEZE_YM.slice(0,4));
 
   const devengadoPorAnio = {};
   let cursor = monthStart(start);
@@ -153,72 +193,28 @@ function computePorAnio(state){
     pagado: pagadoPorAnio[y]||0,
   }));
 
+  // Antes del congelamiento, la deuda acumulada por año es el metodo viejo (devengado - pagado),
+  // no hay divergencia todavia. Desde el año del congelamiento en adelante, se usa la deuda vieja
+  // fija menos los abonos recibidos desde entonces hasta el fin de ese año (o hoy, para el ultimo).
   let acumDevengado = 0, acumPagado = 0;
   const cumRows = rows.map(r=>{
-    acumDevengado += r.correspondia;
-    acumPagado += r.pagado;
-    return { year: r.year, deuda: acumDevengado - acumPagado };
-  });
-
-  return { rows, cumRows, totalDeuda: acumDevengado - acumPagado, cutoff };
-}
-
-// Encuentra el ultimo mes con deficit propio (se pago menos de lo que
-// correspondia ese mes) y calcula la "deuda vieja" congelada justo antes
-// de que empezara a pagarse al dia de forma continua.
-function computeDeudaVieja(state){
-  const startVal = state.settings.fecha_inicio || '2023-05-01';
-  const start = new Date(startVal+'T00:00:00');
-  const cutoff = new Date();
-  const tramos = state.tramos;
-  const checkedIds = new Set(state.categories.filter(c=>c.checked).map(c=>c.id));
-
-  const abonadoPorMes = {};
-  state.payments.forEach(p=>{
-    if(!checkedIds.has(p.category_id)) return;
-    const key = p.fecha.slice(0,7);
-    abonadoPorMes[key] = (abonadoPorMes[key]||0) + p.monto;
-  });
-
-  let cursor = monthStart(start);
-  const cutoffMonth = monthStart(cutoff);
-  let acumDevengado = 0, acumAbonado = 0;
-  let lastDeficitCumDevengado = 0, lastDeficitCumAbonado = 0, lastDeficitKey = null;
-
-  while(cursor <= cutoffMonth){
-    const key = `${cursor.getFullYear()}-${String(cursor.getMonth()+1).padStart(2,'0')}`;
-    const rate = rateForMonth(tramos, cursor);
-    const dim = daysInMonth(cursor);
-    const devengadoMes = (cursor.getTime() === cutoffMonth.getTime())
-      ? rate * (Math.min(cutoff.getDate(), dim) / dim)
-      : rate;
-    const abonadoMes = abonadoPorMes[key] || 0;
-
-    acumDevengado += devengadoMes;
-    acumAbonado += abonadoMes;
-
-    if(abonadoMes < devengadoMes - 1){ // -1 tolera redondeo
-      lastDeficitCumDevengado = acumDevengado;
-      lastDeficitCumAbonado = acumAbonado;
-      lastDeficitKey = key;
+    if(r.year < freezeYear){
+      acumDevengado += r.correspondia;
+      acumPagado += r.pagado;
+      return { year: r.year, deuda: acumDevengado - acumPagado };
     }
-    cursor = new Date(cursor.getFullYear(), cursor.getMonth()+1, 1);
-  }
+    const esUltimo = r.year === cutoff.getFullYear();
+    const finAnio = esUltimo ? cutoff : new Date(r.year, 11, 31);
+    const dv = computeDeudaVieja(state, finAnio);
+    return { year: r.year, deuda: dv.deuda };
+  });
 
-  if(lastDeficitKey === null){
-    return null; // nunca hubo un mes cubierto al 100%, no aplica la separacion
-  }
-  const [ly, lm] = lastDeficitKey.split('-').map(Number);
-  const continuousStart = new Date(ly, lm, 1); // mes siguiente al ultimo deficit
-  return {
-    continuousStart,
-    deudaViejaOriginal: lastDeficitCumDevengado - lastDeficitCumAbonado,
-  };
+  return { rows, cumRows, totalDeuda: deudaVieja.deuda, cutoff };
 }
 
 function render(state){
-  const { rows, cumRows, totalDeuda, cutoff } = computePorAnio(state);
   const deudaVieja = computeDeudaVieja(state);
+  const { rows, cumRows, totalDeuda, cutoff } = computePorAnio(state, deudaVieja);
   const app = document.getElementById('app');
   const currentYear = cutoff.getFullYear();
   const startVal = state.settings.fecha_inicio || '2023-05-01';

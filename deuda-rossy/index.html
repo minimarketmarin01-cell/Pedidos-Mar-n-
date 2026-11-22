@@ -217,22 +217,56 @@ function computeAbonado(){
   return {total, n};
 }
 
+// Desde este mes Rossy recibe su sueldo completo aparte (por banco, via finanzas), sin atraso.
+// Esta app de aqui en adelante solo recibe abonos a la deuda vieja (tipo PAGO DEUDA / SUELDO DEUDA
+// de finanzas) -- nunca el sueldo corriente -- asi que la deuda ya no debe seguir sumando sueldo
+// minimo mes a mes: se congela en este mes y de ahi solo se resta lo abonado.
+const FREEZE_YM = '2026-01';
+
+function computeDeudaActual(){
+  const fechaInicio = STATE.settings.fecha_inicio || '2023-05-01';
+  const start = new Date(fechaInicio+'T00:00:00');
+  const [fy, fm] = FREEZE_YM.split('-').map(Number);
+  const freezeMonth = new Date(fy, fm-1, 1);
+  const freezeEnd = new Date(fy, fm, 0);
+
+  let cursor = monthStart(start);
+  let devengadoHastaFreeze = 0;
+  while(cursor <= freezeMonth){
+    devengadoHastaFreeze += rateForMonth(STATE.tramos, cursor);
+    cursor = new Date(cursor.getFullYear(), cursor.getMonth()+1, 1);
+  }
+
+  const checkedIds = new Set(STATE.categories.filter(c=>c.checked).map(c=>c.id));
+  let abonadoHastaFreeze = 0, abonadoDespues = 0;
+  STATE.payments.forEach(p=>{
+    if(!checkedIds.has(p.category_id)) return;
+    const f = new Date(p.fecha+'T00:00:00');
+    if(f <= freezeEnd) abonadoHastaFreeze += p.monto; else abonadoDespues += p.monto;
+  });
+
+  const deudaVieja = devengadoHastaFreeze - abonadoHastaFreeze;
+  const raw = deudaVieja - abonadoDespues;
+  return { deudaVieja, abonadoDespues, raw, deuda: Math.max(raw, 0) };
+}
+
 function recalcStats(){
   const {total: devengado, months} = computeDevengado();
   const {total: abonado, n} = computeAbonado();
-  const deuda = devengado - abonado;
   document.getElementById('out-devengado').textContent = fmt(devengado);
   document.getElementById('out-devengado-sub').textContent = months + ' meses de sueldo minimo legal';
   document.getElementById('out-abonado').textContent = fmt(abonado);
   document.getElementById('out-abonado-sub').textContent = n + ' de ' + STATE.categories.length + ' grupos marcados';
+
+  const {deudaVieja, abonadoDespues, raw, deuda} = computeDeudaActual();
   const deudaEl = document.getElementById('out-deuda');
   const deudaSub = document.getElementById('out-deuda-sub');
-  if(deuda < 0){
+  if(raw < 0){
     deudaEl.textContent = '$0';
-    deudaSub.textContent = 'Sin deuda — se pago ' + fmt(Math.abs(deuda)) + ' de mas';
+    deudaSub.textContent = 'Sin deuda — se abono ' + fmt(Math.abs(raw)) + ' de mas desde que se paga al dia (ene 2026)';
   } else {
     deudaEl.textContent = fmt(deuda);
-    deudaSub.textContent = 'Devengado − abonado';
+    deudaSub.textContent = 'Deuda de antes (hasta ene 2026): ' + fmt(deudaVieja) + ' − abonado desde entonces: ' + fmt(abonadoDespues);
   }
 }
 
@@ -410,7 +444,7 @@ function render(){
     </section>
 
     <section>
-      <div class="formula"><b>Deuda</b> = Σ sueldo minimo legal por mes (prorateado el mes de corte) − Σ subtotales de abonos marcados ✓</div>
+      <div class="formula"><b>Deuda</b> = deuda vieja congelada a enero 2026 (sueldo minimo que correspondia hasta esa fecha, menos lo abonado hasta entonces) − abonos a la deuda registrados desde febrero 2026 en adelante. Desde febrero 2026 el sueldo corriente se paga al dia aparte (via finanzas), por eso ya no se le sigue sumando sueldo minimo mes a mes a la deuda.</div>
       <div class="disclaimer">
         Estimacion para negociar con la trabajadora, no un finiquito legal. No incluye gratificacion legal, cotizaciones previsionales ni intereses.
         Para un calculo laboral formal, revisa con la Direccion del Trabajo (<a href="https://www.dt.gob.cl" target="_blank" rel="noopener">dt.gob.cl</a>) o un abogado laboral.
