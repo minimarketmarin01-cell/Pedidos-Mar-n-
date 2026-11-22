@@ -81,6 +81,9 @@ tr:last-child td{border-bottom:none;}
 .badge.confirmado{background:var(--accent-soft);color:var(--accent-strong);}
 .badge.inferido{background:var(--amber-soft);color:var(--amber);}
 .badge.excluido{background:var(--off-soft);color:var(--off);}
+.badge.transferencia{background:var(--accent-soft);color:var(--accent-strong);}
+.badge.efectivo{background:var(--amber-soft);color:var(--amber);}
+.badge.otro{background:var(--off-soft);color:var(--off);}
 .cat-subtotal{font-family:'IBM Plex Mono',monospace;font-weight:600;flex:none;}
 .cat-body{padding:0 16px 14px;}
 .cat-desc{font-size:12.5px;color:var(--text-muted);margin:0 0 8px;line-height:1.5;}
@@ -146,6 +149,13 @@ const fmtDate = iso => {
   return `${d} ${meses[parseInt(m,10)-1]} ${y}`;
 };
 const badgeLabel = {confirmado:'Confirmado', inferido:'Inferido — revisa', excluido:'Excluido por defecto'};
+const tipoLabel = {transferencia:'Transferencia', efectivo:'Efectivo', otro:'Otro'};
+const MESES_LARGO = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+function mesLabel(ym){
+  const [y,m] = ym.split('-');
+  const nombre = MESES_LARGO[parseInt(m,10)-1];
+  return nombre.charAt(0).toUpperCase()+nombre.slice(1)+' '+y;
+}
 
 let STATE = null;
 
@@ -239,6 +249,13 @@ function setLastCategory(id){
   try{ localStorage.setItem('lastCategoryId', id); }catch(e){}
 }
 
+function getLastTipo(){
+  try{ return localStorage.getItem('lastTipoPago') || 'transferencia'; }catch(e){ return 'transferencia'; }
+}
+function setLastTipo(tipo){
+  try{ localStorage.setItem('lastTipoPago', tipo); }catch(e){}
+}
+
 function render(){
   const app = document.getElementById('app');
   const today = new Date().toISOString().slice(0,10);
@@ -269,6 +286,39 @@ function render(){
         <div class="stat-sub" id="out-deuda-sub">Devengado − abonado</div>
       </div>
     </div>
+
+    <section id="ultimos-abonos">
+      <div class="section-head"><h2>Últimos abonos</h2></div>
+      <p class="section-note">Filtra por mes o por tipo de pago para encontrar un abono rapido.</p>
+      <div class="panel">
+        <div class="params-row">
+          <div class="field">
+            <label for="abonos-mes">Mes</label>
+            <select id="abonos-mes">
+              <option value="todos">Todos los meses</option>
+              ${Array.from(new Set(STATE.payments.map(p=>p.fecha.slice(0,7)))).sort().reverse()
+                .map(ym=>`<option value="${ym}">${mesLabel(ym)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="field">
+            <label for="abonos-tipo">Tipo</label>
+            <select id="abonos-tipo">
+              <option value="todos">Todos</option>
+              <option value="transferencia">Transferencia</option>
+              <option value="efectivo">Efectivo</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Fecha</th><th>Grupo</th><th>Tipo</th><th class="num">Monto</th><th>Nota</th></tr></thead>
+            <tbody id="abonos-body"></tbody>
+          </table>
+        </div>
+        <div class="stat-sub" id="abonos-note"></div>
+      </div>
+    </section>
 
     <section id="params">
       <div class="section-head"><h2>1. Periodo y sueldo base</h2></div>
@@ -303,7 +353,7 @@ function render(){
 
     <section id="categories">
       <div class="section-head"><h2>2. Abonos registrados</h2></div>
-      <p class="section-note">Desmarca lo que no corresponda a sueldo de Rossy. Cada grupo suma sus movimientos reales guardados en D1.</p>
+      <p class="section-note">Desmarca lo que no corresponda a sueldo de Rossy. Cada grupo suma sus movimientos reales guardados en Supabase.</p>
 
       <div class="panel">
         <h3 style="font-size:14px;margin-bottom:10px;">Agregar abono nuevo</h3>
@@ -331,6 +381,14 @@ function render(){
           <div class="field grow" id="new-cat-field" hidden>
             <label for="new-cat-name">Nombre del grupo nuevo</label>
             <input type="text" id="new-cat-name" placeholder="ej: App de gastos - octubre 2026">
+          </div>
+          <div class="field">
+            <label for="add-tipo">Tipo</label>
+            <select id="add-tipo">
+              <option value="transferencia" ${getLastTipo()==='transferencia'?'selected':''}>Transferencia</option>
+              <option value="efectivo" ${getLastTipo()==='efectivo'?'selected':''}>Efectivo</option>
+              <option value="otro" ${getLastTipo()==='otro'?'selected':''}>Otro</option>
+            </select>
           </div>
           <div class="field">
             <label for="add-monto">Monto</label>
@@ -372,9 +430,39 @@ function render(){
   `;
 
   renderCategories();
+  renderUltimosAbonos();
   recalcStats();
   wireEvents();
   revisarRespaldo();
+}
+
+function renderUltimosAbonos(){
+  const tbody = document.getElementById('abonos-body');
+  const noteEl = document.getElementById('abonos-note');
+  const mesFiltro = document.getElementById('abonos-mes').value;
+  const tipoFiltro = document.getElementById('abonos-tipo').value;
+  const catById = {};
+  STATE.categories.forEach(c=>{ catById[c.id] = c.name; });
+
+  let list = STATE.payments.slice().sort((a,b)=> a.fecha < b.fecha ? 1 : (a.fecha > b.fecha ? -1 : b.id - a.id));
+  if(mesFiltro !== 'todos') list = list.filter(p=>p.fecha.slice(0,7) === mesFiltro);
+  if(tipoFiltro !== 'todos') list = list.filter(p=>p.tipo === tipoFiltro);
+
+  let limitado = false;
+  if(mesFiltro === 'todos' && list.length > 20){ list = list.slice(0,20); limitado = true; }
+
+  tbody.innerHTML = list.map(p=>`
+    <tr>
+      <td>${fmtDate(p.fecha)}</td>
+      <td>${catById[p.category_id] || p.category_id}</td>
+      <td><span class="badge ${p.tipo}">${tipoLabel[p.tipo] || p.tipo}</span></td>
+      <td class="num">${fmt(p.monto)}</td>
+      <td>${p.nota || ''}</td>
+    </tr>`).join('') || '<tr><td colspan="5" style="color:var(--text-muted)">Sin abonos para este filtro</td></tr>';
+
+  noteEl.textContent = limitado
+    ? 'Mostrando los ultimos 20 abonos. Elige un mes para ver todos los de ese mes.'
+    : (list.length + ' abono' + (list.length===1?'':'s'));
 }
 
 // Los datos viven en Supabase (base principal): ya no hay copia que comparar.
@@ -420,6 +508,9 @@ function renderCategories(){
 
 function wireEvents(){
   const paramsStatus = document.getElementById('params-status');
+
+  document.getElementById('abonos-mes').addEventListener('change', renderUltimosAbonos);
+  document.getElementById('abonos-tipo').addEventListener('change', renderUltimosAbonos);
 
   document.getElementById('fecha-corte').addEventListener('input', recalcStats);
 
@@ -578,6 +669,7 @@ function wireEvents(){
     e.preventDefault();
     const fechas = Array.from(selectedDates).sort();
     let category_id = addCatSelect.value;
+    const tipo = document.getElementById('add-tipo').value;
     const monto = Number(montoInput.value.replace(/\D/g,''));
     const nota = document.getElementById('add-nota').value.trim();
     if(fechas.length === 0){ setStatus(addStatus, 'Toca al menos un dia en el calendario', false); return; }
@@ -591,8 +683,9 @@ function wireEvents(){
         category_id = created.id;
         setLastCategory(category_id);
       }
+      setLastTipo(tipo);
       for(const fecha of fechas){
-        await api('/api/payments', {method:'POST', body: JSON.stringify({fecha, category_id, monto, nota})});
+        await api('/api/payments', {method:'POST', body: JSON.stringify({fecha, category_id, monto, nota, tipo})});
       }
       setStatus(addStatus, fechas.length === 1 ? 'Abono agregado' : fechas.length + ' abonos agregados', true);
       selectedDates.clear();
