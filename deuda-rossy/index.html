@@ -186,23 +186,24 @@ function rateForMonth(tramos, ms){
   return tramos.length ? tramos[tramos.length-1].monto : 0;
 }
 
+// Esta app es solo para la deuda vieja de sueldo hasta enero 2026. Desde febrero 2026 Rossy
+// recibe su sueldo completo aparte (por banco, via finanzas), sin atraso, y esta app de ahi en
+// adelante solo recibe abonos a esa deuda vieja (tipo PAGO DEUDA / SUELDO DEUDA de finanzas) --
+// nunca el sueldo corriente. Por eso "devengado" y "abonado" se calculan solo hasta esa fecha: no
+// tiene sentido seguir sumando sueldo mes a mes de ahi en adelante.
+const FREEZE_YM = '2026-01';
+function freezeMonthStart(){ const [y,m] = FREEZE_YM.split('-').map(Number); return new Date(y, m-1, 1); }
+function freezeEnd(){ const [y,m] = FREEZE_YM.split('-').map(Number); return new Date(y, m, 0); }
+
 function computeDevengado(){
   const startVal = document.getElementById('fecha-inicio').value;
-  const cutoffVal = document.getElementById('fecha-corte').value;
-  if(!startVal || !cutoffVal) return {total:0, months:0};
+  if(!startVal) return {total:0, months:0};
   const start = new Date(startVal+'T00:00:00');
-  const cutoff = new Date(cutoffVal+'T00:00:00');
   let cursor = monthStart(start);
-  const cutoffMonth = monthStart(cutoff);
+  const freezeMonth = freezeMonthStart();
   let total = 0, months = 0;
-  while(cursor <= cutoffMonth){
-    const rate = rateForMonth(STATE.tramos, cursor);
-    if(cursor.getTime() === cutoffMonth.getTime()){
-      const dim = daysInMonth(cursor);
-      total += rate * (Math.min(cutoff.getDate(), dim) / dim);
-    } else {
-      total += rate;
-    }
+  while(cursor <= freezeMonth){
+    total += rateForMonth(STATE.tramos, cursor);
     months += 1;
     cursor = new Date(cursor.getFullYear(), cursor.getMonth()+1, 1);
   }
@@ -210,62 +211,45 @@ function computeDevengado(){
 }
 
 function computeAbonado(){
-  let total = 0, n = 0;
-  STATE.categories.forEach(cat=>{
-    if(cat.checked){ total += cat.subtotal; n++; }
-  });
-  return {total, n};
-}
-
-// Desde este mes Rossy recibe su sueldo completo aparte (por banco, via finanzas), sin atraso.
-// Esta app de aqui en adelante solo recibe abonos a la deuda vieja (tipo PAGO DEUDA / SUELDO DEUDA
-// de finanzas) -- nunca el sueldo corriente -- asi que la deuda ya no debe seguir sumando sueldo
-// minimo mes a mes: se congela en este mes y de ahi solo se resta lo abonado.
-const FREEZE_YM = '2026-01';
-
-function computeDeudaActual(){
-  const fechaInicio = STATE.settings.fecha_inicio || '2023-05-01';
-  const start = new Date(fechaInicio+'T00:00:00');
-  const [fy, fm] = FREEZE_YM.split('-').map(Number);
-  const freezeMonth = new Date(fy, fm-1, 1);
-  const freezeEnd = new Date(fy, fm, 0);
-
-  let cursor = monthStart(start);
-  let devengadoHastaFreeze = 0;
-  while(cursor <= freezeMonth){
-    devengadoHastaFreeze += rateForMonth(STATE.tramos, cursor);
-    cursor = new Date(cursor.getFullYear(), cursor.getMonth()+1, 1);
-  }
-
   const checkedIds = new Set(STATE.categories.filter(c=>c.checked).map(c=>c.id));
-  let abonadoHastaFreeze = 0, abonadoDespues = 0;
+  const fEnd = freezeEnd();
+  let total = 0;
   STATE.payments.forEach(p=>{
     if(!checkedIds.has(p.category_id)) return;
-    const f = new Date(p.fecha+'T00:00:00');
-    if(f <= freezeEnd) abonadoHastaFreeze += p.monto; else abonadoDespues += p.monto;
+    if(new Date(p.fecha+'T00:00:00') <= fEnd) total += p.monto;
   });
+  return {total, n: checkedIds.size};
+}
 
-  const deudaVieja = devengadoHastaFreeze - abonadoHastaFreeze;
-  const raw = deudaVieja - abonadoDespues;
-  return { deudaVieja, abonadoDespues, raw, deuda: Math.max(raw, 0) };
+function computeAbonadoDespues(){
+  const checkedIds = new Set(STATE.categories.filter(c=>c.checked).map(c=>c.id));
+  const fEnd = freezeEnd();
+  let total = 0;
+  STATE.payments.forEach(p=>{
+    if(!checkedIds.has(p.category_id)) return;
+    if(new Date(p.fecha+'T00:00:00') > fEnd) total += p.monto;
+  });
+  return total;
 }
 
 function recalcStats(){
   const {total: devengado, months} = computeDevengado();
   const {total: abonado, n} = computeAbonado();
   document.getElementById('out-devengado').textContent = fmt(devengado);
-  document.getElementById('out-devengado-sub').textContent = months + ' meses de sueldo minimo legal';
+  document.getElementById('out-devengado-sub').textContent = months + ' meses de sueldo minimo legal (hasta ene 2026)';
   document.getElementById('out-abonado').textContent = fmt(abonado);
-  document.getElementById('out-abonado-sub').textContent = n + ' de ' + STATE.categories.length + ' grupos marcados';
+  document.getElementById('out-abonado-sub').textContent = n + ' de ' + STATE.categories.length + ' grupos marcados (hasta ene 2026)';
 
-  const {deudaVieja, abonadoDespues, raw, deuda} = computeDeudaActual();
+  const deudaVieja = devengado - abonado;
+  const abonadoDespues = computeAbonadoDespues();
+  const raw = deudaVieja - abonadoDespues;
   const deudaEl = document.getElementById('out-deuda');
   const deudaSub = document.getElementById('out-deuda-sub');
   if(raw < 0){
     deudaEl.textContent = '$0';
     deudaSub.textContent = 'Sin deuda — se abono ' + fmt(Math.abs(raw)) + ' de mas desde que se paga al dia (ene 2026)';
   } else {
-    deudaEl.textContent = fmt(deuda);
+    deudaEl.textContent = fmt(Math.max(raw,0));
     deudaSub.textContent = 'Deuda de antes (hasta ene 2026): ' + fmt(deudaVieja) + ' − abonado desde entonces: ' + fmt(abonadoDespues);
   }
 }
@@ -292,7 +276,6 @@ function setLastTipo(tipo){
 
 function render(){
   const app = document.getElementById('app');
-  const today = new Date().toISOString().slice(0,10);
   const fechaInicio = STATE.settings.fecha_inicio || '2023-05-01';
 
   app.innerHTML = `
@@ -357,16 +340,12 @@ function render(){
 
     <section id="params">
       <div class="section-head"><h2>1. Periodo y sueldo base</h2></div>
-      <p class="section-note">Sueldo base = ingreso minimo mensual legal vigente en cada tramo. Edita los montos si el sueldo pactado era otro; se guarda al instante.</p>
+      <p class="section-note">Sueldo base = ingreso minimo mensual legal vigente en cada tramo. Edita los montos si el sueldo pactado era otro; se guarda al instante. Esta app solo calcula la deuda vieja hasta enero 2026 — desde febrero 2026 el sueldo se paga al dia aparte.</p>
       <div class="panel">
         <div class="params-row">
           <div class="field">
             <label for="fecha-inicio">Deuda desde</label>
             <input type="date" id="fecha-inicio" value="${fechaInicio}">
-          </div>
-          <div class="field">
-            <label for="fecha-corte">Calcular hasta</label>
-            <input type="date" id="fecha-corte" value="${today}">
           </div>
         </div>
         <div class="table-wrap">
@@ -546,8 +525,6 @@ function wireEvents(){
 
   document.getElementById('abonos-mes').addEventListener('change', renderUltimosAbonos);
   document.getElementById('abonos-tipo').addEventListener('change', renderUltimosAbonos);
-
-  document.getElementById('fecha-corte').addEventListener('input', recalcStats);
 
   document.getElementById('fecha-inicio').addEventListener('change', async (e)=>{
     try{
