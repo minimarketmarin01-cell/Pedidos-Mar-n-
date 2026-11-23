@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Abonos a la deuda, por mes — Plan de pago a Rossy</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#0E6E58">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Plan pago Rossy">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#F5F6F4; --surface:#FFFFFF; --surface-2:#EDEFEA; --border:#DCE1DB;
+  --text:#14201B; --text-muted:#5C6B63;
+  --accent:#0E6E58; --accent-strong:#0B5245; --accent-soft:#E3F1EC;
+  --debt:#9C2B2B; --debt-soft:#FBEAEA;
+  --amber:#8A6110; --amber-soft:#FBF1DE;
+  --off:#8A8F8B; --off-soft:#EEEFED;
+  --shadow: 0 1px 2px rgba(20,32,27,.06), 0 6px 16px rgba(20,32,27,.06);
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0E1512; --surface:#16201B; --surface-2:#1C2620; --border:#2A362E;
+    --text:#E9EFEA; --text-muted:#93A69B;
+    --accent:#3FBE98; --accent-strong:#59D2AC; --accent-soft:#16332A;
+    --debt:#E58585; --debt-soft:#3A1D1D;
+    --amber:#D9AE56; --amber-soft:#332711;
+    --off:#7C8A83; --off-soft:#1B241E;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 20px rgba(0,0,0,.35);
+  }
+}
+*{box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Public Sans',system-ui,sans-serif;margin:0;padding:24px 16px 56px;}
+.wrap{max-width:720px;margin:0 auto;}
+h1,h2,h3{font-family:'Fraunces',Georgia,serif;text-wrap:balance;margin:0;}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;}
+.eyebrow{font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-strong);font-weight:600;margin-bottom:8px;}
+h1{font-size:clamp(22px,5vw,28px);font-weight:700;}
+.subtitle{color:var(--text-muted);font-size:14.5px;margin-top:8px;max-width:60ch;line-height:1.5;}
+.back{display:inline-block;font-size:13.5px;font-weight:600;color:var(--accent-strong);text-decoration:none;margin-bottom:14px;}
+.stat-row{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0 26px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow);flex:1 1 180px;}
+.stat-label{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);font-weight:600;}
+.stat-value{font-size:20px;font-weight:700;margin-top:4px;}
+table{width:100%;border-collapse:collapse;font-size:13.5px;}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);padding:7px 8px;border-bottom:1px solid var(--border);}
+td{padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:top;}
+td.num,th.num{text-align:right;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
+tr:last-child td{border-bottom:none;}
+.table-wrap{overflow-x:auto;}
+.badge{font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;padding:2px 7px;border-radius:999px;}
+.badge.transferencia{background:var(--accent-soft);color:var(--accent-strong);}
+.badge.efectivo{background:var(--amber-soft);color:var(--amber);}
+.badge.otro{background:var(--off-soft);color:var(--off);}
+.month-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:10px;}
+.month-summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:14px 16px;-webkit-tap-highlight-color:transparent;}
+.month-summary::-webkit-details-marker{display:none;}
+.month-summary::marker{content:'';}
+.month-name{font-weight:600;font-size:15px;flex:1;}
+.month-count{font-size:12px;color:var(--text-muted);font-weight:400;}
+.month-total{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:14.5px;}
+.month-arrow{color:var(--text-muted);font-size:14px;transition:transform .15s;flex:none;}
+details[open] .month-arrow{transform:rotate(90deg);}
+.month-body{padding:0 16px 14px;border-top:1px solid var(--border);}
+.loading{padding:40px 0;text-align:center;color:var(--text-muted);font-size:14px;}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="loading">Cargando datos…</div>
+</div>
+
+<script>
+(function(){var o=window.fetch;window.fetch=function(u,i){try{if(typeof u==='string'&&u.indexOf('znywepjclzhgkctzrjxb.supabase.co/functions/v1/')>-1&&u.indexOf('forceFunctionRegion')<0)u+=(u.indexOf('?')<0?'?':'&')+'forceFunctionRegion=sa-east-1';}catch(e){}return o.call(this,u,i);};})();
+</script>
+<script>
+const API_ROSSY='https://znywepjclzhgkctzrjxb.supabase.co/functions/v1/rossy-api';
+
+const fmt = n => '$' + Math.round(n).toLocaleString('es-CL');
+const fmtDate = iso => {
+  const [y,m,d] = iso.split('-');
+  const meses=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return `${d} ${meses[parseInt(m,10)-1]}`;
+};
+const tipoLabel = {transferencia:'Transferencia', efectivo:'Efectivo', otro:'Otro'};
+const MESES_LARGO = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+function mesLabel(ym){
+  const [y,m] = ym.split('-');
+  const nombre = MESES_LARGO[parseInt(m,10)-1];
+  return nombre.charAt(0).toUpperCase()+nombre.slice(1)+' '+y;
+}
+
+async function api(path){
+  const res = await fetch(API_ROSSY + path);
+  if(!res.ok) throw new Error('No se pudo cargar '+path);
+  return res.json();
+}
+
+function render(state){
+  const app = document.getElementById('app');
+  const checkedIds = new Set(state.categories.filter(c=>c.checked).map(c=>c.id));
+  const catById = {};
+  state.categories.forEach(c=>{ catById[c.id] = c.name; });
+
+  const porMes = {};
+  state.payments.forEach(p=>{
+    if(!checkedIds.has(p.category_id)) return;
+    const ym = p.fecha.slice(0,7);
+    if(!porMes[ym]) porMes[ym] = [];
+    porMes[ym].push(p);
+  });
+
+  const meses = Object.keys(porMes).sort().reverse();
+  const totalGeneral = meses.reduce((s,ym)=> s + porMes[ym].reduce((a,p)=>a+p.monto,0), 0);
+
+  const monthsHtml = meses.map(ym=>{
+    const items = porMes[ym].slice().sort((a,b)=> a.fecha < b.fecha ? -1 : (a.fecha > b.fecha ? 1 : a.id - b.id));
+    const total = items.reduce((s,p)=>s+p.monto,0);
+    const rows = items.map(p=>`
+      <tr>
+        <td>${fmtDate(p.fecha)}</td>
+        <td>${catById[p.category_id] || p.category_id}</td>
+        <td><span class="badge ${p.tipo}">${tipoLabel[p.tipo] || p.tipo}</span></td>
+        <td class="num">${fmt(p.monto)}</td>
+        <td>${p.nota || ''}</td>
+      </tr>`).join('');
+    return `
+      <details class="month-card">
+        <summary class="month-summary">
+          <span class="month-name">${mesLabel(ym)} <span class="month-count">(${items.length} abono${items.length===1?'':'s'})</span></span>
+          <span class="month-total mono">${fmt(total)}</span>
+          <span class="month-arrow">›</span>
+        </summary>
+        <div class="month-body">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Fecha</th><th>Grupo</th><th>Tipo</th><th class="num">Monto</th><th>Nota</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>
+      </details>`;
+  }).join('');
+
+  app.innerHTML = `
+    <a class="back" href="./">← Volver a la calculadora</a>
+    <div class="eyebrow">Minimarket Marín 376</div>
+    <h1>Abonos a la deuda, por mes</h1>
+    <p class="subtitle">Toca un mes para ver el detalle de cada abono. Solo cuenta lo marcado en los grupos de la calculadora.</p>
+
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-label">Total abonado</div>
+        <div class="stat-value mono">${fmt(totalGeneral)}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Meses con abonos</div>
+        <div class="stat-value mono">${meses.length}</div>
+      </div>
+    </div>
+
+    ${monthsHtml || '<p class="subtitle">Sin abonos registrados todavía.</p>'}
+  `;
+}
+
+(async function init(){
+  try{
+    const state = await api('/api/state');
+    render(state);
+  }catch(err){
+    document.getElementById('app').innerHTML = `<div class="loading">Error cargando datos: ${err.message}</div>`;
+  }
+})();
+</script>
+</body>
+</html>
